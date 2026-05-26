@@ -13,7 +13,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { IconAlertCircle, IconPlus, IconScan } from "@tabler/icons-react";
+import { IconAlertCircle, IconChartBar, IconPlus, IconScan } from "@tabler/icons-react";
 import * as eventService from "../../services/eventService";
 import type { Event } from "../../types/api";
 import { formatShortDate } from "../../utils/format";
@@ -63,10 +63,18 @@ export function ProducerEventsPage() {
     <Stack gap="xl">
       <Group justify="space-between" align="flex-end">
         <Stack gap={4}>
-          <Title order={1}>Painel do produtor</Title>
-          <Text c="dimmed">Gerencie eventos, lotes e check-in na portaria.</Text>
+          <Title order={1}>Meus eventos</Title>
+          <Text c="dimmed">Crie, publique e gerencie lotes de ingressos.</Text>
         </Stack>
         <Group>
+          <Button
+            component={Link}
+            to="/produtor"
+            variant="subtle"
+            leftSection={<IconChartBar size={18} />}
+          >
+            Dashboard
+          </Button>
           <Button
             component={Link}
             to="/produtor/check-in"

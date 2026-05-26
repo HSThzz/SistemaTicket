@@ -13,10 +13,12 @@ import {
 import { authMiddleware } from "../middlewares/authMiddleware";
 import { roleMiddleware } from "../middlewares/roleMiddleware";
 import { EventService, type EventActor } from "../services/EventService";
+import { EventDashboardService } from "../services/EventDashboardService";
 
 const CONTEXT = "EventController";
 const logger = Logger.getInstance();
 const eventService = new EventService(AppDataSource);
+const eventDashboardService = new EventDashboardService(AppDataSource);
 
 function parseEventStatus(value: unknown): EventStatus | undefined {
   if (value === undefined) return undefined;
@@ -78,6 +80,25 @@ export class EventController {
     res.status(200).json({
       events: events.map((event) => serializeEvent(event)),
     });
+  }
+
+  async getMineStats(req: Request, res: Response): Promise<void> {
+    const actor = requireActor(req, res);
+    if (!actor) return;
+
+    try {
+      const stats = await eventDashboardService.getProducerDashboard(actor);
+      res.status(200).json(stats);
+    } catch (error) {
+      logger.error(CONTEXT, "Failed to load producer dashboard stats", {
+        userId: actor.userId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      res.status(500).json({
+        error: "Failed to load dashboard stats",
+        code: "INTERNAL_ERROR",
+      });
+    }
   }
 
   async getPublished(req: Request, res: Response): Promise<void> {

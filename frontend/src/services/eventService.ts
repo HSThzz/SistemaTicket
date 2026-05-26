@@ -1,5 +1,5 @@
 import { api } from "./api";
-import type { Event, TicketLot } from "../types/api";
+import type { Event, ProducerDashboardStats, TicketLot } from "../types/api";
 
 export interface CreateEventInput {
   title: string;
@@ -58,6 +58,11 @@ export async function createTicketLot(
     input,
   );
   return data.ticketLot;
+}
+
+export async function getProducerDashboardStats(): Promise<ProducerDashboardStats> {
+  const { data } = await api.get<ProducerDashboardStats>("/events/mine/stats");
+  return data;
 }
 
 export async function getManagedEvent(eventId: string): Promise<Event | null> {

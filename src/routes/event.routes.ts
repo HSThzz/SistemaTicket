@@ -5,6 +5,11 @@ const router = Router();
 
 router.get("/", (req, res) => void eventController.listPublished(req, res));
 router.get(
+  "/mine/stats",
+  ...eventManagementMiddlewares,
+  (req, res) => void eventController.getMineStats(req, res),
+);
+router.get(
   "/mine",
   ...eventManagementMiddlewares,
   (req, res) => void eventController.listMine(req, res),

@@ -120,6 +120,29 @@ export interface OrderListItem {
   reservationId: string;
 }
 
+export interface ProducerEventStats {
+  eventId: string;
+  title: string;
+  status: string;
+  date: string;
+  ticketsSold: number;
+  ticketsCheckedIn: number;
+  grossRevenueCents: number;
+  capacityTotal: number;
+  capacityRemaining: number;
+}
+
+export interface ProducerDashboardStats {
+  summary: {
+    totalEvents: number;
+    publishedEvents: number;
+    ticketsSold: number;
+    ticketsCheckedIn: number;
+    grossRevenueCents: number;
+  };
+  events: ProducerEventStats[];
+}
+
 export interface ApiErrorBody {
   error?: string;
   code?: string;

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Alert,
   Button,
+  Divider,
   Paper,
   Stack,
   Text,
@@ -12,6 +13,7 @@ import {
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { IconArrowLeft, IconCheck, IconScan, IconX } from "@tabler/icons-react";
+import { QrScanner } from "../../components/QrScanner";
 import * as checkInService from "../../services/checkInService";
 import { formatShortDate } from "../../utils/format";
 import { getApiErrorMessage } from "../../utils/errors";
@@ -23,6 +25,7 @@ interface CheckInFormValues {
 export function ProducerCheckInPage() {
   const [submitting, setSubmitting] = useState(false);
   const [lastResult, setLastResult] = useState<checkInService.CheckInResult | null>(null);
+  const [scannerPaused, setScannerPaused] = useState(false);
 
   const form = useForm<CheckInFormValues>({
     initialValues: { uniqueCode: "" },
@@ -31,32 +34,52 @@ export function ProducerCheckInPage() {
     },
   });
 
+  const performCheckIn = useCallback(
+    async (rawCode: string) => {
+      const uniqueCode = rawCode.trim();
+      if (uniqueCode.length < 8 || submitting) {
+        return;
+      }
+
+      setSubmitting(true);
+      setScannerPaused(true);
+
+      try {
+        const result = await checkInService.checkInTicket(uniqueCode);
+        setLastResult(result);
+        form.reset();
+
+        notifications.show({
+          title: "Check-in realizado",
+          message: `${result.owner_name} — ${result.event_title}`,
+          color: "green",
+          icon: <IconCheck size={18} />,
+        });
+      } catch (error) {
+        notifications.show({
+          title: "Check-in recusado",
+          message: getApiErrorMessage(error),
+          color: "red",
+          icon: <IconX size={18} />,
+        });
+      } finally {
+        setSubmitting(false);
+        window.setTimeout(() => setScannerPaused(false), 2000);
+      }
+    },
+    [form, submitting],
+  );
+
   const handleSubmit = form.onSubmit(async (values) => {
-    setSubmitting(true);
-    setLastResult(null);
-
-    try {
-      const result = await checkInService.checkInTicket(values.uniqueCode);
-      setLastResult(result);
-      form.reset();
-
-      notifications.show({
-        title: "Check-in realizado",
-        message: `${result.owner_name} — ${result.event_title}`,
-        color: "green",
-        icon: <IconCheck size={18} />,
-      });
-    } catch (error) {
-      notifications.show({
-        title: "Check-in recusado",
-        message: getApiErrorMessage(error),
-        color: "red",
-        icon: <IconX size={18} />,
-      });
-    } finally {
-      setSubmitting(false);
-    }
+    await performCheckIn(values.uniqueCode);
   });
+
+  const handleScan = useCallback(
+    (decodedText: string) => {
+      void performCheckIn(decodedText);
+    },
+    [performCheckIn],
+  );
 
   return (
     <Stack gap="xl" maw={560}>
@@ -72,15 +95,24 @@ export function ProducerCheckInPage() {
 
       <Stack gap={4}>
         <Title order={2}>Check-in na portaria</Title>
-        <Text c="dimmed">Digite ou escaneie o código único do ingresso.</Text>
+        <Text c="dimmed">Escaneie o QR code ou digite o código manualmente.</Text>
       </Stack>
+
+      <Paper p="xl" radius="md" withBorder>
+        <Stack gap="md">
+          <Text fw={600}>Scanner de câmera</Text>
+          <QrScanner onScan={handleScan} paused={scannerPaused || submitting} />
+        </Stack>
+      </Paper>
+
+      <Divider label="ou digite o código" labelPosition="center" />
 
       <Paper p="xl" radius="md" withBorder>
         <form onSubmit={handleSubmit}>
           <Stack gap="md">
             <TextInput
               label="Código do ingresso"
-              placeholder="Cole o código ou leia o QR"
+              placeholder="Cole o código manualmente"
               leftSection={<IconScan size={18} />}
               {...form.getInputProps("uniqueCode")}
             />
