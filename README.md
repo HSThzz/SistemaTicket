@@ -66,6 +66,9 @@ Copie `.env.example` para `.env`. Principais variáveis:
 | `PORT` | Porta da API (padrão `3000`) |
 | `JWT_SECRET` | Segredo do JWT |
 | `PAYMENT_WEBHOOK_SECRET` | Header `x-webhook-secret` do webhook |
+| `PAYMENT_GATEWAY` | `simulated` (padrão) ou `mercadopago` |
+| `MERCADOPAGO_ACCESS_TOKEN` | Access token do Mercado Pago (sandbox ou prod) |
+| `MERCADOPAGO_NOTIFICATION_URL` | URL pública do webhook (IPN) |
 | `DB_*` | Conexão PostgreSQL |
 | `REDIS_*` | Conexão Redis |
 | `APPLE_*` / `GOOGLE_WALLET_*` | Credenciais Wallet (opcional) |
@@ -195,6 +198,26 @@ TTL da reserva: **15 minutos**.
 |--------|------|------|-----------|
 | POST | `/payments/webhook` | secret | Webhook do gateway |
 
+### Gateway
+
+| `PAYMENT_GATEWAY` | Comportamento |
+|-------------------|---------------|
+| `simulated` (padrão) | PIX fake para dev/testes |
+| `mercadopago` | Cobrança PIX real via API Mercado Pago |
+
+**Configurar Mercado Pago (sandbox):**
+
+```env
+PAYMENT_GATEWAY=mercadopago
+MERCADOPAGO_ACCESS_TOKEN=TEST-xxxxxxxx
+MERCADOPAGO_NOTIFICATION_URL=https://seu-dominio.com/payments/webhook
+PAYMENT_WEBHOOK_SECRET=seu-secret
+```
+
+Obtenha o access token em [Mercado Pago Developers](https://www.mercadopago.com.br/developers/panel/app) (credenciais de teste para sandbox).
+
+### Webhook interno (simulado / testes manuais)
+
 **Header obrigatório (prod):**
 ```
 x-webhook-secret: <PAYMENT_WEBHOOK_SECRET>
@@ -213,6 +236,30 @@ x-webhook-secret: <PAYMENT_WEBHOOK_SECRET>
 ```
 
 Eventos: `payment.succeeded` | `payment.failed`
+
+### Webhook Mercado Pago
+
+A mesma rota `POST /payments/webhook` aceita notificações do Mercado Pago:
+
+**Formato JSON (Webhooks v2):**
+```json
+{
+  "type": "payment",
+  "data": { "id": "123456789" }
+}
+```
+
+**Formato IPN (query string):**
+```
+POST /payments/webhook?topic=payment&id=123456789
+```
+
+A API consulta o pagamento no Mercado Pago, usa `external_reference` como `orderId` e processa:
+- `approved` → emite ingressos
+- `rejected` / `cancelled` → falha pedido e restaura estoque
+- `pending` → ignora (aguarda próxima notificação)
+
+Configure no painel MP a URL de notificação apontando para `/payments/webhook` e use o header `x-webhook-secret` se configurado.
 
 ---
 

@@ -24,7 +24,10 @@ import {
   PaymentAlreadyProcessedError,
 } from "../errors/PaymentError";
 import type { PaymentGateway } from "./payment/PaymentGateway";
-import { SimulatedPixGateway } from "./payment/SimulatedPixGateway";
+import {
+  createPaymentGateway,
+  isMercadoPagoPixGateway,
+} from "./payment/createPaymentGateway";
 
 const CONTEXT = "PaymentService";
 
@@ -57,7 +60,11 @@ export class PaymentService {
     private readonly redis?: Redis,
     gateway?: PaymentGateway,
   ) {
-    this.gateway = gateway ?? new SimulatedPixGateway();
+    this.gateway = gateway ?? createPaymentGateway();
+  }
+
+  getGatewayProvider(): PaymentGateway["provider"] {
+    return this.gateway.provider;
   }
 
   async processOrderPayment(orderId: string): Promise<PixPaymentDetails> {
@@ -65,10 +72,10 @@ export class PaymentService {
 
     const order = await this.dataSource.getRepository(Order).findOne({
       where: { id: orderId },
-      relations: { reservation: { ticketLot: true } },
+      relations: { reservation: { ticketLot: true }, user: true },
     });
 
-    if (!order) {
+    if (!order?.user) {
       throw new OrderNotFoundError(orderId);
     }
 
@@ -76,6 +83,9 @@ export class PaymentService {
       orderId: order.id,
       amountCents: order.totalPrice,
       description: `Ingressos pedido ${order.id.slice(0, 8)}`,
+      payerEmail: order.user.email,
+      payerFirstName: order.user.name.split(" ")[0] ?? order.user.name,
+      payerDocument: order.user.document,
     });
 
     order.paymentGatewayId = charge.transactionId;
@@ -112,6 +122,54 @@ export class PaymentService {
     }
 
     await this.handlePaymentFailed(payload.data);
+  }
+
+  async handleMercadoPagoNotification(paymentId: string): Promise<"processed" | "pending" | "ignored"> {
+    if (!isMercadoPagoPixGateway(this.gateway)) {
+      throw new InvalidWebhookPayloadError("Mercado Pago gateway is not configured");
+    }
+
+    const snapshot = await this.gateway.getPayment(paymentId);
+
+    this.logger.info(CONTEXT, "Mercado Pago payment fetched", {
+      paymentId,
+      orderId: snapshot.orderId,
+      status: snapshot.status,
+    });
+
+    if (snapshot.status === "pending") {
+      return "pending";
+    }
+
+    if (snapshot.status === "approved") {
+      await this.handleWebhook({
+        event: "payment.succeeded",
+        data: {
+          orderId: snapshot.orderId,
+          transactionId: snapshot.transactionId,
+          paidAt: new Date().toISOString(),
+        },
+      });
+      return "processed";
+    }
+
+    if (
+      snapshot.status === "rejected" ||
+      snapshot.status === "cancelled" ||
+      snapshot.status === "failed"
+    ) {
+      await this.handleWebhook({
+        event: "payment.failed",
+        data: {
+          orderId: snapshot.orderId,
+          transactionId: snapshot.transactionId,
+          failureReason: snapshot.failureReason ?? snapshot.status,
+        },
+      });
+      return "processed";
+    }
+
+    return "ignored";
   }
 
   private async handlePaymentSucceeded(

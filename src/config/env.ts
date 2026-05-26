@@ -17,6 +17,15 @@ export const env = {
   logLevel: process.env.LOG_LEVEL ?? "info",
   payment: {
     webhookSecret: process.env.PAYMENT_WEBHOOK_SECRET ?? "",
+    gateway: (process.env.PAYMENT_GATEWAY ?? "simulated") as
+      | "simulated"
+      | "mercadopago",
+    mercadoPago: {
+      accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN ?? "",
+      apiBaseUrl:
+        process.env.MERCADOPAGO_API_BASE_URL ?? "https://api.mercadopago.com",
+      notificationUrl: process.env.MERCADOPAGO_NOTIFICATION_URL ?? "",
+    },
   },
   jwt: {
     secret: requireEnv("JWT_SECRET", "dev-secret-change-in-production"),

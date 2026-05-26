@@ -13,6 +13,10 @@ import {
   PaymentService,
   type PaymentWebhookPayload,
 } from "../services/PaymentService";
+import {
+  extractMercadoPagoPaymentId,
+  isMercadoPagoWebhookRequest,
+} from "../services/payment/mercadoPagoWebhook";
 
 const CONTEXT = "PaymentController";
 const logger = Logger.getInstance();
@@ -25,9 +29,15 @@ export class PaymentController {
       return;
     }
 
+    if (isMercadoPagoWebhookRequest(req)) {
+      await this.handleMercadoPagoWebhook(req, res);
+      return;
+    }
+
     const payload = req.body as PaymentWebhookPayload;
 
     logger.info(CONTEXT, "Incoming payment webhook", {
+      provider: "internal",
       event: payload?.event,
       orderId: payload?.data?.orderId,
       transactionId: payload?.data?.transactionId,
@@ -44,6 +54,37 @@ export class PaymentController {
       res.status(200).json({ received: true });
     } catch (error) {
       this.handleWebhookError(res, payload, error);
+    }
+  }
+
+  private async handleMercadoPagoWebhook(req: Request, res: Response): Promise<void> {
+    const paymentId = extractMercadoPagoPaymentId(req);
+
+    if (!paymentId) {
+      res.status(400).json({
+        error: "Invalid Mercado Pago webhook payload",
+        code: "INVALID_WEBHOOK_PAYLOAD",
+      });
+      return;
+    }
+
+    logger.info(CONTEXT, "Incoming Mercado Pago webhook", {
+      provider: "mercadopago",
+      paymentId,
+      gateway: paymentService.getGatewayProvider(),
+    });
+
+    try {
+      const result = await paymentService.handleMercadoPagoNotification(paymentId);
+
+      res.status(200).json({
+        received: true,
+        provider: "mercadopago",
+        paymentId,
+        result,
+      });
+    } catch (error) {
+      this.handleWebhookError(res, { event: "payment.succeeded", data: { orderId: "", transactionId: paymentId } }, error);
     }
   }
 

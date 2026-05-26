@@ -31,3 +31,10 @@ export class PaymentAlreadyProcessedError extends PaymentError {
     this.name = "PaymentAlreadyProcessedError";
   }
 }
+
+export class PaymentGatewayError extends PaymentError {
+  constructor(message: string, code = "PAYMENT_GATEWAY_ERROR") {
+    super(message, code);
+    this.name = "PaymentGatewayError";
+  }
+}

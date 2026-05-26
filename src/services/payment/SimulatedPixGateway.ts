@@ -8,6 +8,8 @@ import type {
 const PIX_EXPIRATION_MS = 15 * 60 * 1000;
 
 export class SimulatedPixGateway implements PaymentGateway {
+  readonly provider = "simulated" as const;
+
   async createPixCharge(input: CreatePixChargeInput): Promise<PixChargeResult> {
     const transactionId = `pix_sim_${randomUUID()}`;
     const expiresAt = new Date(Date.now() + PIX_EXPIRATION_MS);

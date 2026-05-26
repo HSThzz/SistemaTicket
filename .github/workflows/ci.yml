@@ -39,6 +39,7 @@ jobs:
       NODE_ENV: test
       JWT_SECRET: test-jwt-secret
       PAYMENT_WEBHOOK_SECRET: test-webhook-secret
+      PAYMENT_GATEWAY: simulated
       DB_HOST: localhost
       DB_PORT: 5432
       DB_USERNAME: postgres
