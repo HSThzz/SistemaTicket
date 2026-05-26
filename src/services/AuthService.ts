@@ -117,6 +117,23 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
+  async getProfile(userId: string): Promise<AuthResponse["user"]> {
+    const user = await this.dataSource.getRepository(User).findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UserNotFoundError(userId);
+    }
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+  }
+
   async updateUserRole(userId: string, role: UserRole): Promise<AuthResponse["user"]> {
     if (!(role in UserRole)) {
       throw new InvalidRoleError(String(role));

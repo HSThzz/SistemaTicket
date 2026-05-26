@@ -27,6 +27,10 @@ export class SimulatedPixGateway implements PaymentGateway {
       expiresAt,
     };
   }
+
+  async refundPayment(_transactionId: string): Promise<void> {
+    // Simulador: reembolso registrado apenas no banco.
+  }
 }
 
 function buildSimulatedPixCopyPaste(params: {

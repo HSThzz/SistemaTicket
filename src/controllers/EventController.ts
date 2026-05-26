@@ -1,6 +1,8 @@
 import type { Request, Response } from "express";
 import { AppDataSource } from "../config/data-source";
+import { TICKET_LOT_STOCK_KEY_PREFIX } from "../config/constants";
 import { Logger } from "../config/logger";
+import { getRedis } from "../config/redis";
 import { Event } from "../entities/Event";
 import { EventStatus, UserRole } from "../entities/enums";
 import {
@@ -185,6 +187,11 @@ export class EventController {
             availableQuantity === undefined ? undefined : Number(availableQuantity),
         },
         actor,
+      );
+
+      await getRedis().set(
+        `${TICKET_LOT_STOCK_KEY_PREFIX}${lot.id}`,
+        String(lot.availableQuantity),
       );
 
       res.status(201).json({

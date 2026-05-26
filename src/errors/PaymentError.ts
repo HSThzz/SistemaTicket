@@ -52,3 +52,17 @@ export class WebhookReplayError extends PaymentError {
     this.name = "WebhookReplayError";
   }
 }
+
+export class OrderRefundNotAllowedError extends PaymentError {
+  constructor(message: string, code = "ORDER_NOT_REFUNDABLE") {
+    super(message, code);
+    this.name = "OrderRefundNotAllowedError";
+  }
+}
+
+export class OrderAlreadyRefundedError extends PaymentError {
+  constructor(orderId: string) {
+    super(`Order ${orderId} is already refunded`, "ORDER_ALREADY_REFUNDED");
+    this.name = "OrderAlreadyRefundedError";
+  }
+}

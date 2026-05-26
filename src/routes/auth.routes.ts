@@ -13,6 +13,7 @@ router.post(
   authLoginRateLimiter,
   (req, res) => void authController.login(req, res),
 );
+router.get("/me", authMiddleware, (req, res) => void authController.me(req, res));
 
 router.patch(
   "/users/:userId/role",

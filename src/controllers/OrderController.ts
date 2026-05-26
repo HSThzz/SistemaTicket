@@ -1,11 +1,27 @@
 import type { Request, Response } from "express";
 import { AppDataSource } from "../config/data-source";
 import { Logger } from "../config/logger";
+import { getRedis } from "../config/redis";
+import {
+  OrderAlreadyRefundedError,
+  OrderNotFoundError,
+  OrderRefundNotAllowedError,
+  PaymentError,
+  PaymentGatewayError,
+} from "../errors/PaymentError";
 import { OrderQueryService } from "../services/OrderQueryService";
+import { PaymentService } from "../services/PaymentService";
 
 const CONTEXT = "OrderController";
 const logger = Logger.getInstance();
 const orderQueryService = new OrderQueryService(AppDataSource);
+const paymentService = new PaymentService(AppDataSource, getRedis());
+
+function parseOrderId(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+  return "";
+}
 
 export class OrderController {
   async listMine(req: Request, res: Response): Promise<void> {
@@ -25,7 +41,60 @@ export class OrderController {
       res.status(500).json({ error: "Failed to list orders", code: "INTERNAL_ERROR" });
     }
   }
+
+  async refund(req: Request, res: Response): Promise<void> {
+    const orderId = parseOrderId(req.params.id);
+
+    if (!orderId) {
+      res.status(400).json({ error: "Invalid order id", code: "INVALID_ORDER_ID" });
+      return;
+    }
+
+    try {
+      const result = await paymentService.refundOrder(orderId);
+      res.status(200).json({ refund: result });
+    } catch (error) {
+      this.handleRefundError(res, orderId, error);
+    }
+  }
+
+  private handleRefundError(res: Response, orderId: string, error: unknown): void {
+    if (error instanceof OrderNotFoundError) {
+      res.status(404).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof OrderAlreadyRefundedError) {
+      res.status(409).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof OrderRefundNotAllowedError) {
+      res.status(422).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof PaymentGatewayError) {
+      logger.error(CONTEXT, "Gateway refund failed", {
+        orderId,
+        error: error.message,
+        code: error.code,
+      });
+      res.status(502).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof PaymentError) {
+      res.status(400).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    logger.error(CONTEXT, "Unexpected refund error", {
+      orderId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    res.status(500).json({ error: "Failed to refund order", code: "INTERNAL_ERROR" });
+  }
 }
 
 export const orderController = new OrderController();
-

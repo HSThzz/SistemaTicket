@@ -7,6 +7,7 @@ import {
   RESERVATION_KEY_PREFIX,
   TICKET_LOT_STOCK_KEY_PREFIX,
 } from "../config/constants";
+import { env, isProduction } from "../config/env";
 import { Logger } from "../config/logger";
 import { Order } from "../entities/Order";
 import { Reservation } from "../entities/Reservation";
@@ -20,7 +21,9 @@ import {
 } from "../entities/enums";
 import {
   InvalidWebhookPayloadError,
+  OrderAlreadyRefundedError,
   OrderNotFoundError,
+  OrderRefundNotAllowedError,
   PaymentAlreadyProcessedError,
 } from "../errors/PaymentError";
 import type { PaymentGateway } from "./payment/PaymentGateway";
@@ -49,6 +52,12 @@ export interface PixPaymentDetails {
   pixCopyPaste: string;
   expiresAt: string;
   amountCents: number;
+}
+
+export interface RefundOrderResult {
+  orderId: string;
+  ticketsCancelled: number;
+  stockRestored: number;
 }
 
 export class PaymentService {
@@ -105,6 +114,188 @@ export class PaymentService {
       expiresAt: charge.expiresAt.toISOString(),
       amountCents: order.totalPrice,
     };
+  }
+
+  async refundOrder(orderId: string): Promise<RefundOrderResult> {
+    this.logger.info(CONTEXT, "Starting order refund", { orderId });
+
+    const order = await this.dataSource.getRepository(Order).findOne({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      throw new OrderNotFoundError(orderId);
+    }
+
+    if (order.status === OrderStatus.REFUNDED) {
+      throw new OrderAlreadyRefundedError(orderId);
+    }
+
+    if (order.status !== OrderStatus.PAID) {
+      throw new OrderRefundNotAllowedError(
+        `Order ${orderId} with status ${order.status} cannot be refunded`,
+      );
+    }
+
+    const tickets = await this.dataSource.getRepository(Ticket).find({
+      where: { orderId },
+    });
+
+    const hasUsedTicket = tickets.some(
+      (ticket) =>
+        ticket.status === TicketStatus.USED || ticket.checkedInAt !== null,
+    );
+
+    if (hasUsedTicket) {
+      throw new OrderRefundNotAllowedError(
+        `Order ${orderId} has used tickets and cannot be refunded`,
+        "TICKET_ALREADY_USED",
+      );
+    }
+
+    if (order.paymentGatewayId) {
+      await this.gateway.refundPayment(order.paymentGatewayId);
+    }
+
+    const result = await this.dataSource.transaction(async (manager) => {
+      const lockedOrder = await manager.findOne(Order, {
+        where: { id: orderId },
+        lock: { mode: "pessimistic_write" },
+      });
+
+      if (!lockedOrder) {
+        throw new OrderNotFoundError(orderId);
+      }
+
+      if (lockedOrder.status === OrderStatus.REFUNDED) {
+        throw new OrderAlreadyRefundedError(orderId);
+      }
+
+      if (lockedOrder.status !== OrderStatus.PAID) {
+        throw new OrderRefundNotAllowedError(
+          `Order ${orderId} with status ${lockedOrder.status} cannot be refunded`,
+        );
+      }
+
+      const orderTickets = await manager.find(Ticket, {
+        where: { orderId },
+        lock: { mode: "pessimistic_write" },
+      });
+
+      const activeTickets = orderTickets.filter(
+        (ticket) => ticket.status === TicketStatus.ACTIVE,
+      );
+
+      const checkedIn = orderTickets.some(
+        (ticket) =>
+          ticket.status === TicketStatus.USED || ticket.checkedInAt !== null,
+      );
+
+      if (checkedIn) {
+        throw new OrderRefundNotAllowedError(
+          `Order ${orderId} has checked-in tickets and cannot be refunded`,
+          "TICKET_ALREADY_USED",
+        );
+      }
+
+      for (const ticket of activeTickets) {
+        ticket.status = TicketStatus.CANCELLED;
+        await manager.save(ticket);
+      }
+
+      const stockByLot = new Map<string, number>();
+      for (const ticket of activeTickets) {
+        stockByLot.set(
+          ticket.ticketLotId,
+          (stockByLot.get(ticket.ticketLotId) ?? 0) + 1,
+        );
+      }
+
+      let stockRestored = 0;
+
+      for (const [ticketLotId, quantity] of stockByLot) {
+        const ticketLot = await manager.findOne(TicketLot, {
+          where: { id: ticketLotId },
+          lock: { mode: "pessimistic_write" },
+        });
+
+        if (!ticketLot) {
+          this.logger.error(CONTEXT, "Ticket lot not found during refund", {
+            orderId,
+            ticketLotId,
+          });
+          continue;
+        }
+
+        ticketLot.availableQuantity += quantity;
+        await manager.save(ticketLot);
+        stockRestored += quantity;
+
+        if (this.redis) {
+          await this.redis.incrby(
+            `${TICKET_LOT_STOCK_KEY_PREFIX}${ticketLotId}`,
+            quantity,
+          );
+        }
+      }
+
+      lockedOrder.status = OrderStatus.REFUNDED;
+      await manager.save(lockedOrder);
+
+      this.logger.info(CONTEXT, "Order refunded successfully", {
+        orderId,
+        ticketsCancelled: activeTickets.length,
+        stockRestored,
+      });
+
+      return {
+        orderId,
+        ticketsCancelled: activeTickets.length,
+        stockRestored,
+      };
+    });
+
+    await this.clearPaymentCache(orderId);
+    await this.clearReservationCache(orderId);
+
+    return result;
+  }
+
+  async simulateDevPayment(orderId: string, requesterUserId: string): Promise<void> {
+    if (isProduction) {
+      throw new InvalidWebhookPayloadError("Dev payment simulation is disabled in production");
+    }
+
+    if (env.payment.gateway !== "simulated") {
+      throw new InvalidWebhookPayloadError(
+        "Dev payment simulation requires PAYMENT_GATEWAY=simulated",
+      );
+    }
+
+    const order = await this.dataSource.getRepository(Order).findOne({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      throw new OrderNotFoundError(orderId);
+    }
+
+    if (order.userId !== requesterUserId) {
+      throw new OrderNotFoundError(orderId);
+    }
+
+    if (order.status !== OrderStatus.PENDING) {
+      throw new PaymentAlreadyProcessedError(orderId, order.status);
+    }
+
+    await this.handleWebhook({
+      event: "payment.succeeded",
+      data: {
+        orderId: order.id,
+        transactionId: order.paymentGatewayId ?? `pix_sim_dev_${order.id}`,
+        paidAt: new Date().toISOString(),
+      },
+    });
   }
 
   async handleWebhook(payload: PaymentWebhookPayload): Promise<void> {

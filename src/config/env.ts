@@ -11,10 +11,20 @@ function requireEnv(key: string, fallback?: string): string {
   return value;
 }
 
+const defaultCorsOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+];
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   port: Number(process.env.PORT ?? "3000"),
   logLevel: process.env.LOG_LEVEL ?? "info",
+  corsOrigins: (process.env.CORS_ORIGINS ?? defaultCorsOrigins.join(","))
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
   payment: {
     webhookSecret: process.env.PAYMENT_WEBHOOK_SECRET ?? "",
     webhookMaxAgeSeconds: Number(process.env.WEBHOOK_MAX_AGE_SECONDS ?? "300"),

@@ -46,6 +46,20 @@ export class AuthController {
     }
   }
 
+  async me(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    try {
+      const user = await authService.getProfile(req.user.id);
+      res.status(200).json({ user });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
   async login(req: Request, res: Response): Promise<void> {
     const { email, password } = req.body as {
       email?: string;

@@ -64,6 +64,7 @@ Copie `.env.example` para `.env`. Principais variáveis:
 | Variável | Descrição |
 |----------|-----------|
 | `PORT` | Porta da API (padrão `3000`) |
+| `CORS_ORIGINS` | Origens permitidas no browser (ex.: `http://localhost:5173`) |
 | `JWT_SECRET` | Segredo do JWT |
 | `PAYMENT_GATEWAY` | `simulated` (padrão) ou `mercadopago` |
 | `PAYMENT_WEBHOOK_SECRET` | Segredo HMAC do webhook interno |
@@ -145,6 +146,7 @@ Authorization: Bearer <token>
 |--------|------|------|-----------|
 | POST | `/auth/register` | — | Cadastro (`CLIENT`) |
 | POST | `/auth/login` | — | Login → JWT |
+| GET | `/auth/me` | JWT | Perfil do usuário logado |
 | PATCH | `/auth/users/:userId/role` | ADMIN | Promover role |
 
 ---
@@ -199,6 +201,7 @@ TTL da reserva e do PIX: **15 minutos**. Se o pagamento não for confirmado ness
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
 | POST | `/payments/webhook` | secret | Webhook do gateway |
+| POST | `/payments/dev/simulate` | JWT | Simula pagamento (só `development` + gateway `simulated`) |
 
 ### Gateway
 
@@ -286,7 +289,33 @@ Configure no painel MP a URL de notificação apontando para `/payments/webhook`
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
 | GET | `/orders/me` | CLIENT+ | Meus pedidos |
+| POST | `/orders/:id/refund` | ADMIN | Reembolsa pedido pago |
 | GET | `/tickets/me` | CLIENT+ | Meus ingressos |
+
+### Reembolso (`POST /orders/:id/refund`)
+
+Regras:
+
+- Pedido deve estar **`PAID`**
+- Ingressos **não podem** estar com check-in (`USED`)
+- Cancela todos os tickets `ACTIVE` → `CANCELLED`
+- Marca pedido como **`REFUNDED`**
+- Restaura estoque no Postgres e Redis
+- Com `PAYMENT_GATEWAY=mercadopago`, dispara reembolso na API do Mercado Pago antes de persistir
+
+Resposta:
+
+```json
+{
+  "refund": {
+    "orderId": "<uuid>",
+    "ticketsCancelled": 2,
+    "stockRestored": 2
+  }
+}
+```
+
+Códigos de erro: `ORDER_NOT_FOUND` (404), `ORDER_ALREADY_REFUNDED` (409), `ORDER_NOT_REFUNDABLE` / `TICKET_ALREADY_USED` (422).
 
 ---
 

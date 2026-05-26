@@ -89,6 +89,13 @@ export class MercadoPagoPixGateway implements PaymentGateway {
     };
   }
 
+  async refundPayment(transactionId: string): Promise<void> {
+    await this.request("POST", `/v1/payments/${transactionId}/refunds`, {
+      body: {},
+      idempotencyKey: `refund-${transactionId}`,
+    });
+  }
+
   async getPayment(transactionId: string): Promise<GatewayPaymentSnapshot> {
     const response = await this.request<MercadoPagoPaymentResponse>(
       "GET",

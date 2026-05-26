@@ -30,6 +30,7 @@ export interface GatewayPaymentSnapshot {
 export interface PaymentGateway {
   readonly provider: "simulated" | "mercadopago";
   createPixCharge(input: CreatePixChargeInput): Promise<PixChargeResult>;
+  refundPayment(transactionId: string): Promise<void>;
 }
 
 export interface PaymentGatewayWithLookup extends PaymentGateway {

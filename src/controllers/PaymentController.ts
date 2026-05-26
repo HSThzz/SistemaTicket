@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { AppDataSource } from "../config/data-source";
+import { isProduction } from "../config/env";
 import { Logger } from "../config/logger";
 import { getRedis } from "../config/redis";
 import {
@@ -26,6 +27,39 @@ const paymentService = new PaymentService(AppDataSource, getRedis());
 const webhookAuthService = new WebhookAuthService(getRedis());
 
 export class PaymentController {
+  async simulateDevPayment(req: Request, res: Response): Promise<void> {
+    if (isProduction) {
+      res.status(404).json({ error: "Not found", code: "NOT_FOUND" });
+      return;
+    }
+
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    const { orderId } = req.body as { orderId?: string };
+
+    if (!orderId) {
+      res.status(400).json({ error: "orderId is required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    try {
+      await paymentService.simulateDevPayment(orderId, req.user.id);
+      res.status(200).json({ simulated: true, orderId });
+    } catch (error) {
+      this.handleWebhookError(
+        res,
+        {
+          event: "payment.succeeded",
+          data: { orderId, transactionId: "dev_simulate" },
+        },
+        error,
+      );
+    }
+  }
+
   async webhook(req: Request, res: Response): Promise<void> {
     try {
       const auth = await webhookAuthService.authorize(req);
