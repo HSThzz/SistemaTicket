@@ -19,18 +19,32 @@ export const appTheme = createTheme({
     brand,
   },
   fontFamily:
-    'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    '"Plus Jakarta Sans", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   headings: {
     fontFamily:
-      'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      '"Plus Jakarta Sans", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     fontWeight: "700",
   },
   defaultRadius: "md",
   components: {
     AppShell: {
       styles: {
+        root: {
+          backgroundColor: "var(--mantine-color-body)",
+        },
+        header: {
+          backgroundColor: "var(--mantine-color-body)",
+          borderBottom: "1px solid var(--mantine-color-default-border)",
+          width: "100%",
+        },
+        navbar: {
+          backgroundColor: "var(--mantine-color-body)",
+          borderRight: "1px solid var(--mantine-color-default-border)",
+        },
         main: {
           backgroundColor: "var(--mantine-color-body)",
+          width: "100%",
+          maxWidth: "none",
         },
       },
     },

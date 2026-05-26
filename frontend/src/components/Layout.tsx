@@ -10,10 +10,12 @@ import {
   Menu,
   Stack,
   Text,
+  UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import {
+  IconCalendarPlus,
   IconChevronDown,
   IconLayoutDashboard,
   IconLogout,
@@ -24,9 +26,9 @@ import { ColorSchemeToggle } from "./ColorSchemeToggle";
 import { useAuth } from "../context/AuthContext";
 
 const CLIENT_NAV_LINKS = [
-  { to: "/", label: "Eventos" },
-  { to: "/ingressos", label: "Meus ingressos" },
-  { to: "/pedidos", label: "Meus pedidos" },
+  { to: "/", label: "Eventos", icon: null },
+  { to: "/ingressos", label: "Meus ingressos", icon: IconTicket },
+  { to: "/pedidos", label: "Meus pedidos", icon: null },
 ] as const;
 
 function NavLinks({
@@ -39,16 +41,14 @@ function NavLinks({
   isProducer: boolean;
 }) {
   const links = isProducer
-    ? [...CLIENT_NAV_LINKS, { to: "/produtor", label: "Painel produtor" } as const]
+    ? [...CLIENT_NAV_LINKS, { to: "/produtor", label: "Produtor", icon: IconLayoutDashboard } as const]
     : CLIENT_NAV_LINKS;
 
   return (
-    <>
+    <Group gap="lg">
       {links.map((link) => {
         const isActive =
-          link.to === "/"
-            ? currentPath === "/"
-            : currentPath.startsWith(link.to);
+          link.to === "/" ? currentPath === "/" : currentPath.startsWith(link.to);
 
         return (
           <Anchor
@@ -59,12 +59,16 @@ function NavLinks({
             c={isActive ? "brand.6" : "dimmed"}
             underline="never"
             onClick={onNavigate}
+            style={{
+              transition: "color 0.2s ease",
+              fontSize: "var(--mantine-font-size-sm)",
+            }}
           >
             {link.label}
           </Anchor>
         );
       })}
-    </>
+    </Group>
   );
 }
 
@@ -74,6 +78,7 @@ export function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
+  const isHome = currentPath === "/";
 
   const isProducer = user?.role === "PRODUCER" || user?.role === "ADMIN";
 
@@ -90,13 +95,18 @@ export function Layout() {
 
   return (
     <AppShell
-      header={{ height: 64 }}
+      header={{ height: 72 }}
       navbar={{
         width: 280,
         breakpoint: "sm",
-        collapsed: { mobile: !opened },
+        collapsed: { mobile: !opened, desktop: true },
       }}
-      padding="md"
+      padding={isHome ? 0 : "md"}
+      className={isHome ? "layout-home" : undefined}
+      classNames={{
+        header: isHome ? "home-hero-bg layout-home-header" : undefined,
+        main: isHome ? "layout-home-main" : undefined,
+      }}
     >
       <AppShell.Header>
         <Container size="lg" h="100%">
@@ -109,14 +119,26 @@ export function Layout() {
                 size="sm"
                 aria-label="Abrir menu"
               />
-              <Anchor component={Link} to="/" underline="never" c="inherit" onClick={close}>
+              <UnstyledButton component={Link} to="/" onClick={close}>
                 <Group gap="xs" wrap="nowrap">
-                  <IconTicket size={28} stroke={1.6} color="var(--mantine-color-brand-6)" />
-                  <Text fw={700} size="lg" visibleFrom="xs">
+                  <Box
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      background: "linear-gradient(135deg, var(--mantine-color-brand-5), var(--mantine-color-brand-7))",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <IconTicket size={20} color="white" stroke={1.8} />
+                  </Box>
+                  <Text fw={800} size="lg" visibleFrom="xs" style={{ letterSpacing: "-0.02em" }}>
                     TicketFlow
                   </Text>
                 </Group>
-              </Anchor>
+              </UnstyledButton>
             </Group>
 
             <Group gap="lg" visibleFrom="sm">
@@ -124,16 +146,32 @@ export function Layout() {
             </Group>
 
             <Group gap="sm" wrap="nowrap">
+              {isProducer ? (
+                <Button
+                  component={Link}
+                  to="/produtor/eventos/novo"
+                  variant="light"
+                  size="xs"
+                  leftSection={<IconCalendarPlus size={16} />}
+                  visibleFrom="md"
+                  onClick={close}
+                >
+                  Criar evento
+                </Button>
+              ) : null}
+
               <ColorSchemeToggle />
+
               {isBootstrapping ? (
                 <Button variant="light" loading size="sm">
-                  Carregando
+                  ...
                 </Button>
               ) : isAuthenticated && user ? (
                 <Menu shadow="md" width={220} position="bottom-end">
                   <Menu.Target>
                     <Button
                       variant="light"
+                      radius="xl"
                       rightSection={<IconChevronDown size={16} />}
                       leftSection={<IconUser size={16} />}
                     >
@@ -168,7 +206,7 @@ export function Layout() {
                   >
                     Entrar
                   </Button>
-                  <Button component={Link} to="/cadastro" onClick={close}>
+                  <Button component={Link} to="/cadastro" radius="xl" onClick={close}>
                     Cadastrar
                   </Button>
                 </>
@@ -181,6 +219,16 @@ export function Layout() {
       <AppShell.Navbar p="md" hiddenFrom="sm">
         <Stack gap="md">
           <NavLinks onNavigate={close} currentPath={currentPath} isProducer={isProducer} />
+          {isProducer ? (
+            <Button
+              component={Link}
+              to="/produtor/eventos/novo"
+              leftSection={<IconCalendarPlus size={16} />}
+              onClick={close}
+            >
+              Criar evento
+            </Button>
+          ) : null}
           <Box pt="sm">
             {isAuthenticated && user ? (
               <Stack gap="xs">
@@ -224,9 +272,13 @@ export function Layout() {
       </AppShell.Navbar>
 
       <AppShell.Main>
-        <Container size="lg" py="md">
+        {isHome ? (
           <Outlet />
-        </Container>
+        ) : (
+          <Container size="lg" py="md">
+            <Outlet />
+          </Container>
+        )}
       </AppShell.Main>
     </AppShell>
   );

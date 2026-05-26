@@ -8,10 +8,21 @@ html,
 body,
 #root {
   min-height: 100%;
+  background-color: var(--mantine-color-body);
 }
 
 body {
   margin: 0;
+  overflow-x: hidden;
   background-color: var(--mantine-color-body);
   color: var(--mantine-color-text);
+}
+
+/* Superfícies do shell = mesma cor do body (evita faixa clara no footer/header) */
+.mantine-AppShell-root,
+.mantine-AppShell-header:not(.home-hero-bg),
+.mantine-AppShell-navbar,
+.mantine-AppShell-main,
+.site-footer {
+  background-color: var(--mantine-color-body);
 }
