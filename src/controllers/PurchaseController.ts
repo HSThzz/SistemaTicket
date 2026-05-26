@@ -168,6 +168,23 @@ export class PurchaseController {
     });
   }
 
+  async getRetrySchedule(req: Request, res: Response): Promise<void> {
+    try {
+      const size = Number((req.query.size as string) ?? "20");
+      const limit = Number.isFinite(size) ? Math.max(1, Math.min(200, size)) : 20;
+      const schedule = await queueMonitorService.getRetrySchedule(limit);
+      res.status(200).json(schedule);
+    } catch (error) {
+      logger.error(CONTEXT, "Failed to read retry schedule", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      res.status(500).json({
+        error: "Failed to read retry schedule",
+        code: "INTERNAL_ERROR",
+      });
+    }
+  }
+
   async reprocessDlq(req: Request, res: Response): Promise<void> {
     const redis = getRedis();
 

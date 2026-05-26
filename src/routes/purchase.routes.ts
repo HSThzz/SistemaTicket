@@ -41,6 +41,13 @@ router.get(
   (req, res) => void purchaseController.listDlq(req, res),
 );
 
+router.get(
+  "/ops/retry-schedule",
+  authMiddleware,
+  roleMiddleware([UserRole.ADMIN, UserRole.PRODUCER]),
+  (req, res) => void purchaseController.getRetrySchedule(req, res),
+);
+
 router.post(
   "/ops/dlq/reprocess",
   authMiddleware,
