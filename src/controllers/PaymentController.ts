@@ -1,6 +1,5 @@
 import type { Request, Response } from "express";
 import { AppDataSource } from "../config/data-source";
-import { env, isProduction } from "../config/env";
 import { Logger } from "../config/logger";
 import { getRedis } from "../config/redis";
 import {
@@ -8,11 +7,14 @@ import {
   OrderNotFoundError,
   PaymentAlreadyProcessedError,
   PaymentError,
+  WebhookReplayError,
+  WebhookUnauthorizedError,
 } from "../errors/PaymentError";
 import {
   PaymentService,
   type PaymentWebhookPayload,
 } from "../services/PaymentService";
+import { WebhookAuthService } from "../services/payment/WebhookAuthService";
 import {
   extractMercadoPagoPaymentId,
   isMercadoPagoWebhookRequest,
@@ -21,11 +23,15 @@ import {
 const CONTEXT = "PaymentController";
 const logger = Logger.getInstance();
 const paymentService = new PaymentService(AppDataSource, getRedis());
+const webhookAuthService = new WebhookAuthService(getRedis());
 
 export class PaymentController {
   async webhook(req: Request, res: Response): Promise<void> {
-    if (!this.isWebhookAuthorized(req)) {
-      res.status(401).json({ error: "Unauthorized webhook", code: "WEBHOOK_UNAUTHORIZED" });
+    try {
+      const auth = await webhookAuthService.authorize(req);
+      await webhookAuthService.assertNotReplayed(auth.replayKey);
+    } catch (error) {
+      this.handleAuthError(res, error);
       return;
     }
 
@@ -84,24 +90,30 @@ export class PaymentController {
         result,
       });
     } catch (error) {
-      this.handleWebhookError(res, { event: "payment.succeeded", data: { orderId: "", transactionId: paymentId } }, error);
+      this.handleWebhookError(
+        res,
+        { event: "payment.succeeded", data: { orderId: "", transactionId: paymentId } },
+        error,
+      );
     }
   }
 
-  private isWebhookAuthorized(req: Request): boolean {
-    const secret = env.payment.webhookSecret;
-
-    if (!secret) {
-      if (isProduction) {
-        return false;
-      }
-
-      logger.warn(CONTEXT, "PAYMENT_WEBHOOK_SECRET not set; accepting webhook in non-production");
-      return true;
+  private handleAuthError(res: Response, error: unknown): void {
+    if (error instanceof WebhookReplayError) {
+      res.status(200).json({ received: true, duplicate: true });
+      return;
     }
 
-    const headerValue = req.header("x-webhook-secret") ?? "";
-    return headerValue === secret;
+    if (error instanceof WebhookUnauthorizedError) {
+      res.status(401).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    logger.error(CONTEXT, "Webhook auth failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    res.status(401).json({ error: "Unauthorized webhook", code: "WEBHOOK_UNAUTHORIZED" });
   }
 
   private handleWebhookError(

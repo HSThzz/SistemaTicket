@@ -124,6 +124,90 @@ export class PaymentService {
     await this.handlePaymentFailed(payload.data);
   }
 
+  async expireUnpaidOrderByReservationId(reservationId: string): Promise<boolean> {
+    this.logger.info(CONTEXT, "Expiring unpaid order by reservation TTL", {
+      reservationId,
+    });
+
+    let orderId: string | null = null;
+
+    const expired = await this.dataSource.transaction(async (manager) => {
+      const reservation = await manager.findOne(Reservation, {
+        where: { id: reservationId },
+        lock: { mode: "pessimistic_write" },
+      });
+
+      if (!reservation) {
+        this.logger.warn(
+          CONTEXT,
+          "Reservation not found on expiry (likely not persisted yet)",
+          { reservationId },
+        );
+        return false;
+      }
+
+      if (reservation.status !== ReservationStatus.PENDING) {
+        this.logger.info(CONTEXT, "Skipping expiry — reservation is no longer pending", {
+          reservationId,
+          status: reservation.status,
+        });
+        return false;
+      }
+
+      const order = await manager.findOne(Order, {
+        where: { reservationId },
+        lock: { mode: "pessimistic_write" },
+      });
+
+      if (order?.status === OrderStatus.PENDING) {
+        order.status = OrderStatus.FAILED;
+        await manager.save(order);
+        orderId = order.id;
+      }
+
+      reservation.status = ReservationStatus.EXPIRED;
+      await manager.save(reservation);
+
+      const ticketLot = await manager.findOne(TicketLot, {
+        where: { id: reservation.ticketLotId },
+        lock: { mode: "pessimistic_write" },
+      });
+
+      if (!ticketLot) {
+        this.logger.error(CONTEXT, "Ticket lot not found when restoring stock on expiry", {
+          reservationId,
+          ticketLotId: reservation.ticketLotId,
+        });
+        return Boolean(orderId);
+      }
+
+      ticketLot.availableQuantity += reservation.quantity;
+      await manager.save(ticketLot);
+
+      if (this.redis) {
+        const stockKey = `${TICKET_LOT_STOCK_KEY_PREFIX}${ticketLot.id}`;
+        await this.redis.incrby(stockKey, reservation.quantity);
+      }
+
+      this.logger.info(CONTEXT, "Unpaid order expired — stock restored", {
+        reservationId,
+        orderId,
+        ticketLotId: ticketLot.id,
+        quantity: reservation.quantity,
+        availableQuantity: ticketLot.availableQuantity,
+      });
+
+      return true;
+    });
+
+    if (orderId) {
+      await this.clearReservationCache(orderId);
+      await this.clearPaymentCache(orderId);
+    }
+
+    return expired;
+  }
+
   async handleMercadoPagoNotification(paymentId: string): Promise<"processed" | "pending" | "ignored"> {
     if (!isMercadoPagoPixGateway(this.gateway)) {
       throw new InvalidWebhookPayloadError("Mercado Pago gateway is not configured");

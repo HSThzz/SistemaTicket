@@ -3,6 +3,7 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import { Ticket } from "../../src/entities/Ticket";
 import { OrderStatus, UserRole } from "../../src/entities/enums";
 import { TEST_WEBHOOK_SECRET } from "../helpers/env";
+import { signInternalWebhookPayload } from "../../src/services/payment/WebhookAuthService";
 import {
   createPublishedEventWithLot,
   createUser,
@@ -77,17 +78,26 @@ describe("Purchase flow integration", () => {
     const payment = awaitingPayment.payment as { transactionId: string };
     assert.ok(payment.transactionId);
 
+    const webhookBody = {
+      event: "payment.succeeded" as const,
+      data: {
+        orderId: order.id,
+        transactionId: payment.transactionId,
+        paidAt: new Date().toISOString(),
+      },
+    };
+
+    const signed = signInternalWebhookPayload({
+      secret: TEST_WEBHOOK_SECRET,
+      body: webhookBody,
+    });
+
     await ctx.agent
       .post("/payments/webhook")
-      .set("x-webhook-secret", TEST_WEBHOOK_SECRET)
-      .send({
-        event: "payment.succeeded",
-        data: {
-          orderId: order.id,
-          transactionId: payment.transactionId,
-          paidAt: new Date().toISOString(),
-        },
-      })
+      .set("Content-Type", "application/json")
+      .set("x-webhook-timestamp", signed.timestamp)
+      .set("x-webhook-signature", signed.signature)
+      .send(JSON.parse(signed.body))
       .expect(200);
 
     const paidStatus = await pollReservationPhase(

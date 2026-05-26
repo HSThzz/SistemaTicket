@@ -65,9 +65,11 @@ Copie `.env.example` para `.env`. Principais variáveis:
 |----------|-----------|
 | `PORT` | Porta da API (padrão `3000`) |
 | `JWT_SECRET` | Segredo do JWT |
-| `PAYMENT_WEBHOOK_SECRET` | Header `x-webhook-secret` do webhook |
 | `PAYMENT_GATEWAY` | `simulated` (padrão) ou `mercadopago` |
-| `MERCADOPAGO_ACCESS_TOKEN` | Access token do Mercado Pago (sandbox ou prod) |
+| `PAYMENT_WEBHOOK_SECRET` | Segredo HMAC do webhook interno |
+| `WEBHOOK_MAX_AGE_SECONDS` | Janela anti-replay (padrão `300`) |
+| `MERCADOPAGO_ACCESS_TOKEN` | Access token Mercado Pago (sandbox ou prod) |
+| `MERCADOPAGO_WEBHOOK_SECRET` | Segredo de assinatura do painel Mercado Pago |
 | `MERCADOPAGO_NOTIFICATION_URL` | URL pública do webhook (IPN) |
 | `DB_*` | Conexão PostgreSQL |
 | `REDIS_*` | Conexão Redis |
@@ -188,7 +190,7 @@ Authorization: Bearer <token>
 **Fases do poll (`phase`):**
 `PENDING_PERSISTENCE` → `PENDING_PAYMENT` → `AWAITING_PAYMENT` → `PAID` | `EXPIRED` | `FAILED`
 
-TTL da reserva: **15 minutos**.
+TTL da reserva e do PIX: **15 minutos**. Se o pagamento não for confirmado nesse prazo, o `ReservationExpiryWorker` marca o pedido como `FAILED`, expira a reserva e devolve o estoque (Redis + Postgres).
 
 ---
 
@@ -218,10 +220,17 @@ Obtenha o access token em [Mercado Pago Developers](https://www.mercadopago.com.
 
 ### Webhook interno (simulado / testes manuais)
 
-**Header obrigatório (prod):**
+**Produção — HMAC obrigatório:**
+
+Headers:
 ```
-x-webhook-secret: <PAYMENT_WEBHOOK_SECRET>
+x-webhook-timestamp: <unix-ms>
+x-webhook-signature: <hmac-sha256-hex>
 ```
+
+Assinatura: `HMAC-SHA256(secret, "${timestamp}.${rawBody}")`
+
+**Desenvolvimento:** aceita HMAC ou header legado `x-webhook-secret`.
 
 **Payload:**
 ```json
@@ -237,9 +246,18 @@ x-webhook-secret: <PAYMENT_WEBHOOK_SECRET>
 
 Eventos: `payment.succeeded` | `payment.failed`
 
+**Anti-replay:** cada webhook é deduplicado via Redis por 24h (timestamp + hash do body, ou `x-request-id` no MP).
+
 ### Webhook Mercado Pago
 
-A mesma rota `POST /payments/webhook` aceita notificações do Mercado Pago:
+A mesma rota `POST /payments/webhook` aceita notificações do Mercado Pago.
+
+**Produção — assinatura obrigatória** (`x-signature` + `x-request-id`):
+
+Manifest: `id:{data.id};request-id:{x-request-id};ts:{ts};`  
+HMAC-SHA256 com `MERCADOPAGO_WEBHOOK_SECRET` (segredo do painel MP, não o access token).
+
+Configure a URL de notificação com `?source_news=webhooks` para receber Webhooks v2 assinados (IPN legado não tem assinatura).
 
 **Formato JSON (Webhooks v2):**
 ```json
@@ -259,7 +277,7 @@ A API consulta o pagamento no Mercado Pago, usa `external_reference` como `order
 - `rejected` / `cancelled` → falha pedido e restaura estoque
 - `pending` → ignora (aguarda próxima notificação)
 
-Configure no painel MP a URL de notificação apontando para `/payments/webhook` e use o header `x-webhook-secret` se configurado.
+Configure no painel MP a URL de notificação apontando para `/payments/webhook` (preferir Webhooks v2 assinados).
 
 ---
 

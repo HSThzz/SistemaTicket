@@ -38,3 +38,17 @@ export class PaymentGatewayError extends PaymentError {
     this.name = "PaymentGatewayError";
   }
 }
+
+export class WebhookUnauthorizedError extends PaymentError {
+  constructor(message = "Unauthorized webhook") {
+    super(message, "WEBHOOK_UNAUTHORIZED");
+    this.name = "WebhookUnauthorizedError";
+  }
+}
+
+export class WebhookReplayError extends PaymentError {
+  constructor() {
+    super("Webhook already processed", "WEBHOOK_REPLAY");
+    this.name = "WebhookReplayError";
+  }
+}

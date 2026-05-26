@@ -17,11 +17,13 @@ export const env = {
   logLevel: process.env.LOG_LEVEL ?? "info",
   payment: {
     webhookSecret: process.env.PAYMENT_WEBHOOK_SECRET ?? "",
+    webhookMaxAgeSeconds: Number(process.env.WEBHOOK_MAX_AGE_SECONDS ?? "300"),
     gateway: (process.env.PAYMENT_GATEWAY ?? "simulated") as
       | "simulated"
       | "mercadopago",
     mercadoPago: {
       accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN ?? "",
+      webhookSecret: process.env.MERCADOPAGO_WEBHOOK_SECRET ?? "",
       apiBaseUrl:
         process.env.MERCADOPAGO_API_BASE_URL ?? "https://api.mercadopago.com",
       notificationUrl: process.env.MERCADOPAGO_NOTIFICATION_URL ?? "",

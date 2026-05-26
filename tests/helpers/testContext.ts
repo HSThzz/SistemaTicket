@@ -70,11 +70,32 @@ export async function teardownTestContext(ctx: TestContext): Promise<void> {
   await closeRedisConnections();
 }
 
+function isDeadlockError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code: string }).code === "40P01"
+  );
+}
+
 export async function resetDatabase(dataSource: DataSource): Promise<void> {
-  await dataSource.query(`
+  const truncateSql = `
     TRUNCATE tickets, orders, reservations, ticket_lots, events, users
     RESTART IDENTITY CASCADE
-  `);
+  `;
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      await dataSource.query(truncateSql);
+      return;
+    } catch (error) {
+      if (!isDeadlockError(error) || attempt === 3) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50 * attempt));
+    }
+  }
 }
 
 export async function resetRedis(redis: Redis): Promise<void> {
