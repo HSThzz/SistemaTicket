@@ -1,0 +1,210 @@
+import type Redis from "ioredis";
+import type { DataSource } from "typeorm";
+import {
+  ORDER_CACHE_KEY_PREFIX,
+  PAYMENT_CACHE_KEY_PREFIX,
+  RESERVATION_KEY_PREFIX,
+} from "../config/constants";
+import { Logger } from "../config/logger";
+import { Order } from "../entities/Order";
+import { Reservation } from "../entities/Reservation";
+import { OrderStatus, ReservationStatus } from "../entities/enums";
+import {
+  ReservationAccessDeniedError,
+  ReservationNotFoundError,
+} from "../errors/PurchaseError";
+import type { PixPaymentDetails } from "./PaymentService";
+import { QueueMonitorService } from "./QueueMonitorService";
+
+const CONTEXT = "ReservationStatusService";
+
+export type ReservationPhase =
+  | "PENDING_PERSISTENCE"
+  | "PENDING_PAYMENT"
+  | "AWAITING_PAYMENT"
+  | "PAID"
+  | "EXPIRED"
+  | "FAILED"
+  | "NOT_FOUND";
+
+export interface ReservationStatusView {
+  reservationId: string;
+  phase: ReservationPhase;
+  reservation: {
+    id: string;
+    status: ReservationStatus | "PENDING_PERSISTENCE";
+    expiresAt: string;
+    quantity: number;
+    ticketLotId: string;
+  } | null;
+  order: {
+    id: string;
+    status: OrderStatus;
+    totalPrice: number;
+    paymentGatewayId: string | null;
+  } | null;
+  payment: PixPaymentDetails | null;
+  meta: {
+    inRedis: boolean;
+    persistedToPostgres: boolean;
+    queuePendingJobs: number;
+  };
+}
+
+type ReservationRedisPayload = {
+  reservationId: string;
+  userId: string;
+  ticketLotId: string;
+  quantity: number;
+  expiresAt: string;
+};
+
+export class ReservationStatusService {
+  private readonly logger = Logger.getInstance();
+  private readonly queueMonitor: QueueMonitorService;
+
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly redis: Redis,
+  ) {
+    this.queueMonitor = new QueueMonitorService(redis);
+  }
+
+  async getStatus(
+    reservationId: string,
+    requesterUserId: string,
+  ): Promise<ReservationStatusView> {
+    const [redisRaw, paymentRaw, orderIdCached, dbReservation, queueStats] =
+      await Promise.all([
+        this.redis.get(`${RESERVATION_KEY_PREFIX}${reservationId}`),
+        this.redis.get(`${PAYMENT_CACHE_KEY_PREFIX}${reservationId}`),
+        this.redis.get(`${ORDER_CACHE_KEY_PREFIX}${reservationId}`),
+        this.dataSource.getRepository(Reservation).findOne({
+          where: { id: reservationId },
+          relations: { ticketLot: true },
+        }),
+        this.queueMonitor.getStats(),
+      ]);
+
+    const redisPayload = redisRaw
+      ? (JSON.parse(redisRaw) as ReservationRedisPayload)
+      : null;
+
+    const payment = paymentRaw
+      ? (JSON.parse(paymentRaw) as PixPaymentDetails)
+      : null;
+
+    if (!redisPayload && !dbReservation) {
+      throw new ReservationNotFoundError(reservationId);
+    }
+
+    const ownerId = redisPayload?.userId ?? dbReservation?.userId;
+    if (!ownerId || ownerId !== requesterUserId) {
+      throw new ReservationAccessDeniedError();
+    }
+
+    let order: Order | null = null;
+    if (dbReservation) {
+      order = await this.dataSource.getRepository(Order).findOne({
+        where: { reservationId },
+      });
+    } else if (orderIdCached) {
+      order = await this.dataSource.getRepository(Order).findOne({
+        where: { id: orderIdCached },
+      });
+    }
+
+    const phase = this.resolvePhase(dbReservation, order, payment, redisPayload);
+
+    this.logger.info(CONTEXT, "Reservation status queried", {
+      reservationId,
+      phase,
+      requesterUserId,
+      queuePendingJobs: queueStats.persistQueueLength,
+    });
+
+    return {
+      reservationId,
+      phase,
+      reservation: this.buildReservationView(dbReservation, redisPayload),
+      order: order
+        ? {
+            id: order.id,
+            status: order.status,
+            totalPrice: order.totalPrice,
+            paymentGatewayId: order.paymentGatewayId,
+          }
+        : null,
+      payment,
+      meta: {
+        inRedis: Boolean(redisPayload),
+        persistedToPostgres: Boolean(dbReservation),
+        queuePendingJobs: queueStats.persistQueueLength,
+      },
+    };
+  }
+
+  private resolvePhase(
+    dbReservation: Reservation | null,
+    order: Order | null,
+    payment: PixPaymentDetails | null,
+    redisPayload: ReservationRedisPayload | null,
+  ): ReservationPhase {
+    if (!dbReservation && redisPayload) {
+      return "PENDING_PERSISTENCE";
+    }
+
+    if (dbReservation?.status === ReservationStatus.COMPLETED) {
+      return "PAID";
+    }
+
+    if (dbReservation?.status === ReservationStatus.EXPIRED) {
+      return order?.status === OrderStatus.FAILED ? "FAILED" : "EXPIRED";
+    }
+
+    if (order?.status === OrderStatus.FAILED) {
+      return "FAILED";
+    }
+
+    if (order?.status === OrderStatus.PAID) {
+      return "PAID";
+    }
+
+    if (payment) {
+      return "AWAITING_PAYMENT";
+    }
+
+    if (dbReservation) {
+      return "PENDING_PAYMENT";
+    }
+
+    return "NOT_FOUND";
+  }
+
+  private buildReservationView(
+    dbReservation: Reservation | null,
+    redisPayload: ReservationRedisPayload | null,
+  ): ReservationStatusView["reservation"] {
+    if (dbReservation) {
+      return {
+        id: dbReservation.id,
+        status: dbReservation.status,
+        expiresAt: dbReservation.expiresAt.toISOString(),
+        quantity: dbReservation.quantity,
+        ticketLotId: dbReservation.ticketLotId,
+      };
+    }
+
+    if (redisPayload) {
+      return {
+        id: redisPayload.reservationId,
+        status: "PENDING_PERSISTENCE",
+        expiresAt: redisPayload.expiresAt,
+        quantity: redisPayload.quantity,
+        ticketLotId: redisPayload.ticketLotId,
+      };
+    }
+
+    return null;
+  }
+}
