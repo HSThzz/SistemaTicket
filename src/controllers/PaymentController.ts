@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { AppDataSource } from "../config/data-source";
+import { env, isProduction } from "../config/env";
 import { Logger } from "../config/logger";
 import { getRedis } from "../config/redis";
 import {
@@ -19,6 +20,11 @@ const paymentService = new PaymentService(AppDataSource, getRedis());
 
 export class PaymentController {
   async webhook(req: Request, res: Response): Promise<void> {
+    if (!this.isWebhookAuthorized(req)) {
+      res.status(401).json({ error: "Unauthorized webhook", code: "WEBHOOK_UNAUTHORIZED" });
+      return;
+    }
+
     const payload = req.body as PaymentWebhookPayload;
 
     logger.info(CONTEXT, "Incoming payment webhook", {
@@ -39,6 +45,22 @@ export class PaymentController {
     } catch (error) {
       this.handleWebhookError(res, payload, error);
     }
+  }
+
+  private isWebhookAuthorized(req: Request): boolean {
+    const secret = env.payment.webhookSecret;
+
+    if (!secret) {
+      if (isProduction) {
+        return false;
+      }
+
+      logger.warn(CONTEXT, "PAYMENT_WEBHOOK_SECRET not set; accepting webhook in non-production");
+      return true;
+    }
+
+    const headerValue = req.header("x-webhook-secret") ?? "";
+    return headerValue === secret;
   }
 
   private handleWebhookError(

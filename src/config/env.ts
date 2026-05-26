@@ -15,6 +15,9 @@ export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   port: Number(process.env.PORT ?? "3000"),
   logLevel: process.env.LOG_LEVEL ?? "info",
+  payment: {
+    webhookSecret: process.env.PAYMENT_WEBHOOK_SECRET ?? "",
+  },
   jwt: {
     secret: requireEnv("JWT_SECRET", "dev-secret-change-in-production"),
     expiresIn: process.env.JWT_EXPIRES_IN ?? "7d",

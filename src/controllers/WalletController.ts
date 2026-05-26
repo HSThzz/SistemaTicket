@@ -1,15 +1,23 @@
 import type { Request, Response } from "express";
 import { AppDataSource } from "../config/data-source";
 import { Logger } from "../config/logger";
+import { UserRole } from "../entities/enums";
 import { TicketNotFoundError, WalletError } from "../errors/WalletError";
+import { WalletAccessService } from "../services/WalletAccessService";
 import { WalletService } from "../services/WalletService";
 
 const CONTEXT = "WalletController";
 const logger = Logger.getInstance();
 const walletService = new WalletService(AppDataSource);
+const walletAccessService = new WalletAccessService(AppDataSource);
 
 export class WalletController {
   async downloadApplePass(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
     const ticketId = req.params.ticketId;
 
     if (typeof ticketId !== "string" || ticketId.length === 0) {
@@ -18,6 +26,16 @@ export class WalletController {
     }
 
     try {
+      const allowed = await walletAccessService.canAccessTicket(ticketId, {
+        userId: req.user.id,
+        role: req.user.role as UserRole,
+      });
+
+      if (!allowed) {
+        res.status(403).json({ error: "Forbidden", code: "FORBIDDEN" });
+        return;
+      }
+
       const buffer = await walletService.generateApplePass(ticketId);
 
       res.setHeader("Content-Type", "application/vnd.apple.pkpass");
@@ -32,6 +50,11 @@ export class WalletController {
   }
 
   async redirectGoogleWallet(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
     const ticketId = req.params.ticketId;
 
     if (typeof ticketId !== "string" || ticketId.length === 0) {
@@ -40,6 +63,16 @@ export class WalletController {
     }
 
     try {
+      const allowed = await walletAccessService.canAccessTicket(ticketId, {
+        userId: req.user.id,
+        role: req.user.role as UserRole,
+      });
+
+      if (!allowed) {
+        res.status(403).json({ error: "Forbidden", code: "FORBIDDEN" });
+        return;
+      }
+
       const url = await walletService.generateGoogleWalletLink(ticketId);
       res.redirect(302, url);
     } catch (error) {
