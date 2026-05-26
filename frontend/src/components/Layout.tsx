@@ -82,7 +82,8 @@ export function Layout() {
   const isFullWidthPage =
     isHome ||
     /^\/eventos\/[^/]+$/.test(currentPath) ||
-    /^\/produtor\/eventos\/[^/]+$/.test(currentPath);
+    /^\/produtor\/eventos\/[^/]+$/.test(currentPath) ||
+    currentPath === "/produtor/check-in";
 
   const isProducer = user?.role === "PRODUCER" || user?.role === "ADMIN";
 
