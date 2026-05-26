@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { healthController } from "../controllers/HealthController";
 import authRoutes from "./auth.routes";
 import eventRoutes from "./event.routes";
 import orderRoutes from "./order.routes";
@@ -9,12 +10,7 @@ import walletRoutes from "./wallet.routes";
 
 const router = Router();
 
-router.get("/health", (_req, res) => {
-  res.status(200).json({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-  });
-});
+router.get("/health", (req, res) => void healthController.check(req, res));
 
 router.use("/auth", authRoutes);
 router.use("/events", eventRoutes);
