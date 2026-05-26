@@ -1,4 +1,7 @@
-import { Paper, Text, Title } from "@mantine/core";
+import { Stack, Text } from "@mantine/core";
+import { AnimatedSection } from "../components/home/AnimatedSection";
+import { PageHeader } from "../components/account/PageHeader";
+import { PremiumPaper } from "../components/account/PremiumPaper";
 
 interface PlaceholderPageProps {
   title: string;
@@ -7,11 +10,18 @@ interface PlaceholderPageProps {
 
 export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
   return (
-    <Paper p="xl" radius="md">
-      <Title order={2} mb="sm">
-        {title}
-      </Title>
-      {description ? <Text c="dimmed">{description}</Text> : null}
-    </Paper>
+    <Stack gap="lg">
+      <AnimatedSection>
+        <PageHeader
+          title={title}
+          description={description ?? "Esta seção estará disponível em breve."}
+        />
+      </AnimatedSection>
+      <AnimatedSection delayMs={60}>
+        <PremiumPaper p="xl">
+          <Text c="dimmed">Em desenvolvimento.</Text>
+        </PremiumPaper>
+      </AnimatedSection>
+    </Stack>
   );
 }

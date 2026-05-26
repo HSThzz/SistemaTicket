@@ -3,23 +3,25 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Button,
-  Center,
   Group,
   Loader,
   NumberInput,
-  Paper,
   Stack,
   Stepper,
   Text,
-  Title,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
   IconAlertCircle,
   IconCheck,
   IconShoppingCart,
+  IconTicket,
   IconX,
 } from "@tabler/icons-react";
+import { AnimatedSection } from "../components/home/AnimatedSection";
+import { PageHeader } from "../components/account/PageHeader";
+import { PageLoader } from "../components/account/PageLoader";
+import { PremiumPaper } from "../components/account/PremiumPaper";
 import { PixPaymentPanel } from "../components/PixPaymentPanel";
 import { PhaseBadge } from "../components/PhaseBadge";
 import { useReservationPoller } from "../hooks/useReservationPoller";
@@ -175,16 +177,12 @@ export function CheckoutPage() {
   };
 
   if (loadingEvent) {
-    return (
-      <Center py="xl">
-        <Loader color="brand" size="lg" />
-      </Center>
-    );
+    return <PageLoader label="Preparando checkout..." />;
   }
 
   if (eventError || !event || !selectedLot) {
     return (
-      <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro">
+      <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro" radius="lg">
         {eventError ?? "Lote não encontrado."}
       </Alert>
     );
@@ -196,146 +194,161 @@ export function CheckoutPage() {
   const isFailed = phase === "EXPIRED" || phase === "FAILED";
 
   return (
-    <Stack gap="xl">
-      <Stack gap={4}>
-        <Title order={2}>Checkout</Title>
-        <Text c="dimmed">
-          {event.title} · {selectedLot.name}
-        </Text>
-      </Stack>
+    <Stack gap="lg">
+      <AnimatedSection>
+        <PageHeader
+          icon={<IconShoppingCart size={28} color="var(--mantine-color-brand-6)" />}
+          title="Finalizar"
+          highlight="compra"
+          description={`${event.title} · ${selectedLot.name}`}
+        />
+      </AnimatedSection>
 
       {isCheckoutStarted ? (
-        <Paper p="lg" radius="md" withBorder>
-          <Stack gap="lg">
-            <Group justify="space-between">
-              <Text fw={600}>Status da compra</Text>
-              {phase ? <PhaseBadge phase={phase} /> : null}
-            </Group>
-
-            <Stepper active={getActiveStep(phase)} size="sm" allowNextStepsSelect={false}>
-              <Stepper.Step label="Reserva" description="Confirmada" />
-              <Stepper.Step label="Processamento" description="Persistência" />
-              <Stepper.Step label="PIX" description="Aguardando" />
-              <Stepper.Step label="Concluído" description="Ingressos" />
-            </Stepper>
-
-            {polling ? (
-              <Group gap="sm">
-                <Loader size="sm" color="brand" />
-                <Text size="sm" c="dimmed">
-                  Atualizando status...
+        <AnimatedSection delayMs={80}>
+          <PremiumPaper p="xl">
+            <Stack gap="lg">
+              <Group justify="space-between" wrap="wrap" gap="sm">
+                <Text fw={600} size="lg">
+                  Status da compra
                 </Text>
+                {phase ? <PhaseBadge phase={phase} /> : null}
               </Group>
-            ) : null}
 
-            {pollError ? (
-              <Alert color="red" icon={<IconAlertCircle size={18} />}>
-                {pollError}
-              </Alert>
-            ) : null}
+              <Stepper active={getActiveStep(phase)} size="sm" allowNextStepsSelect={false}>
+                <Stepper.Step label="Reserva" description="Confirmada" />
+                <Stepper.Step label="Processamento" description="Persistência" />
+                <Stepper.Step label="PIX" description="Aguardando" />
+                <Stepper.Step label="Concluído" description="Ingressos" />
+              </Stepper>
 
-            {phase === "AWAITING_PAYMENT" && status?.payment ? (
-              <>
-                <PixPaymentPanel
-                  pixCopyPaste={status.payment.pixCopyPaste}
-                  amountCents={status.payment.amountCents}
-                  expiresAt={status.payment.expiresAt}
-                />
-                <Button
-                  variant="light"
-                  color="teal"
-                  loading={simulating}
-                  onClick={() => void handleSimulatePayment()}
-                >
-                  Simular pagamento PIX (dev)
-                </Button>
-              </>
-            ) : null}
+              {polling ? (
+                <Group gap="sm">
+                  <Loader size="sm" color="brand" />
+                  <Text size="sm" c="dimmed">
+                    Atualizando status...
+                  </Text>
+                </Group>
+              ) : null}
 
-            {isPaid ? (
-              <Alert color="green" icon={<IconCheck size={18} />} title="Pagamento confirmado!">
-                Seus ingressos foram emitidos com sucesso.
-              </Alert>
-            ) : null}
+              {pollError ? (
+                <Alert color="red" icon={<IconAlertCircle size={18} />} radius="md">
+                  {pollError}
+                </Alert>
+              ) : null}
 
-            {isFailed ? (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} title="Compra não concluída">
-                A reserva expirou ou o pagamento falhou. Tente novamente.
-              </Alert>
-            ) : null}
+              {phase === "AWAITING_PAYMENT" && status?.payment ? (
+                <>
+                  <PixPaymentPanel
+                    pixCopyPaste={status.payment.pixCopyPaste}
+                    amountCents={status.payment.amountCents}
+                    expiresAt={status.payment.expiresAt}
+                  />
+                  <Button
+                    variant="light"
+                    color="teal"
+                    radius="xl"
+                    loading={simulating}
+                    onClick={() => void handleSimulatePayment()}
+                  >
+                    Simular pagamento PIX (dev)
+                  </Button>
+                </>
+              ) : null}
 
-            <Group>
               {isPaid ? (
-                <Button component={Link} to="/ingressos">
-                  Ver meus ingressos
-                </Button>
+                <Alert color="green" icon={<IconCheck size={18} />} title="Pagamento confirmado!" radius="md">
+                  Seus ingressos foram emitidos com sucesso.
+                </Alert>
               ) : null}
+
               {isFailed ? (
-                <Button
-                  onClick={() => {
-                    setReservationId(null);
-                    setConfirmingPayment(false);
-                  }}
-                >
-                  Tentar novamente
-                </Button>
+                <Alert color="red" icon={<IconAlertCircle size={18} />} title="Compra não concluída" radius="md">
+                  A reserva expirou ou o pagamento falhou. Tente novamente.
+                </Alert>
               ) : null}
-              <Button variant="subtle" component={Link} to={`/eventos/${event.id}`}>
-                Voltar ao evento
-              </Button>
-            </Group>
-          </Stack>
-        </Paper>
-      ) : (
-        <Paper p="lg" radius="md" withBorder>
-          <Stack gap="lg">
-            <Stack gap="xs">
-              <Text fw={600}>Resumo</Text>
-              <Group justify="space-between">
-                <Text c="dimmed">Lote</Text>
-                <Text>{selectedLot.name}</Text>
-              </Group>
-              <Group justify="space-between">
-                <Text c="dimmed">Preço unitário</Text>
-                <Text>{formatCurrencyFromCents(selectedLot.price)}</Text>
-              </Group>
-              <Group justify="space-between">
-                <Text c="dimmed">Disponíveis</Text>
-                <Text>{selectedLot.availableQuantity}</Text>
+
+              <Group wrap="wrap">
+                {isPaid ? (
+                  <Button component={Link} to="/ingressos" radius="xl" leftSection={<IconTicket size={18} />}>
+                    Ver meus ingressos
+                  </Button>
+                ) : null}
+                {isFailed ? (
+                  <Button
+                    radius="xl"
+                    onClick={() => {
+                      setReservationId(null);
+                      setConfirmingPayment(false);
+                    }}
+                  >
+                    Tentar novamente
+                  </Button>
+                ) : null}
+                <Button variant="subtle" component={Link} to={`/eventos/${event.id}`} radius="xl">
+                  Voltar ao evento
+                </Button>
               </Group>
             </Stack>
+          </PremiumPaper>
+        </AnimatedSection>
+      ) : (
+        <AnimatedSection delayMs={80}>
+          <PremiumPaper p="xl">
+            <Stack gap="lg">
+              <Stack gap="sm">
+                <Text fw={600} size="lg">
+                  Resumo do pedido
+                </Text>
+                <Group justify="space-between">
+                  <Text c="dimmed">Lote</Text>
+                  <Text fw={500}>{selectedLot.name}</Text>
+                </Group>
+                <Group justify="space-between">
+                  <Text c="dimmed">Preço unitário</Text>
+                  <Text fw={500}>{formatCurrencyFromCents(selectedLot.price)}</Text>
+                </Group>
+                <Group justify="space-between">
+                  <Text c="dimmed">Disponíveis</Text>
+                  <Text fw={500}>{selectedLot.availableQuantity}</Text>
+                </Group>
+              </Stack>
 
-            <NumberInput
-              label="Quantidade"
-              min={1}
-              max={selectedLot.availableQuantity}
-              value={quantity}
-              onChange={(value) => setQuantity(Number(value) || 1)}
-            />
+              <NumberInput
+                label="Quantidade"
+                min={1}
+                max={selectedLot.availableQuantity}
+                value={quantity}
+                onChange={(value) => setQuantity(Number(value) || 1)}
+                radius="md"
+              />
 
-            <Group justify="space-between">
-              <Text fw={700} size="lg">
-                Total
+              <Group justify="space-between" pt="xs">
+                <Text fw={700} size="xl">
+                  Total
+                </Text>
+                <Text fw={800} size="xl" c="brand" className="order-total-value">
+                  {formatCurrencyFromCents(totalCents)}
+                </Text>
+              </Group>
+
+              <Button
+                leftSection={<IconShoppingCart size={18} />}
+                loading={reserving}
+                disabled={selectedLot.availableQuantity === 0}
+                onClick={() => void handleReserve()}
+                radius="xl"
+                size="md"
+              >
+                Reservar ingressos
+              </Button>
+
+              <Text size="sm" c="dimmed">
+                Após reservar, você terá <strong>15 minutos</strong> para pagar via PIX.
               </Text>
-              <Text fw={700} size="lg" c="brand">
-                {formatCurrencyFromCents(totalCents)}
-              </Text>
-            </Group>
-
-            <Button
-              leftSection={<IconShoppingCart size={18} />}
-              loading={reserving}
-              disabled={selectedLot.availableQuantity === 0}
-              onClick={() => void handleReserve()}
-            >
-              Reservar ingressos
-            </Button>
-
-            <Text size="sm" c="dimmed">
-              Após reservar, você terá <strong>15 minutos</strong> para pagar via PIX.
-            </Text>
-          </Stack>
-        </Paper>
+            </Stack>
+          </PremiumPaper>
+        </AnimatedSection>
       )}
     </Stack>
   );

@@ -1,18 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  Button,
-  Group,
-  Paper,
-  Stack,
-  Text,
-  Textarea,
-  TextInput,
-  Title,
-} from "@mantine/core";
+import { useNavigate } from "react-router-dom";
+import { Button, Group, Stack, Textarea, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { IconArrowLeft, IconCheck, IconX } from "@tabler/icons-react";
+import { IconCalendarPlus, IconCheck, IconX } from "@tabler/icons-react";
+import { AnimatedSection } from "../../components/home/AnimatedSection";
+import { BackButton } from "../../components/account/BackButton";
+import { PageHeader } from "../../components/account/PageHeader";
+import { PremiumPaper } from "../../components/account/PremiumPaper";
 import * as eventService from "../../services/eventService";
 import { getApiErrorMessage } from "../../utils/errors";
 
@@ -79,46 +74,51 @@ export function ProducerCreateEventPage() {
   });
 
   return (
-    <Stack gap="xl" maw={640}>
-      <Button
-        component={Link}
-        to="/produtor"
-        variant="subtle"
-        leftSection={<IconArrowLeft size={16} />}
-        w="fit-content"
-      >
-        Voltar ao painel
-      </Button>
+    <Stack gap="lg" maw={720}>
+      <BackButton to="/produtor" label="Voltar ao painel" />
 
-      <Stack gap={4}>
-        <Title order={2}>Novo evento</Title>
-        <Text c="dimmed">O evento será criado como rascunho até você publicar.</Text>
-      </Stack>
+      <AnimatedSection>
+        <PageHeader
+          icon={<IconCalendarPlus size={28} color="var(--mantine-color-brand-6)" />}
+          title="Novo"
+          highlight="evento"
+          description="O evento será criado como rascunho até você publicar na vitrine."
+        />
+      </AnimatedSection>
 
-      <Paper p="xl" radius="md" withBorder>
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <TextInput label="Título" placeholder="Nome do evento" {...form.getInputProps("title")} />
-            <Textarea
-              label="Descrição"
-              placeholder="Descreva o evento"
-              minRows={4}
-              {...form.getInputProps("description")}
-            />
-            <TextInput
-              label="Data e hora"
-              type="datetime-local"
-              {...form.getInputProps("date")}
-            />
-            <TextInput label="Local" placeholder="Arena, endereço..." {...form.getInputProps("location")} />
-            <Group justify="flex-end">
-              <Button type="submit" loading={submitting}>
-                Criar evento
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      </Paper>
+      <AnimatedSection delayMs={80}>
+        <PremiumPaper p="xl">
+          <form onSubmit={handleSubmit}>
+            <Stack gap="md">
+              <TextInput label="Título" placeholder="Nome do evento" radius="md" {...form.getInputProps("title")} />
+              <Textarea
+                label="Descrição"
+                placeholder="Descreva o evento"
+                minRows={4}
+                radius="md"
+                {...form.getInputProps("description")}
+              />
+              <TextInput
+                label="Data e hora"
+                type="datetime-local"
+                radius="md"
+                {...form.getInputProps("date")}
+              />
+              <TextInput
+                label="Local"
+                placeholder="Arena, endereço..."
+                radius="md"
+                {...form.getInputProps("location")}
+              />
+              <Group justify="flex-end" pt="sm">
+                <Button type="submit" loading={submitting} radius="xl">
+                  Criar evento
+                </Button>
+              </Group>
+            </Stack>
+          </form>
+        </PremiumPaper>
+      </AnimatedSection>
     </Stack>
   );
 }

@@ -5,19 +5,17 @@ import {
   Badge,
   Box,
   Button,
-  Center,
   Container,
   Grid,
   Group,
-  Loader,
-  Paper,
   Stack,
-  Table,
   Text,
   Title,
 } from "@mantine/core";
 import { IconAlertCircle, IconCalendar, IconMapPin, IconTicket } from "@tabler/icons-react";
 import { AnimatedSection } from "../components/home/AnimatedSection";
+import { PremiumPaper } from "../components/account/PremiumPaper";
+import { PageLoader } from "../components/account/PageLoader";
 import { useAuth } from "../context/AuthContext";
 import * as eventService from "../services/eventService";
 import type { Event } from "../types/api";
@@ -71,18 +69,16 @@ export function EventDetailPage() {
   }, [eventId]);
 
   if (loading) {
-    return (
-      <Center py="xl">
-        <Loader color="brand" size="lg" />
-      </Center>
-    );
+    return <PageLoader label="Carregando evento..." />;
   }
 
   if (error || !event) {
     return (
-      <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro">
-        {error ?? "Evento não encontrado."}
-      </Alert>
+      <Container size="lg" py="md">
+        <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro" radius="lg">
+          {error ?? "Evento não encontrado."}
+        </Alert>
+      </Container>
     );
   }
 
@@ -101,9 +97,10 @@ export function EventDetailPage() {
   return (
     <Stack gap={0}>
       <Box
+        className="full-bleed"
         style={{
           ...getEventCoverStyle(event.id),
-          minHeight: 280,
+          minHeight: 300,
           position: "relative",
         }}
       >
@@ -112,18 +109,22 @@ export function EventDetailPage() {
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.85) 100%)",
+              "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.88) 100%)",
           }}
         />
-        <Container size="lg" style={{ position: "relative", zIndex: 1 }}>
-          <Stack justify="flex-end" mih={280} py="xl" gap="md" c="white">
-            <Badge color="white" c="dark" variant="filled" w="fit-content">
+        <Container size="lg" px="md" style={{ position: "relative", zIndex: 1 }}>
+          <Stack justify="flex-end" mih={300} py="xl" gap="md" c="white">
+            <Badge color="white" c="dark" variant="filled" w="fit-content" radius="sm">
               {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}
             </Badge>
-            <Title order={1} maw={720} style={{ lineHeight: 1.15 }}>
+            <Title
+              order={1}
+              maw={720}
+              style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", lineHeight: 1.12, letterSpacing: "-0.02em" }}
+            >
               {event.title}
             </Title>
-            <Group gap="lg">
+            <Group gap="lg" wrap="wrap">
               <Group gap={6}>
                 <IconMapPin size={18} />
                 <Text fw={500}>{extractCity(event.location)}</Text>
@@ -137,15 +138,15 @@ export function EventDetailPage() {
         </Container>
       </Box>
 
-      <Container size="lg" py="xl">
-        <Grid gap="xl">
+      <Container size="lg" py="xl" px="md">
+        <Grid>
           <Grid.Col span={{ base: 12, md: 7 }}>
             <AnimatedSection>
               <Stack gap="md">
-                <Title order={2} size="h3">
+                <Title order={2} size="h3" className="page-title">
                   Sobre o evento
                 </Title>
-                <Text c="dimmed" size="lg" style={{ lineHeight: 1.7 }}>
+                <Text c="dimmed" size="lg" style={{ lineHeight: 1.75 }}>
                   {event.description}
                 </Text>
                 <Group gap="xs" c="dimmed">
@@ -158,18 +159,21 @@ export function EventDetailPage() {
 
           <Grid.Col span={{ base: 12, md: 5 }}>
             <AnimatedSection delayMs={100}>
-              <Paper p="lg" radius="lg" withBorder shadow="md" style={{ position: "sticky", top: 88 }}>
-                <Stack gap="md">
-                  <Group justify="space-between">
+              <PremiumPaper
+                p="xl"
+                style={{ position: "sticky", top: 88 }}
+              >
+                <Stack gap="lg">
+                  <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
                     <Title order={3}>Ingressos</Title>
                     {lowestPrice !== null ? (
-                      <Text fw={700} c="brand">
+                      <Text fw={700} c="brand" size="lg">
                         a partir de {formatCurrencyFromCents(lowestPrice)}
                       </Text>
                     ) : null}
                   </Group>
 
-                  <Text size="sm" c={totalAvailable > 0 ? "teal" : "red"} fw={500}>
+                  <Text size="sm" c={totalAvailable > 0 ? "teal" : "red"} fw={600}>
                     {totalAvailable > 0
                       ? `${totalAvailable} disponíve${totalAvailable === 1 ? "l" : "is"}`
                       : "Esgotado"}
@@ -178,41 +182,32 @@ export function EventDetailPage() {
                   {event.ticketLots.length === 0 ? (
                     <Text c="dimmed">Este evento ainda não possui lotes.</Text>
                   ) : (
-                    <Table highlightOnHover withTableBorder layout="fixed">
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Th>Lote</Table.Th>
-                          <Table.Th>Preço</Table.Th>
-                          <Table.Th />
-                        </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        {event.ticketLots.map((lot) => (
-                          <Table.Tr key={lot.id}>
-                            <Table.Td>
-                              <Text fw={500} size="sm">
-                                {lot.name}
-                              </Text>
-                              <Text size="xs" c="dimmed">
+                    <Stack gap="sm">
+                      {event.ticketLots.map((lot) => (
+                        <Box key={lot.id} className="lot-offer-card" p="md">
+                          <Group justify="space-between" align="center" wrap="nowrap" gap="md">
+                            <Stack gap={4} flex={1} miw={0}>
+                              <Text fw={700}>{lot.name}</Text>
+                              <Text size="sm" c="dimmed">
                                 {lot.availableQuantity} restantes
                               </Text>
-                            </Table.Td>
-                            <Table.Td>{formatCurrencyFromCents(lot.price)}</Table.Td>
-                            <Table.Td>
-                              <Button
-                                size="xs"
-                                radius="xl"
-                                leftSection={<IconTicket size={14} />}
-                                disabled={lot.availableQuantity === 0}
-                                onClick={() => handleBuy(lot.id)}
-                              >
-                                {isAuthenticated ? "Comprar" : "Entrar"}
-                              </Button>
-                            </Table.Td>
-                          </Table.Tr>
-                        ))}
-                      </Table.Tbody>
-                    </Table>
+                              <Text fw={700} c="brand">
+                                {formatCurrencyFromCents(lot.price)}
+                              </Text>
+                            </Stack>
+                            <Button
+                              size="sm"
+                              radius="xl"
+                              leftSection={<IconTicket size={14} />}
+                              disabled={lot.availableQuantity === 0}
+                              onClick={() => handleBuy(lot.id)}
+                            >
+                              {isAuthenticated ? "Comprar" : "Entrar"}
+                            </Button>
+                          </Group>
+                        </Box>
+                      ))}
+                    </Stack>
                   )}
 
                   {!isAuthenticated ? (
@@ -224,7 +219,7 @@ export function EventDetailPage() {
                     </Text>
                   ) : null}
                 </Stack>
-              </Paper>
+              </PremiumPaper>
             </AnimatedSection>
           </Grid.Col>
         </Grid>

@@ -4,12 +4,9 @@ import {
   Alert,
   Badge,
   Button,
-  Center,
   Grid,
   Group,
-  Loader,
   NumberInput,
-  Paper,
   Select,
   Stack,
   Table,
@@ -22,11 +19,16 @@ import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import {
   IconAlertCircle,
-  IconArrowLeft,
   IconCheck,
   IconRocket,
+  IconSettings,
   IconX,
 } from "@tabler/icons-react";
+import { AnimatedSection } from "../../components/home/AnimatedSection";
+import { BackButton } from "../../components/account/BackButton";
+import { PageHeader } from "../../components/account/PageHeader";
+import { PageLoader } from "../../components/account/PageLoader";
+import { PremiumPaper } from "../../components/account/PremiumPaper";
 import * as eventService from "../../services/eventService";
 import type { Event, EventStatus } from "../../types/api";
 import { formatCurrencyFromCents, formatShortDate } from "../../utils/format";
@@ -138,7 +140,6 @@ export function ProducerManageEventPage() {
     return () => {
       cancelled = true;
     };
-    // eventForm is stable from useForm; eventId drives reload
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
@@ -254,148 +255,144 @@ export function ProducerManageEventPage() {
   });
 
   if (loading) {
-    return (
-      <Center py="xl">
-        <Loader color="brand" size="lg" />
-      </Center>
-    );
+    return <PageLoader label="Carregando evento..." />;
   }
 
   if (error || !event) {
     return (
-      <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro">
+      <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro" radius="lg">
         {error ?? "Evento não encontrado."}
       </Alert>
     );
   }
 
   return (
-    <Stack gap="xl">
-      <Button
-        component={Link}
-        to="/produtor"
-        variant="subtle"
-        leftSection={<IconArrowLeft size={16} />}
-        w="fit-content"
-      >
-        Voltar ao painel
-      </Button>
+    <Stack gap="lg">
+      <BackButton to="/produtor/eventos" label="Voltar aos eventos" />
 
-      <Group justify="space-between" align="flex-start">
-        <Stack gap={4}>
+      <AnimatedSection>
+        <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+          <PageHeader
+            icon={<IconSettings size={28} color="var(--mantine-color-brand-6)" />}
+            title="Gerenciar"
+            highlight="evento"
+            description={`${formatShortDate(event.date)} · ${event.location}`}
+          />
           <Group gap="sm">
-            <Title order={2}>{event.title}</Title>
-            <Badge color={getEventStatusColor(event.status)} variant="light">
+            <Badge color={getEventStatusColor(event.status)} variant="light" size="lg" radius="sm">
               {getEventStatusLabel(event.status)}
             </Badge>
+            {event.status === "DRAFT" ? (
+              <Button
+                leftSection={<IconRocket size={18} />}
+                loading={savingEvent}
+                radius="xl"
+                onClick={() => void handlePublish()}
+              >
+                Publicar evento
+              </Button>
+            ) : null}
           </Group>
-          <Text c="dimmed">{formatShortDate(event.date)} · {event.location}</Text>
-        </Stack>
-
-        {event.status === "DRAFT" ? (
-          <Button
-            leftSection={<IconRocket size={18} />}
-            loading={savingEvent}
-            onClick={() => void handlePublish()}
-          >
-            Publicar evento
-          </Button>
-        ) : null}
-      </Group>
+        </Group>
+      </AnimatedSection>
 
       <Grid>
         <Grid.Col span={{ base: 12, md: 7 }}>
-          <Paper p="xl" radius="md" withBorder>
-            <form onSubmit={handleSaveEvent}>
-              <Stack gap="md">
-                <Title order={4}>Detalhes do evento</Title>
-                <TextInput label="Título" {...eventForm.getInputProps("title")} />
-                <Textarea label="Descrição" minRows={4} {...eventForm.getInputProps("description")} />
-                <TextInput label="Data e hora" type="datetime-local" {...eventForm.getInputProps("date")} />
-                <TextInput label="Local" {...eventForm.getInputProps("location")} />
-                <Select
-                  label="Status"
-                  data={[
-                    { value: "DRAFT", label: "Rascunho" },
-                    { value: "PUBLISHED", label: "Publicado" },
-                    { value: "CANCELLED", label: "Cancelado" },
-                    { value: "FINISHED", label: "Encerrado" },
-                  ]}
-                  {...eventForm.getInputProps("status")}
-                />
-                <Group justify="flex-end">
-                  <Button type="submit" loading={savingEvent} variant="light">
-                    Salvar alterações
-                  </Button>
-                </Group>
-              </Stack>
-            </form>
-          </Paper>
+          <AnimatedSection delayMs={60}>
+            <PremiumPaper p="xl">
+              <form onSubmit={handleSaveEvent}>
+                <Stack gap="md">
+                  <Title order={4}>Detalhes do evento</Title>
+                  <TextInput label="Título" radius="md" {...eventForm.getInputProps("title")} />
+                  <Textarea label="Descrição" minRows={4} radius="md" {...eventForm.getInputProps("description")} />
+                  <TextInput label="Data e hora" type="datetime-local" radius="md" {...eventForm.getInputProps("date")} />
+                  <TextInput label="Local" radius="md" {...eventForm.getInputProps("location")} />
+                  <Select
+                    label="Status"
+                    radius="md"
+                    data={[
+                      { value: "DRAFT", label: "Rascunho" },
+                      { value: "PUBLISHED", label: "Publicado" },
+                      { value: "CANCELLED", label: "Cancelado" },
+                      { value: "FINISHED", label: "Encerrado" },
+                    ]}
+                    {...eventForm.getInputProps("status")}
+                  />
+                  <Group justify="flex-end" pt="sm">
+                    <Button type="submit" loading={savingEvent} variant="light" radius="xl">
+                      Salvar alterações
+                    </Button>
+                  </Group>
+                </Stack>
+              </form>
+            </PremiumPaper>
+          </AnimatedSection>
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 5 }}>
-          <Paper p="xl" radius="md" withBorder>
-            <form onSubmit={handleCreateLot}>
-              <Stack gap="md">
-                <Title order={4}>Novo lote</Title>
-                <TextInput label="Nome do lote" placeholder="Pista, VIP..." {...lotForm.getInputProps("name")} />
-                <NumberInput
-                  label="Preço (R$)"
-                  decimalScale={2}
-                  fixedDecimalScale
-                  min={0.01}
-                  {...lotForm.getInputProps("priceReais")}
-                />
-                <NumberInput
-                  label="Quantidade total"
-                  min={1}
-                  {...lotForm.getInputProps("totalQuantity")}
-                />
-                <Button type="submit" loading={creatingLot}>
-                  Adicionar lote
-                </Button>
-              </Stack>
-            </form>
-          </Paper>
+          <AnimatedSection delayMs={100}>
+            <PremiumPaper p="xl">
+              <form onSubmit={handleCreateLot}>
+                <Stack gap="md">
+                  <Title order={4}>Novo lote</Title>
+                  <TextInput label="Nome do lote" placeholder="Pista, VIP..." radius="md" {...lotForm.getInputProps("name")} />
+                  <NumberInput
+                    label="Preço (R$)"
+                    decimalScale={2}
+                    fixedDecimalScale
+                    min={0.01}
+                    radius="md"
+                    {...lotForm.getInputProps("priceReais")}
+                  />
+                  <NumberInput label="Quantidade total" min={1} radius="md" {...lotForm.getInputProps("totalQuantity")} />
+                  <Button type="submit" loading={creatingLot} radius="xl">
+                    Adicionar lote
+                  </Button>
+                </Stack>
+              </form>
+            </PremiumPaper>
+          </AnimatedSection>
         </Grid.Col>
       </Grid>
 
-      <Paper p="xl" radius="md" withBorder>
-        <Stack gap="md">
-          <Title order={4}>Lotes cadastrados</Title>
+      <AnimatedSection delayMs={140}>
+        <PremiumPaper p="xl" className="data-table-panel">
+          <Stack gap="lg">
+            <Title order={4}>Lotes cadastrados</Title>
 
-          {event.ticketLots.length === 0 ? (
-            <Text c="dimmed">Nenhum lote cadastrado ainda.</Text>
-          ) : (
-            <Table highlightOnHover withTableBorder>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Nome</Table.Th>
-                  <Table.Th>Preço</Table.Th>
-                  <Table.Th>Total</Table.Th>
-                  <Table.Th>Disponível</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {event.ticketLots.map((lot) => (
-                  <Table.Tr key={lot.id}>
-                    <Table.Td>{lot.name}</Table.Td>
-                    <Table.Td>{formatCurrencyFromCents(lot.price)}</Table.Td>
-                    <Table.Td>{lot.totalQuantity}</Table.Td>
-                    <Table.Td>{lot.availableQuantity}</Table.Td>
+            {event.ticketLots.length === 0 ? (
+              <Text c="dimmed">Nenhum lote cadastrado ainda.</Text>
+            ) : (
+              <Table highlightOnHover withTableBorder>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Nome</Table.Th>
+                    <Table.Th>Preço</Table.Th>
+                    <Table.Th>Total</Table.Th>
+                    <Table.Th>Disponível</Table.Th>
                   </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          )}
+                </Table.Thead>
+                <Table.Tbody>
+                  {event.ticketLots.map((lot) => (
+                    <Table.Tr key={lot.id}>
+                      <Table.Td>{lot.name}</Table.Td>
+                      <Table.Td>{formatCurrencyFromCents(lot.price)}</Table.Td>
+                      <Table.Td>{lot.totalQuantity}</Table.Td>
+                      <Table.Td>{lot.availableQuantity}</Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            )}
 
-          {event.status === "PUBLISHED" ? (
-            <Button component={Link} to={`/eventos/${event.id}`} variant="light">
-              Ver na vitrine pública
-            </Button>
-          ) : null}
-        </Stack>
-      </Paper>
+            {event.status === "PUBLISHED" ? (
+              <Button component={Link} to={`/eventos/${event.id}`} variant="light" radius="xl" w="fit-content">
+                Ver na vitrine pública
+              </Button>
+            ) : null}
+          </Stack>
+        </PremiumPaper>
+      </AnimatedSection>
     </Stack>
   );
 }

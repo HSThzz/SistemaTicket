@@ -4,13 +4,9 @@ import {
   Alert,
   Button,
   Grid,
-  Group,
-  Paper,
   SegmentedControl,
   SimpleGrid,
   Stack,
-  Text,
-  ThemeIcon,
 } from "@mantine/core";
 import {
   IconAlertCircle,
@@ -22,6 +18,7 @@ import {
 import { AnimatedSection } from "../components/home/AnimatedSection";
 import { EmptyState } from "../components/account/EmptyState";
 import { PageHeader } from "../components/account/PageHeader";
+import { StatCard } from "../components/account/StatCard";
 import { TicketsPageSkeleton } from "../components/account/TicketsPageSkeleton";
 import { TicketCard } from "../components/TicketCard";
 import * as ticketService from "../services/ticketService";
@@ -126,49 +123,21 @@ export function MyTicketsPage() {
         <>
           <AnimatedSection delayMs={60}>
             <SimpleGrid cols={{ base: 1, xs: 3 }} spacing="md">
-              <Paper radius="lg" p="md" className="stat-card">
-                <Group gap="sm" wrap="nowrap">
-                  <ThemeIcon size={40} radius="md" variant="light" color="brand">
-                    <IconTicket size={20} />
-                  </ThemeIcon>
-                  <Stack gap={2}>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                      Total
-                    </Text>
-                    <Text className="stat-card-value">{stats.total}</Text>
-                  </Stack>
-                </Group>
-              </Paper>
-              <Paper radius="lg" p="md" className="stat-card">
-                <Group gap="sm" wrap="nowrap">
-                  <ThemeIcon size={40} radius="md" variant="light" color="green">
-                    <IconCalendarEvent size={20} />
-                  </ThemeIcon>
-                  <Stack gap={2}>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                      Ativos
-                    </Text>
-                    <Text className="stat-card-value" c="green">
-                      {stats.active}
-                    </Text>
-                  </Stack>
-                </Group>
-              </Paper>
-              <Paper radius="lg" p="md" className="stat-card">
-                <Group gap="sm" wrap="nowrap">
-                  <ThemeIcon size={40} radius="md" variant="light" color="blue">
-                    <IconCircleCheck size={20} />
-                  </ThemeIcon>
-                  <Stack gap={2}>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                      Utilizados
-                    </Text>
-                    <Text className="stat-card-value" c="blue">
-                      {stats.used}
-                    </Text>
-                  </Stack>
-                </Group>
-              </Paper>
+              <StatCard label="Total" value={String(stats.total)} icon={<IconTicket size={20} />} />
+              <StatCard
+                label="Ativos"
+                value={String(stats.active)}
+                icon={<IconCalendarEvent size={20} />}
+                iconColor="green"
+                valueColor="green"
+              />
+              <StatCard
+                label="Utilizados"
+                value={String(stats.used)}
+                icon={<IconCircleCheck size={20} />}
+                iconColor="blue"
+                valueColor="blue"
+              />
             </SimpleGrid>
           </AnimatedSection>
 

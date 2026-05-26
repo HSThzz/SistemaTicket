@@ -2,7 +2,7 @@ import { Group, Stack, Text, Title } from "@mantine/core";
 import type { ReactNode } from "react";
 
 interface PageHeaderProps {
-  icon: ReactNode;
+  icon?: ReactNode;
   title: string;
   highlight?: string;
   description: string;
@@ -14,7 +14,7 @@ export function PageHeader({ icon, title, highlight, description, action }: Page
     <div className="page-header">
       <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
         <Stack gap="sm" maw={560}>
-          <Group gap="xs">
+          <Group gap="xs" wrap="nowrap" align="flex-start">
             {icon}
             <Title order={1} className="page-title">
               {title}{" "}

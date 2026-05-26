@@ -4,13 +4,9 @@ import {
   Alert,
   Button,
   Grid,
-  Group,
-  Paper,
   SegmentedControl,
   SimpleGrid,
   Stack,
-  Text,
-  ThemeIcon,
 } from "@mantine/core";
 import {
   IconAlertCircle,
@@ -23,6 +19,7 @@ import { AnimatedSection } from "../components/home/AnimatedSection";
 import { EmptyState } from "../components/account/EmptyState";
 import { OrdersPageSkeleton } from "../components/account/OrdersPageSkeleton";
 import { PageHeader } from "../components/account/PageHeader";
+import { StatCard } from "../components/account/StatCard";
 import { OrderCard } from "../components/OrderCard";
 import * as orderService from "../services/orderService";
 import type { OrderListItem } from "../types/api";
@@ -126,49 +123,21 @@ export function MyOrdersPage() {
         <>
           <AnimatedSection delayMs={60}>
             <SimpleGrid cols={{ base: 1, xs: 3 }} spacing="md">
-              <Paper radius="lg" p="md" className="stat-card">
-                <Group gap="sm" wrap="nowrap">
-                  <ThemeIcon size={40} radius="md" variant="light" color="brand">
-                    <IconReceipt2 size={20} />
-                  </ThemeIcon>
-                  <Stack gap={2}>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                      Pedidos
-                    </Text>
-                    <Text className="stat-card-value">{stats.total}</Text>
-                  </Stack>
-                </Group>
-              </Paper>
-              <Paper radius="lg" p="md" className="stat-card">
-                <Group gap="sm" wrap="nowrap">
-                  <ThemeIcon size={40} radius="md" variant="light" color="green">
-                    <IconWallet size={20} />
-                  </ThemeIcon>
-                  <Stack gap={2}>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                      Pagos
-                    </Text>
-                    <Text className="stat-card-value" c="green">
-                      {stats.paid}
-                    </Text>
-                  </Stack>
-                </Group>
-              </Paper>
-              <Paper radius="lg" p="md" className="stat-card">
-                <Group gap="sm" wrap="nowrap">
-                  <ThemeIcon size={40} radius="md" variant="light" color="teal">
-                    <IconWallet size={20} />
-                  </ThemeIcon>
-                  <Stack gap={2}>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                      Total gasto
-                    </Text>
-                    <Text className="stat-card-value" c="teal" style={{ fontSize: "1.35rem" }}>
-                      {formatCurrencyFromCents(stats.totalSpent)}
-                    </Text>
-                  </Stack>
-                </Group>
-              </Paper>
+              <StatCard label="Pedidos" value={String(stats.total)} icon={<IconReceipt2 size={20} />} />
+              <StatCard
+                label="Pagos"
+                value={String(stats.paid)}
+                icon={<IconWallet size={20} />}
+                iconColor="green"
+                valueColor="green"
+              />
+              <StatCard
+                label="Total gasto"
+                value={formatCurrencyFromCents(stats.totalSpent)}
+                icon={<IconWallet size={20} />}
+                iconColor="teal"
+                valueColor="teal"
+              />
             </SimpleGrid>
           </AnimatedSection>
 

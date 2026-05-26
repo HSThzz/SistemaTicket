@@ -1,18 +1,12 @@
 import { useCallback, useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  Alert,
-  Button,
-  Divider,
-  Paper,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from "@mantine/core";
+import { Alert, Button, Divider, Stack, Text, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { IconArrowLeft, IconCheck, IconScan, IconX } from "@tabler/icons-react";
+import { IconCheck, IconScan, IconX } from "@tabler/icons-react";
+import { AnimatedSection } from "../../components/home/AnimatedSection";
+import { BackButton } from "../../components/account/BackButton";
+import { PageHeader } from "../../components/account/PageHeader";
+import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { QrScanner } from "../../components/QrScanner";
 import * as checkInService from "../../services/checkInService";
 import { formatShortDate } from "../../utils/format";
@@ -82,56 +76,61 @@ export function ProducerCheckInPage() {
   );
 
   return (
-    <Stack gap="xl" maw={560}>
-      <Button
-        component={Link}
-        to="/produtor"
-        variant="subtle"
-        leftSection={<IconArrowLeft size={16} />}
-        w="fit-content"
-      >
-        Voltar ao painel
-      </Button>
+    <Stack gap="lg" maw={640}>
+      <BackButton to="/produtor" label="Voltar ao painel" />
 
-      <Stack gap={4}>
-        <Title order={2}>Check-in na portaria</Title>
-        <Text c="dimmed">Escaneie o QR code ou digite o código manualmente.</Text>
-      </Stack>
+      <AnimatedSection>
+        <PageHeader
+          icon={<IconScan size={28} color="var(--mantine-color-brand-6)" />}
+          title="Check-in na"
+          highlight="portaria"
+          description="Escaneie o QR code do ingresso ou digite o código manualmente para validar a entrada."
+        />
+      </AnimatedSection>
 
-      <Paper p="xl" radius="md" withBorder>
-        <Stack gap="md">
-          <Text fw={600}>Scanner de câmera</Text>
-          <QrScanner onScan={handleScan} paused={scannerPaused || submitting} />
-        </Stack>
-      </Paper>
+      <AnimatedSection delayMs={60}>
+        <PremiumPaper p="xl">
+          <Stack gap="md">
+            <Text fw={600} size="lg">
+              Scanner de câmera
+            </Text>
+            <QrScanner onScan={handleScan} paused={scannerPaused || submitting} />
+          </Stack>
+        </PremiumPaper>
+      </AnimatedSection>
 
       <Divider label="ou digite o código" labelPosition="center" />
 
-      <Paper p="xl" radius="md" withBorder>
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <TextInput
-              label="Código do ingresso"
-              placeholder="Cole o código manualmente"
-              leftSection={<IconScan size={18} />}
-              {...form.getInputProps("uniqueCode")}
-            />
-            <Button type="submit" loading={submitting} fullWidth>
-              Validar ingresso
-            </Button>
-          </Stack>
-        </form>
-      </Paper>
+      <AnimatedSection delayMs={100}>
+        <PremiumPaper p="xl">
+          <form onSubmit={handleSubmit}>
+            <Stack gap="md">
+              <TextInput
+                label="Código do ingresso"
+                placeholder="Cole o código manualmente"
+                leftSection={<IconScan size={18} />}
+                radius="md"
+                {...form.getInputProps("uniqueCode")}
+              />
+              <Button type="submit" loading={submitting} fullWidth radius="xl" size="md">
+                Validar ingresso
+              </Button>
+            </Stack>
+          </form>
+        </PremiumPaper>
+      </AnimatedSection>
 
       {lastResult ? (
-        <Alert color="green" title="Último check-in confirmado">
-          <Stack gap={4}>
-            <Text fw={600}>{lastResult.owner_name}</Text>
-            <Text size="sm">Documento: {lastResult.owner_document}</Text>
-            <Text size="sm">Evento: {lastResult.event_title}</Text>
-            <Text size="sm">Horário: {formatShortDate(lastResult.checked_in_at)}</Text>
-          </Stack>
-        </Alert>
+        <AnimatedSection delayMs={120}>
+          <Alert color="green" title="Último check-in confirmado" radius="lg">
+            <Stack gap={4}>
+              <Text fw={600}>{lastResult.owner_name}</Text>
+              <Text size="sm">Documento: {lastResult.owner_document}</Text>
+              <Text size="sm">Evento: {lastResult.event_title}</Text>
+              <Text size="sm">Horário: {formatShortDate(lastResult.checked_in_at)}</Text>
+            </Stack>
+          </Alert>
+        </AnimatedSection>
       ) : null}
     </Stack>
   );

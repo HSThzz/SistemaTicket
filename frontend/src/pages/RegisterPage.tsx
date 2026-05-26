@@ -3,16 +3,15 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Anchor,
   Button,
-  Paper,
   PasswordInput,
   Stack,
   Text,
   TextInput,
-  Title,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { IconCheck, IconX } from "@tabler/icons-react";
+import { IconCheck, IconUserPlus, IconX } from "@tabler/icons-react";
+import { AuthCard } from "../components/account/AuthCard";
 import { useAuth } from "../context/AuthContext";
 import * as authService from "../services/authService";
 import { getApiErrorMessage } from "../utils/errors";
@@ -87,52 +86,64 @@ export function RegisterPage() {
   });
 
   return (
-    <Paper p="xl" radius="md" maw={440} mx="auto" withBorder>
-      <Stack gap="lg">
-        <Stack gap={4}>
-          <Title order={2}>Criar conta</Title>
-          <Text c="dimmed">Cadastre-se para reservar e comprar ingressos.</Text>
+    <AuthCard
+      title="Crie sua"
+      highlight="conta"
+      description="Cadastre-se em segundos para reservar ingressos, pagar com PIX e receber seus tickets na hora."
+    >
+      <form onSubmit={handleSubmit}>
+        <Stack gap="md">
+          <TextInput
+            label="Nome completo"
+            placeholder="Seu nome"
+            autoComplete="name"
+            radius="md"
+            {...form.getInputProps("name")}
+          />
+          <TextInput
+            label="E-mail"
+            placeholder="seu@email.com"
+            autoComplete="email"
+            radius="md"
+            {...form.getInputProps("email")}
+          />
+          <TextInput
+            label="CPF"
+            placeholder="000.000.000-00"
+            inputMode="numeric"
+            radius="md"
+            {...form.getInputProps("document")}
+          />
+          <PasswordInput
+            label="Senha"
+            placeholder="Mínimo 6 caracteres"
+            autoComplete="new-password"
+            radius="md"
+            {...form.getInputProps("password")}
+          />
+          <Button type="submit" loading={submitting} fullWidth radius="xl" size="md">
+            Cadastrar
+          </Button>
         </Stack>
+      </form>
 
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <TextInput
-              label="Nome completo"
-              placeholder="Seu nome"
-              autoComplete="name"
-              {...form.getInputProps("name")}
-            />
-            <TextInput
-              label="E-mail"
-              placeholder="seu@email.com"
-              autoComplete="email"
-              {...form.getInputProps("email")}
-            />
-            <TextInput
-              label="CPF"
-              placeholder="000.000.000-00"
-              inputMode="numeric"
-              {...form.getInputProps("document")}
-            />
-            <PasswordInput
-              label="Senha"
-              placeholder="Mínimo 6 caracteres"
-              autoComplete="new-password"
-              {...form.getInputProps("password")}
-            />
-            <Button type="submit" loading={submitting} fullWidth>
-              Cadastrar
-            </Button>
-          </Stack>
-        </form>
+      <Text size="sm" c="dimmed" ta="center">
+        Já tem conta?{" "}
+        <Anchor component={Link} to="/login" fw={600}>
+          Entrar
+        </Anchor>
+      </Text>
 
-        <Text size="sm" c="dimmed" ta="center">
-          Já tem conta?{" "}
-          <Anchor component={Link} to="/login" fw={600}>
-            Entrar
-          </Anchor>
-        </Text>
-      </Stack>
-    </Paper>
+      <Button
+        component={Link}
+        to="/"
+        variant="subtle"
+        radius="xl"
+        fullWidth
+        leftSection={<IconUserPlus size={16} />}
+      >
+        Explorar sem cadastro
+      </Button>
+    </AuthCard>
   );
 }

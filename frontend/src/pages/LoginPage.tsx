@@ -1,18 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import {
-  Anchor,
-  Button,
-  Paper,
-  PasswordInput,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from "@mantine/core";
+import { Anchor, Button, PasswordInput, Stack, Text, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { IconCheck, IconX } from "@tabler/icons-react";
+import { IconCheck, IconLogin, IconX } from "@tabler/icons-react";
+import { AuthCard } from "../components/account/AuthCard";
 import { useAuth } from "../context/AuthContext";
 import * as authService from "../services/authService";
 import { getApiErrorMessage } from "../utils/errors";
@@ -28,8 +20,7 @@ export function LoginPage() {
   const { setSession } = useAuth();
   const [submitting, setSubmitting] = useState(false);
 
-  const from =
-    (location.state as { from?: string } | null)?.from ?? "/";
+  const from = (location.state as { from?: string } | null)?.from ?? "/";
 
   const form = useForm<LoginFormValues>({
     initialValues: {
@@ -76,40 +67,50 @@ export function LoginPage() {
   });
 
   return (
-    <Paper p="xl" radius="md" maw={440} mx="auto" withBorder>
-      <Stack gap="lg">
-        <Stack gap={4}>
-          <Title order={2}>Entrar</Title>
-          <Text c="dimmed">Acesse sua conta para comprar ingressos.</Text>
+    <AuthCard
+      title="Bem-vindo"
+      highlight="de volta"
+      description="Acesse sua conta para comprar ingressos, ver pedidos e gerenciar seus tickets."
+    >
+      <form onSubmit={handleSubmit}>
+        <Stack gap="md">
+          <TextInput
+            label="E-mail"
+            placeholder="seu@email.com"
+            autoComplete="email"
+            radius="md"
+            {...form.getInputProps("email")}
+          />
+          <PasswordInput
+            label="Senha"
+            placeholder="Sua senha"
+            autoComplete="current-password"
+            radius="md"
+            {...form.getInputProps("password")}
+          />
+          <Button type="submit" loading={submitting} fullWidth radius="xl" size="md">
+            Entrar
+          </Button>
         </Stack>
+      </form>
 
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <TextInput
-              label="E-mail"
-              placeholder="seu@email.com"
-              autoComplete="email"
-              {...form.getInputProps("email")}
-            />
-            <PasswordInput
-              label="Senha"
-              placeholder="Sua senha"
-              autoComplete="current-password"
-              {...form.getInputProps("password")}
-            />
-            <Button type="submit" loading={submitting} fullWidth>
-              Entrar
-            </Button>
-          </Stack>
-        </form>
+      <Text size="sm" c="dimmed" ta="center">
+        Ainda não tem conta?{" "}
+        <Anchor component={Link} to="/cadastro" fw={600}>
+          Cadastre-se
+        </Anchor>
+      </Text>
 
-        <Text size="sm" c="dimmed" ta="center">
-          Ainda não tem conta?{" "}
-          <Anchor component={Link} to="/cadastro" fw={600}>
-            Cadastre-se
-          </Anchor>
-        </Text>
-      </Stack>
-    </Paper>
+      <Button
+        component={Link}
+        to="/"
+        variant="subtle"
+        radius="xl"
+        fullWidth
+        leftSection={<IconLogin size={16} />}
+      >
+        Voltar aos eventos
+      </Button>
+    </AuthCard>
   );
 }
