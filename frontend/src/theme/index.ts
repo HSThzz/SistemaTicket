@@ -27,6 +27,13 @@ export const appTheme = createTheme({
   },
   defaultRadius: "md",
   components: {
+    AppShell: {
+      styles: {
+        main: {
+          backgroundColor: "var(--mantine-color-body)",
+        },
+      },
+    },
     Button: {
       defaultProps: {
         radius: "md",

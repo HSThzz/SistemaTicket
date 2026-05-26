@@ -20,6 +20,7 @@ import {
   IconTicket,
   IconUser,
 } from "@tabler/icons-react";
+import { ColorSchemeToggle } from "./ColorSchemeToggle";
 import { useAuth } from "../context/AuthContext";
 
 const CLIENT_NAV_LINKS = [
@@ -123,6 +124,7 @@ export function Layout() {
             </Group>
 
             <Group gap="sm" wrap="nowrap">
+              <ColorSchemeToggle />
               {isBootstrapping ? (
                 <Button variant="light" loading size="sm">
                   Carregando

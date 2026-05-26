@@ -6,11 +6,16 @@ import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import App from "./App.tsx";
 import { appTheme } from "./theme";
+import { colorSchemeManager } from "./theme/colorScheme";
 import "./index.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <MantineProvider theme={appTheme} defaultColorScheme="light">
+    <MantineProvider
+      theme={appTheme}
+      colorSchemeManager={colorSchemeManager}
+      defaultColorScheme="auto"
+    >
       <Notifications position="top-right" zIndex={1000} />
       <App />
     </MantineProvider>

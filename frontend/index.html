@@ -11,6 +11,18 @@
       rel="stylesheet"
     />
     <title>TicketFlow — Ingressos</title>
+    <script>
+      try {
+        var stored = localStorage.getItem("ticketflow-color-scheme-value");
+        var scheme =
+          stored === "light" || stored === "dark"
+            ? stored
+            : window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+        document.documentElement.setAttribute("data-mantine-color-scheme", scheme);
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

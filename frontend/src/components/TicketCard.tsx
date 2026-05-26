@@ -76,9 +76,9 @@ function PaperLikeQr({ code }: { code: string }) {
     <div
       style={{
         padding: 12,
-        background: "white",
+        background: "var(--mantine-color-white)",
         borderRadius: 8,
-        border: "1px solid var(--mantine-color-gray-3)",
+        border: "1px solid var(--mantine-color-default-border)",
       }}
     >
       <QRCodeSVG value={code} size={160} level="M" includeMargin={false} />
