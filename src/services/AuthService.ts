@@ -8,6 +8,8 @@ import { UserRole } from "../entities/enums";
 import {
   EmailAlreadyExistsError,
   InvalidCredentialsError,
+  InvalidRoleError,
+  UserNotFoundError,
 } from "../errors/AuthError";
 
 const CONTEXT = "AuthService";
@@ -18,7 +20,6 @@ export interface RegisterInput {
   email: string;
   password: string;
   document: string;
-  role?: UserRole;
 }
 
 export interface LoginInput {
@@ -64,7 +65,7 @@ export class AuthService {
       email: input.email.toLowerCase(),
       passwordHash,
       document: input.document,
-      role: input.role ?? UserRole.CLIENT,
+      role: UserRole.CLIENT,
     });
 
     await repository.save(user);
@@ -114,6 +115,35 @@ export class AuthService {
     });
 
     return this.buildAuthResponse(user);
+  }
+
+  async updateUserRole(userId: string, role: UserRole): Promise<AuthResponse["user"]> {
+    if (!(role in UserRole)) {
+      throw new InvalidRoleError(String(role));
+    }
+
+    const repository = this.dataSource.getRepository(User);
+    const user = await repository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new UserNotFoundError(userId);
+    }
+
+    user.role = role;
+    await repository.save(user);
+
+    this.logger.info(CONTEXT, "User role updated", {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
   }
 
   private buildAuthResponse(user: User): AuthResponse {

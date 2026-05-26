@@ -1,8 +1,9 @@
 import type { DataSource } from "typeorm";
 import { Logger } from "../config/logger";
 import { Ticket } from "../entities/Ticket";
-import { EventStatus, TicketStatus } from "../entities/enums";
+import { EventStatus, TicketStatus, UserRole } from "../entities/enums";
 import {
+  CheckInAccessDeniedError,
   CheckInNotAllowedTodayError,
   EventNotPublishedError,
   InvalidTicketStatusError,
@@ -11,6 +12,11 @@ import {
 
 const CONTEXT = "CheckInService";
 const CHECK_IN_TIMEZONE = "America/Sao_Paulo";
+
+export interface CheckInActor {
+  userId: string;
+  role: UserRole;
+}
 
 export interface CheckInResult {
   ownerName: string;
@@ -25,7 +31,7 @@ export class CheckInService {
 
   constructor(private readonly dataSource: DataSource) {}
 
-  async checkIn(uniqueCode: string): Promise<CheckInResult> {
+  async checkIn(uniqueCode: string, actor: CheckInActor): Promise<CheckInResult> {
     return this.dataSource.transaction(async (manager) => {
       const ticket = await manager.findOne(Ticket, {
         where: { uniqueCode },
@@ -41,6 +47,18 @@ export class CheckInService {
       }
 
       const event = ticket.ticketLot.event;
+
+      if (
+        actor.role !== UserRole.ADMIN &&
+        event.producerId !== actor.userId
+      ) {
+        this.logger.warn(CONTEXT, "Check-in rejected — producer does not own event", {
+          ticketId: ticket.id,
+          eventId: event.id,
+          actorUserId: actor.userId,
+        });
+        throw new CheckInAccessDeniedError();
+      }
 
       if (ticket.status !== TicketStatus.ACTIVE) {
         this.logger.warn(

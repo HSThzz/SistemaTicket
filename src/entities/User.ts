@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
 } from "typeorm";
 import { UserRole } from "./enums";
+import { Event } from "./Event";
 import { Order } from "./Order";
 import { Reservation } from "./Reservation";
 
@@ -31,6 +32,9 @@ export class User {
     default: UserRole.CLIENT,
   })
   role!: UserRole;
+
+  @OneToMany(() => Event, (event) => event.producer)
+  events!: Event[];
 
   @OneToMany(() => Reservation, (reservation) => reservation.user)
   reservations!: Reservation[];

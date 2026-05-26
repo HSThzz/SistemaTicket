@@ -46,3 +46,10 @@ export class CheckInNotAllowedTodayError extends CheckInError {
     this.name = "CheckInNotAllowedTodayError";
   }
 }
+
+export class CheckInAccessDeniedError extends CheckInError {
+  constructor() {
+    super("You do not have permission to check in tickets for this event", "CHECKIN_ACCESS_DENIED");
+    this.name = "CheckInAccessDeniedError";
+  }
+}

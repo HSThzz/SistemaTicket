@@ -1,16 +1,22 @@
 import {
   Column,
   Entity,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
 import { EventStatus } from "./enums";
 import { TicketLot } from "./TicketLot";
+import { User } from "./User";
 
 @Entity("events")
 export class Event {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
+
+  @Column({ name: "producer_id", type: "uuid", nullable: true })
+  producerId!: string | null;
 
   @Column({ type: "varchar", length: 255 })
   title!: string;
@@ -30,6 +36,10 @@ export class Event {
     default: EventStatus.DRAFT,
   })
   status!: EventStatus;
+
+  @ManyToOne(() => User, (user) => user.events, { onDelete: "RESTRICT" })
+  @JoinColumn({ name: "producer_id" })
+  producer!: User;
 
   @OneToMany(() => TicketLot, (ticketLot) => ticketLot.event)
   ticketLots!: TicketLot[];

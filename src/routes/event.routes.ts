@@ -4,6 +4,11 @@ import { eventController, eventManagementMiddlewares } from "../controllers/Even
 const router = Router();
 
 router.get("/", (req, res) => void eventController.listPublished(req, res));
+router.get(
+  "/mine",
+  ...eventManagementMiddlewares,
+  (req, res) => void eventController.listMine(req, res),
+);
 router.get("/:eventId", (req, res) => void eventController.getPublished(req, res));
 
 router.post(

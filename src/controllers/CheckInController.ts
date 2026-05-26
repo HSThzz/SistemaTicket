@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { AppDataSource } from "../config/data-source";
 import { Logger } from "../config/logger";
 import {
+  CheckInAccessDeniedError,
   CheckInError,
   CheckInNotAllowedTodayError,
   EventNotPublishedError,
@@ -16,6 +17,11 @@ const checkInService = new CheckInService(AppDataSource);
 
 export class CheckInController {
   async checkIn(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
     const { unique_code: uniqueCode } = req.body as { unique_code?: string };
 
     if (!uniqueCode || typeof uniqueCode !== "string") {
@@ -27,7 +33,10 @@ export class CheckInController {
     }
 
     try {
-      const result = await checkInService.checkIn(uniqueCode.trim());
+      const result = await checkInService.checkIn(uniqueCode.trim(), {
+        userId: req.user.id,
+        role: req.user.role,
+      });
 
       res.status(200).json({
         owner_name: result.ownerName,
@@ -66,6 +75,11 @@ export class CheckInController {
         code: error.code,
         eventDate: error.eventDate,
       });
+      return;
+    }
+
+    if (error instanceof CheckInAccessDeniedError) {
+      res.status(403).json({ error: error.message, code: error.code });
       return;
     }
 

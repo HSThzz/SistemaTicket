@@ -5,7 +5,10 @@ import {
   AuthError,
   EmailAlreadyExistsError,
   InvalidCredentialsError,
+  InvalidRoleError,
+  UserNotFoundError,
 } from "../errors/AuthError";
+import { UserRole } from "../entities/enums";
 import { AuthService } from "../services/AuthService";
 
 const CONTEXT = "AuthController";
@@ -65,6 +68,38 @@ export class AuthController {
     }
   }
 
+  async updateUserRole(req: Request, res: Response): Promise<void> {
+    const userIdParam = req.params.userId;
+    const userId =
+      typeof userIdParam === "string"
+        ? userIdParam
+        : Array.isArray(userIdParam)
+          ? userIdParam[0]
+          : "";
+
+    const { role } = req.body as { role?: string };
+
+    if (!userId) {
+      res.status(400).json({ error: "userId is required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    if (!role || !(role in UserRole)) {
+      res.status(400).json({ error: "Valid role is required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    try {
+      const user = await authService.updateUserRole(
+        userId,
+        UserRole[role as keyof typeof UserRole],
+      );
+      res.status(200).json({ user });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
   private handleError(res: Response, error: unknown): void {
     if (error instanceof EmailAlreadyExistsError) {
       logger.warn(CONTEXT, "Registration failed", {
@@ -77,6 +112,16 @@ export class AuthController {
 
     if (error instanceof InvalidCredentialsError) {
       res.status(401).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof UserNotFoundError) {
+      res.status(404).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof InvalidRoleError) {
+      res.status(400).json({ error: error.message, code: error.code });
       return;
     }
 

@@ -1,10 +1,16 @@
 import type { Request, Response } from "express";
 import { AppDataSource } from "../config/data-source";
 import { Logger } from "../config/logger";
+import { Event } from "../entities/Event";
 import { EventStatus, UserRole } from "../entities/enums";
+import {
+  EventAccessDeniedError,
+  EventError,
+  EventNotFoundError,
+} from "../errors/EventError";
 import { authMiddleware } from "../middlewares/authMiddleware";
 import { roleMiddleware } from "../middlewares/roleMiddleware";
-import { EventService } from "../services/EventService";
+import { EventService, type EventActor } from "../services/EventService";
 
 const CONTEXT = "EventController";
 const logger = Logger.getInstance();
@@ -17,37 +23,63 @@ function parseEventStatus(value: unknown): EventStatus | undefined {
   return EventStatus[value as keyof typeof EventStatus];
 }
 
+function parseEventId(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+  return "";
+}
+
+function requireActor(req: Request, res: Response): EventActor | null {
+  if (!req.user) {
+    res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+    return null;
+  }
+
+  return {
+    userId: req.user.id,
+    role: req.user.role,
+  };
+}
+
+function serializeEvent(event: Event) {
+  return {
+    id: event.id,
+    producerId: event.producerId,
+    title: event.title,
+    description: event.description,
+    date: event.date.toISOString(),
+    location: event.location,
+    status: event.status,
+    ticketLots: (event.ticketLots ?? []).map((lot) => ({
+      id: lot.id,
+      name: lot.name,
+      price: lot.price,
+      totalQuantity: lot.totalQuantity,
+      availableQuantity: lot.availableQuantity,
+    })),
+  };
+}
+
 export class EventController {
   async listPublished(_req: Request, res: Response): Promise<void> {
     const events = await eventService.listPublished();
     res.status(200).json({
-      events: events.map((event) => ({
-        id: event.id,
-        title: event.title,
-        description: event.description,
-        date: event.date.toISOString(),
-        location: event.location,
-        status: event.status,
-        ticketLots: (event.ticketLots ?? []).map((lot) => ({
-          id: lot.id,
-          name: lot.name,
-          price: lot.price,
-          totalQuantity: lot.totalQuantity,
-          availableQuantity: lot.availableQuantity,
-        })),
-      })),
+      events: events.map((event) => serializeEvent(event)),
+    });
+  }
+
+  async listMine(req: Request, res: Response): Promise<void> {
+    const actor = requireActor(req, res);
+    if (!actor) return;
+
+    const events = await eventService.listManaged(actor);
+    res.status(200).json({
+      events: events.map((event) => serializeEvent(event)),
     });
   }
 
   async getPublished(req: Request, res: Response): Promise<void> {
-    const eventIdParam = req.params.eventId;
-    const eventId =
-      typeof eventIdParam === "string"
-        ? eventIdParam
-        : Array.isArray(eventIdParam)
-          ? eventIdParam[0]
-          : "";
-
+    const eventId = parseEventId(req.params.eventId);
     if (!eventId) {
       res.status(400).json({ error: "eventId is required", code: "VALIDATION_ERROR" });
       return;
@@ -59,26 +91,13 @@ export class EventController {
       return;
     }
 
-    res.status(200).json({
-      event: {
-        id: event.id,
-        title: event.title,
-        description: event.description,
-        date: event.date.toISOString(),
-        location: event.location,
-        status: event.status,
-        ticketLots: (event.ticketLots ?? []).map((lot) => ({
-          id: lot.id,
-          name: lot.name,
-          price: lot.price,
-          totalQuantity: lot.totalQuantity,
-          availableQuantity: lot.availableQuantity,
-        })),
-      },
-    });
+    res.status(200).json({ event: serializeEvent(event) });
   }
 
   async create(req: Request, res: Response): Promise<void> {
+    const actor = requireActor(req, res);
+    if (!actor) return;
+
     try {
       const { title, description, date, location, status } = req.body as Record<string, unknown>;
       if (!title || !description || !date || !location) {
@@ -89,41 +108,28 @@ export class EventController {
         return;
       }
 
-      const created = await eventService.createEvent({
-        title: String(title),
-        description: String(description),
-        date: String(date),
-        location: String(location),
-        status: parseEventStatus(status),
-      });
-
-      res.status(201).json({
-        event: {
-          id: created.id,
-          title: created.title,
-          description: created.description,
-          date: created.date.toISOString(),
-          location: created.location,
-          status: created.status,
+      const created = await eventService.createEvent(
+        {
+          title: String(title),
+          description: String(description),
+          date: String(date),
+          location: String(location),
+          status: parseEventStatus(status),
         },
-      });
+        actor,
+      );
+
+      res.status(201).json({ event: serializeEvent(created) });
     } catch (error) {
-      logger.error(CONTEXT, "Failed to create event", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      res.status(400).json({ error: "Invalid payload", code: "VALIDATION_ERROR" });
+      this.handleError(res, error, "create");
     }
   }
 
   async update(req: Request, res: Response): Promise<void> {
-    const eventIdParam = req.params.eventId;
-    const eventId =
-      typeof eventIdParam === "string"
-        ? eventIdParam
-        : Array.isArray(eventIdParam)
-          ? eventIdParam[0]
-          : "";
+    const actor = requireActor(req, res);
+    if (!actor) return;
 
+    const eventId = parseEventId(req.params.eventId);
     if (!eventId) {
       res.status(400).json({ error: "eventId is required", code: "VALIDATION_ERROR" });
       return;
@@ -131,47 +137,29 @@ export class EventController {
 
     try {
       const { title, description, date, location, status } = req.body as Record<string, unknown>;
-      const updated = await eventService.updateEvent(eventId, {
-        title: title === undefined ? undefined : String(title),
-        description: description === undefined ? undefined : String(description),
-        date: date === undefined ? undefined : String(date),
-        location: location === undefined ? undefined : String(location),
-        status: parseEventStatus(status),
-      });
-
-      if (!updated) {
-        res.status(404).json({ error: "Event not found", code: "NOT_FOUND" });
-        return;
-      }
-
-      res.status(200).json({
-        event: {
-          id: updated.id,
-          title: updated.title,
-          description: updated.description,
-          date: updated.date.toISOString(),
-          location: updated.location,
-          status: updated.status,
-        },
-      });
-    } catch (error) {
-      logger.error(CONTEXT, "Failed to update event", {
+      const updated = await eventService.updateEvent(
         eventId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      res.status(400).json({ error: "Invalid payload", code: "VALIDATION_ERROR" });
+        {
+          title: title === undefined ? undefined : String(title),
+          description: description === undefined ? undefined : String(description),
+          date: date === undefined ? undefined : String(date),
+          location: location === undefined ? undefined : String(location),
+          status: parseEventStatus(status),
+        },
+        actor,
+      );
+
+      res.status(200).json({ event: serializeEvent(updated) });
+    } catch (error) {
+      this.handleError(res, error, "update", { eventId });
     }
   }
 
   async createLot(req: Request, res: Response): Promise<void> {
-    const eventIdParam = req.params.eventId;
-    const eventId =
-      typeof eventIdParam === "string"
-        ? eventIdParam
-        : Array.isArray(eventIdParam)
-          ? eventIdParam[0]
-          : "";
+    const actor = requireActor(req, res);
+    if (!actor) return;
 
+    const eventId = parseEventId(req.params.eventId);
     if (!eventId) {
       res.status(400).json({ error: "eventId is required", code: "VALIDATION_ERROR" });
       return;
@@ -187,17 +175,17 @@ export class EventController {
         return;
       }
 
-      const lot = await eventService.createTicketLot(eventId, {
-        name: String(name),
-        price: Number(price),
-        totalQuantity: Number(totalQuantity),
-        availableQuantity: availableQuantity === undefined ? undefined : Number(availableQuantity),
-      });
-
-      if (!lot) {
-        res.status(404).json({ error: "Event not found", code: "NOT_FOUND" });
-        return;
-      }
+      const lot = await eventService.createTicketLot(
+        eventId,
+        {
+          name: String(name),
+          price: Number(price),
+          totalQuantity: Number(totalQuantity),
+          availableQuantity:
+            availableQuantity === undefined ? undefined : Number(availableQuantity),
+        },
+        actor,
+      );
 
       res.status(201).json({
         ticketLot: {
@@ -210,12 +198,36 @@ export class EventController {
         },
       });
     } catch (error) {
-      logger.error(CONTEXT, "Failed to create ticket lot", {
-        eventId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      res.status(400).json({ error: "Invalid payload", code: "VALIDATION_ERROR" });
+      this.handleError(res, error, "createLot", { eventId });
     }
+  }
+
+  private handleError(
+    res: Response,
+    error: unknown,
+    action: string,
+    context: Record<string, unknown> = {},
+  ): void {
+    if (error instanceof EventNotFoundError) {
+      res.status(404).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof EventAccessDeniedError) {
+      res.status(403).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof EventError) {
+      res.status(400).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    logger.error(CONTEXT, `Failed to ${action} event`, {
+      ...context,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    res.status(400).json({ error: "Invalid payload", code: "VALIDATION_ERROR" });
   }
 }
 
@@ -225,4 +237,3 @@ export const eventManagementMiddlewares = [
   authMiddleware,
   roleMiddleware([UserRole.ADMIN, UserRole.PRODUCER]),
 ] as const;
-
