@@ -13,10 +13,16 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { IconChevronDown, IconLogout, IconTicket, IconUser } from "@tabler/icons-react";
+import {
+  IconChevronDown,
+  IconLayoutDashboard,
+  IconLogout,
+  IconTicket,
+  IconUser,
+} from "@tabler/icons-react";
 import { useAuth } from "../context/AuthContext";
 
-const NAV_LINKS = [
+const CLIENT_NAV_LINKS = [
   { to: "/", label: "Eventos" },
   { to: "/ingressos", label: "Meus ingressos" },
   { to: "/pedidos", label: "Meus pedidos" },
@@ -25,13 +31,19 @@ const NAV_LINKS = [
 function NavLinks({
   onNavigate,
   currentPath,
+  isProducer,
 }: {
   onNavigate?: () => void;
   currentPath: string;
+  isProducer: boolean;
 }) {
+  const links = isProducer
+    ? [...CLIENT_NAV_LINKS, { to: "/produtor", label: "Painel produtor" } as const]
+    : CLIENT_NAV_LINKS;
+
   return (
     <>
-      {NAV_LINKS.map((link) => {
+      {links.map((link) => {
         const isActive =
           link.to === "/"
             ? currentPath === "/"
@@ -61,6 +73,8 @@ export function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
+
+  const isProducer = user?.role === "PRODUCER" || user?.role === "ADMIN";
 
   const handleLogout = () => {
     clearSession();
@@ -105,7 +119,7 @@ export function Layout() {
             </Group>
 
             <Group gap="lg" visibleFrom="sm">
-              <NavLinks onNavigate={close} currentPath={currentPath} />
+              <NavLinks onNavigate={close} currentPath={currentPath} isProducer={isProducer} />
             </Group>
 
             <Group gap="sm" wrap="nowrap">
@@ -114,7 +128,7 @@ export function Layout() {
                   Carregando
                 </Button>
               ) : isAuthenticated && user ? (
-                <Menu shadow="md" width={200} position="bottom-end">
+                <Menu shadow="md" width={220} position="bottom-end">
                   <Menu.Target>
                     <Button
                       variant="light"
@@ -126,6 +140,16 @@ export function Layout() {
                   </Menu.Target>
                   <Menu.Dropdown>
                     <Menu.Label>{user.email}</Menu.Label>
+                    {isProducer ? (
+                      <Menu.Item
+                        component={Link}
+                        to="/produtor"
+                        leftSection={<IconLayoutDashboard size={16} />}
+                        onClick={close}
+                      >
+                        Painel produtor
+                      </Menu.Item>
+                    ) : null}
                     <Menu.Item leftSection={<IconLogout size={16} />} onClick={handleLogout}>
                       Sair
                     </Menu.Item>
@@ -154,13 +178,25 @@ export function Layout() {
 
       <AppShell.Navbar p="md" hiddenFrom="sm">
         <Stack gap="md">
-          <NavLinks onNavigate={close} currentPath={currentPath} />
+          <NavLinks onNavigate={close} currentPath={currentPath} isProducer={isProducer} />
           <Box pt="sm">
             {isAuthenticated && user ? (
               <Stack gap="xs">
                 <Text size="sm" c="dimmed">
                   {user.name}
                 </Text>
+                {isProducer ? (
+                  <Button
+                    fullWidth
+                    variant="light"
+                    component={Link}
+                    to="/produtor"
+                    onClick={close}
+                    leftSection={<IconLayoutDashboard size={16} />}
+                  >
+                    Painel produtor
+                  </Button>
+                ) : null}
                 <Button
                   fullWidth
                   variant="light"

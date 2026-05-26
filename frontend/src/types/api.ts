@@ -20,6 +20,8 @@ export interface TicketLot {
   availableQuantity: number;
 }
 
+export type EventStatus = "DRAFT" | "PUBLISHED" | "CANCELLED" | "FINISHED";
+
 export interface Event {
   id: string;
   producerId: string;
@@ -27,7 +29,7 @@ export interface Event {
   description: string;
   date: string;
   location: string;
-  status: string;
+  status: EventStatus | string;
   ticketLots: TicketLot[];
 }
 

@@ -30,6 +30,36 @@ export function getOrderStatusColor(status: string): BadgeProps["color"] {
   }
 }
 
+export function getEventStatusLabel(status: string): string {
+  switch (status) {
+    case "DRAFT":
+      return "Rascunho";
+    case "PUBLISHED":
+      return "Publicado";
+    case "CANCELLED":
+      return "Cancelado";
+    case "FINISHED":
+      return "Encerrado";
+    default:
+      return status;
+  }
+}
+
+export function getEventStatusColor(status: string): BadgeProps["color"] {
+  switch (status) {
+    case "DRAFT":
+      return "gray";
+    case "PUBLISHED":
+      return "green";
+    case "CANCELLED":
+      return "red";
+    case "FINISHED":
+      return "blue";
+    default:
+      return "gray";
+  }
+}
+
 export function getTicketStatusLabel(status: string): string {
   switch (status) {
     case "ACTIVE":

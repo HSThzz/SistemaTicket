@@ -1,5 +1,6 @@
-import { Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { Badge, Card, Center, Group, Stack, Text, Title } from "@mantine/core";
 import { IconCalendar, IconMapPin, IconTicket } from "@tabler/icons-react";
+import { QRCodeSVG } from "qrcode.react";
 import type { TicketListItem } from "../types/api";
 import { formatShortDate } from "../utils/format";
 import { getTicketStatusColor, getTicketStatusLabel } from "../utils/statusLabels";
@@ -9,13 +10,17 @@ interface TicketCardProps {
 }
 
 export function TicketCard({ ticket }: TicketCardProps) {
+  const showQr = ticket.status === "ACTIVE";
+
   return (
     <Card padding="lg" radius="md" withBorder>
       <Stack gap="md">
-        <Group justify="space-between" align="flex-start">
-          <Group gap="xs">
+        <Group justify="space-between" align="flex-start" wrap="nowrap">
+          <Group gap="xs" wrap="nowrap">
             <IconTicket size={22} color="var(--mantine-color-brand-6)" />
-            <Title order={4}>{ticket.event.title}</Title>
+            <Title order={4} lineClamp={2}>
+              {ticket.event.title}
+            </Title>
           </Group>
           <Badge color={getTicketStatusColor(ticket.status)} variant="light">
             {getTicketStatusLabel(ticket.status)}
@@ -36,6 +41,17 @@ export function TicketCard({ ticket }: TicketCardProps) {
           </Group>
         </Stack>
 
+        {showQr ? (
+          <Center>
+            <Stack gap="xs" align="center">
+              <PaperLikeQr code={ticket.uniqueCode} />
+              <Text size="xs" c="dimmed" ta="center">
+                Apresente este QR na entrada do evento
+              </Text>
+            </Stack>
+          </Center>
+        ) : null}
+
         <Stack gap={4}>
           <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
             Código do ingresso
@@ -52,5 +68,20 @@ export function TicketCard({ ticket }: TicketCardProps) {
         ) : null}
       </Stack>
     </Card>
+  );
+}
+
+function PaperLikeQr({ code }: { code: string }) {
+  return (
+    <div
+      style={{
+        padding: 12,
+        background: "white",
+        borderRadius: 8,
+        border: "1px solid var(--mantine-color-gray-3)",
+      }}
+    >
+      <QRCodeSVG value={code} size={160} level="M" includeMargin={false} />
+    </div>
   );
 }

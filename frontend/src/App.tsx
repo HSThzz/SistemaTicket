@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { GuestRoute } from "./components/GuestRoute";
 import { Layout } from "./components/Layout";
+import { ProducerRoute } from "./components/ProducerRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { CheckoutPage } from "./pages/CheckoutPage";
@@ -10,6 +11,10 @@ import { LoginPage } from "./pages/LoginPage";
 import { MyOrdersPage } from "./pages/MyOrdersPage";
 import { MyTicketsPage } from "./pages/MyTicketsPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { ProducerCheckInPage } from "./pages/producer/ProducerCheckInPage";
+import { ProducerCreateEventPage } from "./pages/producer/ProducerCreateEventPage";
+import { ProducerEventsPage } from "./pages/producer/ProducerEventsPage";
+import { ProducerManageEventPage } from "./pages/producer/ProducerManageEventPage";
 
 export default function App() {
   return (
@@ -29,6 +34,13 @@ export default function App() {
               <Route path="ingressos" element={<MyTicketsPage />} />
               <Route path="pedidos" element={<MyOrdersPage />} />
               <Route path="eventos/:eventId/comprar" element={<CheckoutPage />} />
+            </Route>
+
+            <Route element={<ProducerRoute />}>
+              <Route path="produtor" element={<ProducerEventsPage />} />
+              <Route path="produtor/eventos/novo" element={<ProducerCreateEventPage />} />
+              <Route path="produtor/eventos/:eventId" element={<ProducerManageEventPage />} />
+              <Route path="produtor/check-in" element={<ProducerCheckInPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />
