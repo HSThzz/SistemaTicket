@@ -8,6 +8,7 @@ import { globalRateLimiter } from "./middlewares/rateLimiter";
 import { requestLogger } from "./middlewares/requestLogger";
 import routes from "./routes";
 import { PaymentService } from "./services/PaymentService";
+import { setReservationPersistenceWorker } from "./runtime/workerRegistry";
 import { ReservationExpiryWorker } from "./workers/ReservationExpiryWorker";
 import { ReservationPersistenceWorker } from "./workers/ReservationPersistenceWorker";
 
@@ -64,6 +65,8 @@ async function bootstrap(): Promise<void> {
     });
     process.exit(1);
   }
+
+  setReservationPersistenceWorker(persistenceWorker);
 
   const app = express();
 

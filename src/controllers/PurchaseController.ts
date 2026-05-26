@@ -3,10 +3,16 @@ import { AppDataSource } from "../config/data-source";
 import { Logger } from "../config/logger";
 import { getRedis } from "../config/redis";
 import {
+  RESERVATION_PERSIST_DLQ_KEY,
+  RESERVATION_PERSIST_RETRY_QUEUE_KEY,
+  RESERVATION_PERSIST_RETRY_SCHEDULE_KEY,
+} from "../config/constants";
+import {
   PurchaseError,
   ReservationAccessDeniedError,
   ReservationNotFoundError,
 } from "../errors/PurchaseError";
+import { getReservationPersistenceWorker } from "../runtime/workerRegistry";
 import { QueueMonitorService } from "../services/QueueMonitorService";
 import { ReservationStatusService } from "../services/ReservationStatusService";
 import { PurchaseService } from "../services/PurchaseService";
@@ -118,6 +124,103 @@ export class PurchaseController {
         code: "INTERNAL_ERROR",
       });
     }
+  }
+
+  async getWorkerMetrics(_req: Request, res: Response): Promise<void> {
+    const worker = getReservationPersistenceWorker();
+    if (!worker) {
+      res.status(503).json({
+        error: "ReservationPersistenceWorker is not running",
+        code: "WORKER_NOT_RUNNING",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      worker: "ReservationPersistenceWorker",
+      metrics: worker.getMetrics(),
+      sampledAt: new Date().toISOString(),
+    });
+  }
+
+  async listDlq(_req: Request, res: Response): Promise<void> {
+    const redis = getRedis();
+
+    const size = Number((_req.query.size as string) ?? "20");
+    const limit = Number.isFinite(size) ? Math.max(1, Math.min(200, size)) : 20;
+
+    const [length, items] = await Promise.all([
+      redis.llen(RESERVATION_PERSIST_DLQ_KEY),
+      redis.lrange(RESERVATION_PERSIST_DLQ_KEY, 0, limit - 1),
+    ]);
+
+    res.status(200).json({
+      dlqKey: RESERVATION_PERSIST_DLQ_KEY,
+      length,
+      items: items.map((raw) => {
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return { raw };
+        }
+      }),
+      sampledAt: new Date().toISOString(),
+    });
+  }
+
+  async reprocessDlq(req: Request, res: Response): Promise<void> {
+    const redis = getRedis();
+
+    const { count } = req.body as { count?: number };
+    const requested = Number(count ?? 10);
+    const toMove = Number.isFinite(requested)
+      ? Math.max(1, Math.min(500, requested))
+      : 10;
+
+    let moved = 0;
+
+    for (let i = 0; i < toMove; i += 1) {
+      const raw = await redis.rpop(RESERVATION_PERSIST_DLQ_KEY);
+      if (!raw) break;
+
+      let payload: Record<string, unknown>;
+      try {
+        payload = JSON.parse(raw) as Record<string, unknown>;
+      } catch {
+        payload = { raw };
+      }
+
+      const cleaned = {
+        reservationId: payload.reservationId,
+        userId: payload.userId,
+        ticketLotId: payload.ticketLotId,
+        quantity: payload.quantity,
+        expiresAt: payload.expiresAt,
+        attempt: 1,
+      };
+
+      // Empurra para retry imediato para reprocessar rapidamente.
+      await redis.lpush(RESERVATION_PERSIST_RETRY_QUEUE_KEY, JSON.stringify(cleaned));
+      moved += 1;
+    }
+
+    const [dlqLength, retryQueueLength, retryScheduled] = await Promise.all([
+      redis.llen(RESERVATION_PERSIST_DLQ_KEY),
+      redis.llen(RESERVATION_PERSIST_RETRY_QUEUE_KEY),
+      redis.zcard(RESERVATION_PERSIST_RETRY_SCHEDULE_KEY),
+    ]);
+
+    res.status(200).json({
+      moved,
+      dlq: { key: RESERVATION_PERSIST_DLQ_KEY, length: dlqLength },
+      retry: {
+        queueKey: RESERVATION_PERSIST_RETRY_QUEUE_KEY,
+        queueLength: retryQueueLength,
+        scheduleKey: RESERVATION_PERSIST_RETRY_SCHEDULE_KEY,
+        scheduled: retryScheduled,
+      },
+      sampledAt: new Date().toISOString(),
+    });
   }
 
   private handlePurchaseError(

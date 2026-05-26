@@ -27,4 +27,25 @@ router.get(
   (req, res) => void purchaseController.getQueueStats(req, res),
 );
 
+router.get(
+  "/ops/worker",
+  authMiddleware,
+  roleMiddleware([UserRole.ADMIN, UserRole.PRODUCER]),
+  (req, res) => void purchaseController.getWorkerMetrics(req, res),
+);
+
+router.get(
+  "/ops/dlq",
+  authMiddleware,
+  roleMiddleware([UserRole.ADMIN, UserRole.PRODUCER]),
+  (req, res) => void purchaseController.listDlq(req, res),
+);
+
+router.post(
+  "/ops/dlq/reprocess",
+  authMiddleware,
+  roleMiddleware([UserRole.ADMIN, UserRole.PRODUCER]),
+  (req, res) => void purchaseController.reprocessDlq(req, res),
+);
+
 export default router;
