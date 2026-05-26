@@ -79,7 +79,10 @@ export function Layout() {
   const location = useLocation();
   const currentPath = location.pathname;
   const isHome = currentPath === "/";
-  const isFullWidthPage = isHome || /^\/eventos\/[^/]+$/.test(currentPath);
+  const isFullWidthPage =
+    isHome ||
+    /^\/eventos\/[^/]+$/.test(currentPath) ||
+    /^\/produtor\/eventos\/[^/]+$/.test(currentPath);
 
   const isProducer = user?.role === "PRODUCER" || user?.role === "ADMIN";
 

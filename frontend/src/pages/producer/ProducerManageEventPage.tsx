@@ -1,37 +1,48 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Alert,
   Badge,
+  Box,
   Button,
+  Container,
   Grid,
   Group,
   NumberInput,
   Select,
+  SimpleGrid,
   Stack,
-  Table,
   Text,
   Textarea,
   TextInput,
+  ThemeIcon,
   Title,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import {
   IconAlertCircle,
+  IconCalendar,
   IconCheck,
+  IconExternalLink,
+  IconMapPin,
+  IconPlus,
   IconRocket,
   IconSettings,
+  IconTicket,
   IconX,
 } from "@tabler/icons-react";
 import { AnimatedSection } from "../../components/home/AnimatedSection";
 import { BackButton } from "../../components/account/BackButton";
-import { PageHeader } from "../../components/account/PageHeader";
+import { EmptyState } from "../../components/account/EmptyState";
 import { PageLoader } from "../../components/account/PageLoader";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
+import { StatCard } from "../../components/account/StatCard";
+import { ProducerLotCard } from "../../components/producer/ProducerLotCard";
 import * as eventService from "../../services/eventService";
 import type { Event, EventStatus } from "../../types/api";
-import { formatCurrencyFromCents, formatShortDate } from "../../utils/format";
+import { getEventCoverStyle } from "../../utils/eventVisuals";
+import { formatEventDate } from "../../utils/format";
 import { getApiErrorMessage } from "../../utils/errors";
 import { getEventStatusColor, getEventStatusLabel } from "../../utils/statusLabels";
 
@@ -142,6 +153,22 @@ export function ProducerManageEventPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
+
+  const lotSummary = useMemo(() => {
+    if (!event) {
+      return { lots: 0, capacity: 0, sold: 0, available: 0 };
+    }
+
+    const capacity = event.ticketLots.reduce((sum, lot) => sum + lot.totalQuantity, 0);
+    const available = event.ticketLots.reduce((sum, lot) => sum + lot.availableQuantity, 0);
+
+    return {
+      lots: event.ticketLots.length,
+      capacity,
+      sold: capacity - available,
+      available,
+    };
+  }, [event]);
 
   const reloadEvent = async () => {
     if (!eventId) {
@@ -260,139 +287,258 @@ export function ProducerManageEventPage() {
 
   if (error || !event) {
     return (
-      <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro" radius="lg">
-        {error ?? "Evento não encontrado."}
-      </Alert>
+      <Stack gap="md">
+        <BackButton to="/produtor/eventos" label="Voltar aos eventos" />
+        <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro" radius="lg">
+          {error ?? "Evento não encontrado."}
+        </Alert>
+      </Stack>
     );
   }
 
   return (
-    <Stack gap="lg">
-      <BackButton to="/produtor/eventos" label="Voltar aos eventos" />
-
-      <AnimatedSection>
-        <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
-          <PageHeader
-            icon={<IconSettings size={28} color="var(--mantine-color-brand-6)" />}
-            title="Gerenciar"
-            highlight="evento"
-            description={`${formatShortDate(event.date)} · ${event.location}`}
-          />
-          <Group gap="sm">
-            <Badge color={getEventStatusColor(event.status)} variant="light" size="lg" radius="sm">
-              {getEventStatusLabel(event.status)}
-            </Badge>
-            {event.status === "DRAFT" ? (
-              <Button
-                leftSection={<IconRocket size={18} />}
-                loading={savingEvent}
-                radius="xl"
-                onClick={() => void handlePublish()}
-              >
-                Publicar evento
-              </Button>
-            ) : null}
-          </Group>
-        </Group>
-      </AnimatedSection>
-
-      <Grid>
-        <Grid.Col span={{ base: 12, md: 7 }}>
-          <AnimatedSection delayMs={60}>
-            <PremiumPaper p="xl">
-              <form onSubmit={handleSaveEvent}>
-                <Stack gap="md">
-                  <Title order={4}>Detalhes do evento</Title>
-                  <TextInput label="Título" radius="md" {...eventForm.getInputProps("title")} />
-                  <Textarea label="Descrição" minRows={4} radius="md" {...eventForm.getInputProps("description")} />
-                  <TextInput label="Data e hora" type="datetime-local" radius="md" {...eventForm.getInputProps("date")} />
-                  <TextInput label="Local" radius="md" {...eventForm.getInputProps("location")} />
-                  <Select
-                    label="Status"
-                    radius="md"
-                    data={[
-                      { value: "DRAFT", label: "Rascunho" },
-                      { value: "PUBLISHED", label: "Publicado" },
-                      { value: "CANCELLED", label: "Cancelado" },
-                      { value: "FINISHED", label: "Encerrado" },
-                    ]}
-                    {...eventForm.getInputProps("status")}
-                  />
-                  <Group justify="flex-end" pt="sm">
-                    <Button type="submit" loading={savingEvent} variant="light" radius="xl">
-                      Salvar alterações
-                    </Button>
+    <Stack gap={0}>
+      <Box className="producer-manage-hero full-bleed" style={getEventCoverStyle(event.id)}>
+        <Box className="producer-manage-hero-overlay" />
+        <Container size="lg" px="md" className="producer-manage-hero-content">
+          <Stack gap="md">
+            <BackButton
+              to="/produtor/eventos"
+              label="Voltar aos eventos"
+              inverted
+              style={{ alignSelf: "flex-start" }}
+            />
+            <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
+              <Stack gap="sm" maw={640}>
+                <Group gap="sm" wrap="wrap">
+                  <Badge color={getEventStatusColor(event.status)} variant="filled" radius="sm">
+                    {getEventStatusLabel(event.status)}
+                  </Badge>
+                  <Badge color="white" c="dark" variant="filled" radius="sm">
+                    {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}
+                  </Badge>
+                </Group>
+                <Title
+                  order={1}
+                  style={{
+                    fontSize: "clamp(1.5rem, 4vw, 2.25rem)",
+                    lineHeight: 1.15,
+                    letterSpacing: "-0.02em",
+                  }}
+                >
+                  {event.title}
+                </Title>
+                <Group gap="lg" wrap="wrap" c="white" opacity={0.92}>
+                  <Group gap={6}>
+                    <IconCalendar size={18} />
+                    <Text size="sm" fw={500}>
+                      {formatEventDate(event.date)}
+                    </Text>
                   </Group>
-                </Stack>
-              </form>
-            </PremiumPaper>
-          </AnimatedSection>
-        </Grid.Col>
-
-        <Grid.Col span={{ base: 12, md: 5 }}>
-          <AnimatedSection delayMs={100}>
-            <PremiumPaper p="xl">
-              <form onSubmit={handleCreateLot}>
-                <Stack gap="md">
-                  <Title order={4}>Novo lote</Title>
-                  <TextInput label="Nome do lote" placeholder="Pista, VIP..." radius="md" {...lotForm.getInputProps("name")} />
-                  <NumberInput
-                    label="Preço (R$)"
-                    decimalScale={2}
-                    fixedDecimalScale
-                    min={0.01}
-                    radius="md"
-                    {...lotForm.getInputProps("priceReais")}
-                  />
-                  <NumberInput label="Quantidade total" min={1} radius="md" {...lotForm.getInputProps("totalQuantity")} />
-                  <Button type="submit" loading={creatingLot} radius="xl">
-                    Adicionar lote
+                  <Group gap={6} maw={400}>
+                    <IconMapPin size={18} style={{ flexShrink: 0 }} />
+                    <Text size="sm" fw={500} lineClamp={1}>
+                      {event.location}
+                    </Text>
+                  </Group>
+                </Group>
+              </Stack>
+              <Group gap="sm" wrap="wrap">
+                {event.status === "DRAFT" ? (
+                  <Button
+                    leftSection={<IconRocket size={18} />}
+                    loading={savingEvent}
+                    radius="xl"
+                    onClick={() => void handlePublish()}
+                  >
+                    Publicar evento
                   </Button>
-                </Stack>
-              </form>
-            </PremiumPaper>
-          </AnimatedSection>
-        </Grid.Col>
-      </Grid>
-
-      <AnimatedSection delayMs={140}>
-        <PremiumPaper p="xl" className="data-table-panel">
-          <Stack gap="lg">
-            <Title order={4}>Lotes cadastrados</Title>
-
-            {event.ticketLots.length === 0 ? (
-              <Text c="dimmed">Nenhum lote cadastrado ainda.</Text>
-            ) : (
-              <Table highlightOnHover withTableBorder>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Nome</Table.Th>
-                    <Table.Th>Preço</Table.Th>
-                    <Table.Th>Total</Table.Th>
-                    <Table.Th>Disponível</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {event.ticketLots.map((lot) => (
-                    <Table.Tr key={lot.id}>
-                      <Table.Td>{lot.name}</Table.Td>
-                      <Table.Td>{formatCurrencyFromCents(lot.price)}</Table.Td>
-                      <Table.Td>{lot.totalQuantity}</Table.Td>
-                      <Table.Td>{lot.availableQuantity}</Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            )}
-
-            {event.status === "PUBLISHED" ? (
-              <Button component={Link} to={`/eventos/${event.id}`} variant="light" radius="xl" w="fit-content">
-                Ver na vitrine pública
-              </Button>
-            ) : null}
+                ) : null}
+                {event.status === "PUBLISHED" ? (
+                  <Button
+                    component={Link}
+                    to={`/eventos/${event.id}`}
+                    variant="white"
+                    color="dark"
+                    radius="xl"
+                    leftSection={<IconExternalLink size={18} />}
+                  >
+                    Ver na vitrine
+                  </Button>
+                ) : null}
+              </Group>
+            </Group>
           </Stack>
-        </PremiumPaper>
-      </AnimatedSection>
+        </Container>
+      </Box>
+
+      <Container size="lg" py="xl" px="md">
+        <Stack gap="xl">
+          <AnimatedSection>
+            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
+              <StatCard label="Lotes" value={String(lotSummary.lots)} icon={<IconTicket size={20} />} />
+              <StatCard
+                label="Capacidade"
+                value={String(lotSummary.capacity)}
+                icon={<IconTicket size={20} />}
+                iconColor="grape"
+                valueColor="grape"
+              />
+              <StatCard
+                label="Vendidos"
+                value={String(lotSummary.sold)}
+                icon={<IconTicket size={20} />}
+                iconColor="teal"
+                valueColor="teal"
+              />
+              <StatCard
+                label="Disponíveis"
+                value={String(lotSummary.available)}
+                icon={<IconTicket size={20} />}
+                iconColor="blue"
+                valueColor="blue"
+              />
+            </SimpleGrid>
+          </AnimatedSection>
+
+          <Grid>
+            <Grid.Col span={{ base: 12, md: 7 }}>
+              <AnimatedSection delayMs={60}>
+                <PremiumPaper p="xl">
+                  <form onSubmit={handleSaveEvent}>
+                    <Stack gap="lg">
+                      <Group gap="sm" className="producer-form-section-title">
+                        <ThemeIcon size={36} radius="md" variant="light" color="brand">
+                          <IconSettings size={18} />
+                        </ThemeIcon>
+                        <Title order={3} size="h4" className="producer-section-title">
+                          Detalhes do evento
+                        </Title>
+                      </Group>
+                      <TextInput label="Título" radius="md" {...eventForm.getInputProps("title")} />
+                      <Textarea
+                        label="Descrição"
+                        minRows={4}
+                        radius="md"
+                        {...eventForm.getInputProps("description")}
+                      />
+                      <TextInput
+                        label="Data e hora"
+                        type="datetime-local"
+                        radius="md"
+                        {...eventForm.getInputProps("date")}
+                      />
+                      <TextInput label="Local" radius="md" {...eventForm.getInputProps("location")} />
+                      <Select
+                        label="Status"
+                        radius="md"
+                        data={[
+                          { value: "DRAFT", label: "Rascunho" },
+                          { value: "PUBLISHED", label: "Publicado" },
+                          { value: "CANCELLED", label: "Cancelado" },
+                          { value: "FINISHED", label: "Encerrado" },
+                        ]}
+                        {...eventForm.getInputProps("status")}
+                      />
+                      <Group justify="flex-end" pt="xs">
+                        <Button type="submit" loading={savingEvent} radius="xl">
+                          Salvar alterações
+                        </Button>
+                      </Group>
+                    </Stack>
+                  </form>
+                </PremiumPaper>
+              </AnimatedSection>
+            </Grid.Col>
+
+            <Grid.Col span={{ base: 12, md: 5 }}>
+              <AnimatedSection delayMs={100}>
+                <PremiumPaper p="xl">
+                  <form onSubmit={handleCreateLot}>
+                    <Stack gap="lg">
+                      <Group gap="sm" className="producer-form-section-title">
+                        <ThemeIcon size={36} radius="md" variant="light" color="teal">
+                          <IconPlus size={18} />
+                        </ThemeIcon>
+                        <Title order={3} size="h4" className="producer-section-title">
+                          Novo lote
+                        </Title>
+                      </Group>
+                      <TextInput
+                        label="Nome do lote"
+                        placeholder="Pista, VIP..."
+                        radius="md"
+                        {...lotForm.getInputProps("name")}
+                      />
+                      <NumberInput
+                        label="Preço (R$)"
+                        decimalScale={2}
+                        fixedDecimalScale
+                        min={0.01}
+                        radius="md"
+                        {...lotForm.getInputProps("priceReais")}
+                      />
+                      <NumberInput
+                        label="Quantidade total"
+                        min={1}
+                        radius="md"
+                        {...lotForm.getInputProps("totalQuantity")}
+                      />
+                      <Button
+                        type="submit"
+                        loading={creatingLot}
+                        radius="xl"
+                        fullWidth
+                        leftSection={<IconPlus size={18} />}
+                      >
+                        Adicionar lote
+                      </Button>
+                    </Stack>
+                  </form>
+                </PremiumPaper>
+              </AnimatedSection>
+            </Grid.Col>
+          </Grid>
+
+          <AnimatedSection delayMs={140}>
+            <Stack gap="md">
+              <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+                <Stack gap={4}>
+                  <Title order={3} size="h4" className="producer-section-title">
+                    Lotes cadastrados
+                  </Title>
+                  <Text c="dimmed" size="sm">
+                    Acompanhe preço, estoque e ocupação de cada lote.
+                  </Text>
+                </Stack>
+                {event.ticketLots.length > 0 ? (
+                  <Badge size="lg" variant="light" color="brand" radius="sm">
+                    {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}
+                  </Badge>
+                ) : null}
+              </Group>
+
+              {event.ticketLots.length === 0 ? (
+                <PremiumPaper p="xl">
+                  <EmptyState
+                    icon={<IconTicket size={32} />}
+                    title="Nenhum lote cadastrado"
+                    description="Adicione pelo menos um lote para começar a vender ingressos deste evento."
+                  />
+                </PremiumPaper>
+              ) : (
+                <Stack gap="md">
+                  {event.ticketLots.map((lot, index) => (
+                    <AnimatedSection key={lot.id} delayMs={160 + index * 40}>
+                      <ProducerLotCard lot={lot} />
+                    </AnimatedSection>
+                  ))}
+                </Stack>
+              )}
+            </Stack>
+          </AnimatedSection>
+        </Stack>
+      </Container>
     </Stack>
   );
 }

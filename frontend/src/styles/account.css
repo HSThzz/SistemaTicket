@@ -254,6 +254,104 @@
   ) !important;
 }
 
+/* Gerenciar evento — hero e lotes */
+.producer-manage-hero,
+.producer-create-hero {
+  position: relative;
+  min-height: 220px;
+  overflow: hidden;
+}
+
+.producer-create-hero {
+  background: linear-gradient(135deg, #6366f1 0%, #4a6fe8 45%, #14b8a6 100%);
+}
+
+.producer-create-steps {
+  padding: var(--mantine-spacing-lg);
+  border-radius: var(--mantine-radius-lg);
+  background: light-dark(rgba(74, 111, 232, 0.06), rgba(74, 111, 232, 0.1));
+  border: 1px solid light-dark(rgba(74, 111, 232, 0.15), rgba(74, 111, 232, 0.25));
+}
+
+.producer-create-step {
+  display: flex;
+  gap: var(--mantine-spacing-md);
+  align-items: flex-start;
+}
+
+.producer-create-step-number {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 700;
+  background: var(--mantine-color-brand-filled);
+  color: var(--mantine-color-white);
+}
+
+.producer-manage-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.5) 55%,
+    rgba(0, 0, 0, 0.88) 100%
+  );
+}
+
+.producer-manage-hero-content {
+  position: relative;
+  z-index: 1;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: var(--mantine-spacing-xl) 0;
+  color: white;
+}
+
+.producer-section-title {
+  font-size: var(--mantine-font-size-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.producer-lot-card {
+  padding: var(--mantine-spacing-lg) var(--mantine-spacing-xl);
+  border-radius: var(--mantine-radius-lg);
+  border: 1px solid var(--mantine-color-default-border);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.producer-lot-card:hover {
+  transform: translateY(-3px);
+  border-color: light-dark(rgba(74, 111, 232, 0.35), rgba(74, 111, 232, 0.45));
+  box-shadow: 0 12px 32px light-dark(rgba(74, 111, 232, 0.1), rgba(0, 0, 0, 0.28));
+}
+
+.producer-lot-stat {
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  border-radius: var(--mantine-radius-md);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
+  border: 1px solid var(--mantine-color-default-border);
+}
+
+.producer-form-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  margin-bottom: var(--mantine-spacing-xs);
+}
+
 /* Pedido — mesmo sistema visual do ingresso */
 .order-card-premium {
   overflow: hidden;
