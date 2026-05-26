@@ -1,5 +1,7 @@
 import { Router } from "express";
 import authRoutes from "./auth.routes";
+import eventRoutes from "./event.routes";
+import orderRoutes from "./order.routes";
 import paymentRoutes from "./payment.routes";
 import purchaseRoutes from "./purchase.routes";
 import ticketRoutes from "./ticket.routes";
@@ -15,6 +17,8 @@ router.get("/health", (_req, res) => {
 });
 
 router.use("/auth", authRoutes);
+router.use("/events", eventRoutes);
+router.use("/orders", orderRoutes);
 router.use("/purchases", purchaseRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/tickets", ticketRoutes);
