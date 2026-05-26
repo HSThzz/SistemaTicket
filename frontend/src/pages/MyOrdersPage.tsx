@@ -1,26 +1,49 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Alert,
-  Badge,
-  Center,
-  Loader,
+  Button,
+  Grid,
+  Group,
   Paper,
+  SegmentedControl,
+  SimpleGrid,
   Stack,
-  Table,
   Text,
-  Title,
+  ThemeIcon,
 } from "@mantine/core";
-import { IconAlertCircle } from "@tabler/icons-react";
+import {
+  IconAlertCircle,
+  IconReceipt,
+  IconReceipt2,
+  IconSearch,
+  IconWallet,
+} from "@tabler/icons-react";
+import { AnimatedSection } from "../components/home/AnimatedSection";
+import { EmptyState } from "../components/account/EmptyState";
+import { OrdersPageSkeleton } from "../components/account/OrdersPageSkeleton";
+import { PageHeader } from "../components/account/PageHeader";
+import { OrderCard } from "../components/OrderCard";
 import * as orderService from "../services/orderService";
 import type { OrderListItem } from "../types/api";
 import { formatCurrencyFromCents } from "../utils/format";
 import { getApiErrorMessage } from "../utils/errors";
-import { getOrderStatusColor, getOrderStatusLabel } from "../utils/statusLabels";
+
+type OrderFilter = "all" | "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+
+const FILTER_OPTIONS: { label: string; value: OrderFilter }[] = [
+  { label: "Todos", value: "all" },
+  { label: "Pendentes", value: "PENDING" },
+  { label: "Pagos", value: "PAID" },
+  { label: "Falhos", value: "FAILED" },
+  { label: "Reembolsados", value: "REFUNDED" },
+];
 
 export function MyOrdersPage() {
   const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<OrderFilter>("all");
 
   useEffect(() => {
     let cancelled = false;
@@ -48,75 +71,178 @@ export function MyOrdersPage() {
     };
   }, []);
 
+  const filteredOrders = useMemo(() => {
+    if (filter === "all") {
+      return orders;
+    }
+    return orders.filter((order) => order.status === filter);
+  }, [orders, filter]);
+
+  const stats = useMemo(() => {
+    const paidOrders = orders.filter((order) => order.status === "PAID");
+    const totalSpent = paidOrders.reduce((sum, order) => sum + order.totalPrice, 0);
+
+    return {
+      total: orders.length,
+      paid: paidOrders.length,
+      totalSpent,
+    };
+  }, [orders]);
+
   if (loading) {
-    return (
-      <Center py="xl">
-        <Loader color="brand" size="lg" />
-      </Center>
-    );
+    return <OrdersPageSkeleton />;
   }
 
   return (
-    <Stack gap="xl">
-      <Stack gap={4}>
-        <Title order={1}>Meus pedidos</Title>
-        <Text c="dimmed">Histórico de compras e status de pagamento.</Text>
-      </Stack>
+    <Stack gap="lg">
+      <AnimatedSection>
+        <PageHeader
+          icon={<IconReceipt2 size={28} color="var(--mantine-color-brand-6)" />}
+          title="Meus"
+          highlight="pedidos"
+          description="Histórico de compras, pagamentos PIX e status de cada reserva. Acompanhe tudo em um só lugar."
+          action={
+            <Button
+              component={Link}
+              to="/ingressos"
+              variant="light"
+              radius="xl"
+              leftSection={<IconReceipt size={18} />}
+              visibleFrom="xs"
+            >
+              Meus ingressos
+            </Button>
+          }
+        />
+      </AnimatedSection>
 
       {error ? (
-        <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro">
+        <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro ao carregar" radius="lg">
           {error}
         </Alert>
       ) : null}
 
-      {!error && orders.length === 0 ? (
-        <Alert icon={<IconAlertCircle size={18} />} color="gray" title="Nenhum pedido">
-          Você ainda não realizou nenhuma compra.
-        </Alert>
+      {!error && orders.length > 0 ? (
+        <>
+          <AnimatedSection delayMs={60}>
+            <SimpleGrid cols={{ base: 1, xs: 3 }} spacing="md">
+              <Paper radius="lg" p="md" className="stat-card">
+                <Group gap="sm" wrap="nowrap">
+                  <ThemeIcon size={40} radius="md" variant="light" color="brand">
+                    <IconReceipt2 size={20} />
+                  </ThemeIcon>
+                  <Stack gap={2}>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                      Pedidos
+                    </Text>
+                    <Text className="stat-card-value">{stats.total}</Text>
+                  </Stack>
+                </Group>
+              </Paper>
+              <Paper radius="lg" p="md" className="stat-card">
+                <Group gap="sm" wrap="nowrap">
+                  <ThemeIcon size={40} radius="md" variant="light" color="green">
+                    <IconWallet size={20} />
+                  </ThemeIcon>
+                  <Stack gap={2}>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                      Pagos
+                    </Text>
+                    <Text className="stat-card-value" c="green">
+                      {stats.paid}
+                    </Text>
+                  </Stack>
+                </Group>
+              </Paper>
+              <Paper radius="lg" p="md" className="stat-card">
+                <Group gap="sm" wrap="nowrap">
+                  <ThemeIcon size={40} radius="md" variant="light" color="teal">
+                    <IconWallet size={20} />
+                  </ThemeIcon>
+                  <Stack gap={2}>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                      Total gasto
+                    </Text>
+                    <Text className="stat-card-value" c="teal" style={{ fontSize: "1.35rem" }}>
+                      {formatCurrencyFromCents(stats.totalSpent)}
+                    </Text>
+                  </Stack>
+                </Group>
+              </Paper>
+            </SimpleGrid>
+          </AnimatedSection>
+
+          <AnimatedSection delayMs={100}>
+            <SegmentedControl
+              className="filter-pills"
+              value={filter}
+              onChange={(value) => setFilter(value as OrderFilter)}
+              data={FILTER_OPTIONS}
+              radius="xl"
+              fullWidth
+              size="sm"
+            />
+          </AnimatedSection>
+
+          {filteredOrders.length === 0 ? (
+            <AnimatedSection delayMs={120}>
+              <EmptyState
+                icon={<IconReceipt2 size={32} />}
+                title="Nenhum pedido neste filtro"
+                description="Tente outro status ou explore eventos para fazer uma nova compra."
+                action={
+                  <Button component={Link} to="/" variant="light" radius="xl">
+                    Ver eventos
+                  </Button>
+                }
+              />
+            </AnimatedSection>
+          ) : (
+            <Grid>
+              {filteredOrders.map((order, index) => (
+                <Grid.Col key={order.id} span={{ base: 12, lg: 6 }}>
+                  <AnimatedSection delayMs={120 + index * 40}>
+                    <OrderCard order={order} />
+                  </AnimatedSection>
+                </Grid.Col>
+              ))}
+            </Grid>
+          )}
+        </>
       ) : null}
 
-      {orders.length > 0 ? (
-        <Paper radius="md" withBorder>
-          <Table highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Pedido</Table.Th>
-                <Table.Th>Status</Table.Th>
-                <Table.Th>Total</Table.Th>
-                <Table.Th>Reserva</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {orders.map((order) => (
-                <Table.Tr key={order.id}>
-                  <Table.Td>
-                    <Stack gap={2}>
-                      <Text size="sm" fw={500}>
-                        #{order.id.slice(0, 8)}
-                      </Text>
-                      {order.paymentGatewayId ? (
-                        <Text size="xs" c="dimmed">
-                          {order.paymentGatewayId.slice(0, 20)}...
-                        </Text>
-                      ) : null}
-                    </Stack>
-                  </Table.Td>
-                  <Table.Td>
-                    <Badge color={getOrderStatusColor(order.status)} variant="light">
-                      {getOrderStatusLabel(order.status)}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>{formatCurrencyFromCents(order.totalPrice)}</Table.Td>
-                  <Table.Td>
-                    <Text size="xs" c="dimmed" ff="monospace">
-                      {order.reservationId.slice(0, 8)}...
-                    </Text>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Paper>
+      {!error && orders.length === 0 ? (
+        <AnimatedSection delayMs={60}>
+          <EmptyState
+            icon={<IconReceipt2 size={32} />}
+            title="Nenhum pedido ainda"
+            description="Quando você reservar ingressos e pagar com PIX, seus pedidos aparecerão aqui com o status do pagamento."
+            action={
+              <Button
+                component={Link}
+                to="/"
+                radius="xl"
+                leftSection={<IconSearch size={18} />}
+              >
+                Descobrir eventos
+              </Button>
+            }
+          />
+        </AnimatedSection>
+      ) : null}
+
+      {!error && orders.length > 0 ? (
+        <Button
+          component={Link}
+          to="/ingressos"
+          variant="subtle"
+          radius="xl"
+          leftSection={<IconReceipt size={18} />}
+          hiddenFrom="xs"
+          fullWidth
+        >
+          Meus ingressos
+        </Button>
       ) : null}
     </Stack>
   );
