@@ -31,9 +31,13 @@ export const TERMINAL_PHASES = new Set<ReservationStatusView["phase"]>([
   "FAILED",
 ]);
 
+/** Para o polling automático ao exibir o PIX (dados estáveis até o pagamento). */
+export const CHECKOUT_POLL_STOP_PHASES = new Set<ReservationStatusView["phase"]>([
+  "AWAITING_PAYMENT",
+  ...TERMINAL_PHASES,
+]);
+
 export const AWAITING_PAYMENT_PHASES = new Set<ReservationStatusView["phase"]>([
   "AWAITING_PAYMENT",
-  "PAID",
-  "EXPIRED",
-  "FAILED",
+  ...TERMINAL_PHASES,
 ]);

@@ -59,11 +59,14 @@ export function CheckoutPage() {
   const [reservationId, setReservationId] = useState<string | null>(null);
   const [reserving, setReserving] = useState(false);
   const [simulating, setSimulating] = useState(false);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
 
   const { status, loading: polling, error: pollError } = useReservationPoller({
     reservationId,
     enabled: Boolean(reservationId),
-    stopOn: purchaseService.TERMINAL_PHASES,
+    stopOn: confirmingPayment
+      ? purchaseService.TERMINAL_PHASES
+      : purchaseService.CHECKOUT_POLL_STOP_PHASES,
   });
 
   useEffect(() => {
@@ -150,6 +153,7 @@ export function CheckoutPage() {
     }
 
     setSimulating(true);
+    setConfirmingPayment(true);
 
     try {
       await purchaseService.simulateDevPayment(orderId);
@@ -270,6 +274,7 @@ export function CheckoutPage() {
                 <Button
                   onClick={() => {
                     setReservationId(null);
+                    setConfirmingPayment(false);
                   }}
                 >
                   Tentar novamente

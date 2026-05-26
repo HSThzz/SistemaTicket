@@ -12,6 +12,33 @@ interface UseReservationPollerOptions {
   stopOn?: Set<ReservationStatusView["phase"]>;
 }
 
+function isSameStatus(
+  previous: ReservationStatusView | null,
+  next: ReservationStatusView,
+): boolean {
+  if (!previous) {
+    return false;
+  }
+
+  if (previous.phase !== next.phase) {
+    return false;
+  }
+
+  if (previous.order?.id !== next.order?.id) {
+    return false;
+  }
+
+  if (previous.payment?.pixCopyPaste !== next.payment?.pixCopyPaste) {
+    return false;
+  }
+
+  if (previous.payment?.expiresAt !== next.payment?.expiresAt) {
+    return false;
+  }
+
+  return previous.payment?.amountCents === next.payment?.amountCents;
+}
+
 export function useReservationPoller({
   reservationId,
   enabled = true,
@@ -22,6 +49,10 @@ export function useReservationPoller({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
+  const stopOnRef = useRef(stopOn);
+  const isFirstPollRef = useRef(true);
+
+  stopOnRef.current = stopOn;
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -36,7 +67,7 @@ export function useReservationPoller({
     }
 
     const next = await purchaseService.getReservationStatus(reservationId);
-    setStatus(next);
+    setStatus((previous) => (isSameStatus(previous, next) ? previous : next));
     return next;
   }, [reservationId]);
 
@@ -58,6 +89,12 @@ export function useReservationPoller({
   }, [pollOnce, reservationId]);
 
   useEffect(() => {
+    isFirstPollRef.current = true;
+    setStatus(null);
+    setError(null);
+  }, [reservationId]);
+
+  useEffect(() => {
     if (!enabled || !reservationId) {
       clearTimer();
       return;
@@ -77,19 +114,27 @@ export function useReservationPoller({
         return;
       }
 
+      const showLoading = isFirstPollRef.current;
+
       try {
-        setLoading(true);
+        if (showLoading) {
+          setLoading(true);
+        }
+
         const next = await pollOnce();
         setError(null);
 
-        if (next && !stopOn.has(next.phase)) {
+        if (next && !stopOnRef.current.has(next.phase)) {
           schedule(intervalMs);
         }
       } catch (err) {
         setError(getApiErrorMessage(err, "Falha ao consultar reserva."));
         schedule(intervalMs);
       } finally {
-        setLoading(false);
+        if (showLoading) {
+          setLoading(false);
+          isFirstPollRef.current = false;
+        }
       }
     };
 
