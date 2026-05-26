@@ -3,7 +3,7 @@ import type { ReservationPersistenceWorker } from "../workers/ReservationPersist
 let persistenceWorker: ReservationPersistenceWorker | null = null;
 
 export function setReservationPersistenceWorker(
-  worker: ReservationPersistenceWorker,
+  worker: ReservationPersistenceWorker | null,
 ): void {
   persistenceWorker = worker;
 }

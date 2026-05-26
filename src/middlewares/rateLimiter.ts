@@ -36,7 +36,15 @@ function buildRateLimitHandler(label: string) {
   };
 }
 
+function skipInTest(): boolean {
+  return process.env.NODE_ENV === "test";
+}
+
 function shouldSkipGlobalLimit(req: Request): boolean {
+  if (skipInTest()) {
+    return true;
+  }
+
   const path = req.path;
 
   if (path === "/health") {
@@ -67,6 +75,7 @@ export const authLoginRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createRedisStore("auth-login"),
+  skip: skipInTest,
   handler: buildRateLimitHandler("auth-login"),
 });
 
@@ -77,5 +86,6 @@ export const reserveRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createRedisStore("reserve"),
+  skip: skipInTest,
   handler: buildRateLimitHandler("reserve"),
 });

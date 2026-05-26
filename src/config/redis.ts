@@ -9,6 +9,7 @@ function buildRedisOptions() {
   return {
     host: env.redis.host,
     port: env.redis.port,
+    db: env.redis.db,
     maxRetriesPerRequest: 3,
     lazyConnect: false,
   } as const;

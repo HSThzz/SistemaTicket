@@ -278,8 +278,24 @@ Requer JWT + `ADMIN` ou `PRODUCER`.
 | `npm run dev` | Dev com hot reload |
 | `npm run build` | Compila TypeScript |
 | `npm start` | Produção (`dist/`) |
+| `npm test` | Testes de integração (Postgres + Redis) |
 | `npm run migration:run` | Roda migrations |
 | `npm run migration:revert` | Reverte última migration |
+
+### Testes
+
+Requisitos: **PostgreSQL** e **Redis** rodando (ex.: `docker compose up -d postgres redis`).
+
+Os testes usam **Redis DB 1** por padrão para não conflitar com a API em execução (DB 0).
+
+```bash
+npm run migration:run
+npm test
+```
+
+Cobertura atual:
+- Fluxo E2E: reserva → persistência → PIX → webhook → emissão de ingressos
+- Concorrência: estoque Redis nunca fica negativo / oversell
 
 ---
 

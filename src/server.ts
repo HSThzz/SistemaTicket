@@ -1,14 +1,11 @@
 import "reflect-metadata";
-import express from "express";
+import { createApp } from "./app";
 import { AppDataSource } from "./config/data-source";
 import { env } from "./config/env";
 import { Logger } from "./config/logger";
 import { closeRedisConnections, getRedis, getRedisWorker } from "./config/redis";
-import { globalRateLimiter } from "./middlewares/rateLimiter";
-import { requestLogger } from "./middlewares/requestLogger";
-import routes from "./routes";
-import { PaymentService } from "./services/PaymentService";
 import { setReservationPersistenceWorker } from "./runtime/workerRegistry";
+import { PaymentService } from "./services/PaymentService";
 import { ReservationExpiryWorker } from "./workers/ReservationExpiryWorker";
 import { ReservationPersistenceWorker } from "./workers/ReservationPersistenceWorker";
 
@@ -68,14 +65,7 @@ async function bootstrap(): Promise<void> {
 
   setReservationPersistenceWorker(persistenceWorker);
 
-  const app = express();
-
-  app.set("trust proxy", 1);
-
-  app.use(express.json());
-  app.use(globalRateLimiter);
-  app.use(requestLogger);
-  app.use(routes);
+  const app = createApp();
 
   app.listen(env.port, () => {
     logger.info(CONTEXT, `Server listening on port ${env.port}`, {

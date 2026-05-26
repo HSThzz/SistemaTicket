@@ -13,6 +13,7 @@ import {
 dotenv.config();
 
 const isProduction = process.env.NODE_ENV === "production";
+const isTest = process.env.NODE_ENV === "test";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -22,7 +23,7 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD ?? "postgres",
   database: process.env.DB_DATABASE ?? "app_db",
   synchronize: false,
-  logging: !isProduction,
+  logging: !isProduction && !isTest,
   entities: [User, Event, TicketLot, Reservation, Order, Ticket],
   migrations: [`${__dirname}/../migrations/*.{ts,js}`],
 });
