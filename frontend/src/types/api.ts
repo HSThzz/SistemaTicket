@@ -31,6 +31,93 @@ export interface Event {
   ticketLots: TicketLot[];
 }
 
+export type ReservationPhase =
+  | "PENDING_PERSISTENCE"
+  | "PENDING_PAYMENT"
+  | "AWAITING_PAYMENT"
+  | "PAID"
+  | "EXPIRED"
+  | "FAILED"
+  | "NOT_FOUND";
+
+export interface PixPaymentDetails {
+  orderId: string;
+  transactionId: string;
+  pixCopyPaste: string;
+  expiresAt: string;
+  amountCents: number;
+}
+
+export interface ReservationStatusView {
+  reservationId: string;
+  phase: ReservationPhase;
+  reservation: {
+    id: string;
+    status: string;
+    expiresAt: string;
+    quantity: number;
+    ticketLotId: string;
+  } | null;
+  order: {
+    id: string;
+    status: string;
+    totalPrice: number;
+    paymentGatewayId: string | null;
+  } | null;
+  payment: PixPaymentDetails | null;
+  meta: {
+    inRedis: boolean;
+    persistedToPostgres: boolean;
+    queuePendingJobs: number;
+  };
+}
+
+export interface ReserveTicketsResponse {
+  reservation: {
+    id: string;
+    status: string;
+    expiresAt: string;
+    quantity: number;
+    ticketLotId: string;
+  };
+  stock: {
+    remaining: number;
+  };
+}
+
+export interface TicketListItem {
+  id: string;
+  status: string;
+  uniqueCode: string;
+  checkedInAt: string | null;
+  event: {
+    id: string;
+    title: string;
+    description: string;
+    date: string;
+    location: string;
+    status: string;
+  };
+  ticketLot: {
+    id: string;
+    name: string;
+    price: number;
+  };
+  order: {
+    id: string;
+    status: string;
+    totalPrice: number;
+  };
+}
+
+export interface OrderListItem {
+  id: string;
+  status: string;
+  totalPrice: number;
+  paymentGatewayId: string | null;
+  reservationId: string;
+}
+
 export interface ApiErrorBody {
   error?: string;
   code?: string;
