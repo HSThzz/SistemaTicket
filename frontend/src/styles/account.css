@@ -1,0 +1,136 @@
+/* Cabeçalho de páginas da conta */
+.page-header {
+  position: relative;
+  padding: var(--mantine-spacing-lg) 0 var(--mantine-spacing-xl);
+  margin-bottom: var(--mantine-spacing-md);
+}
+
+.page-header::before {
+  content: "";
+  position: absolute;
+  inset: -var(--mantine-spacing-md) -50vw var(--mantine-spacing-md) -50vw;
+  z-index: -1;
+  background-image: radial-gradient(
+    ellipse 70% 80% at 20% 0%,
+    light-dark(rgba(74, 111, 232, 0.09), rgba(74, 111, 232, 0.12)) 0%,
+    transparent 65%
+  );
+  pointer-events: none;
+}
+
+.page-title {
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.stat-card {
+  border: 1px solid var(--mantine-color-default-border);
+  background: light-dark(
+    var(--mantine-color-white),
+    var(--mantine-color-dark-6)
+  );
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: light-dark(rgba(74, 111, 232, 0.35), rgba(74, 111, 232, 0.45));
+  box-shadow: 0 8px 24px light-dark(rgba(74, 111, 232, 0.08), rgba(0, 0, 0, 0.25));
+}
+
+.stat-card-value {
+  font-size: clamp(1.5rem, 3vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+/* Ingresso estilo ticket físico */
+.ticket-card-premium {
+  overflow: hidden;
+  border: 1px solid var(--mantine-color-default-border);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s ease;
+}
+
+.ticket-card-premium:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px light-dark(rgba(74, 111, 232, 0.12), rgba(0, 0, 0, 0.35));
+}
+
+.ticket-card-premium.is-inactive {
+  opacity: 0.82;
+}
+
+.ticket-card-premium.is-inactive:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.ticket-card-stub {
+  position: relative;
+  width: 100px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mantine-spacing-sm);
+  padding: var(--mantine-spacing-lg) var(--mantine-spacing-md);
+}
+
+.ticket-card-stub::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  right: 0;
+  width: 1px;
+  background: repeating-linear-gradient(
+    to bottom,
+    light-dark(rgba(0, 0, 0, 0.12), rgba(255, 255, 255, 0.15)) 0,
+    light-dark(rgba(0, 0, 0, 0.12), rgba(255, 255, 255, 0.15)) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+
+.ticket-card-body {
+  flex: 1;
+  min-width: 0;
+  padding: var(--mantine-spacing-lg) var(--mantine-spacing-lg) var(--mantine-spacing-lg)
+    var(--mantine-spacing-xl);
+}
+
+.ticket-qr-frame {
+  padding: 18px;
+  border-radius: var(--mantine-radius-md);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-5));
+  border: 1px solid var(--mantine-color-default-border);
+  box-shadow: 0 4px 20px light-dark(rgba(74, 111, 232, 0.1), rgba(0, 0, 0, 0.2));
+}
+
+.ticket-code-block {
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  border-radius: var(--mantine-radius-sm);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
+  border: 1px dashed var(--mantine-color-default-border);
+}
+
+.empty-state-card {
+  border: 1px dashed var(--mantine-color-default-border);
+  background: light-dark(
+    rgba(74, 111, 232, 0.03),
+    rgba(74, 111, 232, 0.06)
+  );
+}
+
+.filter-pills .mantine-SegmentedControl-label {
+  font-weight: 500;
+}

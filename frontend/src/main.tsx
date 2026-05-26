@@ -10,6 +10,7 @@ import { appTheme } from "./theme";
 import { colorSchemeManager } from "./theme/colorScheme";
 import "./index.css";
 import "./styles/home.css";
+import "./styles/account.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
