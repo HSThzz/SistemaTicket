@@ -33,10 +33,21 @@ export class CheckInService {
 
   async checkIn(uniqueCode: string, actor: CheckInActor): Promise<CheckInResult> {
     return this.dataSource.transaction(async (manager) => {
-      const ticket = await manager.findOne(Ticket, {
+      const locked = await manager.findOne(Ticket, {
         where: { uniqueCode },
-        relations: { ticketLot: { event: true } },
         lock: { mode: "pessimistic_write" },
+      });
+
+      if (!locked) {
+        this.logger.warn(CONTEXT, "Check-in failed — ticket not found", {
+          uniqueCode,
+        });
+        throw new TicketNotFoundError();
+      }
+
+      const ticket = await manager.findOne(Ticket, {
+        where: { id: locked.id },
+        relations: { ticketLot: { event: true } },
       });
 
       if (!ticket?.ticketLot?.event) {

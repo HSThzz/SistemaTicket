@@ -54,7 +54,22 @@ API disponível em `http://localhost:3000`.
 cp .env.example .env
 npm install
 npm run migration:run
+npm run seed          # reseta DB + Redis e popula dados demo
 npm run dev
+```
+
+### Dados de demonstração (`npm run seed`)
+
+| Papel | E-mail | Senha |
+|-------|--------|-------|
+| ADMIN | `admin@ticketflow.test` | `123456` |
+| PRODUCER | `producer@ticketflow.test` | `123456` |
+| CLIENT | `client@ticketflow.test` | `123456` |
+
+Inclui 2 eventos publicados + 1 rascunho, estoque no Redis e 3 ingressos de exemplo para o cliente (2 ativos com QR, 1 já usado no check-in).
+
+```bash
+npm run seed:keep   # não apaga o banco; aborta se os usuários demo já existirem
 ```
 
 ## Variáveis de ambiente
