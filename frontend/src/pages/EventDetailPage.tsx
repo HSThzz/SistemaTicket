@@ -296,7 +296,7 @@ export function EventDetailPage() {
         </Container>
 
         <Container size="lg" py="xl" px="md">
-          <Grid gutter="xl">
+          <Grid gap="xl">
             <Grid.Col span={{ base: 12, md: 7 }}>
               <Stack gap="xl">
                 <AnimatedSection delayMs={60}>

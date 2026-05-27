@@ -339,7 +339,7 @@ export function CheckoutPage() {
 
       <Box className="checkout-body">
         <Container size="lg" py="xl" px="md">
-          <Grid gutter="xl">
+          <Grid gap="xl">
             <Grid.Col span={{ base: 12, md: 7 }}>
               <Stack gap="lg">
                 {!isCheckoutStarted ? (
