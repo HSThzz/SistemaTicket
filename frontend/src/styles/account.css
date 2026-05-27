@@ -266,6 +266,7 @@
   background-position: center;
   background-repeat: no-repeat;
   position: relative;
+  border-radius: var(--mantine-radius-lg) 0 0 var(--mantine-radius-lg);
 }
 
 .producer-event-card-stub::after {
