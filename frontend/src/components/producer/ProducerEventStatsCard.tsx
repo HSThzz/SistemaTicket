@@ -57,7 +57,10 @@ export function ProducerEventStatsCard({ event }: ProducerEventStatsCardProps) {
       className="producer-event-card"
     >
       <Group wrap="nowrap" align="stretch" gap={0}>
-        <Box className="producer-event-card-stub" style={getEventCoverStyle(event.eventId)} />
+        <Box
+          className="producer-event-card-stub"
+          style={getEventCoverStyle({ id: event.eventId, imageUrl: event.imageUrl })}
+        />
 
         <Stack gap="lg" className="producer-event-card-body">
           <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">

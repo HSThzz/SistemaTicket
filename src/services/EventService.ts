@@ -17,6 +17,7 @@ export interface CreateEventInput {
   description: string;
   date: string;
   location: string;
+  imageUrl?: string | null;
   status?: EventStatus;
 }
 
@@ -25,6 +26,7 @@ export interface UpdateEventInput {
   description?: string;
   date?: string;
   location?: string;
+  imageUrl?: string | null;
   status?: EventStatus;
 }
 
@@ -84,6 +86,7 @@ export class EventService {
       description: input.description.trim(),
       date,
       location: input.location.trim(),
+      imageUrl: normalizeImageUrl(input.imageUrl),
       status: input.status ?? EventStatus.DRAFT,
     });
 
@@ -112,6 +115,7 @@ export class EventService {
     if (input.title !== undefined) event.title = input.title.trim();
     if (input.description !== undefined) event.description = input.description.trim();
     if (input.location !== undefined) event.location = input.location.trim();
+    if (input.imageUrl !== undefined) event.imageUrl = normalizeImageUrl(input.imageUrl);
     if (input.status !== undefined) event.status = input.status;
     if (input.date !== undefined) {
       const date = new Date(input.date);
@@ -199,4 +203,13 @@ export class EventService {
       throw new EventAccessDeniedError();
     }
   }
+}
+
+function normalizeImageUrl(value: string | null | undefined): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }

@@ -183,7 +183,7 @@ export function EventDetailPage() {
 
   return (
     <Stack gap={0}>
-      <Box className="event-detail-hero full-bleed" style={getEventCoverStyle(event.id)}>
+      <Box className="event-detail-hero full-bleed" style={getEventCoverStyle(event)}>
         <Box
           className="hero-glow"
           style={{

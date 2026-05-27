@@ -47,7 +47,7 @@ export function HeroCarousel({ events }: HeroCarouselProps) {
             transition: "width 250ms ease, background-color 250ms ease",
           },
           control: {
-            background: "light-dark(rgba(255,255,255,0.92), rgba(26,27,30,0.92))",
+            background: "light-dark(rgba(255,255,255,0.92), rgba(139, 139, 139, 0.92))",
             border: "none",
             boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
           },
@@ -65,7 +65,7 @@ export function HeroCarousel({ events }: HeroCarouselProps) {
                 to={`/eventos/${event.id}`}
                 className="hero-slide"
                 style={{
-                  ...getEventCoverStyle(event.id),
+                  ...getEventCoverStyle(event),
                   display: "block",
                   textDecoration: "none",
                   color: "white",

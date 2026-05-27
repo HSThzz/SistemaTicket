@@ -10,6 +10,11 @@ const GRADIENT_PAIRS: [string, string][] = [
   ["#22c55e", "#14b8a6"],
 ];
 
+export interface EventCoverSource {
+  id: string;
+  imageUrl?: string | null;
+}
+
 export function getEventGradient(eventId: string): [string, string] {
   let hash = 0;
   for (let i = 0; i < eventId.length; i += 1) {
@@ -18,8 +23,19 @@ export function getEventGradient(eventId: string): [string, string] {
   return GRADIENT_PAIRS[Math.abs(hash) % GRADIENT_PAIRS.length];
 }
 
-export function getEventCoverStyle(eventId: string): CSSProperties {
-  const [from, to] = getEventGradient(eventId);
+export function getEventCoverStyle(source: EventCoverSource): CSSProperties {
+  const imageUrl = source.imageUrl?.trim();
+
+  if (imageUrl) {
+    return {
+      backgroundImage: `url("${imageUrl}")`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+    };
+  }
+
+  const [from, to] = getEventGradient(source.id);
   return {
     background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
   };

@@ -6,6 +6,7 @@ export interface CreateEventInput {
   description: string;
   date: string;
   location: string;
+  imageUrl?: string | null;
   status?: string;
 }
 
@@ -14,6 +15,7 @@ export interface UpdateEventInput {
   description?: string;
   date?: string;
   location?: string;
+  imageUrl?: string | null;
   status?: string;
 }
 

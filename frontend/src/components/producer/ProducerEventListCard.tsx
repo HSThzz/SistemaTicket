@@ -52,7 +52,7 @@ export function ProducerEventListCard({ event }: ProducerEventListCardProps) {
   return (
     <Box component={Link} to={`/produtor/eventos/${event.id}`} className="producer-event-card">
       <Group wrap="nowrap" align="stretch" gap={0}>
-        <Box className="producer-event-card-stub" style={getEventCoverStyle(event.id)} />
+        <Box className="producer-event-card-stub" style={getEventCoverStyle(event)} />
 
         <Stack gap="lg" className="producer-event-card-body">
           <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">

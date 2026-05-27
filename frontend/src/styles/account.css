@@ -9,6 +9,9 @@
   position: relative;
   min-height: 380px;
   overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .event-detail-body {
@@ -121,6 +124,9 @@
   justify-content: center;
   gap: var(--mantine-spacing-sm);
   padding: var(--mantine-spacing-lg) var(--mantine-spacing-md);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .ticket-card-stub::after {
@@ -254,6 +260,9 @@
 .producer-event-card-stub {
   width: 8px;
   flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .producer-event-card-body {

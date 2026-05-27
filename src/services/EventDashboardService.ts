@@ -10,6 +10,7 @@ export interface ProducerEventStats {
   title: string;
   status: string;
   date: string;
+  imageUrl: string | null;
   ticketsSold: number;
   ticketsCheckedIn: number;
   grossRevenueCents: number;
@@ -69,6 +70,7 @@ export class EventDashboardService {
         title: event.title,
         status: event.status,
         date: event.date.toISOString(),
+        imageUrl: event.imageUrl,
         ticketsSold: soldByEvent.get(event.id) ?? 0,
         ticketsCheckedIn: checkedInByEvent.get(event.id) ?? 0,
         grossRevenueCents: revenueByEvent.get(event.id) ?? 0,

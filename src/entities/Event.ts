@@ -30,6 +30,9 @@ export class Event {
   @Column({ type: "varchar", length: 255 })
   location!: string;
 
+  @Column({ name: "image_url", type: "varchar", length: 2048, nullable: true })
+  imageUrl!: string | null;
+
   @Column({
     type: "enum",
     enum: EventStatus,

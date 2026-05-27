@@ -29,6 +29,7 @@ export interface Event {
   description: string;
   date: string;
   location: string;
+  imageUrl: string | null;
   status: EventStatus | string;
   ticketLots: TicketLot[];
 }
@@ -99,6 +100,7 @@ export interface TicketListItem {
     date: string;
     location: string;
     status: string;
+    imageUrl: string | null;
   };
   ticketLot: {
     id: string;
@@ -125,6 +127,7 @@ export interface ProducerEventStats {
   title: string;
   status: string;
   date: string;
+  imageUrl: string | null;
   ticketsSold: number;
   ticketsCheckedIn: number;
   grossRevenueCents: number;

@@ -38,7 +38,7 @@ export function TicketCard({ ticket }: TicketCardProps) {
       component="article"
     >
       <Group wrap="nowrap" align="stretch" gap={0}>
-        <Box className="ticket-card-stub" style={getEventCoverStyle(ticket.event.id)}>
+        <Box className="ticket-card-stub" style={getEventCoverStyle(ticket.event)}>
           <ThemeIcon size={36} radius="md" variant="white" color="dark" style={{ opacity: 0.92 }}>
             <IconTicket size={20} stroke={1.6} />
           </ThemeIcon>

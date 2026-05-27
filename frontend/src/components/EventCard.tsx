@@ -35,7 +35,7 @@ export function EventCard({ event, variant = "default" }: EventCardProps) {
         <Group wrap="nowrap" align="stretch" gap="md">
           <Box
             className="event-card-cover"
-            style={{ ...getEventCoverStyle(event.id), width: 120, flexShrink: 0 }}
+            style={{ ...getEventCoverStyle(event), width: 120, flexShrink: 0 }}
           />
           <Stack gap={4} justify="center" flex={1}>
             <Text fw={700} lineClamp={2}>
@@ -73,7 +73,7 @@ export function EventCard({ event, variant = "default" }: EventCardProps) {
       className="event-card-root"
       style={{ textDecoration: "none", color: "inherit", overflow: "hidden" }}
     >
-      <Box className="event-card-cover" style={getEventCoverStyle(event.id)}>
+      <Box className="event-card-cover" style={getEventCoverStyle(event)}>
         <Group justify="space-between" p="sm" align="flex-start">
           {lowStock ? (
             <Badge color="orange" variant="filled" size="sm">

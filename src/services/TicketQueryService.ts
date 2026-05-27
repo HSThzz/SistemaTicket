@@ -13,6 +13,7 @@ export interface TicketListItem {
     date: string;
     location: string;
     status: string;
+    imageUrl: string | null;
   };
   ticketLot: {
     id: string;
@@ -51,6 +52,7 @@ export class TicketQueryService {
         date: ticket.ticketLot.event.date.toISOString(),
         location: ticket.ticketLot.event.location,
         status: ticket.ticketLot.event.status,
+        imageUrl: ticket.ticketLot.event.imageUrl,
       },
       ticketLot: {
         id: ticket.ticketLot.id,

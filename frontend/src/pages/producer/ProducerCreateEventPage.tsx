@@ -21,6 +21,7 @@ import {
   IconCalendarPlus,
   IconCheck,
   IconMapPin,
+  IconPhoto,
   IconRocket,
   IconTicket,
   IconX,
@@ -36,6 +37,7 @@ interface CreateEventFormValues {
   description: string;
   date: string;
   location: string;
+  imageUrl: string;
 }
 
 const CREATE_STEPS = [
@@ -83,6 +85,7 @@ export function ProducerCreateEventPage() {
       description: "",
       date: "",
       location: "",
+      imageUrl: "",
     },
     validate: {
       title: (value) => (value.trim().length >= 3 ? null : "Informe o título"),
@@ -101,6 +104,7 @@ export function ProducerCreateEventPage() {
         description: values.description.trim(),
         date: toIsoDate(values.date),
         location: values.location.trim(),
+        imageUrl: values.imageUrl.trim() || null,
         status: "DRAFT",
       });
 
@@ -201,6 +205,14 @@ export function ProducerCreateEventPage() {
                       radius="md"
                       leftSection={<IconMapPin size={16} />}
                       {...form.getInputProps("location")}
+                    />
+                    <TextInput
+                      label="URL da imagem de capa"
+                      placeholder="https://images.unsplash.com/..."
+                      radius="md"
+                      leftSection={<IconPhoto size={16} />}
+                      description="Opcional. Use uma URL pública (ex.: Unsplash) para a capa do evento."
+                      {...form.getInputProps("imageUrl")}
                     />
 
                     <Group justify="space-between" pt="md" wrap="wrap" gap="sm">

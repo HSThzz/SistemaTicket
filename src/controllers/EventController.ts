@@ -53,6 +53,7 @@ function serializeEvent(event: Event) {
     description: event.description,
     date: event.date.toISOString(),
     location: event.location,
+    imageUrl: event.imageUrl,
     status: event.status,
     ticketLots: (event.ticketLots ?? []).map((lot) => ({
       id: lot.id,
@@ -122,7 +123,7 @@ export class EventController {
     if (!actor) return;
 
     try {
-      const { title, description, date, location, status } = req.body as Record<string, unknown>;
+      const { title, description, date, location, imageUrl, status } = req.body as Record<string, unknown>;
       if (!title || !description || !date || !location) {
         res.status(400).json({
           error: "title, description, date and location are required",
@@ -137,6 +138,7 @@ export class EventController {
           description: String(description),
           date: String(date),
           location: String(location),
+          imageUrl: imageUrl === undefined || imageUrl === null ? undefined : String(imageUrl),
           status: parseEventStatus(status),
         },
         actor,
@@ -159,7 +161,7 @@ export class EventController {
     }
 
     try {
-      const { title, description, date, location, status } = req.body as Record<string, unknown>;
+      const { title, description, date, location, imageUrl, status } = req.body as Record<string, unknown>;
       const updated = await eventService.updateEvent(
         eventId,
         {
@@ -167,6 +169,12 @@ export class EventController {
           description: description === undefined ? undefined : String(description),
           date: date === undefined ? undefined : String(date),
           location: location === undefined ? undefined : String(location),
+          imageUrl:
+            imageUrl === undefined
+              ? undefined
+              : imageUrl === null
+                ? null
+                : String(imageUrl),
           status: parseEventStatus(status),
         },
         actor,

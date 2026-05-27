@@ -26,6 +26,7 @@ import {
   IconCheck,
   IconExternalLink,
   IconMapPin,
+  IconPhoto,
   IconPlus,
   IconRocket,
   IconSettings,
@@ -51,6 +52,7 @@ interface EventFormValues {
   description: string;
   date: string;
   location: string;
+  imageUrl: string;
   status: string;
 }
 
@@ -90,6 +92,7 @@ export function ProducerManageEventPage() {
       description: "",
       date: "",
       location: "",
+      imageUrl: "",
       status: "DRAFT",
     },
   });
@@ -134,6 +137,7 @@ export function ProducerManageEventPage() {
           description: data.description,
           date: toLocalDatetimeInput(data.date),
           location: data.location,
+          imageUrl: data.imageUrl ?? "",
           status: data.status,
         });
       })
@@ -194,6 +198,7 @@ export function ProducerManageEventPage() {
         description: values.description.trim(),
         date: toIsoDate(values.date),
         location: values.location.trim(),
+        imageUrl: values.imageUrl.trim() || null,
         status: values.status as EventStatus,
       });
 
@@ -298,7 +303,7 @@ export function ProducerManageEventPage() {
 
   return (
     <Stack gap={0}>
-      <Box className="producer-manage-hero full-bleed" style={getEventCoverStyle(event.id)}>
+      <Box className="producer-manage-hero full-bleed" style={getEventCoverStyle(event)}>
         <Box className="producer-manage-hero-overlay" />
         <Container size="lg" px="md" className="producer-manage-hero-content">
           <Stack gap="md">
@@ -429,6 +434,14 @@ export function ProducerManageEventPage() {
                         {...eventForm.getInputProps("date")}
                       />
                       <TextInput label="Local" radius="md" {...eventForm.getInputProps("location")} />
+                      <TextInput
+                        label="URL da imagem de capa"
+                        placeholder="https://images.unsplash.com/..."
+                        radius="md"
+                        leftSection={<IconPhoto size={16} />}
+                        description="Opcional. Imagem exibida nos cards e na página do evento."
+                        {...eventForm.getInputProps("imageUrl")}
+                      />
                       <Select
                         label="Status"
                         radius="md"
