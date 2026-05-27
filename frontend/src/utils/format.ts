@@ -21,3 +21,18 @@ export function formatShortDate(isoDate: string): string {
     minute: "2-digit",
   }).format(new Date(isoDate));
 }
+
+export function formatEventDateOnly(isoDate: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(isoDate));
+}
+
+export function formatEventTimeOnly(isoDate: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(isoDate));
+}

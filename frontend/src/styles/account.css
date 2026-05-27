@@ -3,7 +3,40 @@
   max-width: none;
 }
 
-/* Cabeçalho de páginas da conta */
+.producer-manage-hero,
+.producer-create-hero,
+.event-detail-hero {
+  position: relative;
+  min-height: 380px;
+  overflow: hidden;
+}
+
+.event-detail-body {
+  position: relative;
+  border-top: 1px solid var(--mantine-color-default-border);
+  background-color: var(--mantine-color-body);
+  background-image: radial-gradient(
+    ellipse 80% 50% at 50% 0%,
+    light-dark(rgba(74, 111, 232, 0.07), rgba(74, 111, 232, 0.1)) 0%,
+    transparent 65%
+  );
+}
+
+.event-detail-stats {
+  padding-top: var(--mantine-spacing-xl);
+  padding-bottom: var(--mantine-spacing-xs);
+}
+
+.event-detail-tickets-panel {
+  position: sticky;
+  top: 88px;
+}
+
+.lot-offer-card__price {
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+
 .page-header {
   position: relative;
   padding: var(--mantine-spacing-lg) 0 var(--mantine-spacing-xl);
@@ -255,13 +288,6 @@
 }
 
 /* Gerenciar evento — hero e lotes */
-.producer-manage-hero,
-.producer-create-hero {
-  position: relative;
-  min-height: 220px;
-  overflow: hidden;
-}
-
 .producer-create-hero {
   background: linear-gradient(135deg, #6366f1 0%, #4a6fe8 45%, #14b8a6 100%);
 }
@@ -335,10 +361,21 @@
 .producer-manage-hero-content {
   position: relative;
   z-index: 1;
-  min-height: 220px;
+  min-height: 380px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  padding: var(--mantine-spacing-xl) 0;
+  color: white;
+}
+
+.event-detail-hero-content {
+  position: relative;
+  z-index: 1;
+  min-height: 380px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   padding: var(--mantine-spacing-xl) 0;
   color: white;
 }

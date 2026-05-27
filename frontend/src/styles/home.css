@@ -141,7 +141,8 @@
 }
 
 /* Home: sem padding no main — o hero encosta no header; o título desce via .home-hero-section */
-.layout-home .layout-home-main {
+.layout-home .layout-home-main,
+.layout-hero .layout-hero-main {
   width: 100%;
   max-width: none;
   margin: 0;

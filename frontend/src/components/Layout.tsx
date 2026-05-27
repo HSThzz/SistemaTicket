@@ -79,11 +79,11 @@ export function Layout() {
   const location = useLocation();
   const currentPath = location.pathname;
   const isHome = currentPath === "/";
-  const isFullWidthPage =
-    isHome ||
+  const isHeroPage =
     /^\/eventos\/[^/]+$/.test(currentPath) ||
     /^\/produtor\/eventos\/[^/]+$/.test(currentPath) ||
     currentPath === "/produtor/check-in";
+  const isFullWidthPage = isHome || isHeroPage;
 
   const isProducer = user?.role === "PRODUCER" || user?.role === "ADMIN";
 
@@ -106,11 +106,11 @@ export function Layout() {
         breakpoint: "sm",
         collapsed: { mobile: !opened, desktop: true },
       }}
-      padding={isHome ? 0 : "md"}
-      className={isHome ? "layout-home" : undefined}
+      padding={isFullWidthPage ? 0 : "md"}
+      className={isHome ? "layout-home" : isHeroPage ? "layout-hero" : undefined}
       classNames={{
         header: isHome ? "home-hero-bg layout-home-header" : undefined,
-        main: isHome ? "layout-home-main" : undefined,
+        main: isHome ? "layout-home-main" : isHeroPage ? "layout-hero-main" : undefined,
       }}
     >
       <AppShell.Header>

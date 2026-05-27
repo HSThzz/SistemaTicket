@@ -93,7 +93,7 @@ export class EventService {
       producerId: saved.producerId,
       status: saved.status,
     });
-    return saved;
+    return this.loadEventWithLots(saved.id);
   }
 
   async updateEvent(
@@ -128,7 +128,7 @@ export class EventService {
       status: saved.status,
       actorUserId: actor.userId,
     });
-    return saved;
+    return this.loadEventWithLots(saved.id);
   }
 
   async createTicketLot(
@@ -175,6 +175,19 @@ export class EventService {
       actorUserId: actor.userId,
     });
     return saved;
+  }
+
+  private async loadEventWithLots(eventId: string): Promise<Event> {
+    const event = await this.dataSource.getRepository(Event).findOne({
+      where: { id: eventId },
+      relations: { ticketLots: true },
+    });
+
+    if (!event) {
+      throw new EventNotFoundError(eventId);
+    }
+
+    return event;
   }
 
   private assertCanManage(event: Event, actor: EventActor): void {
