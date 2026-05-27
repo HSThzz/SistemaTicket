@@ -1,6 +1,16 @@
+# Dependencies
 node_modules/
+
+# Builds & caches
 dist/
-.env
+*.tsbuildinfo
+
+# Logs & OS junk
 *.log
 .DS_Store
 coverage/
+
+# Secrets — só versionar arquivos de exemplo (`*.example`)
+.env
+.env.*
+!.env.example
