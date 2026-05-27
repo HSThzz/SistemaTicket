@@ -1,25 +1,33 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Alert,
   Badge,
   Button,
   Group,
+  SimpleGrid,
   Stack,
-  Table,
   Text,
+  Title,
 } from "@mantine/core";
-import { IconAlertCircle, IconCalendarEvent, IconChartBar, IconPlus, IconScan } from "@tabler/icons-react";
+import {
+  IconAlertCircle,
+  IconCalendarEvent,
+  IconChartBar,
+  IconPlus,
+  IconScan,
+  IconTicket,
+} from "@tabler/icons-react";
 import { AnimatedSection } from "../../components/home/AnimatedSection";
 import { EmptyState } from "../../components/account/EmptyState";
 import { PageHeader } from "../../components/account/PageHeader";
 import { PageLoader } from "../../components/account/PageLoader";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
+import { StatCard } from "../../components/account/StatCard";
+import { ProducerEventListCard } from "../../components/producer/ProducerEventListCard";
 import * as eventService from "../../services/eventService";
 import type { Event } from "../../types/api";
-import { formatShortDate } from "../../utils/format";
 import { getApiErrorMessage } from "../../utils/errors";
-import { getEventStatusColor, getEventStatusLabel } from "../../utils/statusLabels";
 
 export function ProducerEventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -51,6 +59,19 @@ export function ProducerEventsPage() {
       cancelled = true;
     };
   }, []);
+
+  const summary = useMemo(() => {
+    const published = events.filter((event) => event.status === "PUBLISHED").length;
+    const drafts = events.filter((event) => event.status === "DRAFT").length;
+    const lots = events.reduce((sum, event) => sum + event.ticketLots.length, 0);
+
+    return {
+      total: events.length,
+      published,
+      drafts,
+      lots,
+    };
+  }, [events]);
 
   if (loading) {
     return <PageLoader label="Carregando eventos..." />;
@@ -103,75 +124,96 @@ export function ProducerEventsPage() {
         </Alert>
       ) : null}
 
+      {!error && events.length > 0 ? (
+        <AnimatedSection delayMs={60}>
+          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
+            <StatCard
+              label="Total"
+              value={String(summary.total)}
+              icon={<IconCalendarEvent size={20} />}
+            />
+            <StatCard
+              label="Publicados"
+              value={String(summary.published)}
+              icon={<IconTicket size={20} />}
+              iconColor="teal"
+              valueColor="teal"
+            />
+            <StatCard
+              label="Rascunhos"
+              value={String(summary.drafts)}
+              icon={<IconTicket size={20} />}
+              iconColor="gray"
+              valueColor="dimmed"
+            />
+            <StatCard
+              label="Lotes"
+              value={String(summary.lots)}
+              icon={<IconTicket size={20} />}
+              iconColor="brand"
+            />
+          </SimpleGrid>
+        </AnimatedSection>
+      ) : null}
+
       {!error && events.length === 0 ? (
         <AnimatedSection delayMs={60}>
-          <EmptyState
-            icon={<IconPlus size={32} />}
-            title="Nenhum evento criado"
-            description="Comece criando seu primeiro evento como rascunho e adicione os lotes de ingressos."
-            action={
-              <Button
-                component={Link}
-                to="/produtor/eventos/novo"
-                radius="xl"
-                leftSection={<IconPlus size={18} />}
-              >
-                Criar primeiro evento
-              </Button>
-            }
-          />
+          <PremiumPaper p="xl">
+            <EmptyState
+              icon={<IconPlus size={32} />}
+              title="Nenhum evento criado"
+              description="Comece criando seu primeiro evento como rascunho e adicione os lotes de ingressos."
+              action={
+                <Button
+                  component={Link}
+                  to="/produtor/eventos/novo"
+                  radius="xl"
+                  leftSection={<IconPlus size={18} />}
+                >
+                  Criar primeiro evento
+                </Button>
+              }
+            />
+          </PremiumPaper>
         </AnimatedSection>
       ) : null}
 
       {events.length > 0 ? (
-        <AnimatedSection delayMs={80}>
-          <PremiumPaper className="data-table-panel">
-            <Table highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Evento</Table.Th>
-                  <Table.Th>Data</Table.Th>
-                  <Table.Th>Status</Table.Th>
-                  <Table.Th>Lotes</Table.Th>
-                  <Table.Th />
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {events.map((event) => (
-                  <Table.Tr key={event.id}>
-                    <Table.Td>
-                      <Stack gap={2}>
-                        <Text fw={600}>{event.title}</Text>
-                        <Text size="xs" c="dimmed" lineClamp={1}>
-                          {event.location}
-                        </Text>
-                      </Stack>
-                    </Table.Td>
-                    <Table.Td>{formatShortDate(event.date)}</Table.Td>
-                    <Table.Td>
-                      <Badge color={getEventStatusColor(event.status)} variant="light" radius="sm">
-                        {getEventStatusLabel(event.status)}
-                      </Badge>
-                    </Table.Td>
-                    <Table.Td>{event.ticketLots.length}</Table.Td>
-                    <Table.Td>
-                      <Button
-                        size="xs"
-                        variant="light"
-                        radius="xl"
-                        component={Link}
-                        to={`/produtor/eventos/${event.id}`}
-                      >
-                        Gerenciar
-                      </Button>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </PremiumPaper>
+        <AnimatedSection delayMs={100}>
+          <Stack gap="md">
+            <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+              <Stack gap={4}>
+                <Title order={3} size="h4">
+                  Todos os eventos
+                </Title>
+                <Text c="dimmed" size="sm">
+                  Clique em um evento para editar, publicar ou gerenciar lotes.
+                </Text>
+              </Stack>
+              <Badge size="lg" variant="light" color="brand" radius="sm">
+                {events.length} evento{events.length === 1 ? "" : "s"}
+              </Badge>
+            </Group>
+
+            <Stack gap="md">
+              {events.map((event, index) => (
+                <AnimatedSection key={event.id} delayMs={120 + index * 50}>
+                  <ProducerEventListCard event={event} />
+                </AnimatedSection>
+              ))}
+            </Stack>
+          </Stack>
         </AnimatedSection>
       ) : null}
+
+      <Group hiddenFrom="xs" grow>
+        <Button component={Link} to="/produtor/eventos/novo" radius="xl" leftSection={<IconPlus size={18} />}>
+          Novo evento
+        </Button>
+        <Button component={Link} to="/produtor/check-in" variant="light" radius="xl" leftSection={<IconScan size={18} />}>
+          Check-in
+        </Button>
+      </Group>
     </Stack>
   );
 }
