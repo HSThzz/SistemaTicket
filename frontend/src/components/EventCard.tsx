@@ -8,7 +8,7 @@ import {
   getLowestPrice,
   getTotalAvailable,
 } from "../utils/eventVisuals";
-import { formatCurrencyFromCents, formatShortDate } from "../utils/format";
+import { formatCurrencyFromCents, formatEventDateOnly, formatEventTimeOnly } from "../utils/format";
 
 interface EventCardProps {
   event: Event;
@@ -47,9 +47,16 @@ export function EventCard({ event, variant = "default" }: EventCardProps) {
                 {extractCity(event.location)}
               </Text>
             </Group>
-            <Text size="xs" c="dimmed">
-              {formatShortDate(event.date)}
-            </Text>
+            <Group gap={8} c="dimmed" wrap="wrap">
+              <Group gap={4}>
+                <IconCalendar size={14} />
+                <Text size="xs">{formatEventDateOnly(event.date)}</Text>
+              </Group>
+              <Text size="xs" c="dimmed">
+                ·
+              </Text>
+              <Text size="xs">{formatEventTimeOnly(event.date)}</Text>
+            </Group>
           </Stack>
         </Group>
       </Card>
@@ -95,9 +102,15 @@ export function EventCard({ event, variant = "default" }: EventCardProps) {
           </Text>
         </Group>
 
-        <Group gap={6} c="dimmed">
-          <IconCalendar size={15} />
-          <Text size="sm">{formatShortDate(event.date)}</Text>
+        <Group gap={8} c="dimmed" wrap="wrap">
+          <Group gap={4}>
+            <IconCalendar size={15} />
+            <Text size="sm">{formatEventDateOnly(event.date)}</Text>
+          </Group>
+          <Text size="sm" c="dimmed">
+            ·
+          </Text>
+          <Text size="sm">{formatEventTimeOnly(event.date)}</Text>
         </Group>
 
         <Group justify="space-between" align="center" mt={4}>

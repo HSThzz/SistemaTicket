@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Anchor, Box, Group, Stack, Title } from "@mantine/core";
+import { Anchor, Badge, Box, Group, Stack, Text, Title } from "@mantine/core";
 import { Carousel } from "@mantine/carousel";
 import { IconChevronRight } from "@tabler/icons-react";
 import { EventCard } from "../EventCard";
@@ -7,21 +7,34 @@ import type { Event } from "../../types/api";
 
 interface EventShelfProps {
   title: string;
+  subtitle?: string;
   events: Event[];
   viewAllHref?: string;
 }
 
-export function EventShelf({ title, events, viewAllHref }: EventShelfProps) {
+export function EventShelf({ title, subtitle, events, viewAllHref }: EventShelfProps) {
   if (events.length === 0) {
     return null;
   }
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between" align="center">
-        <Title order={2} size="h3">
-          {title}
-        </Title>
+    <Stack gap="lg" className="home-event-shelf">
+      <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm">
+        <Stack gap={4}>
+          <Group gap="sm" align="center">
+            <Title order={2} size="h3" className="home-section-title">
+              {title}
+            </Title>
+            <Badge variant="light" color="brand" radius="sm" size="lg">
+              {events.length}
+            </Badge>
+          </Group>
+          {subtitle ? (
+            <Text c="dimmed" size="sm">
+              {subtitle}
+            </Text>
+          ) : null}
+        </Stack>
         {viewAllHref ? (
           <Anchor
             component={Link}
@@ -30,7 +43,7 @@ export function EventShelf({ title, events, viewAllHref }: EventShelfProps) {
             fw={600}
             size="sm"
             underline="never"
-            style={{ display: "flex", alignItems: "center", gap: 4 }}
+            className="home-shelf-link"
           >
             Ver tudo
             <IconChevronRight size={16} />

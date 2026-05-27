@@ -28,14 +28,18 @@ export function HeroCarousel({ events }: HeroCarouselProps) {
   const slides = events.slice(0, 5);
 
   return (
-    <Box>
+    <Box className="hero-carousel">
       <Carousel
         withIndicators
-        height={380}
+        height={400}
         slideSize="100%"
-        slideGap="md"
+        slideGap={0}
         emblaOptions={{ loop: slides.length > 1, align: "center" }}
         plugins={[autoplay.current]}
+        classNames={{
+          viewport: "hero-carousel-viewport",
+          slide: "hero-carousel-slide",
+        }}
         styles={{
           indicator: {
             width: 8,

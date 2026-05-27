@@ -18,14 +18,7 @@ export function HomeSearchBar({
     <Group
       gap="sm"
       wrap="nowrap"
-      className="search-bar-glow"
-      style={{
-        padding: 6,
-        borderRadius: "var(--mantine-radius-xl)",
-        border: "1px solid light-dark(rgba(0,0,0,0.08), rgba(255,255,255,0.1))",
-        background: "light-dark(white, var(--mantine-color-dark-6))",
-        boxShadow: "0 8px 32px light-dark(rgba(74,111,232,0.08), rgba(0,0,0,0.25))",
-      }}
+      className="search-bar-glow search-bar-premium"
     >
       <TextInput
         flex={1}

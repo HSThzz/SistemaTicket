@@ -1,4 +1,6 @@
 import { Accordion, Stack, Text, Title } from "@mantine/core";
+import { IconHelpCircle } from "@tabler/icons-react";
+import { PremiumPaper } from "../account/PremiumPaper";
 
 const FAQ_ITEMS = [
   {
@@ -30,27 +32,33 @@ const FAQ_ITEMS = [
 
 export function FaqSection() {
   return (
-    <Stack gap="lg">
-      <Stack gap={4}>
-        <Title order={2} size="h3">
-          Tire suas dúvidas
-        </Title>
-        <Text c="dimmed">Respostas rápidas sobre compra, ingressos e conta.</Text>
-      </Stack>
+    <PremiumPaper p="xl" className="home-faq-panel">
+      <Stack gap="lg">
+        <Stack gap={4}>
+          <Title order={2} size="h3" className="home-section-title">
+            Tire suas dúvidas
+          </Title>
+          <Text c="dimmed">Respostas rápidas sobre compra, ingressos e conta.</Text>
+        </Stack>
 
-      <Accordion
-        variant="separated"
-        radius="md"
-        chevronPosition="right"
-        classNames={{ item: "faq-item" }}
-      >
-        {FAQ_ITEMS.map((item) => (
-          <Accordion.Item key={item.question} value={item.question}>
-            <Accordion.Control fw={600}>{item.question}</Accordion.Control>
-            <Accordion.Panel c="dimmed">{item.answer}</Accordion.Panel>
-          </Accordion.Item>
-        ))}
-      </Accordion>
-    </Stack>
+        <Accordion
+          variant="separated"
+          radius="lg"
+          chevronPosition="right"
+          classNames={{ item: "faq-item home-faq-item" }}
+        >
+          {FAQ_ITEMS.map((item) => (
+            <Accordion.Item key={item.question} value={item.question}>
+              <Accordion.Control fw={600} icon={<IconHelpCircle size={18} color="var(--mantine-color-brand-6)" />}>
+                {item.question}
+              </Accordion.Control>
+              <Accordion.Panel c="dimmed" style={{ lineHeight: 1.65 }}>
+                {item.answer}
+              </Accordion.Panel>
+            </Accordion.Item>
+          ))}
+        </Accordion>
+      </Stack>
+    </PremiumPaper>
   );
 }

@@ -109,7 +109,7 @@ export function Layout() {
       padding={isFullWidthPage ? 0 : "md"}
       className={isHome ? "layout-home" : isHeroPage ? "layout-hero" : undefined}
       classNames={{
-        header: isHome ? "home-hero-bg layout-home-header" : undefined,
+        header: isHome ? "layout-home-header" : undefined,
         main: isHome ? "layout-home-main" : isHeroPage ? "layout-hero-main" : undefined,
       }}
     >
