@@ -80,6 +80,37 @@ export class WalletController {
     }
   }
 
+  async getGoogleWalletLink(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    const ticketId = req.params.ticketId;
+
+    if (typeof ticketId !== "string" || ticketId.length === 0) {
+      res.status(400).json({ error: "ticketId is required" });
+      return;
+    }
+
+    try {
+      const allowed = await walletAccessService.canAccessTicket(ticketId, {
+        userId: req.user.id,
+        role: req.user.role as UserRole,
+      });
+
+      if (!allowed) {
+        res.status(403).json({ error: "Forbidden", code: "FORBIDDEN" });
+        return;
+      }
+
+      const url = await walletService.generateGoogleWalletLink(ticketId);
+      res.json({ url });
+    } catch (error) {
+      this.handleError(res, "Google Wallet link generation failed", ticketId, error);
+    }
+  }
+
   private handleError(
     res: Response,
     message: string,

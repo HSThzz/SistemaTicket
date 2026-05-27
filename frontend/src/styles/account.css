@@ -167,6 +167,13 @@
   border: 1px dashed var(--mantine-color-default-border);
 }
 
+.ticket-wallet-actions {
+  padding: var(--mantine-spacing-md);
+  border-radius: var(--mantine-radius-md);
+  border: 1px dashed light-dark(rgba(74, 111, 232, 0.25), rgba(74, 111, 232, 0.35));
+  background: light-dark(rgba(74, 111, 232, 0.04), rgba(74, 111, 232, 0.08));
+}
+
 .empty-state-card {
   border: 1px dashed var(--mantine-color-default-border);
   background: light-dark(

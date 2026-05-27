@@ -16,4 +16,10 @@ router.get(
   (req, res) => void walletController.redirectGoogleWallet(req, res),
 );
 
+router.get(
+  "/google/:ticketId/link",
+  authMiddleware,
+  (req, res) => void walletController.getGoogleWalletLink(req, res),
+);
+
 export default router;

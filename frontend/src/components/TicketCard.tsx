@@ -18,6 +18,7 @@ import {
 } from "@tabler/icons-react";
 import { QRCodeSVG } from "qrcode.react";
 import type { TicketListItem } from "../types/api";
+import { TicketWalletActions } from "./TicketWalletActions";
 import { extractCity, getEventCoverStyle } from "../utils/eventVisuals";
 import { formatCurrencyFromCents, formatShortDate } from "../utils/format";
 import { getTicketStatusColor, getTicketStatusLabel } from "../utils/statusLabels";
@@ -97,6 +98,8 @@ export function TicketCard({ ticket }: TicketCardProps) {
               </Stack>
             </Group>
           ) : null}
+
+          {isActive ? <TicketWalletActions ticketId={ticket.id} /> : null}
 
           {isUsed && ticket.checkedInAt ? (
             <Group gap="xs" c="blue">
