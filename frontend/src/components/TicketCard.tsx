@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Anchor,
   Badge,
   Box,
+  Button,
   Group,
   Paper,
   Stack,
@@ -13,6 +15,8 @@ import {
 import {
   IconCalendar,
   IconCheck,
+  IconChevronDown,
+  IconChevronUp,
   IconMapPin,
   IconTicket,
 } from "@tabler/icons-react";
@@ -28,6 +32,7 @@ interface TicketCardProps {
 }
 
 export function TicketCard({ ticket }: TicketCardProps) {
+  const [showCode, setShowCode] = useState(false);
   const isActive = ticket.status === "ACTIVE";
   const isUsed = ticket.status === "USED";
   const eventHref = `/eventos/${ticket.event.id}`;
@@ -101,6 +106,32 @@ export function TicketCard({ ticket }: TicketCardProps) {
 
           {isActive ? <TicketWalletActions ticketId={ticket.id} /> : null}
 
+          {isActive ? (
+            <Button
+              variant="subtle"
+              color="gray"
+              size="compact-sm"
+              radius="xl"
+              fullWidth
+              className="ticket-code-toggle"
+              rightSection={showCode ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
+              onClick={() => setShowCode((value) => !value)}
+            >
+              {showCode ? "Ocultar código manual" : "Problema com o QR? Ver código manual"}
+            </Button>
+          ) : null}
+
+          {isActive && showCode ? (
+            <Box className="ticket-code-block">
+              <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb={6}>
+                Código do ingresso
+              </Text>
+              <Text ff="monospace" size="sm" fw={500} style={{ wordBreak: "break-all" }}>
+                {ticket.uniqueCode}
+              </Text>
+            </Box>
+          ) : null}
+
           {isUsed && ticket.checkedInAt ? (
             <Group gap="xs" c="blue">
               <IconCheck size={16} />
@@ -110,14 +141,31 @@ export function TicketCard({ ticket }: TicketCardProps) {
             </Group>
           ) : null}
 
-          <Box className="ticket-code-block">
-            <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb={6}>
-              Código do ingresso
-            </Text>
-            <Text ff="monospace" size="sm" fw={500} style={{ wordBreak: "break-all" }}>
-              {ticket.uniqueCode}
-            </Text>
-          </Box>
+          {!isActive ? (
+            <Button
+              variant="subtle"
+              color="gray"
+              size="compact-sm"
+              radius="xl"
+              fullWidth
+              className="ticket-code-toggle"
+              rightSection={showCode ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
+              onClick={() => setShowCode((value) => !value)}
+            >
+              {showCode ? "Ocultar código" : "Ver código do ingresso"}
+            </Button>
+          ) : null}
+
+          {!isActive && showCode ? (
+            <Box className="ticket-code-block">
+              <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb={6}>
+                Código do ingresso
+              </Text>
+              <Text ff="monospace" size="sm" fw={500} style={{ wordBreak: "break-all" }}>
+                {ticket.uniqueCode}
+              </Text>
+            </Box>
+          ) : null}
 
           <Anchor component={Link} to={eventHref} size="sm" fw={600}>
             Ver detalhes do evento →
