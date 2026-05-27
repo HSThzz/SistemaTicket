@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   Alert,
   Button,
-  Grid,
   SegmentedControl,
   SimpleGrid,
   Stack,
@@ -20,7 +19,7 @@ import { EmptyState } from "../components/account/EmptyState";
 import { PageHeader } from "../components/account/PageHeader";
 import { StatCard } from "../components/account/StatCard";
 import { TicketsPageSkeleton } from "../components/account/TicketsPageSkeleton";
-import { TicketCard } from "../components/TicketCard";
+import { TicketsWallet } from "../components/account/TicketsWallet";
 import * as ticketService from "../services/ticketService";
 import type { TicketListItem } from "../types/api";
 import { getApiErrorMessage } from "../utils/errors";
@@ -71,10 +70,10 @@ export function MyTicketsPage() {
   }, []);
 
   const filteredTickets = useMemo(() => {
-    if (filter === "all") {
-      return tickets;
-    }
-    return tickets.filter((ticket) => ticket.status === filter);
+    const filtered =
+      filter === "all" ? tickets : tickets.filter((ticket) => ticket.status === filter);
+
+    return ticketService.sortTicketsByEventDate(filtered);
   }, [tickets, filter]);
 
   const stats = useMemo(
@@ -97,7 +96,7 @@ export function MyTicketsPage() {
           icon={<IconTicket size={28} color="var(--mantine-color-brand-6)" />}
           title="Meus"
           highlight="ingressos"
-          description="Seus ingressos digitais com QR Code para entrada. Filtre por status e acesse os detalhes de cada evento."
+          description="Sua carteira digital de ingressos. Toque em um cartão para abrir o QR Code e salvar na Apple ou Google Wallet."
           action={
             <Button
               component={Link}
@@ -167,15 +166,9 @@ export function MyTicketsPage() {
               />
             </AnimatedSection>
           ) : (
-            <Grid>
-              {filteredTickets.map((ticket, index) => (
-                <Grid.Col key={ticket.id} span={{ base: 12, lg: 6 }}>
-                  <AnimatedSection delayMs={120 + index * 40}>
-                    <TicketCard ticket={ticket} />
-                  </AnimatedSection>
-                </Grid.Col>
-              ))}
-            </Grid>
+            <AnimatedSection delayMs={120}>
+              <TicketsWallet tickets={filteredTickets} />
+            </AnimatedSection>
           )}
         </>
       ) : null}

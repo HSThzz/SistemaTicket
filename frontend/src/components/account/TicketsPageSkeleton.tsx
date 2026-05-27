@@ -1,19 +1,10 @@
-import { Grid, Group, Paper, Skeleton, Stack } from "@mantine/core";
+import { Box, Group, Skeleton, Stack } from "@mantine/core";
 
-function TicketCardSkeleton() {
+function WalletPassSkeleton() {
   return (
-    <Paper radius="lg" withBorder p={0} className="skeleton-shimmer" style={{ overflow: "hidden" }}>
-      <Group wrap="nowrap" align="stretch" gap={0}>
-        <Skeleton w={88} radius={0} />
-        <Stack gap="sm" p="md" flex={1}>
-          <Skeleton h={20} w="70%" />
-          <Skeleton h={14} w="50%" />
-          <Skeleton h={14} w="60%" />
-          <Skeleton h={120} radius="md" mt="xs" />
-          <Skeleton h={32} radius="sm" />
-        </Stack>
-      </Group>
-    </Paper>
+    <Box className="tickets-wallet-carousel-item">
+      <Skeleton h={190} radius={18} className="skeleton-shimmer" />
+    </Box>
   );
 }
 
@@ -24,24 +15,39 @@ export function TicketsPageSkeleton() {
         <Skeleton h={36} w={280} radius="md" className="skeleton-shimmer" />
         <Skeleton h={20} w={360} radius="sm" className="skeleton-shimmer" />
       </Stack>
-      <Grid>
-        <Grid.Col span={{ base: 6, sm: 4 }}>
-          <Skeleton h={88} radius="lg" className="skeleton-shimmer" />
-        </Grid.Col>
-        <Grid.Col span={{ base: 6, sm: 4 }}>
-          <Skeleton h={88} radius="lg" className="skeleton-shimmer" />
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, sm: 4 }}>
-          <Skeleton h={88} radius="lg" className="skeleton-shimmer" />
-        </Grid.Col>
-      </Grid>
-      <Grid>
-        {Array.from({ length: 4 }).map((_, index) => (
-          <Grid.Col key={index} span={{ base: 12, lg: 6 }}>
-            <TicketCardSkeleton />
-          </Grid.Col>
-        ))}
-      </Grid>
+
+      <SimpleGridSkeleton />
+
+      <Box className="tickets-wallet">
+        <Group justify="space-between" mb="md">
+          <Skeleton h={18} w={180} radius="sm" className="skeleton-shimmer" />
+          <Skeleton h={32} w={96} radius="xl" className="skeleton-shimmer" />
+        </Group>
+
+        <Box className="tickets-wallet-carousel">
+          <WalletPassSkeleton />
+          <WalletPassSkeleton />
+          <WalletPassSkeleton />
+        </Box>
+
+        <Box className="tickets-wallet-detail" mt="md">
+          <Stack gap="sm">
+            <Skeleton h={148} w={148} radius="md" mx="auto" className="skeleton-shimmer" />
+            <Skeleton h={72} radius="md" className="skeleton-shimmer" />
+            <Skeleton h={36} radius="xl" className="skeleton-shimmer" />
+          </Stack>
+        </Box>
+      </Box>
     </Stack>
+  );
+}
+
+function SimpleGridSkeleton() {
+  return (
+    <Group grow>
+      <Skeleton h={88} radius="lg" className="skeleton-shimmer" />
+      <Skeleton h={88} radius="lg" className="skeleton-shimmer" />
+      <Skeleton h={88} radius="lg" className="skeleton-shimmer" />
+    </Group>
   );
 }

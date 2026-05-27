@@ -90,7 +90,184 @@
   line-height: 1;
 }
 
-/* Ingresso estilo ticket físico */
+/* Carteira de ingressos */
+.tickets-wallet {
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
+  padding: var(--mantine-spacing-md);
+  border-radius: calc(var(--mantine-radius-lg) + 4px);
+  border: 1px solid var(--mantine-color-default-border);
+  background:
+    radial-gradient(
+      ellipse 120% 80% at 50% -20%,
+      light-dark(rgba(74, 111, 232, 0.12), rgba(74, 111, 232, 0.18)) 0%,
+      transparent 55%
+    ),
+    light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  box-shadow:
+    inset 0 1px 0 light-dark(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.04)),
+    0 20px 50px light-dark(rgba(74, 111, 232, 0.08), rgba(0, 0, 0, 0.35));
+}
+
+.tickets-wallet-toolbar {
+  padding-inline: var(--mantine-spacing-xs);
+}
+
+.tickets-wallet-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-xl);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  color: var(--mantine-color-dimmed);
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.tickets-wallet-nav-btn:hover {
+  border-color: light-dark(rgba(74, 111, 232, 0.35), rgba(74, 111, 232, 0.45));
+  color: var(--mantine-color-brand-6);
+  transform: translateY(-1px);
+}
+
+.tickets-wallet-counter {
+  min-width: 42px;
+  text-align: center;
+}
+
+.tickets-wallet-carousel {
+  display: flex;
+  gap: var(--mantine-spacing-md);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--mantine-spacing-md);
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-xs) var(--mantine-spacing-lg);
+  margin-inline: calc(var(--mantine-spacing-xs) * -1);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.tickets-wallet-carousel-item {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+  width: min(300px, 78vw);
+}
+
+.ticket-wallet-pass {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.586 / 1;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  border: 2px solid transparent;
+  border-radius: 18px;
+  overflow: hidden;
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  box-shadow:
+    0 12px 28px light-dark(rgba(74, 111, 232, 0.12), rgba(0, 0, 0, 0.38)),
+    0 2px 0 light-dark(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.04)) inset;
+  cursor: pointer;
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.ticket-wallet-pass:hover {
+  transform: translateY(-4px) scale(1.02);
+}
+
+.ticket-wallet-pass.is-selected {
+  border-color: light-dark(rgba(74, 111, 232, 0.65), rgba(74, 111, 232, 0.85));
+  transform: translateY(-6px) scale(1.04);
+  box-shadow:
+    0 18px 40px light-dark(rgba(74, 111, 232, 0.22), rgba(0, 0, 0, 0.45)),
+    0 0 0 1px light-dark(rgba(74, 111, 232, 0.15), rgba(74, 111, 232, 0.25));
+}
+
+.ticket-wallet-pass.is-inactive {
+  opacity: 0.82;
+}
+
+.ticket-wallet-pass-face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: var(--mantine-spacing-md);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.ticket-wallet-pass-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    light-dark(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.22)) 0%,
+    light-dark(rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.72)) 100%
+  );
+}
+
+.ticket-wallet-pass-face-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.ticket-wallet-pass-badge {
+  backdrop-filter: blur(8px);
+}
+
+.ticket-wallet-pass-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 22px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.45));
+  color: light-dark(var(--mantine-color-dark-6), var(--mantine-color-dark-2));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.45) inset;
+}
+
+.tickets-wallet-detail {
+  margin-top: var(--mantine-spacing-md);
+  padding: var(--mantine-spacing-lg);
+  border-radius: var(--mantine-radius-lg);
+  border: 1px solid var(--mantine-color-default-border);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  box-shadow: light-dark(0 4px 24px rgba(74, 111, 232, 0.04), 0 4px 24px rgba(0, 0, 0, 0.2));
+}
+
+.ticket-wallet-pass-body {
+  padding-top: var(--mantine-spacing-xs);
+}
+
+.tickets-wallet-hint {
+  padding-inline: var(--mantine-spacing-sm);
+}
+
+@media (min-width: 48em) {
+  .tickets-wallet-carousel-item {
+    width: 320px;
+  }
+}
+
+/* Ingresso estilo ticket físico (legado) */
 .ticket-card-premium {
   overflow: hidden;
   border: 1px solid var(--mantine-color-default-border);
