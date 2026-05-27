@@ -1,6 +1,16 @@
-import { CopyButton, Group, Paper, Stack, Text, Textarea, Tooltip } from "@mantine/core";
-import { IconCheck, IconCopy } from "@tabler/icons-react";
-import { formatCurrencyFromCents, formatShortDate } from "../utils/format";
+import {
+  Box,
+  Button,
+  CopyButton,
+  Group,
+  Stack,
+  Text,
+  ThemeIcon,
+  Tooltip,
+} from "@mantine/core";
+import { IconBolt, IconCheck, IconCopy, IconQrcode } from "@tabler/icons-react";
+import { PremiumPaper } from "./account/PremiumPaper";
+import { formatCurrencyFromCents, formatEventDateOnly, formatEventTimeOnly } from "../utils/format";
 
 interface PixPaymentPanelProps {
   pixCopyPaste: string;
@@ -10,57 +20,108 @@ interface PixPaymentPanelProps {
 
 export function PixPaymentPanel({ pixCopyPaste, amountCents, expiresAt }: PixPaymentPanelProps) {
   return (
-    <Paper p="lg" radius="md" withBorder>
-      <Stack gap="md">
-        <Stack gap={4}>
-          <Text fw={600} size="lg">
-            Pague com PIX
-          </Text>
-          <Text c="dimmed" size="sm">
-            Valor: {formatCurrencyFromCents(amountCents)} · Expira em{" "}
-            {formatShortDate(expiresAt)}
-          </Text>
-        </Stack>
-
-        <Textarea
-          label="Pix Copia e Cola"
-          value={pixCopyPaste}
-          readOnly
-          minRows={4}
-          autosize
-        />
-
-        <Group>
-          <CopyButton value={pixCopyPaste}>
-            {({ copied, copy }) => (
-              <Tooltip label={copied ? "Copiado!" : "Copiar código PIX"} withArrow>
-                <Group
-                  gap="xs"
-                  style={{ cursor: "pointer" }}
-                  onClick={copy}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      copy();
-                    }
-                  }}
-                >
-                  {copied ? <IconCheck size={18} color="green" /> : <IconCopy size={18} />}
-                  <Text fw={500} c={copied ? "green" : "brand"}>
-                    {copied ? "Código copiado" : "Copiar código PIX"}
-                  </Text>
-                </Group>
-              </Tooltip>
-            )}
-          </CopyButton>
+    <PremiumPaper p="xl" className="pix-payment-panel">
+      <Stack gap="lg">
+        <Group gap="sm" align="flex-start">
+          <ThemeIcon size={48} radius="xl" variant="light" color="teal">
+            <IconQrcode size={24} />
+          </ThemeIcon>
+          <Stack gap={4}>
+            <Text fw={700} size="lg">
+              Pague com PIX
+            </Text>
+            <Text c="dimmed" size="sm" style={{ lineHeight: 1.55 }}>
+              Copie o código abaixo e conclua o pagamento no app do seu banco.
+            </Text>
+          </Stack>
         </Group>
 
-        <Text size="sm" c="dimmed">
-          Após o pagamento, a confirmação pode levar alguns segundos. Esta página atualiza
-          automaticamente.
+        <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+          <Stack gap={2}>
+            <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+              Valor a pagar
+            </Text>
+            <Text className="order-total-value" c="brand">
+              {formatCurrencyFromCents(amountCents)}
+            </Text>
+          </Stack>
+          <Stack gap={2} ta="right">
+            <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+              Expira em
+            </Text>
+            <Text fw={600}>
+              {formatEventDateOnly(expiresAt)} · {formatEventTimeOnly(expiresAt)}
+            </Text>
+          </Stack>
+        </Group>
+
+        <Stack gap="xs">
+          <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+            Pix Copia e Cola
+          </Text>
+          <Box className="pix-code-block">
+            <Text ff="monospace" size="sm" style={{ wordBreak: "break-all", lineHeight: 1.6 }}>
+              {pixCopyPaste}
+            </Text>
+          </Box>
+        </Stack>
+
+        <CopyButton value={pixCopyPaste}>
+          {({ copied, copy }) => (
+            <Tooltip label={copied ? "Copiado!" : "Copiar código PIX"} withArrow>
+              <Button
+                fullWidth
+                radius="xl"
+                variant={copied ? "light" : "filled"}
+                color={copied ? "green" : "brand"}
+                leftSection={copied ? <IconCheck size={18} /> : <IconCopy size={18} />}
+                onClick={copy}
+              >
+                {copied ? "Código copiado" : "Copiar código PIX"}
+              </Button>
+            </Tooltip>
+          )}
+        </CopyButton>
+
+        <Text size="sm" c="dimmed" ta="center" style={{ lineHeight: 1.55 }}>
+          Após o pagamento, a confirmação pode levar alguns segundos. Esta página atualiza automaticamente.
         </Text>
       </Stack>
-    </Paper>
+    </PremiumPaper>
+  );
+}
+
+interface DevSimulatePaymentPanelProps {
+  loading: boolean;
+  onSimulate: () => void;
+}
+
+export function DevSimulatePaymentPanel({ loading, onSimulate }: DevSimulatePaymentPanelProps) {
+  return (
+    <PremiumPaper p="lg" className="checkout-dev-panel">
+      <Stack gap="md">
+        <Group gap="sm" align="flex-start">
+          <ThemeIcon size={40} radius="md" variant="light" color="yellow">
+            <IconBolt size={20} />
+          </ThemeIcon>
+          <Stack gap={4}>
+            <Text fw={700}>Simular pagamento (dev)</Text>
+            <Text size="sm" c="dimmed" style={{ lineHeight: 1.55 }}>
+              Ambiente de desenvolvimento: confirma o PIX instantaneamente sem usar um banco real.
+            </Text>
+          </Stack>
+        </Group>
+        <Button
+          variant="light"
+          color="teal"
+          radius="xl"
+          loading={loading}
+          leftSection={<IconBolt size={18} />}
+          onClick={onSimulate}
+        >
+          Simular pagamento PIX
+        </Button>
+      </Stack>
+    </PremiumPaper>
   );
 }

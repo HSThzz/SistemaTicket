@@ -81,6 +81,7 @@ export function Layout() {
   const isHome = currentPath === "/";
   const isHeroPage =
     /^\/eventos\/[^/]+$/.test(currentPath) ||
+    /^\/eventos\/[^/]+\/comprar$/.test(currentPath) ||
     /^\/produtor\/eventos\/[^/]+$/.test(currentPath) ||
     currentPath === "/produtor/check-in";
   const isFullWidthPage = isHome || isHeroPage;

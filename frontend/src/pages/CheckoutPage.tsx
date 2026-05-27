@@ -2,33 +2,45 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   Alert,
+  Badge,
+  Box,
   Button,
+  Container,
+  Divider,
+  Grid,
   Group,
   Loader,
   NumberInput,
   Stack,
   Stepper,
   Text,
+  ThemeIcon,
+  Title,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
   IconAlertCircle,
+  IconCalendar,
   IconCheck,
+  IconClock,
+  IconMapPin,
+  IconShieldCheck,
   IconShoppingCart,
   IconTicket,
   IconX,
 } from "@tabler/icons-react";
 import { AnimatedSection } from "../components/home/AnimatedSection";
-import { PageHeader } from "../components/account/PageHeader";
+import { BackButton } from "../components/account/BackButton";
 import { PageLoader } from "../components/account/PageLoader";
 import { PremiumPaper } from "../components/account/PremiumPaper";
-import { PixPaymentPanel } from "../components/PixPaymentPanel";
+import { DevSimulatePaymentPanel, PixPaymentPanel } from "../components/PixPaymentPanel";
 import { PhaseBadge } from "../components/PhaseBadge";
 import { useReservationPoller } from "../hooks/useReservationPoller";
 import * as eventService from "../services/eventService";
 import * as purchaseService from "../services/purchaseService";
 import type { Event, TicketLot } from "../types/api";
-import { formatCurrencyFromCents } from "../utils/format";
+import { getEventCoverStyle } from "../utils/eventVisuals";
+import { formatCurrencyFromCents, formatEventDateOnly, formatEventTimeOnly } from "../utils/format";
 import { getApiErrorMessage } from "../utils/errors";
 
 function getActiveStep(phase: string | undefined): number {
@@ -44,6 +56,85 @@ function getActiveStep(phase: string | undefined): number {
     default:
       return 0;
   }
+}
+
+function CheckoutSummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
+      <Text size="sm" c="dimmed">
+        {label}
+      </Text>
+      <Text size="sm" fw={600} ta="right">
+        {value}
+      </Text>
+    </Group>
+  );
+}
+
+function CheckoutOrderSummary({
+  event,
+  selectedLot,
+  quantity,
+  totalCents,
+}: {
+  event: Event;
+  selectedLot: TicketLot;
+  quantity: number;
+  totalCents: number;
+}) {
+  return (
+    <PremiumPaper p="xl" className="checkout-summary-panel">
+      <Stack gap="lg">
+        <Stack gap="sm">
+          <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+            Resumo do pedido
+          </Text>
+          <Title order={3} size="h4" lineClamp={2} style={{ letterSpacing: "-0.01em" }}>
+            {event.title}
+          </Title>
+        </Stack>
+
+        <Box
+          className="checkout-summary-cover"
+          style={getEventCoverStyle(event)}
+          aria-hidden
+        />
+
+        <Stack gap="sm">
+          <CheckoutSummaryRow label="Lote" value={selectedLot.name} />
+          <CheckoutSummaryRow
+            label="Quantidade"
+            value={`${quantity} ingresso${quantity === 1 ? "" : "s"}`}
+          />
+          <CheckoutSummaryRow
+            label="Unitário"
+            value={formatCurrencyFromCents(selectedLot.price)}
+          />
+          <CheckoutSummaryRow
+            label="Data"
+            value={`${formatEventDateOnly(event.date)} · ${formatEventTimeOnly(event.date)}`}
+          />
+          <CheckoutSummaryRow label="Local" value={event.location} />
+        </Stack>
+
+        <Divider />
+
+        <Group justify="space-between" align="center">
+          <Text fw={700} size="lg">
+            Total
+          </Text>
+          <Text fw={800} className="order-total-value" c="brand">
+            {formatCurrencyFromCents(totalCents)}
+          </Text>
+        </Group>
+
+        <Group gap={6} c="dimmed">
+          <IconShieldCheck size={16} />
+          <Text size="sm">Reserva garantida por 15 minutos após confirmar.</Text>
+        </Group>
+      </Stack>
+    </PremiumPaper>
+  );
 }
 
 export function CheckoutPage() {
@@ -182,9 +273,11 @@ export function CheckoutPage() {
 
   if (eventError || !event || !selectedLot) {
     return (
-      <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro" radius="lg">
-        {eventError ?? "Lote não encontrado."}
-      </Alert>
+      <Container size="lg" py="md">
+        <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro" radius="lg">
+          {eventError ?? "Lote não encontrado."}
+        </Alert>
+      </Container>
     );
   }
 
@@ -194,162 +287,281 @@ export function CheckoutPage() {
   const isFailed = phase === "EXPIRED" || phase === "FAILED";
 
   return (
-    <Stack gap="lg">
-      <AnimatedSection>
-        <PageHeader
-          icon={<IconShoppingCart size={28} color="var(--mantine-color-brand-6)" />}
-          title="Finalizar"
-          highlight="compra"
-          description={`${event.title} · ${selectedLot.name}`}
-        />
-      </AnimatedSection>
-
-      {isCheckoutStarted ? (
-        <AnimatedSection delayMs={80}>
-          <PremiumPaper p="xl">
-            <Stack gap="lg">
-              <Group justify="space-between" wrap="wrap" gap="sm">
-                <Text fw={600} size="lg">
-                  Status da compra
-                </Text>
-                {phase ? <PhaseBadge phase={phase} /> : null}
-              </Group>
-
-              <Stepper active={getActiveStep(phase)} size="sm" allowNextStepsSelect={false}>
-                <Stepper.Step label="Reserva" description="Confirmada" />
-                <Stepper.Step label="Processamento" description="Persistência" />
-                <Stepper.Step label="PIX" description="Aguardando" />
-                <Stepper.Step label="Concluído" description="Ingressos" />
-              </Stepper>
-
-              {polling ? (
-                <Group gap="sm">
-                  <Loader size="sm" color="brand" />
-                  <Text size="sm" c="dimmed">
-                    Atualizando status...
+    <Stack gap={0}>
+      <Box className="checkout-hero full-bleed" style={getEventCoverStyle(event)}>
+        <Box className="producer-manage-hero-overlay" />
+        <Container size="lg" px="md" className="checkout-hero-content">
+          <Stack gap="md">
+            <BackButton
+              to={`/eventos/${event.id}`}
+              label="Voltar ao evento"
+              inverted
+              style={{ alignSelf: "flex-start" }}
+            />
+            <Stack gap="sm" maw={640}>
+              <Badge color="white" c="dark" variant="filled" radius="sm" w="fit-content">
+                Checkout seguro
+              </Badge>
+              <Title
+                order={1}
+                style={{
+                  fontSize: "clamp(1.75rem, 4vw, 2.5rem)",
+                  lineHeight: 1.12,
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                Finalizar compra
+              </Title>
+              <Group gap="lg" wrap="wrap" c="white" opacity={0.92}>
+                <Group gap={6}>
+                  <IconTicket size={18} />
+                  <Text size="sm" fw={500}>
+                    {selectedLot.name}
                   </Text>
                 </Group>
-              ) : null}
-
-              {pollError ? (
-                <Alert color="red" icon={<IconAlertCircle size={18} />} radius="md">
-                  {pollError}
-                </Alert>
-              ) : null}
-
-              {phase === "AWAITING_PAYMENT" && status?.payment ? (
-                <>
-                  <PixPaymentPanel
-                    pixCopyPaste={status.payment.pixCopyPaste}
-                    amountCents={status.payment.amountCents}
-                    expiresAt={status.payment.expiresAt}
-                  />
-                  <Button
-                    variant="light"
-                    color="teal"
-                    radius="xl"
-                    loading={simulating}
-                    onClick={() => void handleSimulatePayment()}
-                  >
-                    Simular pagamento PIX (dev)
-                  </Button>
-                </>
-              ) : null}
-
-              {isPaid ? (
-                <Alert color="green" icon={<IconCheck size={18} />} title="Pagamento confirmado!" radius="md">
-                  Seus ingressos foram emitidos com sucesso.
-                </Alert>
-              ) : null}
-
-              {isFailed ? (
-                <Alert color="red" icon={<IconAlertCircle size={18} />} title="Compra não concluída" radius="md">
-                  A reserva expirou ou o pagamento falhou. Tente novamente.
-                </Alert>
-              ) : null}
-
-              <Group wrap="wrap">
-                {isPaid ? (
-                  <Button component={Link} to="/ingressos" radius="xl" leftSection={<IconTicket size={18} />}>
-                    Ver meus ingressos
-                  </Button>
-                ) : null}
-                {isFailed ? (
-                  <Button
-                    radius="xl"
-                    onClick={() => {
-                      setReservationId(null);
-                      setConfirmingPayment(false);
-                    }}
-                  >
-                    Tentar novamente
-                  </Button>
-                ) : null}
-                <Button variant="subtle" component={Link} to={`/eventos/${event.id}`} radius="xl">
-                  Voltar ao evento
-                </Button>
+                <Group gap={6}>
+                  <IconCalendar size={18} />
+                  <Text size="sm" fw={500}>
+                    {formatEventDateOnly(event.date)}
+                  </Text>
+                </Group>
+                <Group gap={6}>
+                  <IconMapPin size={18} />
+                  <Text size="sm" fw={500} lineClamp={1}>
+                    {event.location}
+                  </Text>
+                </Group>
               </Group>
             </Stack>
-          </PremiumPaper>
-        </AnimatedSection>
-      ) : (
-        <AnimatedSection delayMs={80}>
-          <PremiumPaper p="xl">
-            <Stack gap="lg">
-              <Stack gap="sm">
-                <Text fw={600} size="lg">
-                  Resumo do pedido
-                </Text>
-                <Group justify="space-between">
-                  <Text c="dimmed">Lote</Text>
-                  <Text fw={500}>{selectedLot.name}</Text>
-                </Group>
-                <Group justify="space-between">
-                  <Text c="dimmed">Preço unitário</Text>
-                  <Text fw={500}>{formatCurrencyFromCents(selectedLot.price)}</Text>
-                </Group>
-                <Group justify="space-between">
-                  <Text c="dimmed">Disponíveis</Text>
-                  <Text fw={500}>{selectedLot.availableQuantity}</Text>
-                </Group>
+          </Stack>
+        </Container>
+      </Box>
+
+      <Box className="checkout-body">
+        <Container size="lg" py="xl" px="md">
+          <Grid gutter="xl">
+            <Grid.Col span={{ base: 12, md: 7 }}>
+              <Stack gap="lg">
+                {!isCheckoutStarted ? (
+                  <AnimatedSection>
+                    <PremiumPaper p="xl">
+                      <Stack gap="lg">
+                        <Group gap="sm" className="producer-form-section-title">
+                          <ThemeIcon size={40} radius="md" variant="light" color="brand">
+                            <IconShoppingCart size={20} />
+                          </ThemeIcon>
+                          <Stack gap={2}>
+                            <Title order={3} size="h4" className="producer-section-title">
+                              Reservar ingressos
+                            </Title>
+                            <Text size="sm" c="dimmed">
+                              Escolha a quantidade e confirme para gerar o PIX.
+                            </Text>
+                          </Stack>
+                        </Group>
+
+                        <Group grow align="flex-start" wrap="wrap">
+                          <Box className="checkout-metric-block">
+                            <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb={6}>
+                              Disponíveis
+                            </Text>
+                            <Text fw={800} size="lg">
+                              {selectedLot.availableQuantity}
+                            </Text>
+                          </Box>
+                          <Box className="checkout-metric-block">
+                            <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb={6}>
+                              Preço unitário
+                            </Text>
+                            <Text fw={800} size="lg" c="brand">
+                              {formatCurrencyFromCents(selectedLot.price)}
+                            </Text>
+                          </Box>
+                        </Group>
+
+                        <NumberInput
+                          label="Quantidade"
+                          description={`Máximo de ${selectedLot.availableQuantity} ingresso${selectedLot.availableQuantity === 1 ? "" : "s"} neste lote.`}
+                          min={1}
+                          max={selectedLot.availableQuantity}
+                          value={quantity}
+                          onChange={(value) => setQuantity(Number(value) || 1)}
+                          radius="md"
+                        />
+
+                        <Button
+                          size="lg"
+                          radius="xl"
+                          leftSection={<IconShoppingCart size={18} />}
+                          loading={reserving}
+                          disabled={selectedLot.availableQuantity === 0}
+                          onClick={() => void handleReserve()}
+                        >
+                          Reservar ingressos
+                        </Button>
+
+                        <Group gap={6} c="dimmed">
+                          <IconClock size={16} />
+                          <Text size="sm">
+                            Após reservar, você terá <strong>15 minutos</strong> para pagar via PIX.
+                          </Text>
+                        </Group>
+                      </Stack>
+                    </PremiumPaper>
+                  </AnimatedSection>
+                ) : (
+                  <AnimatedSection>
+                    <Stack gap="lg">
+                      <PremiumPaper p="xl">
+                        <Stack gap="lg">
+                          <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
+                            <Stack gap={4}>
+                              <Title order={3} size="h4" className="producer-section-title">
+                                Status da compra
+                              </Title>
+                              <Text size="sm" c="dimmed">
+                                Acompanhe cada etapa até a emissão dos ingressos.
+                              </Text>
+                            </Stack>
+                            {phase ? <PhaseBadge phase={phase} /> : null}
+                          </Group>
+
+                          <Stepper
+                            active={getActiveStep(phase)}
+                            size="sm"
+                            allowNextStepsSelect={false}
+                            className="checkout-stepper"
+                          >
+                            <Stepper.Step label="Reserva" description="Confirmada" />
+                            <Stepper.Step label="Processamento" description="Persistência" />
+                            <Stepper.Step label="PIX" description="Aguardando" />
+                            <Stepper.Step label="Concluído" description="Ingressos" />
+                          </Stepper>
+
+                          {polling ? (
+                            <Group gap="sm" className="checkout-status-loading">
+                              <Loader size="sm" color="brand" />
+                              <Text size="sm" c="dimmed">
+                                Atualizando status...
+                              </Text>
+                            </Group>
+                          ) : null}
+
+                          {pollError ? (
+                            <Alert color="red" icon={<IconAlertCircle size={18} />} radius="lg">
+                              {pollError}
+                            </Alert>
+                          ) : null}
+                        </Stack>
+                      </PremiumPaper>
+
+                      {phase === "AWAITING_PAYMENT" && status?.payment ? (
+                        <>
+                          <PixPaymentPanel
+                            pixCopyPaste={status.payment.pixCopyPaste}
+                            amountCents={status.payment.amountCents}
+                            expiresAt={status.payment.expiresAt}
+                          />
+                          <DevSimulatePaymentPanel
+                            loading={simulating}
+                            onSimulate={() => void handleSimulatePayment()}
+                          />
+                        </>
+                      ) : null}
+
+                      {isPaid ? (
+                        <PremiumPaper p="xl" className="checkout-success-panel">
+                          <Stack gap="md" align="center" ta="center">
+                            <ThemeIcon size={64} radius="xl" variant="light" color="green">
+                              <IconCheck size={32} />
+                            </ThemeIcon>
+                            <Stack gap={4}>
+                              <Title order={3}>Pagamento confirmado!</Title>
+                              <Text c="dimmed">
+                                Seus ingressos foram emitidos com sucesso e já estão disponíveis.
+                              </Text>
+                            </Stack>
+                            <Button
+                              component={Link}
+                              to="/ingressos"
+                              radius="xl"
+                              size="md"
+                              leftSection={<IconTicket size={18} />}
+                            >
+                              Ver meus ingressos
+                            </Button>
+                          </Stack>
+                        </PremiumPaper>
+                      ) : null}
+
+                      {isFailed ? (
+                        <PremiumPaper p="xl" className="checkout-error-panel">
+                          <Stack gap="md" align="center" ta="center">
+                            <ThemeIcon size={64} radius="xl" variant="light" color="red">
+                              <IconAlertCircle size={32} />
+                            </ThemeIcon>
+                            <Stack gap={4}>
+                              <Title order={3}>Compra não concluída</Title>
+                              <Text c="dimmed">
+                                A reserva expirou ou o pagamento falhou. Você pode tentar novamente.
+                              </Text>
+                            </Stack>
+                            <Group gap="sm">
+                              <Button
+                                radius="xl"
+                                onClick={() => {
+                                  setReservationId(null);
+                                  setConfirmingPayment(false);
+                                }}
+                              >
+                                Tentar novamente
+                              </Button>
+                              <Button
+                                variant="subtle"
+                                component={Link}
+                                to={`/eventos/${event.id}`}
+                                radius="xl"
+                              >
+                                Voltar ao evento
+                              </Button>
+                            </Group>
+                          </Stack>
+                        </PremiumPaper>
+                      ) : null}
+
+                      {!isPaid && !isFailed ? (
+                        <Group>
+                          <Button
+                            variant="subtle"
+                            component={Link}
+                            to={`/eventos/${event.id}`}
+                            radius="xl"
+                          >
+                            Voltar ao evento
+                          </Button>
+                        </Group>
+                      ) : null}
+                    </Stack>
+                  </AnimatedSection>
+                )}
               </Stack>
+            </Grid.Col>
 
-              <NumberInput
-                label="Quantidade"
-                min={1}
-                max={selectedLot.availableQuantity}
-                value={quantity}
-                onChange={(value) => setQuantity(Number(value) || 1)}
-                radius="md"
-              />
-
-              <Group justify="space-between" pt="xs">
-                <Text fw={700} size="xl">
-                  Total
-                </Text>
-                <Text fw={800} size="xl" c="brand" className="order-total-value">
-                  {formatCurrencyFromCents(totalCents)}
-                </Text>
-              </Group>
-
-              <Button
-                leftSection={<IconShoppingCart size={18} />}
-                loading={reserving}
-                disabled={selectedLot.availableQuantity === 0}
-                onClick={() => void handleReserve()}
-                radius="xl"
-                size="md"
-              >
-                Reservar ingressos
-              </Button>
-
-              <Text size="sm" c="dimmed">
-                Após reservar, você terá <strong>15 minutos</strong> para pagar via PIX.
-              </Text>
-            </Stack>
-          </PremiumPaper>
-        </AnimatedSection>
-      )}
+            <Grid.Col span={{ base: 12, md: 5 }}>
+              <AnimatedSection delayMs={80}>
+                <Box className="checkout-summary-sticky">
+                  <CheckoutOrderSummary
+                    event={event}
+                    selectedLot={selectedLot}
+                    quantity={quantity}
+                    totalCents={totalCents}
+                  />
+                </Box>
+              </AnimatedSection>
+            </Grid.Col>
+          </Grid>
+        </Container>
+      </Box>
     </Stack>
   );
 }

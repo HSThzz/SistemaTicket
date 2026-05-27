@@ -27,7 +27,7 @@ interface PhaseBadgeProps {
 
 export function PhaseBadge({ phase }: PhaseBadgeProps) {
   return (
-    <Badge color={PHASE_COLORS[phase]} variant="light">
+    <Badge color={PHASE_COLORS[phase]} variant="light" size="lg" radius="sm">
       {PHASE_LABELS[phase]}
     </Badge>
   );
