@@ -1,22 +1,37 @@
-import Redis from "ioredis";
+import Redis, { type RedisOptions } from "ioredis";
 import { env } from "./env";
 
 let redisClient: Redis | null = null;
 let redisSubscriber: Redis | null = null;
 let redisWorker: Redis | null = null;
 
-function buildRedisOptions() {
+const sharedOptions = {
+  maxRetriesPerRequest: 3,
+  lazyConnect: false,
+} as const;
+
+function buildRedisOptions(): string | RedisOptions {
+  const url = env.redis.url.trim();
+  if (url) {
+    return url;
+  }
+
   return {
     host: env.redis.host,
     port: env.redis.port,
     db: env.redis.db,
-    maxRetriesPerRequest: 3,
-    lazyConnect: false,
-  } as const;
+    ...sharedOptions,
+  };
 }
 
 export function createRedisConnection(): Redis {
-  return new Redis(buildRedisOptions());
+  const options = buildRedisOptions();
+
+  if (typeof options === "string") {
+    return new Redis(options, sharedOptions);
+  }
+
+  return new Redis(options);
 }
 
 export function getRedis(): Redis {
