@@ -44,11 +44,12 @@ export const env = {
     expiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
   },
   db: {
-    host: requireEnv("DB_HOST", "localhost"),
+    url: process.env.DATABASE_URL ?? "",
+    host: process.env.DB_HOST ?? "localhost",
     port: Number(process.env.DB_PORT ?? "5432"),
-    username: requireEnv("DB_USERNAME", "postgres"),
-    password: requireEnv("DB_PASSWORD", "postgres"),
-    database: requireEnv("DB_DATABASE", "app_db"),
+    username: process.env.DB_USERNAME ?? "postgres",
+    password: process.env.DB_PASSWORD ?? "postgres",
+    database: process.env.DB_DATABASE ?? "app_db",
   },
   redis: {
     host: requireEnv("REDIS_HOST", "localhost"),
