@@ -355,15 +355,19 @@ export function CheckoutPage() {
       <Box className="checkout-hero full-bleed" style={getEventCoverStyle(event)}>
         <Box className="producer-manage-hero-overlay" />
         <Container size="lg" px="md" className="checkout-hero-content">
-          <Stack gap="md">
-            <BackButton
-              to={`/eventos/${event.id}`}
-              label="Voltar ao evento"
-              inverted
-              style={{ alignSelf: "flex-start" }}
-            />
-            <Stack gap="sm" maw={640}>
-              <Badge color="white" c="dark" variant="filled" radius="sm" w="fit-content">
+          <Stack gap="sm" maw={640}>
+              <Badge
+                color="white"
+                c="dark"
+                variant="filled"
+                radius="md"
+                size="lg"
+                w="fit-content"
+                tt="uppercase"
+                fw={700}
+                className="checkout-secure-badge"
+                leftSection={<IconShieldCheck size={14} stroke={2.25} />}
+              >
                 Checkout seguro
               </Badge>
               <Title
@@ -396,14 +400,14 @@ export function CheckoutPage() {
                   </Text>
                 </Group>
               </Group>
-            </Stack>
           </Stack>
         </Container>
       </Box>
 
       <Box className="checkout-body">
         <Container size="lg" py="xl" px="md">
-          <Grid gap="xl">
+          <BackButton to={`/eventos/${event.id}`} label="Voltar ao evento" />
+          <Grid gap="xl" mt="lg">
             <Grid.Col span={{ base: 12, md: 7 }}>
               <Stack gap="lg">
                 {!isCheckoutStarted ? (
