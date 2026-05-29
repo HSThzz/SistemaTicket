@@ -97,10 +97,7 @@ export class MercadoPagoPixGateway implements PaymentGateway {
   }
 
   async getPayment(transactionId: string): Promise<GatewayPaymentSnapshot> {
-    const response = await this.request<MercadoPagoPaymentResponse>(
-      "GET",
-      `/v1/payments/${transactionId}`,
-    );
+    const response = await this.fetchPaymentResponse(transactionId);
 
     if (!response.external_reference) {
       throw new PaymentGatewayError(
@@ -115,6 +112,33 @@ export class MercadoPagoPixGateway implements PaymentGateway {
       status: mapMercadoPagoStatus(response.status),
       failureReason: response.status_detail,
     };
+  }
+
+  async getPixCopyPaste(transactionId: string): Promise<{
+    pixCopyPaste: string;
+    expiresAt: Date;
+  } | null> {
+    const response = await this.fetchPaymentResponse(transactionId);
+    const qrCode = response.point_of_interaction?.transaction_data?.qr_code;
+
+    if (!qrCode) {
+      return null;
+    }
+
+    const expiresAt = response.date_of_expiration
+      ? new Date(response.date_of_expiration)
+      : new Date(Date.now() + DEFAULT_EXPIRATION_MINUTES * 60 * 1000);
+
+    return { pixCopyPaste: qrCode, expiresAt };
+  }
+
+  private async fetchPaymentResponse(
+    transactionId: string,
+  ): Promise<MercadoPagoPaymentResponse> {
+    return this.request<MercadoPagoPaymentResponse>(
+      "GET",
+      `/v1/payments/${transactionId}`,
+    );
   }
 
   private async request<T>(

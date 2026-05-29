@@ -142,6 +142,7 @@ export function CheckoutPage() {
   const [searchParams] = useSearchParams();
 
   const lotIdFromQuery = searchParams.get("lot") ?? "";
+  const reservationFromQuery = searchParams.get("reservation");
 
   const [event, setEvent] = useState<Event | null>(null);
   const [selectedLot, setSelectedLot] = useState<TicketLot | null>(null);
@@ -149,7 +150,9 @@ export function CheckoutPage() {
   const [loadingEvent, setLoadingEvent] = useState(true);
   const [eventError, setEventError] = useState<string | null>(null);
 
-  const [reservationId, setReservationId] = useState<string | null>(null);
+  const [reservationId, setReservationId] = useState<string | null>(
+    () => reservationFromQuery,
+  );
   const [reserving, setReserving] = useState(false);
   const [simulating, setSimulating] = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
@@ -202,6 +205,12 @@ export function CheckoutPage() {
       cancelled = true;
     };
   }, [eventId, lotIdFromQuery]);
+
+  useEffect(() => {
+    if (reservationFromQuery) {
+      setReservationId(reservationFromQuery);
+    }
+  }, [reservationFromQuery]);
 
   const totalCents = useMemo(() => {
     if (!selectedLot) {

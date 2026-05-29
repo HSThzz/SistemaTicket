@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Center,
   CopyButton,
   Group,
   Stack,
@@ -9,6 +10,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { IconBolt, IconCheck, IconCopy, IconQrcode } from "@tabler/icons-react";
+import { QRCodeSVG } from "qrcode.react";
 import { PremiumPaper } from "./account/PremiumPaper";
 import { formatCurrencyFromCents, formatEventDateOnly, formatEventTimeOnly } from "../utils/format";
 
@@ -16,25 +18,48 @@ interface PixPaymentPanelProps {
   pixCopyPaste: string;
   amountCents: number;
   expiresAt: string;
+  showQrCode?: boolean;
+  compact?: boolean;
 }
 
-export function PixPaymentPanel({ pixCopyPaste, amountCents, expiresAt }: PixPaymentPanelProps) {
+export function PixPaymentPanel({
+  pixCopyPaste,
+  amountCents,
+  expiresAt,
+  showQrCode = true,
+  compact = false,
+}: PixPaymentPanelProps) {
   return (
-    <PremiumPaper p="xl" className="pix-payment-panel">
-      <Stack gap="lg">
+    <PremiumPaper p={compact ? "lg" : "xl"} className="pix-payment-panel">
+      <Stack gap={compact ? "md" : "lg"}>
         <Group gap="sm" align="flex-start">
-          <ThemeIcon size={48} radius="xl" variant="light" color="teal">
-            <IconQrcode size={24} />
+          <ThemeIcon size={compact ? 40 : 48} radius="xl" variant="light" color="teal">
+            <IconQrcode size={compact ? 20 : 24} />
           </ThemeIcon>
           <Stack gap={4}>
-            <Text fw={700} size="lg">
+            <Text fw={700} size={compact ? "md" : "lg"}>
               Pague com PIX
             </Text>
             <Text c="dimmed" size="sm" style={{ lineHeight: 1.55 }}>
-              Copie o código abaixo e conclua o pagamento no app do seu banco.
+              {showQrCode
+                ? "Escaneie o QR Code ou copie o código no app do seu banco."
+                : "Copie o código abaixo e conclua o pagamento no app do seu banco."}
             </Text>
           </Stack>
         </Group>
+
+        {showQrCode ? (
+          <Center className="pix-qr-wrap">
+            <Box
+              p="md"
+              bg="white"
+              style={{ borderRadius: 16, lineHeight: 0 }}
+              aria-label="QR Code PIX"
+            >
+              <QRCodeSVG value={pixCopyPaste} size={compact ? 168 : 200} level="M" />
+            </Box>
+          </Center>
+        ) : null}
 
         <Group justify="space-between" align="center" wrap="wrap" gap="sm">
           <Stack gap={2}>

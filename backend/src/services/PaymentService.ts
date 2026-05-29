@@ -5,6 +5,7 @@ import {
   ORDER_CACHE_KEY_PREFIX,
   PAYMENT_CACHE_KEY_PREFIX,
   RESERVATION_KEY_PREFIX,
+  RESERVATION_TTL_SECONDS,
   TICKET_LOT_STOCK_KEY_PREFIX,
 } from "../config/constants";
 import { env, isProduction } from "../config/env";
@@ -25,8 +26,9 @@ import {
   OrderNotFoundError,
   OrderRefundNotAllowedError,
   PaymentAlreadyProcessedError,
+  PaymentGatewayError,
 } from "../errors/PaymentError";
-import type { PaymentGateway } from "./payment/PaymentGateway";
+import type { PaymentGateway, PixChargeResult } from "./payment/PaymentGateway";
 import {
   createPaymentGateway,
   isMercadoPagoPixGateway,
@@ -115,6 +117,8 @@ export class PaymentService {
     });
 
     order.paymentGatewayId = charge.transactionId;
+    order.pixCopyPaste = charge.pixCopyPaste;
+    order.pixExpiresAt = charge.expiresAt;
     await this.dataSource.getRepository(Order).save(order);
 
     this.logger.info(CONTEXT, "PIX charge created", {
@@ -124,13 +128,110 @@ export class PaymentService {
       expiresAt: charge.expiresAt.toISOString(),
     });
 
+    const details = this.buildPixPaymentDetails(order, charge);
+
+    if (this.redis) {
+      await this.redis.setex(
+        `${PAYMENT_CACHE_KEY_PREFIX}${order.reservationId}`,
+        RESERVATION_TTL_SECONDS,
+        JSON.stringify(details),
+      );
+    }
+
+    return details;
+  }
+
+  async resolvePixPaymentDetails(order: Order): Promise<PixPaymentDetails | null> {
+    if (order.status !== OrderStatus.PENDING) {
+      return null;
+    }
+
+    if (order.pixCopyPaste && order.pixExpiresAt) {
+      return this.buildPixPaymentDetails(order, {
+        transactionId: order.paymentGatewayId ?? "",
+        pixCopyPaste: order.pixCopyPaste,
+        expiresAt: order.pixExpiresAt,
+      });
+    }
+
+    if (this.redis) {
+      const cached = await this.redis.get(
+        `${PAYMENT_CACHE_KEY_PREFIX}${order.reservationId}`,
+      );
+
+      if (cached) {
+        const parsed = JSON.parse(cached) as PixPaymentDetails;
+        await this.persistPixOnOrder(order.id, parsed);
+        return parsed;
+      }
+    }
+
+    if (order.paymentGatewayId && isMercadoPagoPixGateway(this.gateway)) {
+      const recovered = await this.gateway.getPixCopyPaste(order.paymentGatewayId);
+
+      if (recovered) {
+        order.pixCopyPaste = recovered.pixCopyPaste;
+        order.pixExpiresAt = recovered.expiresAt;
+        await this.dataSource.getRepository(Order).save(order);
+
+        return this.buildPixPaymentDetails(order, {
+          transactionId: order.paymentGatewayId,
+          pixCopyPaste: recovered.pixCopyPaste,
+          expiresAt: recovered.expiresAt,
+        });
+      }
+    }
+
+    return null;
+  }
+
+  async getOrderPixPayment(orderId: string, userId: string): Promise<PixPaymentDetails> {
+    const order = await this.dataSource.getRepository(Order).findOne({
+      where: { id: orderId },
+    });
+
+    if (!order || order.userId !== userId) {
+      throw new OrderNotFoundError(orderId);
+    }
+
+    const details = await this.resolvePixPaymentDetails(order);
+
+    if (!details) {
+      throw new PaymentGatewayError(
+        "PIX não disponível para este pedido",
+        "PIX_NOT_AVAILABLE",
+      );
+    }
+
+    return details;
+  }
+
+  private buildPixPaymentDetails(
+    order: Order,
+    charge: Pick<PixChargeResult, "transactionId" | "pixCopyPaste" | "expiresAt">,
+  ): PixPaymentDetails {
+    const expiresAt =
+      charge.expiresAt instanceof Date
+        ? charge.expiresAt.toISOString()
+        : new Date(charge.expiresAt).toISOString();
+
     return {
       orderId: order.id,
       transactionId: charge.transactionId,
       pixCopyPaste: charge.pixCopyPaste,
-      expiresAt: charge.expiresAt.toISOString(),
+      expiresAt,
       amountCents: order.totalPrice,
     };
+  }
+
+  private async persistPixOnOrder(
+    orderId: string,
+    details: PixPaymentDetails,
+  ): Promise<void> {
+    await this.dataSource.getRepository(Order).update(orderId, {
+      pixCopyPaste: details.pixCopyPaste,
+      pixExpiresAt: new Date(details.expiresAt),
+    });
   }
 
   async refundOrder(orderId: string): Promise<RefundOrderResult> {

@@ -8,6 +8,12 @@ const router = Router();
 
 router.get("/me", authMiddleware, (req, res) => void orderController.listMine(req, res));
 
+router.get(
+  "/:id/payment",
+  authMiddleware,
+  (req, res) => void orderController.getPayment(req, res),
+);
+
 router.post(
   "/:id/refund",
   authMiddleware,

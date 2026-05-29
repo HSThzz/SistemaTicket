@@ -32,6 +32,12 @@ export class Order {
   @Column({ name: "payment_gateway_id", type: "varchar", length: 255, nullable: true })
   paymentGatewayId!: string | null;
 
+  @Column({ name: "pix_copy_paste", type: "text", nullable: true })
+  pixCopyPaste!: string | null;
+
+  @Column({ name: "pix_expires_at", type: "timestamptz", nullable: true })
+  pixExpiresAt!: Date | null;
+
   @Column({ name: "reservation_id", type: "uuid" })
   reservationId!: string;
 

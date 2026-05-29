@@ -1,9 +1,28 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { CSSProperties } from "react";
-import { Anchor, Badge, Box, Group, Paper, Stack, Text, ThemeIcon, Title } from "@mantine/core";
-import { IconReceipt, IconTicket } from "@tabler/icons-react";
-import type { OrderListItem } from "../types/api";
+import {
+  Alert,
+  Anchor,
+  Badge,
+  Box,
+  Button,
+  Collapse,
+  Group,
+  Loader,
+  Paper,
+  Stack,
+  Text,
+  ThemeIcon,
+  Title,
+} from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { IconChevronDown, IconChevronUp, IconReceipt, IconTicket } from "@tabler/icons-react";
+import { PixPaymentPanel } from "./PixPaymentPanel";
+import * as orderService from "../services/orderService";
+import type { OrderListItem, PixPaymentDetails } from "../types/api";
 import { formatCurrencyFromCents } from "../utils/format";
+import { getApiErrorMessage } from "../utils/errors";
 import { getOrderStatusColor, getOrderStatusLabel } from "../utils/statusLabels";
 
 interface OrderCardProps {
@@ -42,6 +61,40 @@ function getOrderStubLabel(status: string): string {
 
 export function OrderCard({ order }: OrderCardProps) {
   const isPaid = order.status === "PAID";
+  const isPending = order.status === "PENDING";
+  const [pixOpen, { toggle: togglePix }] = useDisclosure(Boolean(order.payment));
+  const [payment, setPayment] = useState<PixPaymentDetails | null>(order.payment);
+  const [loadingPayment, setLoadingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPayment(order.payment);
+  }, [order.payment]);
+
+  const loadPayment = async () => {
+    if (payment || loadingPayment) {
+      return;
+    }
+
+    setLoadingPayment(true);
+    setPaymentError(null);
+
+    try {
+      const details = await orderService.getOrderPayment(order.id);
+      setPayment(details);
+    } catch (error) {
+      setPaymentError(getApiErrorMessage(error, "Não foi possível carregar o PIX."));
+    } finally {
+      setLoadingPayment(false);
+    }
+  };
+
+  const handleTogglePix = () => {
+    if (!pixOpen && !payment) {
+      void loadPayment();
+    }
+    togglePix();
+  };
 
   return (
     <Paper radius="lg" className="order-card-premium" component="article">
@@ -64,6 +117,11 @@ export function OrderCard({ order }: OrderCardProps) {
               <Title order={4} style={{ letterSpacing: "-0.01em" }}>
                 #{order.id.slice(0, 8).toUpperCase()}
               </Title>
+              {order.eventTitle ? (
+                <Text size="sm" c="dimmed" lineClamp={2}>
+                  {order.eventTitle}
+                </Text>
+              ) : null}
             </Stack>
             <Badge color={getOrderStatusColor(order.status)} variant="light" radius="sm">
               {getOrderStatusLabel(order.status)}
@@ -72,34 +130,61 @@ export function OrderCard({ order }: OrderCardProps) {
 
           <Stack gap={4}>
             <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-              Total pago
+              {isPaid ? "Total pago" : "Total"}
             </Text>
             <Text className="order-total-value" c={isPaid ? "green" : undefined}>
               {formatCurrencyFromCents(order.totalPrice)}
             </Text>
           </Stack>
 
-          <Stack gap="sm">
-            {order.paymentGatewayId ? (
-              <Box className="order-meta-block">
-                <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb={6}>
-                  ID do pagamento
-                </Text>
-                <Text ff="monospace" size="sm" fw={500} style={{ wordBreak: "break-all" }}>
-                  {order.paymentGatewayId}
-                </Text>
-              </Box>
-            ) : null}
+          {isPending ? (
+            <Stack gap="sm">
+              <Button
+                variant="light"
+                color="teal"
+                radius="xl"
+                onClick={handleTogglePix}
+                rightSection={pixOpen ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
+              >
+                {pixOpen ? "Ocultar PIX" : "Ver PIX para pagar"}
+              </Button>
 
-            <Box className="order-meta-block">
-              <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb={6}>
-                Reserva
-              </Text>
-              <Text ff="monospace" size="sm" fw={500} style={{ wordBreak: "break-all" }}>
-                {order.reservationId}
-              </Text>
-            </Box>
-          </Stack>
+              {order.eventId ? (
+                <Button
+                  component={Link}
+                  to={`/eventos/${order.eventId}/comprar?reservation=${order.reservationId}`}
+                  variant="subtle"
+                  radius="xl"
+                  size="sm"
+                >
+                  Abrir checkout do evento
+                </Button>
+              ) : null}
+
+              <Collapse expanded={pixOpen}>
+                {loadingPayment ? (
+                  <Group justify="center" py="md">
+                    <Loader size="sm" color="brand" />
+                  </Group>
+                ) : null}
+
+                {paymentError ? (
+                  <Alert color="red" radius="lg">
+                    {paymentError}
+                  </Alert>
+                ) : null}
+
+                {payment ? (
+                  <PixPaymentPanel
+                    pixCopyPaste={payment.pixCopyPaste}
+                    amountCents={payment.amountCents}
+                    expiresAt={payment.expiresAt}
+                    compact
+                  />
+                ) : null}
+              </Collapse>
+            </Stack>
+          ) : null}
 
           {isPaid ? (
             <Anchor
@@ -112,13 +197,11 @@ export function OrderCard({ order }: OrderCardProps) {
               <IconTicket size={16} />
               Ver meus ingressos →
             </Anchor>
-          ) : (
+          ) : !isPending ? (
             <Text size="sm" c="dimmed">
-              {order.status === "PENDING"
-                ? "Aguardando confirmação do pagamento PIX."
-                : "Este pedido não gerou ingressos ativos."}
+              Este pedido não gerou ingressos ativos.
             </Text>
-          )}
+          ) : null}
         </Stack>
       </Group>
     </Paper>

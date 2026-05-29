@@ -120,6 +120,9 @@ export interface OrderListItem {
   totalPrice: number;
   paymentGatewayId: string | null;
   reservationId: string;
+  eventId: string | null;
+  eventTitle: string | null;
+  payment: PixPaymentDetails | null;
 }
 
 export interface ProducerEventStats {

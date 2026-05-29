@@ -775,6 +775,10 @@
   background: light-dark(rgba(239, 68, 68, 0.04), rgba(239, 68, 68, 0.08));
 }
 
+.pix-qr-wrap {
+  padding: var(--mantine-spacing-xs) 0;
+}
+
 .checkout-dev-panel {
   border-style: dashed;
   background: light-dark(rgba(234, 179, 8, 0.04), rgba(234, 179, 8, 0.08));
