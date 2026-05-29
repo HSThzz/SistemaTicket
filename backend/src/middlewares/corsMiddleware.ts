@@ -1,10 +1,14 @@
 import type { NextFunction, Request, Response } from "express";
 import { env } from "../config/env";
 
-const allowedOrigins = new Set(env.corsOrigins);
+function normalizeOrigin(origin: string): string {
+  return origin.trim().replace(/\/+$/, "");
+}
+
+const allowedOrigins = new Set(env.corsOrigins.map(normalizeOrigin));
 
 export function corsMiddleware(req: Request, res: Response, next: NextFunction): void {
-  const origin = req.headers.origin;
+  const origin = req.headers.origin ? normalizeOrigin(req.headers.origin) : undefined;
 
   if (origin && allowedOrigins.has(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);

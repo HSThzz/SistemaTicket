@@ -23,7 +23,7 @@ export const env = {
   logLevel: process.env.LOG_LEVEL ?? "info",
   corsOrigins: (process.env.CORS_ORIGINS ?? defaultCorsOrigins.join(","))
     .split(",")
-    .map((origin) => origin.trim())
+    .map((origin) => origin.trim().replace(/\/+$/, ""))
     .filter(Boolean),
   payment: {
     webhookSecret: process.env.PAYMENT_WEBHOOK_SECRET ?? "",
