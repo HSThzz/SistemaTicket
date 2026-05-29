@@ -42,6 +42,12 @@ import type { Event, TicketLot } from "../types/api";
 import { getEventCoverStyle } from "../utils/eventVisuals";
 import { formatCurrencyFromCents, formatEventDateOnly, formatEventTimeOnly } from "../utils/format";
 import { getApiErrorMessage } from "../utils/errors";
+import {
+  getBillableQuantity,
+  getQuantityValidationMessage,
+  normalizeTicketQuantity,
+  validateTicketQuantity,
+} from "../utils/ticketQuantity";
 
 function getActiveStep(phase: string | undefined): number {
   switch (phase) {
@@ -76,11 +82,13 @@ function CheckoutOrderSummary({
   selectedLot,
   quantity,
   totalCents,
+  quantityWarning,
 }: {
   event: Event;
   selectedLot: TicketLot;
   quantity: number;
   totalCents: number;
+  quantityWarning?: string | null;
 }) {
   return (
     <PremiumPaper p="xl" className="checkout-summary-panel">
@@ -123,10 +131,20 @@ function CheckoutOrderSummary({
           <Text fw={700} size="lg">
             Total
           </Text>
-          <Text fw={800} className="order-total-value" c="brand">
+          <Text
+            fw={800}
+            className="order-total-value"
+            c={quantityWarning ? "dimmed" : "brand"}
+          >
             {formatCurrencyFromCents(totalCents)}
           </Text>
         </Group>
+
+        {quantityWarning ? (
+          <Alert color="orange" variant="light" radius="lg" icon={<IconAlertCircle size={18} />}>
+            {quantityWarning}
+          </Alert>
+        ) : null}
 
         <Group gap={6} c="dimmed">
           <IconShieldCheck size={16} />
@@ -212,22 +230,59 @@ export function CheckoutPage() {
     }
   }, [reservationFromQuery]);
 
+  const quantityValidation = useMemo(() => {
+    if (!selectedLot) {
+      return null;
+    }
+
+    return validateTicketQuantity(quantity, selectedLot.availableQuantity);
+  }, [selectedLot, quantity]);
+
+  const quantityWarning = useMemo(() => {
+    if (!quantityValidation || quantityValidation.valid) {
+      return null;
+    }
+
+    return getQuantityValidationMessage(quantityValidation);
+  }, [quantityValidation]);
+
+  const billableQuantity = useMemo(() => {
+    if (!quantityValidation) {
+      return quantity;
+    }
+
+    return getBillableQuantity(quantityValidation);
+  }, [quantityValidation, quantity]);
+
   const totalCents = useMemo(() => {
     if (!selectedLot) {
       return 0;
     }
-    return selectedLot.price * quantity;
-  }, [selectedLot, quantity]);
+    return selectedLot.price * billableQuantity;
+  }, [selectedLot, billableQuantity]);
 
   const handleReserve = async () => {
-    if (!selectedLot) {
+    if (!selectedLot || !quantityValidation) {
+      return;
+    }
+
+    if (!quantityValidation.valid) {
+      notifications.show({
+        title: "Quantidade inválida",
+        message: getQuantityValidationMessage(quantityValidation),
+        color: "orange",
+        icon: <IconAlertCircle size={18} />,
+      });
       return;
     }
 
     setReserving(true);
 
     try {
-      const response = await purchaseService.reserveTickets(selectedLot.id, quantity);
+      const response = await purchaseService.reserveTickets(
+        selectedLot.id,
+        quantityValidation.quantity,
+      );
       setReservationId(response.reservation.id);
 
       notifications.show({
@@ -394,16 +449,41 @@ export function CheckoutPage() {
                           min={1}
                           max={selectedLot.availableQuantity}
                           value={quantity}
-                          onChange={(value) => setQuantity(Number(value) || 1)}
+                          onChange={(value) => {
+                            if (value === "" || value === undefined) {
+                              setQuantity(1);
+                              return;
+                            }
+                            setQuantity(normalizeTicketQuantity(value));
+                          }}
+                          error={
+                            quantityValidation && !quantityValidation.valid
+                              ? getQuantityValidationMessage(quantityValidation)
+                              : undefined
+                          }
                           radius="md"
                         />
+
+                        {quantityWarning ? (
+                          <Alert
+                            color="orange"
+                            variant="light"
+                            radius="lg"
+                            icon={<IconAlertCircle size={18} />}
+                          >
+                            {quantityWarning}
+                          </Alert>
+                        ) : null}
 
                         <Button
                           size="lg"
                           radius="xl"
                           leftSection={<IconShoppingCart size={18} />}
                           loading={reserving}
-                          disabled={selectedLot.availableQuantity === 0}
+                          disabled={
+                            selectedLot.availableQuantity === 0 ||
+                            Boolean(quantityValidation && !quantityValidation.valid)
+                          }
                           onClick={() => void handleReserve()}
                         >
                           Reservar ingressos
@@ -566,6 +646,7 @@ export function CheckoutPage() {
                     selectedLot={selectedLot}
                     quantity={quantity}
                     totalCents={totalCents}
+                    quantityWarning={quantityWarning}
                   />
                 </Box>
               </AnimatedSection>
