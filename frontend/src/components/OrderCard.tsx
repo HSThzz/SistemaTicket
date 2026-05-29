@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { CSSProperties } from "react";
 import {
@@ -7,7 +7,6 @@ import {
   Badge,
   Box,
   Button,
-  Collapse,
   Group,
   Loader,
   Paper,
@@ -16,8 +15,8 @@ import {
   ThemeIcon,
   Title,
 } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { IconChevronDown, IconChevronUp, IconReceipt, IconTicket } from "@tabler/icons-react";
+import { useMediaQuery } from "@mantine/hooks";
+import { IconReceipt, IconTicket } from "@tabler/icons-react";
 import { PixPaymentPanel } from "./PixPaymentPanel";
 import * as orderService from "../services/orderService";
 import type { OrderListItem, PixPaymentDetails } from "../types/api";
@@ -49,7 +48,7 @@ function getOrderStubLabel(status: string): string {
     case "PAID":
       return "Pago";
     case "PENDING":
-      return "Pend.";
+      return "Pendente";
     case "FAILED":
       return "Falhou";
     case "REFUNDED":
@@ -62,20 +61,19 @@ function getOrderStubLabel(status: string): string {
 export function OrderCard({ order }: OrderCardProps) {
   const isPaid = order.status === "PAID";
   const isPending = order.status === "PENDING";
-  const [pixOpen, { toggle: togglePix }] = useDisclosure(Boolean(order.payment));
+  const isMobile = useMediaQuery("(max-width: 48em)");
   const [payment, setPayment] = useState<PixPaymentDetails | null>(order.payment);
   const [loadingPayment, setLoadingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const fetchAttemptedRef = useRef(false);
 
   useEffect(() => {
     setPayment(order.payment);
-  }, [order.payment]);
+    fetchAttemptedRef.current = false;
+    setPaymentError(null);
+  }, [order.payment, order.id]);
 
-  const loadPayment = async () => {
-    if (payment || loadingPayment) {
-      return;
-    }
-
+  const loadPayment = useCallback(async () => {
     setLoadingPayment(true);
     setPaymentError(null);
 
@@ -87,18 +85,24 @@ export function OrderCard({ order }: OrderCardProps) {
     } finally {
       setLoadingPayment(false);
     }
-  };
+  }, [order.id]);
 
-  const handleTogglePix = () => {
-    if (!pixOpen && !payment) {
-      void loadPayment();
+  useEffect(() => {
+    if (!isPending || payment || fetchAttemptedRef.current) {
+      return;
     }
-    togglePix();
-  };
+
+    fetchAttemptedRef.current = true;
+    void loadPayment();
+  }, [isPending, payment, loadPayment]);
 
   return (
-    <Paper radius="lg" className="order-card-premium" component="article">
-      <Group wrap="nowrap" align="stretch" gap={0}>
+    <Paper
+      radius="lg"
+      className={`order-card-premium${isPending ? " order-card-premium--pending" : ""}`}
+      component="article"
+    >
+      <Group wrap="nowrap" align="stretch" gap={0} className="order-card-layout">
         <Box className="order-card-stub" style={getOrderAccentStyle(order.status)}>
           <ThemeIcon size={36} radius="md" variant="white" color="dark" style={{ opacity: 0.92 }}>
             <IconReceipt size={20} stroke={1.6} />
@@ -109,7 +113,7 @@ export function OrderCard({ order }: OrderCardProps) {
         </Box>
 
         <Stack gap="lg" className="order-card-body">
-          <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
+          <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
             <Stack gap={6} flex={1} miw={0}>
               <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
                 Pedido
@@ -138,51 +142,57 @@ export function OrderCard({ order }: OrderCardProps) {
           </Stack>
 
           {isPending ? (
-            <Stack gap="sm">
-              <Button
-                variant="light"
-                color="teal"
-                radius="xl"
-                onClick={handleTogglePix}
-                rightSection={pixOpen ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
-              >
-                {pixOpen ? "Ocultar PIX" : "Ver PIX para pagar"}
-              </Button>
-
+            <Stack gap="sm" className="order-card-pix-section">
               {order.eventId ? (
                 <Button
                   component={Link}
                   to={`/eventos/${order.eventId}/comprar?reservation=${order.reservationId}`}
-                  variant="subtle"
+                  variant="light"
+                  color="brand"
                   radius="xl"
-                  size="sm"
+                  fullWidth
                 >
-                  Abrir checkout do evento
+                  Continuar no checkout
                 </Button>
               ) : null}
 
-              <Collapse expanded={pixOpen}>
-                {loadingPayment ? (
-                  <Group justify="center" py="md">
-                    <Loader size="sm" color="brand" />
-                  </Group>
-                ) : null}
+              {loadingPayment ? (
+                <Group justify="center" py="md">
+                  <Loader size="sm" color="brand" />
+                  <Text size="sm" c="dimmed">
+                    Carregando PIX...
+                  </Text>
+                </Group>
+              ) : null}
 
-                {paymentError ? (
-                  <Alert color="red" radius="lg">
-                    {paymentError}
-                  </Alert>
-                ) : null}
+              {paymentError ? (
+                <Alert color="red" radius="lg">
+                  {paymentError}
+                  <Button
+                    variant="light"
+                    color="red"
+                    size="xs"
+                    mt="sm"
+                    fullWidth
+                    onClick={() => {
+                      fetchAttemptedRef.current = true;
+                      setPayment(null);
+                      void loadPayment();
+                    }}
+                  >
+                    Tentar novamente
+                  </Button>
+                </Alert>
+              ) : null}
 
-                {payment ? (
-                  <PixPaymentPanel
-                    pixCopyPaste={payment.pixCopyPaste}
-                    amountCents={payment.amountCents}
-                    expiresAt={payment.expiresAt}
-                    compact
-                  />
-                ) : null}
-              </Collapse>
+              {payment ? (
+                <PixPaymentPanel
+                  pixCopyPaste={payment.pixCopyPaste}
+                  amountCents={payment.amountCents}
+                  expiresAt={payment.expiresAt}
+                  compact={isMobile ?? true}
+                />
+              ) : null}
             </Stack>
           ) : null}
 

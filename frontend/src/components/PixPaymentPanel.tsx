@@ -7,8 +7,8 @@ import {
   Stack,
   Text,
   ThemeIcon,
-  Tooltip,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import { IconBolt, IconCheck, IconCopy, IconQrcode } from "@tabler/icons-react";
 import { QRCodeSVG } from "qrcode.react";
 import { PremiumPaper } from "./account/PremiumPaper";
@@ -29,6 +29,15 @@ export function PixPaymentPanel({
   showQrCode = true,
   compact = false,
 }: PixPaymentPanelProps) {
+  const isMobile = useMediaQuery("(max-width: 48em)");
+  const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 360;
+  const qrSize =
+    isMobile === true
+      ? Math.min(220, Math.max(160, viewportWidth - 80))
+      : compact
+        ? 168
+        : 200;
+
   return (
     <PremiumPaper p={compact ? "lg" : "xl"} className="pix-payment-panel">
       <Stack gap={compact ? "md" : "lg"}>
@@ -50,13 +59,8 @@ export function PixPaymentPanel({
 
         {showQrCode ? (
           <Center className="pix-qr-wrap">
-            <Box
-              p="md"
-              bg="white"
-              style={{ borderRadius: 16, lineHeight: 0 }}
-              aria-label="QR Code PIX"
-            >
-              <QRCodeSVG value={pixCopyPaste} size={compact ? 168 : 200} level="M" />
+            <Box className="pix-qr-box" p="md" bg="white" aria-label="QR Code PIX">
+              <QRCodeSVG value={pixCopyPaste} size={qrSize} level="M" className="pix-qr-svg" />
             </Box>
           </Center>
         ) : null}
@@ -91,20 +95,19 @@ export function PixPaymentPanel({
           </Box>
         </Stack>
 
-        <CopyButton value={pixCopyPaste}>
+        <CopyButton value={pixCopyPaste} timeout={2500}>
           {({ copied, copy }) => (
-            <Tooltip label={copied ? "Copiado!" : "Copiar código PIX"} withArrow>
-              <Button
-                fullWidth
-                radius="xl"
-                variant={copied ? "light" : "filled"}
-                color={copied ? "green" : "brand"}
-                leftSection={copied ? <IconCheck size={18} /> : <IconCopy size={18} />}
-                onClick={copy}
-              >
-                {copied ? "Código copiado" : "Copiar código PIX"}
-              </Button>
-            </Tooltip>
+            <Button
+              fullWidth
+              radius="xl"
+              variant={copied ? "light" : "filled"}
+              color={copied ? "green" : "brand"}
+              leftSection={copied ? <IconCheck size={18} /> : <IconCopy size={18} />}
+              onClick={copy}
+              style={{ touchAction: "manipulation" }}
+            >
+              {copied ? "Código copiado" : "Copiar código PIX"}
+            </Button>
           )}
         </CopyButton>
 
