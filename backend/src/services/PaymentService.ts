@@ -87,12 +87,9 @@ export class PaymentService {
     });
 
     await this.handlePaymentFailed({
-      event: "payment.failed",
-      data: {
-        orderId,
-        transactionId: "pix_creation_failed",
-        failureReason: reason,
-      },
+      orderId,
+      transactionId: "pix_creation_failed",
+      failureReason: reason,
     });
   }
 
