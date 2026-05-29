@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { createApp } from "./app";
 import { AppDataSource } from "./config/data-source";
 import { env } from "./config/env";
+import { getPaymentGatewayProvider } from "./services/payment/createPaymentGateway";
 import { Logger } from "./config/logger";
 import { closeRedisConnections, getRedis, getRedisWorker } from "./config/redis";
 import { setReservationPersistenceWorker } from "./runtime/workerRegistry";
@@ -70,6 +71,7 @@ async function bootstrap(): Promise<void> {
   app.listen(env.port, () => {
     logger.info(CONTEXT, `Server listening on port ${env.port}`, {
       environment: env.nodeEnv,
+      paymentGateway: getPaymentGatewayProvider(),
     });
   });
 }

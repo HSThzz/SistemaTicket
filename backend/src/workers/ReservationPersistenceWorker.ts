@@ -264,11 +264,26 @@ export class ReservationPersistenceWorker {
         transactionId: payment.transactionId,
       });
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       this.logger.error(CONTEXT, "Failed to create PIX after persistence", {
         reservationId,
         orderId,
-        error: error instanceof Error ? error.message : String(error),
+        error: message,
       });
+
+      try {
+        await this.paymentService.abortPendingOrderAfterPixCreationFailure(
+          orderId,
+          message,
+        );
+      } catch (abortError) {
+        this.logger.error(CONTEXT, "Failed to abort order after PIX error", {
+          reservationId,
+          orderId,
+          error:
+            abortError instanceof Error ? abortError.message : String(abortError),
+        });
+      }
     }
   }
 

@@ -76,6 +76,26 @@ export class PaymentService {
     return this.gateway.provider;
   }
 
+  async abortPendingOrderAfterPixCreationFailure(
+    orderId: string,
+    reason: string,
+  ): Promise<void> {
+    this.logger.error(CONTEXT, "Aborting order after PIX creation failure", {
+      orderId,
+      reason,
+      gateway: this.gateway.provider,
+    });
+
+    await this.handlePaymentFailed({
+      event: "payment.failed",
+      data: {
+        orderId,
+        transactionId: "pix_creation_failed",
+        failureReason: reason,
+      },
+    });
+  }
+
   async processOrderPayment(orderId: string): Promise<PixPaymentDetails> {
     this.logger.info(CONTEXT, "Starting PIX charge creation", { orderId });
 

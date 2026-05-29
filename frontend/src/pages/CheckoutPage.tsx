@@ -462,10 +462,12 @@ export function CheckoutPage() {
                             amountCents={status.payment.amountCents}
                             expiresAt={status.payment.expiresAt}
                           />
-                          <DevSimulatePaymentPanel
-                            loading={simulating}
-                            onSimulate={() => void handleSimulatePayment()}
-                          />
+                          {import.meta.env.DEV ? (
+                            <DevSimulatePaymentPanel
+                              loading={simulating}
+                              onSimulate={() => void handleSimulatePayment()}
+                            />
+                          ) : null}
                         </>
                       ) : null}
 
