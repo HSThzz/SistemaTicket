@@ -29,7 +29,7 @@ import {
 import { AnimatedSection } from "../../components/home/AnimatedSection";
 import { BackButton } from "../../components/account/BackButton";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
-import * as eventService from "../../services/eventService";
+import * as eventService from "../../features/catalog/api/eventService";
 import { getApiErrorMessage } from "../../utils/errors";
 
 interface CreateEventFormValues {

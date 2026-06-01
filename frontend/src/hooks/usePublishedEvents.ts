@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import * as eventService from "../services/eventService";
+import * as eventService from "../features/catalog/api/eventService";
 import type { Event } from "../types/api";
 import { getApiErrorMessage } from "../utils/errors";
 

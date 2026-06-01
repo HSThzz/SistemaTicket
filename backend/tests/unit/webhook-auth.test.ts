@@ -5,11 +5,11 @@ import {
   buildMercadoPagoManifest,
   parseMercadoPagoSignatureHeader,
   verifyMercadoPagoSignature,
-} from "../../src/services/payment/mercadoPagoSignature";
+} from "../../src/modules/payment/infrastructure/gateways/mercadoPagoSignature";
 import {
   buildInternalWebhookSignature,
   verifyInternalWebhookSignature,
-} from "../../src/services/payment/internalWebhookSignature";
+} from "../../src/modules/payment/infrastructure/gateways/internalWebhookSignature";
 
 describe("Mercado Pago signature", () => {
   it("parses x-signature header", () => {

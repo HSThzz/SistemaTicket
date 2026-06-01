@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import * as purchaseService from "../services/purchaseService";
+import * as purchaseService from "../features/sales/api/purchaseService";
 import type { ReservationStatusView } from "../types/api";
 import { getApiErrorMessage } from "../utils/errors";
 

@@ -25,7 +25,7 @@ import { PageLoader } from "../../components/account/PageLoader";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { StatCard } from "../../components/account/StatCard";
 import { ProducerEventListCard } from "../../components/producer/ProducerEventListCard";
-import * as eventService from "../../services/eventService";
+import * as eventService from "../../features/catalog/api/eventService";
 import type { Event } from "../../types/api";
 import { getApiErrorMessage } from "../../utils/errors";
 

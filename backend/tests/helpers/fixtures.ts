@@ -1,9 +1,9 @@
 import bcrypt from "bcrypt";
 import type { DataSource } from "typeorm";
-import { Event } from "../../src/entities/Event";
-import { TicketLot } from "../../src/entities/TicketLot";
-import { User } from "../../src/entities/User";
-import { EventStatus, UserRole } from "../../src/entities/enums";
+import { Event } from "../../src/shared/infrastructure/persistence/entities/Event";
+import { TicketLot } from "../../src/shared/infrastructure/persistence/entities/TicketLot";
+import { User } from "../../src/shared/infrastructure/persistence/entities/User";
+import { EventStatus, UserRole } from "../../src/shared/kernel/enums";
 
 const BCRYPT_ROUNDS = 4;
 

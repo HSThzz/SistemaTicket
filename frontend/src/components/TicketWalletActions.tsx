@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button, Group, Stack, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconBrandApple, IconBrandGoogle, IconWallet } from "@tabler/icons-react";
-import * as walletService from "../services/walletService";
+import * as walletService from "../features/ticketing/api/walletService";
 
 interface TicketWalletActionsProps {
   ticketId: string;

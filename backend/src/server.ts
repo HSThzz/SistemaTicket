@@ -1,14 +1,14 @@
-import "reflect-metadata";
+﻿import "reflect-metadata";
 import { createApp } from "./app";
-import { AppDataSource } from "./config/data-source";
-import { env } from "./config/env";
-import { getPaymentGatewayProvider } from "./services/payment/createPaymentGateway";
-import { Logger } from "./config/logger";
-import { closeRedisConnections, getRedis, getRedisWorker } from "./config/redis";
-import { setReservationPersistenceWorker } from "./runtime/workerRegistry";
-import { PaymentService } from "./services/PaymentService";
-import { ReservationExpiryWorker } from "./workers/ReservationExpiryWorker";
-import { ReservationPersistenceWorker } from "./workers/ReservationPersistenceWorker";
+import { AppDataSource } from "./shared/infrastructure/config/data-source";
+import { env } from "./shared/infrastructure/config/env";
+import { getPaymentGatewayProvider } from "./modules/payment/infrastructure/gateways/createPaymentGateway";
+import { Logger } from "./shared/infrastructure/config/logger";
+import { closeRedisConnections, getRedis, getRedisWorker } from "./shared/infrastructure/config/redis";
+import { setReservationPersistenceWorker } from "./shared/runtime/workerRegistry";
+import { PaymentService } from "./modules/payment/application/PaymentService";
+import { ReservationExpiryWorker } from "./modules/sales/infrastructure/workers/ReservationExpiryWorker";
+import { ReservationPersistenceWorker } from "./modules/sales/infrastructure/workers/ReservationPersistenceWorker";
 
 const logger = Logger.getInstance();
 const CONTEXT = "Server";

@@ -40,7 +40,7 @@ import { PageLoader } from "../../components/account/PageLoader";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { StatCard } from "../../components/account/StatCard";
 import { ProducerLotCard } from "../../components/producer/ProducerLotCard";
-import * as eventService from "../../services/eventService";
+import * as eventService from "../../features/catalog/api/eventService";
 import type { Event, EventStatus } from "../../types/api";
 import { getEventCoverStyle } from "../../utils/eventVisuals";
 import { formatEventDate } from "../../utils/format";

@@ -414,18 +414,24 @@ Scripts K6 e instruções detalhadas: **[STRESS_TEST_README.md](./STRESS_TEST_RE
 
 ---
 
-## Estrutura do projeto
+## Estrutura do projeto (DDD)
+
+Documentação completa: [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)
 
 ```
 src/
-  controllers/    # HTTP handlers
-  services/       # Regras de negócio
-  workers/        # Persistência + expiração
-  entities/       # TypeORM
-  migrations/     # Schema PostgreSQL
-  routes/         # Rotas Express
-  middlewares/    # Auth, roles, rate limit
-  config/         # Env, Redis, logger, DB
+  shared/
+    kernel/              # Enums (UserRole, OrderStatus, …)
+    infrastructure/      # Config, TypeORM entities, migrations
+    interfaces/http/     # Middlewares, rotas agregadas
+    application/         # Health, monitor de filas
+  modules/
+    identity/            # Auth
+    catalog/             # Eventos e lotes
+    sales/               # Reservas, pedidos, workers
+    payment/             # PIX e webhooks
+    ticketing/           # Ingressos, check-in, wallet
+  app.ts, server.ts
 ```
 
 ---

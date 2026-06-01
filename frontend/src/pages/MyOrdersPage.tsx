@@ -21,7 +21,7 @@ import { OrdersPageSkeleton } from "../components/account/OrdersPageSkeleton";
 import { PageHeader } from "../components/account/PageHeader";
 import { StatCard } from "../components/account/StatCard";
 import { OrderCard } from "../components/OrderCard";
-import * as orderService from "../services/orderService";
+import * as orderService from "../features/sales/api/orderService";
 import type { OrderListItem } from "../types/api";
 import { formatCurrencyFromCents } from "../utils/format";
 import { getApiErrorMessage } from "../utils/errors";

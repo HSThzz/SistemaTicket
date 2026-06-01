@@ -7,8 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import * as authService from "../services/authService";
-import { api, getAuthToken, setAuthToken } from "../services/api";
+import * as authService from "../features/identity/api/authService";
+import { api, getAuthToken, setAuthToken } from "../shared/api/client";
 import type { AuthUser } from "../types/api";
 
 interface AuthContextValue {

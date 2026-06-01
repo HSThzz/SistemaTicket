@@ -6,7 +6,7 @@ import { notifications } from "@mantine/notifications";
 import { IconCheck, IconLogin, IconX } from "@tabler/icons-react";
 import { AuthCard } from "../components/account/AuthCard";
 import { useAuth } from "../context/AuthContext";
-import * as authService from "../services/authService";
+import * as authService from "../features/identity/api/authService";
 import { getApiErrorMessage } from "../utils/errors";
 
 interface LoginFormValues {

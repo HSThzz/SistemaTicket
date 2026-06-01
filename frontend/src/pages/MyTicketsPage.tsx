@@ -20,7 +20,7 @@ import { PageHeader } from "../components/account/PageHeader";
 import { StatCard } from "../components/account/StatCard";
 import { TicketsPageSkeleton } from "../components/account/TicketsPageSkeleton";
 import { TicketsWallet } from "../components/account/TicketsWallet";
-import * as ticketService from "../services/ticketService";
+import * as ticketService from "../features/ticketing/api/ticketService";
 import type { TicketListItem } from "../types/api";
 import { getApiErrorMessage } from "../utils/errors";
 

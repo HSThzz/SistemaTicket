@@ -1,21 +1,21 @@
-import { randomBytes } from "node:crypto";
+﻿import { randomBytes } from "node:crypto";
 import bcrypt from "bcrypt";
 import type Redis from "ioredis";
 import type { DataSource } from "typeorm";
-import { TICKET_LOT_STOCK_KEY_PREFIX } from "../config/constants";
-import { Event } from "../entities/Event";
-import { Order } from "../entities/Order";
-import { Reservation } from "../entities/Reservation";
-import { Ticket } from "../entities/Ticket";
-import { TicketLot } from "../entities/TicketLot";
-import { User } from "../entities/User";
+import { TICKET_LOT_STOCK_KEY_PREFIX } from "../shared/infrastructure/config/constants";
+import { Event } from "../shared/infrastructure/persistence/entities/Event";
+import { Order } from "../shared/infrastructure/persistence/entities/Order";
+import { Reservation } from "../shared/infrastructure/persistence/entities/Reservation";
+import { Ticket } from "../shared/infrastructure/persistence/entities/Ticket";
+import { TicketLot } from "../shared/infrastructure/persistence/entities/TicketLot";
+import { User } from "../shared/infrastructure/persistence/entities/User";
 import {
   EventStatus,
   OrderStatus,
   ReservationStatus,
   TicketStatus,
   UserRole,
-} from "../entities/enums";
+} from "../shared/kernel/enums";
 
 export const SEED_PASSWORD = "123456";
 const BCRYPT_ROUNDS = 12;

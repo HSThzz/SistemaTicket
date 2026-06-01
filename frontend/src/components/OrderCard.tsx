@@ -18,7 +18,7 @@ import {
 import { useMediaQuery } from "@mantine/hooks";
 import { IconReceipt, IconTicket } from "@tabler/icons-react";
 import { PixPaymentPanel } from "./PixPaymentPanel";
-import * as orderService from "../services/orderService";
+import * as orderService from "../features/sales/api/orderService";
 import type { OrderListItem, PixPaymentDetails } from "../types/api";
 import { formatCurrencyFromCents } from "../utils/format";
 import { getApiErrorMessage } from "../utils/errors";

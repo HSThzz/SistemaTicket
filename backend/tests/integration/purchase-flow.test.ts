@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
-import { Ticket } from "../../src/entities/Ticket";
-import { OrderStatus, UserRole } from "../../src/entities/enums";
+import { Ticket } from "../../src/shared/infrastructure/persistence/entities/Ticket";
+import { OrderStatus, UserRole } from "../../src/shared/kernel/enums";
 import {
   createPublishedEventWithLot,
   createUser,

@@ -32,7 +32,7 @@ import { PremiumPaper } from "../components/account/PremiumPaper";
 import { PageLoader } from "../components/account/PageLoader";
 import { StatCard } from "../components/account/StatCard";
 import { useAuth } from "../context/AuthContext";
-import * as eventService from "../services/eventService";
+import * as eventService from "../features/catalog/api/eventService";
 import type { Event, TicketLot } from "../types/api";
 import {
   CATEGORY_LABELS,

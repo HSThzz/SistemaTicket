@@ -5,11 +5,11 @@ import type Redis from "ioredis";
 import type { DataSource } from "typeorm";
 import request from "supertest";
 import { createApp } from "../../src/app";
-import { AppDataSource } from "../../src/config/data-source";
-import { getRedis, getRedisWorker, closeRedisConnections } from "../../src/config/redis";
-import { setReservationPersistenceWorker } from "../../src/runtime/workerRegistry";
-import { PaymentService } from "../../src/services/PaymentService";
-import { ReservationPersistenceWorker } from "../../src/workers/ReservationPersistenceWorker";
+import { AppDataSource } from "../../src/shared/infrastructure/config/data-source";
+import { getRedis, getRedisWorker, closeRedisConnections } from "../../src/shared/infrastructure/config/redis";
+import { setReservationPersistenceWorker } from "../../src/shared/runtime/workerRegistry";
+import { PaymentService } from "../../src/modules/payment/application/PaymentService";
+import { ReservationPersistenceWorker } from "../../src/modules/sales/infrastructure/workers/ReservationPersistenceWorker";
 
 export interface TestContext {
   app: Application;

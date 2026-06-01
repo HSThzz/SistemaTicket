@@ -4,7 +4,7 @@ import type { Request } from "express";
 import {
   extractMercadoPagoPaymentId,
   isMercadoPagoWebhookRequest,
-} from "../../src/services/payment/mercadoPagoWebhook";
+} from "../../src/modules/payment/infrastructure/gateways/mercadoPagoWebhook";
 
 function mockRequest(partial: Partial<Request>): Request {
   return partial as Request;

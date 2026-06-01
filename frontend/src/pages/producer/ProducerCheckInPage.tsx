@@ -26,7 +26,7 @@ import { BackButton } from "../../components/account/BackButton";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { CheckInSuccessCard } from "../../components/producer/CheckInSuccessCard";
 import { QrScanner } from "../../components/QrScanner";
-import * as checkInService from "../../services/checkInService";
+import * as checkInService from "../../features/ticketing/api/checkInService";
 import { getApiErrorMessage } from "../../utils/errors";
 
 interface CheckInFormValues {

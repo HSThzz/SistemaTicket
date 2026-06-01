@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
-import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../src/config/constants";
-import { Ticket } from "../../src/entities/Ticket";
-import { TicketLot } from "../../src/entities/TicketLot";
-import { OrderStatus, TicketStatus, UserRole } from "../../src/entities/enums";
+import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../src/shared/infrastructure/config/constants";
+import { Ticket } from "../../src/shared/infrastructure/persistence/entities/Ticket";
+import { TicketLot } from "../../src/shared/infrastructure/persistence/entities/TicketLot";
+import { OrderStatus, TicketStatus, UserRole } from "../../src/shared/kernel/enums";
 import { TEST_WEBHOOK_SECRET } from "../helpers/env";
-import { signInternalWebhookPayload } from "../../src/services/payment/WebhookAuthService";
+import { signInternalWebhookPayload } from "../../src/modules/payment/infrastructure/gateways/WebhookAuthService";
 import {
   createPublishedEventWithLot,
   createUser,

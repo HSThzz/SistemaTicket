@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
-import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../src/config/constants";
-import { UserRole } from "../../src/entities/enums";
-import { InsufficientStockError } from "../../src/errors/PurchaseError";
-import { PurchaseService } from "../../src/services/PurchaseService";
+import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../src/shared/infrastructure/config/constants";
+import { UserRole } from "../../src/shared/kernel/enums";
+import { InsufficientStockError } from "../../src/modules/sales/domain/errors/PurchaseError";
+import { PurchaseService } from "../../src/modules/sales/application/PurchaseService";
 import { createPublishedEventWithLot, createUser } from "../helpers/fixtures";
 import {
   resetTestState,

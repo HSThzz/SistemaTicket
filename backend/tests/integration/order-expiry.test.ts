@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
-import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../src/config/constants";
-import { Order } from "../../src/entities/Order";
-import { Reservation } from "../../src/entities/Reservation";
-import { TicketLot } from "../../src/entities/TicketLot";
+import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../src/shared/infrastructure/config/constants";
+import { Order } from "../../src/shared/infrastructure/persistence/entities/Order";
+import { Reservation } from "../../src/shared/infrastructure/persistence/entities/Reservation";
+import { TicketLot } from "../../src/shared/infrastructure/persistence/entities/TicketLot";
 import {
   OrderStatus,
   ReservationStatus,
   UserRole,
-} from "../../src/entities/enums";
-import { PaymentService } from "../../src/services/PaymentService";
+} from "../../src/shared/kernel/enums";
+import { PaymentService } from "../../src/modules/payment/application/PaymentService";
 import {
   createPublishedEventWithLot,
   createUser,

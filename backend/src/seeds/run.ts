@@ -1,6 +1,6 @@
-import "reflect-metadata";
-import { AppDataSource } from "../config/data-source";
-import { getRedis, closeRedisConnections } from "../config/redis";
+﻿import "reflect-metadata";
+import { AppDataSource } from "../shared/infrastructure/config/data-source";
+import { getRedis, closeRedisConnections } from "../shared/infrastructure/config/redis";
 import {
   resetDatabase,
   resetRedis,
@@ -58,7 +58,7 @@ async function main(): Promise<void> {
     await resetDatabase(AppDataSource);
     await resetRedis(redis);
   } else {
-    const { User } = await import("../entities/User");
+    const { User } = await import("../shared/infrastructure/persistence/entities/User");
     const existingUsers = await AppDataSource.getRepository(User).count({
       where: { email: "admin@ticketflow.test" },
     });
