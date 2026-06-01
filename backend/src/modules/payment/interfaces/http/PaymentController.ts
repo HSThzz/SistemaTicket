@@ -1,4 +1,9 @@
-﻿import type { Request, Response } from "express";
+﻿/**
+ * @file Controlador HTTP de webhooks de pagamento e simulação em desenvolvimento.
+ * @module payment/interfaces/http/PaymentController
+ */
+
+import type { Request, Response } from "express";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { isProduction } from "../../../../shared/infrastructure/config/env";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
@@ -26,7 +31,15 @@ const logger = Logger.getInstance();
 const paymentService = new PaymentService(AppDataSource, getRedis());
 const webhookAuthService = new WebhookAuthService(getRedis());
 
+/**
+ * Recebe webhooks internos e Mercado Pago após autenticação.
+ */
 export class PaymentController {
+  /**
+   * Simula pagamento PIX aprovado (não disponível em produção).
+   * @param req - Body `{ orderId }` e usuário autenticado.
+   * @param res - `{ simulated: true }` ou erro mapeado de webhook.
+   */
   async simulateDevPayment(req: Request, res: Response): Promise<void> {
     if (isProduction) {
       res.status(404).json({ error: "Not found", code: "NOT_FOUND" });
@@ -60,6 +73,11 @@ export class PaymentController {
     }
   }
 
+  /**
+   * Endpoint unificado de webhook com anti-replay e roteamento MP vs interno.
+   * @param req - Corpo JSON ou notificação Mercado Pago.
+   * @param res - 200 com `received` ou erro 4xx/5xx.
+   */
   async webhook(req: Request, res: Response): Promise<void> {
     try {
       const auth = await webhookAuthService.authorize(req);
@@ -185,4 +203,5 @@ export class PaymentController {
   }
 }
 
+/** Instância singleton do controlador de pagamentos. */
 export const paymentController = new PaymentController();

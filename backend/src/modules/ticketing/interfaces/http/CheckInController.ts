@@ -1,4 +1,9 @@
-﻿import type { Request, Response } from "express";
+﻿/**
+ * @file Controlador HTTP de check-in na portaria.
+ * @module ticketing/interfaces/http/CheckInController
+ */
+
+import type { Request, Response } from "express";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import {
@@ -15,7 +20,14 @@ const CONTEXT = "CheckInController";
 const logger = Logger.getInstance();
 const checkInService = new CheckInService(AppDataSource);
 
+/**
+ * Endpoint de validação de ingresso por código único.
+ */
 export class CheckInController {
+  /**
+   * @param req - Body `{ unique_code }` e usuário admin/produtor.
+   * @param res - Dados do check-in em snake_case ou erro mapeado.
+   */
   async checkIn(req: Request, res: Response): Promise<void> {
     if (!req.user) {
       res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
@@ -110,4 +122,5 @@ export class CheckInController {
   }
 }
 
+/** Instância singleton do controlador de check-in. */
 export const checkInController = new CheckInController();

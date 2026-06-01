@@ -1,3 +1,8 @@
+/**
+ * @file Formulário de criação de novo evento pelo produtor.
+ * @module pages/producer/ProducerCreateEventPage
+ */
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -75,6 +80,9 @@ function CreateStep({ index, title, description }: { index: number; title: strin
   );
 }
 
+/**
+ * Cria evento com título, descrição, data, local e imagem; redireciona para gestão.
+ */
 export function ProducerCreateEventPage() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);

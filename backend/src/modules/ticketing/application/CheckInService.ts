@@ -1,4 +1,9 @@
-﻿import type { DataSource } from "typeorm";
+﻿/**
+ * @file Serviço de check-in de ingressos com lock pessimista e regras de negócio.
+ * @module ticketing/application/CheckInService
+ */
+
+import type { DataSource } from "typeorm";
 import { Logger } from "../../../shared/infrastructure/config/logger";
 import { Ticket } from "../../../shared/infrastructure/persistence/entities/Ticket";
 import { EventStatus, TicketStatus, UserRole } from "../../../shared/kernel/enums";
@@ -13,11 +18,17 @@ import {
 const CONTEXT = "CheckInService";
 const CHECK_IN_TIMEZONE = "America/Sao_Paulo";
 
+/**
+ * Usuário que realiza o check-in (produtor do evento ou admin).
+ */
 export interface CheckInActor {
   userId: string;
   role: UserRole;
 }
 
+/**
+ * Dados retornados após check-in bem-sucedido.
+ */
 export interface CheckInResult {
   ownerName: string;
   ownerDocument: string;
@@ -26,11 +37,27 @@ export interface CheckInResult {
   eventTitle: string;
 }
 
+/**
+ * Valida e registra entrada do portador pelo código único do ingresso.
+ */
 export class CheckInService {
   private readonly logger = Logger.getInstance();
 
+  /**
+   * @param dataSource - Conexão TypeORM para transações com lock.
+   */
   constructor(private readonly dataSource: DataSource) {}
 
+  /**
+   * @param uniqueCode - Código QR/único do ingresso.
+   * @param actor - Operador autenticado (admin ou produtor dono do evento).
+   * @returns Dados do titular e horário do check-in.
+   * @throws {TicketNotFoundError} Código inexistente.
+   * @throws {CheckInAccessDeniedError} Produtor sem permissão no evento.
+   * @throws {InvalidTicketStatusError} Ingresso não ativo.
+   * @throws {EventNotPublishedError} Evento não publicado.
+   * @throws {CheckInNotAllowedTodayError} Fora do dia do evento (SP).
+   */
   async checkIn(uniqueCode: string, actor: CheckInActor): Promise<CheckInResult> {
     return this.dataSource.transaction(async (manager) => {
       const locked = await manager.findOne(Ticket, {

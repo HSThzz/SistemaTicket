@@ -1,4 +1,9 @@
-﻿import { Router } from "express";
+﻿/**
+ * @file Rotas HTTP de pedidos do cliente (`/orders`).
+ * @module sales/interfaces/http/order.routes
+ */
+
+import { Router } from "express";
 import { orderController } from "./OrderController";
 import { UserRole } from "../../../../shared/kernel/enums";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
@@ -21,5 +26,6 @@ router.post(
   (req, res) => void orderController.refund(req, res),
 );
 
+/** Router Express montado em `/orders`. */
 export default router;
 

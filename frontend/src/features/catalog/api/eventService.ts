@@ -1,6 +1,12 @@
+/**
+ * @file Cliente HTTP para catálogo e gestão de eventos (público e produtor).
+ * @module features/catalog/api/eventService
+ */
+
 import { api } from "../../../shared/api/client";
 import type { Event, ProducerDashboardStats, TicketLot } from "../../../types/api";
 
+/** Payload para criação de evento pelo produtor. */
 export interface CreateEventInput {
   title: string;
   description: string;
@@ -10,6 +16,7 @@ export interface CreateEventInput {
   status?: string;
 }
 
+/** Campos opcionais para atualização parcial de evento. */
 export interface UpdateEventInput {
   title?: string;
   description?: string;
@@ -19,6 +26,7 @@ export interface UpdateEventInput {
   status?: string;
 }
 
+/** Payload para criação de lote de ingressos em um evento. */
 export interface CreateTicketLotInput {
   name: string;
   price: number;
@@ -26,31 +34,59 @@ export interface CreateTicketLotInput {
   availableQuantity?: number;
 }
 
+/**
+ * Lista eventos publicados na vitrine pública.
+ */
 export async function listPublishedEvents(): Promise<Event[]> {
   const { data } = await api.get<{ events: Event[] }>("/events");
   return data.events;
 }
 
+/**
+ * Obtém detalhes de um evento publicado por ID.
+ *
+ * @param eventId - Identificador do evento.
+ */
 export async function getPublishedEvent(eventId: string): Promise<Event> {
   const { data } = await api.get<{ event: Event }>(`/events/${eventId}`);
   return data.event;
 }
 
+/**
+ * Lista eventos gerenciados pelo produtor autenticado.
+ */
 export async function listManagedEvents(): Promise<Event[]> {
   const { data } = await api.get<{ events: Event[] }>("/events/mine");
   return data.events;
 }
 
+/**
+ * Cria novo evento no painel do produtor.
+ *
+ * @param input - Dados do evento.
+ */
 export async function createEvent(input: CreateEventInput): Promise<Event> {
   const { data } = await api.post<{ event: Event }>("/events", input);
   return data.event;
 }
 
+/**
+ * Atualiza campos de um evento existente.
+ *
+ * @param eventId - Identificador do evento.
+ * @param input - Campos a alterar.
+ */
 export async function updateEvent(eventId: string, input: UpdateEventInput): Promise<Event> {
   const { data } = await api.patch<{ event: Event }>(`/events/${eventId}`, input);
   return data.event;
 }
 
+/**
+ * Adiciona lote de ingressos a um evento.
+ *
+ * @param eventId - Identificador do evento.
+ * @param input - Nome, preço e quantidades do lote.
+ */
 export async function createTicketLot(
   eventId: string,
   input: CreateTicketLotInput,
@@ -62,11 +98,20 @@ export async function createTicketLot(
   return data.ticketLot;
 }
 
+/**
+ * Obtém estatísticas agregadas do dashboard do produtor.
+ */
 export async function getProducerDashboardStats(): Promise<ProducerDashboardStats> {
   const { data } = await api.get<ProducerDashboardStats>("/events/mine/stats");
   return data;
 }
 
+/**
+ * Busca um evento gerenciado pelo ID na lista do produtor.
+ *
+ * @param eventId - Identificador do evento.
+ * @returns Evento encontrado ou `null`.
+ */
 export async function getManagedEvent(eventId: string): Promise<Event | null> {
   const events = await listManagedEvents();
   return events.find((event) => event.id === eventId) ?? null;

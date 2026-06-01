@@ -1,10 +1,21 @@
-﻿import type { NextFunction, Request, Response } from "express";
+﻿/**
+ * @file Middleware de autenticação JWT (Bearer).
+ * @module shared/interfaces/http/middlewares/authMiddleware
+ */
+
+import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { env } from "../../../infrastructure/config/env";
 import type { UserRole } from "../../../kernel/enums";
 import { UnauthorizedError } from "../../../../modules/identity/domain/errors/AuthError";
 import type { AuthTokenPayload } from "../../../../modules/identity/application/AuthService";
 
+/**
+ * Valida o header Authorization Bearer, verifica o JWT e preenche `req.user`.
+ * @param req - Requisição Express.
+ * @param res - Resposta Express.
+ * @param next - Próximo middleware.
+ */
 export function authMiddleware(
   req: Request,
   res: Response,

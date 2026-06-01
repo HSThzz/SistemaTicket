@@ -1,3 +1,8 @@
+/**
+ * @file Listagem de eventos gerenciados pelo produtor.
+ * @module pages/producer/ProducerEventsPage
+ */
+
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -29,6 +34,9 @@ import * as eventService from "../../features/catalog/api/eventService";
 import type { Event } from "../../types/api";
 import { getApiErrorMessage } from "../../utils/errors";
 
+/**
+ * Lista todos os eventos do produtor com atalhos para criar, gerenciar e check-in.
+ */
 export function ProducerEventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);

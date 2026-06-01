@@ -1,4 +1,9 @@
-﻿import type { Request, Response } from "express";
+﻿/**
+ * @file Controlador HTTP de pedidos do cliente: listagem, PIX e reembolso (admin).
+ * @module sales/interfaces/http/OrderController
+ */
+
+import type { Request, Response } from "express";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { getRedis } from "../../../../shared/infrastructure/config/redis";
@@ -23,7 +28,15 @@ function parseOrderId(value: unknown): string {
   return "";
 }
 
+/**
+ * Endpoints de consulta e reembolso de pedidos.
+ */
 export class OrderController {
+  /**
+   * Retorna dados PIX do pedido para o dono autenticado.
+   * @param req - Parâmetro `id` do pedido.
+   * @param res - `{ payment }` ou erro 404/502.
+   */
   async getPayment(req: Request, res: Response): Promise<void> {
     if (!req.user) {
       res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
@@ -60,6 +73,11 @@ export class OrderController {
     }
   }
 
+  /**
+   * Lista pedidos do usuário autenticado com evento e PIX pendente.
+   * @param req - Usuário em `req.user`.
+   * @param res - `{ orders: OrderListItem[] }`.
+   */
   async listMine(req: Request, res: Response): Promise<void> {
     if (!req.user) {
       res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
@@ -78,6 +96,11 @@ export class OrderController {
     }
   }
 
+  /**
+   * Reembolsa pedido pago (somente admin via rota).
+   * @param req - Parâmetro `id` do pedido.
+   * @param res - `{ refund }` ou erro de negócio/gateway.
+   */
   async refund(req: Request, res: Response): Promise<void> {
     const orderId = parseOrderId(req.params.id);
 
@@ -133,4 +156,5 @@ export class OrderController {
   }
 }
 
+/** Instância singleton do controlador de pedidos. */
 export const orderController = new OrderController();

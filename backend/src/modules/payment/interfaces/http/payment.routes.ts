@@ -1,4 +1,9 @@
-﻿import { Router } from "express";
+﻿/**
+ * @file Rotas HTTP de pagamento (`/payments`).
+ * @module payment/interfaces/http/payment.routes
+ */
+
+import { Router } from "express";
 import { paymentController } from "./PaymentController";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
 
@@ -12,4 +17,5 @@ router.post(
   (req, res) => void paymentController.simulateDevPayment(req, res),
 );
 
+/** Router Express montado em `/payments`. */
 export default router;

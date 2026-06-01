@@ -1,4 +1,9 @@
-﻿import type { Request, Response } from "express";
+﻿/**
+ * @file Controlador HTTP do endpoint de health check.
+ * @module shared/interfaces/http/HealthController
+ */
+
+import type { Request, Response } from "express";
 import { AppDataSource } from "../../infrastructure/config/data-source";
 import { Logger } from "../../infrastructure/config/logger";
 import { getRedis } from "../../infrastructure/config/redis";
@@ -8,7 +13,16 @@ const CONTEXT = "HealthController";
 const logger = Logger.getInstance();
 const healthService = new HealthService(AppDataSource, getRedis());
 
+/**
+ * Expõe verificação de saúde agregada da API e dependências.
+ */
 export class HealthController {
+  /**
+   * Executa o health check e responde com 200 ou 503 conforme o status.
+   * @param _req - Requisição Express (não utilizada).
+   * @param res - Resposta Express.
+   * @returns Promise resolvida após enviar o JSON.
+   */
   async check(_req: Request, res: Response): Promise<void> {
     try {
       const report = await healthService.check();
@@ -29,4 +43,5 @@ export class HealthController {
   }
 }
 
+/** Instância singleton do controlador de health. */
 export const healthController = new HealthController();

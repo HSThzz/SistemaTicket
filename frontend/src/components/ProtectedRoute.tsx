@@ -1,7 +1,15 @@
+/**
+ * @file Guard de rota que exige usuário autenticado.
+ * @module components/ProtectedRoute
+ */
+
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Center, Loader } from "@mantine/core";
 import { useAuth } from "../context/AuthContext";
 
+/**
+ * Redireciona para login se não autenticado; preserva `from` no state para retorno.
+ */
 export function ProtectedRoute() {
   const { isAuthenticated, isBootstrapping } = useAuth();
   const location = useLocation();

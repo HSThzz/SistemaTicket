@@ -1,7 +1,15 @@
+/**
+ * @file Guard de rota apenas para visitantes não autenticados (login/cadastro).
+ * @module components/GuestRoute
+ */
+
 import { Navigate, Outlet } from "react-router-dom";
 import { Center, Loader } from "@mantine/core";
 import { useAuth } from "../context/AuthContext";
 
+/**
+ * Redireciona usuários já logados para a home; exibe loader durante bootstrap.
+ */
 export function GuestRoute() {
   const { isAuthenticated, isBootstrapping } = useAuth();
 

@@ -1,4 +1,9 @@
-﻿import { Router } from "express";
+﻿/**
+ * @file Rotas HTTP do catálogo de eventos e lotes.
+ * @module modules/catalog/interfaces/http/event.routes
+ */
+
+import { Router } from "express";
 import { eventController, eventManagementMiddlewares } from "./EventController";
 
 const router = Router();
@@ -35,4 +40,3 @@ router.post(
 );
 
 export default router;
-

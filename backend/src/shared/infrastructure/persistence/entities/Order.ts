@@ -1,4 +1,9 @@
-﻿import {
+﻿/**
+ * @file Entidade TypeORM de pedido de compra.
+ * @module shared/infrastructure/persistence/entities/Order
+ */
+
+import {
   Column,
   Entity,
   JoinColumn,
@@ -11,6 +16,7 @@ import { Reservation } from "./Reservation";
 import { Ticket } from "./Ticket";
 import { User } from "./User";
 
+/** Pedido vinculado a uma reserva, com pagamento PIX e ingressos emitidos. */
 @Entity("orders")
 export class Order {
   @PrimaryGeneratedColumn("uuid")

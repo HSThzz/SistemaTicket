@@ -1,9 +1,17 @@
+/**
+ * @file Guard de rota restrita a produtores e administradores.
+ * @module components/ProducerRoute
+ */
+
 import { Navigate, Outlet } from "react-router-dom";
 import { Center, Loader } from "@mantine/core";
 import { useAuth } from "../context/AuthContext";
 
 const PRODUCER_ROLES = new Set(["PRODUCER", "ADMIN"]);
 
+/**
+ * Exige autenticação e papel `PRODUCER` ou `ADMIN`; demais perfis voltam à home.
+ */
 export function ProducerRoute() {
   const { user, isAuthenticated, isBootstrapping } = useAuth();
 

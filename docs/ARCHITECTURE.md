@@ -60,6 +60,13 @@ src/
 
 Páginas e componentes permanecem por fluxo de UI; a camada **features** concentra integração com a API por bounded context.
 
+## Documentação (JSDoc)
+
+Todo o código de negócio está anotado com **JSDoc** em português (`@module`, `@param`, `@returns`, `@throws`).
+
+- Gerar site HTML da API: `cd backend && npm run docs` → `backend/docs-api/index.html`
+- Migrations TypeORM não são documentadas (geradas pelo schema)
+
 ## Comandos
 
 ```bash
@@ -68,6 +75,7 @@ cd backend
 npm run dev
 npm run migration:run
 npm run build
+npm run docs
 
 # Frontend
 cd frontend

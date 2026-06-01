@@ -1,3 +1,8 @@
+/**
+ * @file Ponto de entrada Vite: Monta React com Mantine e tema da aplicação.
+ * @module main
+ */
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { MantineProvider } from "@mantine/core";

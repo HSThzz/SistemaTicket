@@ -1,4 +1,14 @@
+/**
+ * @file Erros de domínio do módulo de identidade e autenticação.
+ * @module modules/identity/domain/errors/AuthError
+ */
+
+/** Erro base de autenticação com código estável para a API. */
 export class AuthError extends Error {
+  /**
+   * @param message - Mensagem descritiva.
+   * @param code - Código de erro exposto ao cliente.
+   */
   constructor(
     message: string,
     public readonly code: string,
@@ -8,6 +18,7 @@ export class AuthError extends Error {
   }
 }
 
+/** Credenciais de login inválidas (email ou senha). */
 export class InvalidCredentialsError extends AuthError {
   constructor() {
     super("Invalid email or password", "INVALID_CREDENTIALS");
@@ -15,20 +26,29 @@ export class InvalidCredentialsError extends AuthError {
   }
 }
 
+/** Email já cadastrado no registro. */
 export class EmailAlreadyExistsError extends AuthError {
+  /**
+   * @param email - Email em conflito.
+   */
   constructor(email: string) {
     super(`Email already registered: ${email}`, "EMAIL_ALREADY_EXISTS");
     this.name = "EmailAlreadyExistsError";
   }
 }
 
+/** Requisição sem autenticação ou token inválido. */
 export class UnauthorizedError extends AuthError {
+  /**
+   * @param message - Mensagem opcional (padrão: "Unauthorized").
+   */
   constructor(message = "Unauthorized") {
     super(message, "UNAUTHORIZED");
     this.name = "UnauthorizedError";
   }
 }
 
+/** Usuário autenticado sem permissão para a operação. */
 export class ForbiddenError extends AuthError {
   constructor() {
     super("Forbidden", "FORBIDDEN");
@@ -36,14 +56,22 @@ export class ForbiddenError extends AuthError {
   }
 }
 
+/** Usuário não encontrado pelo identificador. */
 export class UserNotFoundError extends AuthError {
+  /**
+   * @param userId - ID do usuário ausente.
+   */
   constructor(userId: string) {
     super(`User ${userId} not found`, "USER_NOT_FOUND");
     this.name = "UserNotFoundError";
   }
 }
 
+/** Papel de usuário inválido na atualização de role. */
 export class InvalidRoleError extends AuthError {
+  /**
+   * @param role - Valor de papel rejeitado.
+   */
   constructor(role: string) {
     super(`Invalid role: ${role}`, "INVALID_ROLE");
     this.name = "InvalidRoleError";

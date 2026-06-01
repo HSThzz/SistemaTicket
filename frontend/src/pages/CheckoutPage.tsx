@@ -1,3 +1,8 @@
+/**
+ * @file Fluxo de checkout: reserva, polling de fase, PIX e simulação em dev.
+ * @module pages/CheckoutPage
+ */
+
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
@@ -49,6 +54,7 @@ import {
   validateTicketQuantity,
 } from "../utils/ticketQuantity";
 
+/** Mapeia fase da reserva para índice do stepper Mantine (0–4). */
 function getActiveStep(phase: string | undefined): number {
   switch (phase) {
     case "PENDING_PERSISTENCE":
@@ -64,6 +70,7 @@ function getActiveStep(phase: string | undefined): number {
   }
 }
 
+/** Linha label/valor no painel lateral de resumo do checkout. */
 function CheckoutSummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
@@ -77,6 +84,9 @@ function CheckoutSummaryRow({ label, value }: { label: string; value: string }) 
   );
 }
 
+/**
+ * Painel fixo com resumo do evento, lote, quantidade e total da compra.
+ */
 function CheckoutOrderSummary({
   event,
   selectedLot,
@@ -155,6 +165,9 @@ function CheckoutOrderSummary({
   );
 }
 
+/**
+ * Stepper de compra com seleção de lote/quantidade, reserva e pagamento PIX monitorado.
+ */
 export function CheckoutPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const [searchParams] = useSearchParams();

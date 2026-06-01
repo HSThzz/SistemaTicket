@@ -1,4 +1,9 @@
-﻿import {
+﻿/**
+ * @file Entidade TypeORM de usuário do sistema.
+ * @module shared/infrastructure/persistence/entities/User
+ */
+
+import {
   Column,
   Entity,
   OneToMany,
@@ -9,6 +14,7 @@ import { Event } from "./Event";
 import { Order } from "./Order";
 import { Reservation } from "./Reservation";
 
+/** Usuário autenticável com papel, documento e relacionamentos de negócio. */
 @Entity("users")
 export class User {
   @PrimaryGeneratedColumn("uuid")

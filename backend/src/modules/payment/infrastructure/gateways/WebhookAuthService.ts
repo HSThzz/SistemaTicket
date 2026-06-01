@@ -1,4 +1,9 @@
-﻿import { createHash } from "node:crypto";
+﻿/**
+ * @file Autenticação, validação de assinatura e anti-replay de webhooks de pagamento.
+ * @module payment/infrastructure/gateways/WebhookAuthService
+ */
+
+import { createHash } from "node:crypto";
 import type { Request } from "express";
 import type Redis from "ioredis";
 import { env, isProduction } from "../../../../shared/infrastructure/config/env";
@@ -23,15 +28,29 @@ const CONTEXT = "WebhookAuthService";
 const REPLAY_KEY_PREFIX = "webhook:dedupe:";
 const REPLAY_TTL_SECONDS = 24 * 60 * 60;
 
+/**
+ * Resultado da autorização com chave para deduplicação no Redis.
+ */
 export interface WebhookAuthResult {
   replayKey: string;
 }
 
+/**
+ * Valida webhooks Mercado Pago e internos antes do processamento de pagamento.
+ */
 export class WebhookAuthService {
   private readonly logger = Logger.getInstance();
 
+  /**
+   * @param redis - Cliente Redis para chaves `SET NX` de anti-replay.
+   */
   constructor(private readonly redis: Redis) {}
 
+  /**
+   * @param req - Requisição com headers `x-signature` / `x-request-id` ou fallback legado.
+   * @returns Chave de deduplicação exclusiva por notificação.
+   * @throws {WebhookUnauthorizedError} Se assinatura ou timestamp forem inválidos.
+   */
   async authorizeMercadoPago(req: Request): Promise<WebhookAuthResult> {
     const xSignature = req.header("x-signature");
     const xRequestId = req.header("x-request-id");
@@ -97,6 +116,11 @@ export class WebhookAuthService {
     throw new WebhookUnauthorizedError("Unauthorized Mercado Pago webhook");
   }
 
+  /**
+   * @param req - Requisição com HMAC em `x-webhook-signature` e `x-webhook-timestamp`.
+   * @returns Chave de deduplicação baseada em timestamp e hash do corpo.
+   * @throws {WebhookUnauthorizedError} Em produção sem headers obrigatórios.
+   */
   async authorizeInternal(req: Request): Promise<WebhookAuthResult> {
     const secret = env.payment.webhookSecret;
     const timestamp = req.header("x-webhook-timestamp");
@@ -153,6 +177,11 @@ export class WebhookAuthService {
     throw new WebhookUnauthorizedError("Unauthorized internal webhook");
   }
 
+  /**
+   * Despacha para Mercado Pago ou webhook interno conforme o payload.
+   * @param req - Requisição HTTP do webhook.
+   * @returns Resultado com `replayKey` para {@link assertNotReplayed}.
+   */
   async authorize(req: Request): Promise<WebhookAuthResult> {
     if (isMercadoPagoWebhookRequest(req)) {
       return this.authorizeMercadoPago(req);
@@ -161,6 +190,10 @@ export class WebhookAuthService {
     return this.authorizeInternal(req);
   }
 
+  /**
+   * @param replayKey - Chave única da notificação.
+   * @throws {WebhookReplayError} Se a chave já existir no Redis (TTL 24h).
+   */
   async assertNotReplayed(replayKey: string): Promise<void> {
     const inserted = await this.redis.set(replayKey, "1", "EX", REPLAY_TTL_SECONDS, "NX");
 
@@ -179,6 +212,11 @@ export class WebhookAuthService {
   }
 }
 
+/**
+ * Gera headers de assinatura para testes ou emissão de webhooks internos.
+ * @param params - Secret, corpo JSON e timestamp opcional.
+ * @returns Timestamp, assinatura hex e corpo serializado.
+ */
 export function signInternalWebhookPayload(params: {
   secret: string;
   body: unknown;

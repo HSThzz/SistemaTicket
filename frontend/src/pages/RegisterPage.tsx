@@ -1,3 +1,8 @@
+/**
+ * @file Página de cadastro de novo cliente.
+ * @module pages/RegisterPage
+ */
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -23,10 +28,14 @@ interface RegisterFormValues {
   document: string;
 }
 
+/** Remove caracteres não numéricos do CPF informado. */
 function normalizeDocument(value: string): string {
   return value.replace(/\D/g, "");
 }
 
+/**
+ * Formulário de cadastro com nome, e-mail, CPF e senha; inicia sessão ao concluir.
+ */
 export function RegisterPage() {
   const navigate = useNavigate();
   const { setSession } = useAuth();

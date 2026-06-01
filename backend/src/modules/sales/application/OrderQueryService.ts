@@ -1,4 +1,9 @@
-﻿import type { DataSource } from "typeorm";
+﻿/**
+ * @file Consultas de pedidos do usuário com detalhes de evento e pagamento PIX pendente.
+ * @module sales/application/OrderQueryService
+ */
+
+import type { DataSource } from "typeorm";
 import { Order } from "../../../shared/infrastructure/persistence/entities/Order";
 import { OrderStatus } from "../../../shared/kernel/enums";
 import type {
@@ -6,6 +11,9 @@ import type {
   PixPaymentDetails,
 } from "../../payment/application/PaymentService";
 
+/**
+ * Representação resumida de um pedido na listagem do cliente.
+ */
 export interface OrderListItem {
   id: string;
   status: string;
@@ -17,12 +25,24 @@ export interface OrderListItem {
   payment: PixPaymentDetails | null;
 }
 
+/**
+ * Serviço de leitura de pedidos vinculados ao usuário autenticado.
+ */
 export class OrderQueryService {
+  /**
+   * @param dataSource - Conexão TypeORM.
+   * @param paymentService - Serviço de pagamento para resolver PIX de pedidos pendentes.
+   */
   constructor(
     private readonly dataSource: DataSource,
     private readonly paymentService: PaymentService,
   ) {}
 
+  /**
+   * Lista pedidos do usuário ordenados do mais recente ao mais antigo.
+   * @param userId - Identificador do cliente.
+   * @returns Lista de pedidos com evento e dados PIX quando o status for pendente.
+   */
   async listUserOrders(userId: string): Promise<OrderListItem[]> {
     const orders = await this.dataSource.getRepository(Order).find({
       where: { userId },

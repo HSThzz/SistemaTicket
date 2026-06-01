@@ -1,3 +1,8 @@
+/**
+ * @file Componente raiz com definição de rotas e guards de autenticação.
+ * @module App
+ */
+
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { GuestRoute } from "./components/GuestRoute";
 import { Layout } from "./components/Layout";
@@ -17,6 +22,9 @@ import { ProducerDashboardPage } from "./pages/producer/ProducerDashboardPage";
 import { ProducerEventsPage } from "./pages/producer/ProducerEventsPage";
 import { ProducerManageEventPage } from "./pages/producer/ProducerManageEventPage";
 
+/**
+ * Aplicação SPA: layout compartilhado, rotas públicas, protegidas e área do produtor.
+ */
 export default function App() {
   return (
     <BrowserRouter>

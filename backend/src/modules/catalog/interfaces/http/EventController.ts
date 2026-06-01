@@ -1,4 +1,9 @@
-﻿import type { Request, Response } from "express";
+﻿/**
+ * @file Controlador HTTP de eventos e lotes de ingressos.
+ * @module modules/catalog/interfaces/http/EventController
+ */
+
+import type { Request, Response } from "express";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
@@ -20,6 +25,12 @@ const logger = Logger.getInstance();
 const eventService = new EventService(AppDataSource);
 const eventDashboardService = new EventDashboardService(AppDataSource);
 
+/**
+ * Converte valor de body em `EventStatus` quando válido.
+ * @param value - Valor recebido do cliente.
+ * @returns Status parseado ou `undefined` se omitido.
+ * @throws {Error} Quando o valor não é string ou não é membro do enum.
+ */
 function parseEventStatus(value: unknown): EventStatus | undefined {
   if (value === undefined) return undefined;
   if (typeof value !== "string") throw new Error("Invalid status");
@@ -27,12 +38,23 @@ function parseEventStatus(value: unknown): EventStatus | undefined {
   return EventStatus[value as keyof typeof EventStatus];
 }
 
+/**
+ * Extrai eventId de `req.params.eventId` (string ou array).
+ * @param value - Parâmetro bruto do Express.
+ * @returns ID normalizado ou string vazia.
+ */
 function parseEventId(value: unknown): string {
   if (typeof value === "string") return value;
   if (Array.isArray(value) && typeof value[0] === "string") return value[0];
   return "";
 }
 
+/**
+ * Obtém ator autenticado da requisição ou responde 401.
+ * @param req - Requisição Express.
+ * @param res - Resposta Express.
+ * @returns Ator ou `null` se não autenticado.
+ */
 function requireActor(req: Request, res: Response): EventActor | null {
   if (!req.user) {
     res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
@@ -45,6 +67,11 @@ function requireActor(req: Request, res: Response): EventActor | null {
   };
 }
 
+/**
+ * Serializa entidade Event para JSON da API.
+ * @param event - Evento com lotes opcionais.
+ * @returns Objeto DTO para resposta HTTP.
+ */
 function serializeEvent(event: Event) {
   return {
     id: event.id,
@@ -65,7 +92,16 @@ function serializeEvent(event: Event) {
   };
 }
 
+/**
+ * Endpoints públicos e de gestão de eventos/lotes.
+ */
 export class EventController {
+  /**
+   * GET /events — lista eventos publicados.
+   * @param _req - Requisição (não utilizada).
+   * @param res - Lista serializada de eventos.
+   * @returns Promise resolvida após enviar 200.
+   */
   async listPublished(_req: Request, res: Response): Promise<void> {
     const events = await eventService.listPublished();
     res.status(200).json({
@@ -73,6 +109,12 @@ export class EventController {
     });
   }
 
+  /**
+   * GET /events/mine — lista eventos do produtor autenticado.
+   * @param req - Requer usuário PRODUCER ou ADMIN.
+   * @param res - Lista de eventos gerenciáveis.
+   * @returns Promise resolvida após enviar 200 ou 401.
+   */
   async listMine(req: Request, res: Response): Promise<void> {
     const actor = requireActor(req, res);
     if (!actor) return;
@@ -83,6 +125,12 @@ export class EventController {
     });
   }
 
+  /**
+   * GET /events/mine/stats — dashboard de métricas do produtor.
+   * @param req - Requer usuário PRODUCER ou ADMIN.
+   * @param res - Estatísticas agregadas ou 500 em falha.
+   * @returns Promise resolvida após enviar a resposta.
+   */
   async getMineStats(req: Request, res: Response): Promise<void> {
     const actor = requireActor(req, res);
     if (!actor) return;
@@ -102,6 +150,12 @@ export class EventController {
     }
   }
 
+  /**
+   * GET /events/:eventId — detalhe de evento publicado.
+   * @param req - Parâmetro eventId.
+   * @param res - Evento ou 404.
+   * @returns Promise resolvida após enviar a resposta.
+   */
   async getPublished(req: Request, res: Response): Promise<void> {
     const eventId = parseEventId(req.params.eventId);
     if (!eventId) {
@@ -118,6 +172,12 @@ export class EventController {
     res.status(200).json({ event: serializeEvent(event) });
   }
 
+  /**
+   * POST /events — cria novo evento.
+   * @param req - Corpo com campos obrigatórios e opcionais de status/imagem.
+   * @param res - 201 com evento criado ou erro.
+   * @returns Promise resolvida após enviar a resposta.
+   */
   async create(req: Request, res: Response): Promise<void> {
     const actor = requireActor(req, res);
     if (!actor) return;
@@ -150,6 +210,12 @@ export class EventController {
     }
   }
 
+  /**
+   * PATCH /events/:eventId — atualiza evento existente.
+   * @param req - Parâmetro eventId e corpo parcial.
+   * @param res - 200 com evento ou erro de domínio.
+   * @returns Promise resolvida após enviar a resposta.
+   */
   async update(req: Request, res: Response): Promise<void> {
     const actor = requireActor(req, res);
     if (!actor) return;
@@ -186,6 +252,12 @@ export class EventController {
     }
   }
 
+  /**
+   * POST /events/:eventId/lots — cria lote e inicializa estoque no Redis.
+   * @param req - Parâmetro eventId e dados do lote.
+   * @param res - 201 com ticketLot ou erro.
+   * @returns Promise resolvida após enviar a resposta.
+   */
   async createLot(req: Request, res: Response): Promise<void> {
     const actor = requireActor(req, res);
     if (!actor) return;
@@ -238,6 +310,7 @@ export class EventController {
     }
   }
 
+  /** Mapeia erros de evento para status HTTP e log. */
   private handleError(
     res: Response,
     error: unknown,
@@ -267,8 +340,10 @@ export class EventController {
   }
 }
 
+/** Instância singleton do controlador de eventos. */
 export const eventController = new EventController();
 
+/** Middlewares padrão para rotas de gestão (auth + PRODUCER ou ADMIN). */
 export const eventManagementMiddlewares = [
   authMiddleware,
   roleMiddleware([UserRole.ADMIN, UserRole.PRODUCER]),

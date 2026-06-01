@@ -1,10 +1,16 @@
-﻿import type { DataSource } from "typeorm";
+﻿/**
+ * @file Serviço de estatísticas do painel do produtor (dashboard).
+ * @module modules/catalog/application/EventDashboardService
+ */
+
+import type { DataSource } from "typeorm";
 import { Event } from "../../../shared/infrastructure/persistence/entities/Event";
 import { Order } from "../../../shared/infrastructure/persistence/entities/Order";
 import { Ticket } from "../../../shared/infrastructure/persistence/entities/Ticket";
 import { OrderStatus, TicketStatus, UserRole } from "../../../shared/kernel/enums";
 import type { EventActor } from "./EventService";
 
+/** Métricas agregadas por evento no painel do produtor. */
 export interface ProducerEventStats {
   eventId: string;
   title: string;
@@ -18,6 +24,7 @@ export interface ProducerEventStats {
   capacityRemaining: number;
 }
 
+/** Resposta completa do dashboard com resumo e lista por evento. */
 export interface ProducerDashboardStats {
   summary: {
     totalEvents: number;
@@ -29,9 +36,20 @@ export interface ProducerDashboardStats {
   events: ProducerEventStats[];
 }
 
+/**
+ * Calcula vendas, check-ins, receita e capacidade dos eventos gerenciados pelo ator.
+ */
 export class EventDashboardService {
+  /**
+   * @param dataSource - Fonte de dados TypeORM.
+   */
   constructor(private readonly dataSource: DataSource) {}
 
+  /**
+   * Monta dashboard com totais e detalhamento por evento.
+   * @param actor - Produtor ou admin autenticado.
+   * @returns Estatísticas resumidas e por evento.
+   */
   async getProducerDashboard(actor: EventActor): Promise<ProducerDashboardStats> {
     const events = await this.loadManagedEvents(actor);
     const eventIds = events.map((event) => event.id);
@@ -100,6 +118,7 @@ export class EventDashboardService {
     return { summary, events: eventStats };
   }
 
+  /** Lista eventos visíveis ao ator com lotes carregados. */
   private async loadManagedEvents(actor: EventActor): Promise<Event[]> {
     const repository = this.dataSource.getRepository(Event);
 
@@ -117,6 +136,13 @@ export class EventDashboardService {
     });
   }
 
+  /**
+   * Conta ingressos por evento conforme status de pedido e opcionalmente de ticket.
+   * @param eventIds - IDs dos eventos.
+   * @param orderStatus - Status do pedido exigido.
+   * @param ticketStatus - Status do ingresso opcional.
+   * @returns Mapa eventId → quantidade.
+   */
   private async countTicketsByEvent(
     eventIds: string[],
     orderStatus: OrderStatus,
@@ -142,6 +168,11 @@ export class EventDashboardService {
     return new Map(rows.map((row) => [row.eventId, Number(row.count)]));
   }
 
+  /**
+   * Soma receita bruta (centavos) de pedidos pagos por evento.
+   * @param eventIds - IDs dos eventos.
+   * @returns Mapa eventId → receita em centavos.
+   */
   private async sumRevenueByEvent(eventIds: string[]): Promise<Map<string, number>> {
     const rows = await this.dataSource
       .getRepository(Order)

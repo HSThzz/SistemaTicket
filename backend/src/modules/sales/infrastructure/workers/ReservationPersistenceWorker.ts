@@ -1,4 +1,9 @@
-﻿import type Redis from "ioredis";
+﻿/**
+ * @file Worker que consome a fila Redis e persiste reservas no PostgreSQL, criando pedido e PIX.
+ * @module sales/infrastructure/workers/ReservationPersistenceWorker
+ */
+
+import type Redis from "ioredis";
 import type { DataSource } from "typeorm";
 import {
   ORDER_CACHE_KEY_PREFIX,
@@ -33,6 +38,9 @@ const MAX_ATTEMPTS = 5;
 const RETRY_BASE_DELAY_MS = 500;
 const RETRY_MAX_DELAY_MS = 20_000;
 
+/**
+ * Processa jobs de persistência de reserva com retentativas exponenciais e DLQ.
+ */
 export class ReservationPersistenceWorker {
   private readonly logger = Logger.getInstance();
   private running = false;
@@ -41,12 +49,21 @@ export class ReservationPersistenceWorker {
   private retryScheduledCount = 0;
   private dlqCount = 0;
 
+  /**
+   * @param dataSource - Conexão TypeORM para transações de reserva e pedido.
+   * @param redis - Cliente Redis da fila principal e caches.
+   * @param paymentService - Serviço para gerar cobrança PIX após persistência.
+   */
   constructor(
     private readonly dataSource: DataSource,
     private readonly redis: Redis,
     private readonly paymentService: PaymentService,
   ) {}
 
+  /**
+   * Inicia o loop de consumo da fila em background.
+   * @returns Promise resolvida assim que o worker estiver marcado como ativo.
+   */
   async start(): Promise<void> {
     this.running = true;
     this.logger.info(CONTEXT, "Worker started", {
@@ -55,6 +72,10 @@ export class ReservationPersistenceWorker {
     void this.loop();
   }
 
+  /**
+   * Sinaliza parada do loop e registra métricas finais.
+   * @returns Promise resolvida quando a flag `running` for desligada.
+   */
   async stop(): Promise<void> {
     this.running = false;
     this.logger.info(CONTEXT, "Worker stopping", {
@@ -65,6 +86,10 @@ export class ReservationPersistenceWorker {
     });
   }
 
+  /**
+   * Retorna contadores acumulados do worker (processados, falhas, retries, DLQ).
+   * @returns Objeto com métricas desde o último `start`.
+   */
   getMetrics(): {
     processedCount: number;
     failedCount: number;

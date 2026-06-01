@@ -1,4 +1,9 @@
-﻿import type { Request, Response } from "express";
+﻿/**
+ * @file Controlador HTTP de reserva de ingressos, status e operações de fila (ops).
+ * @module sales/interfaces/http/PurchaseController
+ */
+
+import type { Request, Response } from "express";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { getRedis } from "../../../../shared/infrastructure/config/redis";
@@ -26,7 +31,15 @@ const reservationStatusService = new ReservationStatusService(
 );
 const queueMonitorService = new QueueMonitorService(getRedis());
 
+/**
+ * Endpoints de compra assíncrona e monitoramento operacional da fila de persistência.
+ */
 export class PurchaseController {
+  /**
+   * Cria reserva de ingressos no Redis (`POST` body: `ticketLotId`, `quantity`).
+   * @param req - Requisição autenticada.
+   * @param res - Resposta HTTP (201 com reserva ou erro mapeado).
+   */
   async reserve(req: Request, res: Response): Promise<void> {
     if (!req.user) {
       res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
@@ -79,6 +92,11 @@ export class PurchaseController {
     }
   }
 
+  /**
+   * Consulta status consolidado da reserva para polling do cliente.
+   * @param req - Parâmetro `reservationId` na URL.
+   * @param res - Resposta HTTP com {@link ReservationStatusView} ou erro.
+   */
   async getReservationStatus(req: Request, res: Response): Promise<void> {
     if (!req.user) {
       res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
@@ -111,6 +129,11 @@ export class PurchaseController {
     }
   }
 
+  /**
+   * Estatísticas das filas Redis (admin/produtor).
+   * @param _req - Requisição (não utilizada).
+   * @param res - JSON com profundidade das filas.
+   */
   async getQueueStats(_req: Request, res: Response): Promise<void> {
     try {
       const stats = await queueMonitorService.getStats();
@@ -126,6 +149,11 @@ export class PurchaseController {
     }
   }
 
+  /**
+   * Métricas do {@link ReservationPersistenceWorker} em execução.
+   * @param _req - Requisição (não utilizada).
+   * @param res - Métricas ou 503 se o worker não estiver registrado.
+   */
   async getWorkerMetrics(_req: Request, res: Response): Promise<void> {
     const worker = getReservationPersistenceWorker();
     if (!worker) {
@@ -143,6 +171,11 @@ export class PurchaseController {
     });
   }
 
+  /**
+   * Lista amostra de itens na dead-letter queue de persistência.
+   * @param _req - Query `size` opcional (1–200).
+   * @param res - Itens parseados da DLQ.
+   */
   async listDlq(_req: Request, res: Response): Promise<void> {
     const redis = getRedis();
 
@@ -168,6 +201,11 @@ export class PurchaseController {
     });
   }
 
+  /**
+   * Agenda de retentativas futuras (sorted set Redis).
+   * @param req - Query `size` opcional.
+   * @param res - Entradas agendadas ou 500 em falha de leitura.
+   */
   async getRetrySchedule(req: Request, res: Response): Promise<void> {
     try {
       const size = Number((req.query.size as string) ?? "20");
@@ -185,6 +223,11 @@ export class PurchaseController {
     }
   }
 
+  /**
+   * Move itens da DLQ de volta para a fila de retry imediato.
+   * @param req - Body `count` opcional (1–500, padrão 10).
+   * @param res - Quantidade movida e tamanhos atuais das filas.
+   */
   async reprocessDlq(req: Request, res: Response): Promise<void> {
     const redis = getRedis();
 
@@ -279,4 +322,5 @@ export class PurchaseController {
   }
 }
 
+/** Instância singleton do controlador de compras. */
 export const purchaseController = new PurchaseController();

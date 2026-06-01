@@ -1,3 +1,8 @@
+/**
+ * @file Shell principal (AppShell) com navegação, menu do usuário e outlet de rotas.
+ * @module components/Layout
+ */
+
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Anchor,
@@ -31,6 +36,13 @@ const CLIENT_NAV_LINKS = [
   { to: "/pedidos", label: "Meus pedidos", icon: null },
 ] as const;
 
+/**
+ * Links de navegação principal (desktop e drawer mobile).
+ *
+ * @param props.onNavigate - Callback ao clicar (fecha menu mobile).
+ * @param props.currentPath - Pathname atual para destaque ativo.
+ * @param props.isProducer - Exibe link do painel produtor quando aplicável.
+ */
 function NavLinks({
   onNavigate,
   currentPath,
@@ -72,6 +84,10 @@ function NavLinks({
   );
 }
 
+/**
+ * Layout global com cabeçalho TicketFlow, navegação responsiva e área de conteúdo.
+ * Ajusta padding e classes para home, páginas hero e demais rotas.
+ */
 export function Layout() {
   const [opened, { toggle, close }] = useDisclosure();
   const { user, isAuthenticated, isBootstrapping, clearSession } = useAuth();

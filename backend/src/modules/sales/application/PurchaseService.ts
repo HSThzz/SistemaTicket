@@ -1,4 +1,9 @@
-﻿import type Redis from "ioredis";
+﻿/**
+ * @file Serviço de reserva de ingressos com estoque em Redis e fila de persistência assíncrona.
+ * @module sales/application/PurchaseService
+ */
+
+import type Redis from "ioredis";
 import { randomUUID } from "node:crypto";
 import type { DataSource } from "typeorm";
 import {
@@ -18,6 +23,9 @@ import { TicketLot } from "../../../shared/infrastructure/persistence/entities/T
 
 const CONTEXT = "PurchaseService";
 
+/**
+ * Payload armazenado no Redis para uma reserva em andamento.
+ */
 export interface ReservationCachePayload {
   reservationId: string;
   userId: string;
@@ -25,6 +33,9 @@ export interface ReservationCachePayload {
   quantity: number;
 }
 
+/**
+ * Resultado imediato após aceitar uma reserva no Redis.
+ */
 export interface ReserveTicketsResult {
   reservationId: string;
   expiresAt: string;
@@ -59,14 +70,31 @@ const RESERVE_TICKETS_LUA = `
   return { 1, newStock }
 `;
 
+/**
+ * Orquestra reserva atômica de ingressos via script Lua no Redis.
+ */
 export class PurchaseService {
   private readonly logger = Logger.getInstance();
 
+  /**
+   * @param dataSource - Conexão TypeORM para leitura de lotes quando o estoque Redis ainda não existe.
+   * @param redis - Cliente Redis para estoque e fila de persistência.
+   */
   constructor(
     private readonly dataSource: DataSource,
     private readonly redis: Redis,
   ) {}
 
+  /**
+   * Reserva ingressos decrementando estoque no Redis e enfileirando persistência no PostgreSQL.
+   * @param userId - Identificador do comprador autenticado.
+   * @param ticketLotId - Lote de ingressos.
+   * @param quantity - Quantidade desejada (inteiro positivo).
+   * @returns Dados da reserva criada e estoque restante no Redis.
+   * @throws {InvalidQuantityError} Se `quantity` não for inteiro positivo.
+   * @throws {TicketLotNotFoundError} Se o lote não existir ao inicializar estoque.
+   * @throws {InsufficientStockError} Se não houver estoque suficiente.
+   */
   async reserveTickets(
     userId: string,
     ticketLotId: string,
@@ -130,6 +158,11 @@ export class PurchaseService {
     };
   }
 
+  /**
+   * Garante que a chave de estoque do lote exista no Redis (SETNX a partir do PostgreSQL).
+   * @param ticketLotId - Lote cujo estoque deve estar inicializado.
+   * @throws {TicketLotNotFoundError} Se o lote não existir no banco.
+   */
   private async ensureRedisStockInitialized(ticketLotId: string): Promise<void> {
     const stockKey = `${TICKET_LOT_STOCK_KEY_PREFIX}${ticketLotId}`;
 

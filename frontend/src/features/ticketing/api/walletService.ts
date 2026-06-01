@@ -1,3 +1,8 @@
+/**
+ * @file Integração com Apple Wallet e Google Wallet para ingressos digitais.
+ * @module features/ticketing/api/walletService
+ */
+
 import type { AxiosError } from "axios";
 import type { ApiErrorBody } from "../../../types/api";
 import { getApiErrorMessage } from "../../../utils/errors";
@@ -5,6 +10,11 @@ import { api } from "../../../shared/api/client";
 
 const APPLE_PASS_MIME = "application/vnd.apple.pkpass";
 
+/**
+ * Tenta extrair mensagem de erro de resposta blob JSON da API de wallet.
+ *
+ * @param data - Corpo da resposta em formato Blob.
+ */
 async function parseBlobError(data: Blob): Promise<string | null> {
   try {
     const text = await data.text();
@@ -15,6 +25,12 @@ async function parseBlobError(data: Blob): Promise<string | null> {
   }
 }
 
+/**
+ * Mensagem de erro amigável para falhas de download/abertura de wallet.
+ *
+ * @param error - Erro capturado (pode incluir resposta blob).
+ * @param fallback - Texto padrão.
+ */
 export async function getWalletErrorMessage(
   error: unknown,
   fallback = "Não foi possível adicionar à carteira.",
@@ -34,6 +50,12 @@ export async function getWalletErrorMessage(
   return getApiErrorMessage(error, fallback);
 }
 
+/**
+ * Baixa ou abre o arquivo `.pkpass` da Apple Wallet para um ingresso.
+ * Em iOS redireciona para o pass; em desktop dispara download.
+ *
+ * @param ticketId - Identificador do ingresso.
+ */
 export async function downloadAppleWalletPass(ticketId: string): Promise<void> {
   const response = await api.get<Blob>(`/wallet/apple/${ticketId}`, {
     responseType: "blob",
@@ -70,6 +92,11 @@ export async function downloadAppleWalletPass(ticketId: string): Promise<void> {
   }
 }
 
+/**
+ * Obtém link do Google Wallet e redireciona o navegador.
+ *
+ * @param ticketId - Identificador do ingresso.
+ */
 export async function openGoogleWallet(ticketId: string): Promise<void> {
   const { data } = await api.get<{ url: string }>(`/wallet/google/${ticketId}/link`);
 

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/**/*.ts"],
+  "entryPointStrategy": "expand",
+  "out": "docs-api",
+  "exclude": ["**/migrations/**", "**/seeds/**"],
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "readme": "none",
+  "name": "SistemaTicket API",
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "sort": ["source-order"]
+}

@@ -1,4 +1,9 @@
-﻿import "reflect-metadata";
+﻿/**
+ * @file Script CLI para popular o ambiente com dados de demonstração.
+ * @module seeds/run
+ */
+
+import "reflect-metadata";
 import { AppDataSource } from "../shared/infrastructure/config/data-source";
 import { getRedis, closeRedisConnections } from "../shared/infrastructure/config/redis";
 import {
@@ -38,6 +43,10 @@ function printSummary(): void {
   console.log("========================================\n");
 }
 
+/**
+ * Executa migrations pendentes, opcionalmente reseta DB/Redis e roda o seed demo.
+ * Aceita `--keep` para não truncar dados existentes.
+ */
 async function main(): Promise<void> {
   const keepExisting = process.argv.includes("--keep");
 

@@ -1,3 +1,8 @@
+/**
+ * @file Página de login com redirecionamento pós-autenticação.
+ * @module pages/LoginPage
+ */
+
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Anchor, Button, PasswordInput, Stack, Text, TextInput } from "@mantine/core";
@@ -14,6 +19,9 @@ interface LoginFormValues {
   password: string;
 }
 
+/**
+ * Formulário de e-mail/senha; restaura rota original via `location.state.from`.
+ */
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();

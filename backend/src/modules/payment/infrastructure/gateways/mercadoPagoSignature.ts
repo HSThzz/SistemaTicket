@@ -1,11 +1,23 @@
+/**
+ * @file Validação de assinatura HMAC dos webhooks Mercado Pago.
+ * @module payment/infrastructure/gateways/mercadoPagoSignature
+ */
+
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Request } from "express";
 
+/**
+ * Componentes parseados do header `x-signature`.
+ */
 export interface ParsedMercadoPagoSignature {
   ts: string;
   v1: string;
 }
 
+/**
+ * @param headerValue - Valor bruto de `x-signature` (`ts=...,v1=...`).
+ * @returns Timestamp e assinatura ou `null` se malformado.
+ */
 export function parseMercadoPagoSignatureHeader(
   headerValue: string | undefined,
 ): ParsedMercadoPagoSignature | null {
@@ -39,6 +51,10 @@ export function parseMercadoPagoSignatureHeader(
   return { ts, v1 };
 }
 
+/**
+ * @param req - Requisição com query `data.id` / `id` ou body `data.id`.
+ * @returns ID normalizado para o manifest de assinatura.
+ */
 export function extractMercadoPagoManifestId(req: Request): string | null {
   const fromQuery =
     readQueryValue(req.query["data.id"]) ??
@@ -57,6 +73,11 @@ export function extractMercadoPagoManifestId(req: Request): string | null {
   return null;
 }
 
+/**
+ * Monta a string assinada conforme documentação do Mercado Pago.
+ * @param params - `dataId`, `requestId` e `ts` do webhook.
+ * @returns Manifest no formato `id:...;request-id:...;ts:...;`.
+ */
 export function buildMercadoPagoManifest(params: {
   dataId: string;
   requestId: string;
@@ -65,6 +86,10 @@ export function buildMercadoPagoManifest(params: {
   return `id:${params.dataId};request-id:${params.requestId};ts:${params.ts};`;
 }
 
+/**
+ * @param params - Manifest, secret e assinatura recebida em hex.
+ * @returns `true` se o HMAC SHA-256 coincidir (comparação timing-safe).
+ */
 export function verifyMercadoPagoSignature(params: {
   manifest: string;
   secret: string;
@@ -77,6 +102,12 @@ export function verifyMercadoPagoSignature(params: {
   return safeEqualHex(calculated, params.receivedSignature);
 }
 
+/**
+ * @param timestampMs - Timestamp do header em milissegundos (string).
+ * @param maxAgeSeconds - Janela máxima aceita.
+ * @param nowMs - Referência temporal (padrão: agora).
+ * @returns `true` se a idade absoluta estiver dentro do limite.
+ */
 export function isTimestampWithinMaxAge(
   timestampMs: string,
   maxAgeSeconds: number,

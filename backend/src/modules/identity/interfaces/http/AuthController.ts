@@ -1,4 +1,9 @@
-﻿import type { Request, Response } from "express";
+﻿/**
+ * @file Controlador HTTP de registro, login e perfil.
+ * @module modules/identity/interfaces/http/AuthController
+ */
+
+import type { Request, Response } from "express";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import {
@@ -15,7 +20,16 @@ const CONTEXT = "AuthController";
 const logger = Logger.getInstance();
 const authService = new AuthService(AppDataSource);
 
+/**
+ * Adapta requisições HTTP para o `AuthService` e mapeia erros para status HTTP.
+ */
 export class AuthController {
+  /**
+   * POST /auth/register — cadastra novo usuário.
+   * @param req - Corpo: name, email, password, document.
+   * @param res - 201 com token e user ou erro de validação/domínio.
+   * @returns Promise resolvida após enviar a resposta.
+   */
   async register(req: Request, res: Response): Promise<void> {
     const { name, email, password, document } = req.body as {
       name?: string;
@@ -46,6 +60,12 @@ export class AuthController {
     }
   }
 
+  /**
+   * GET /auth/me — retorna perfil do usuário autenticado.
+   * @param req - Requer `req.user` preenchido pelo middleware.
+   * @param res - 200 com user ou 401/404.
+   * @returns Promise resolvida após enviar a resposta.
+   */
   async me(req: Request, res: Response): Promise<void> {
     if (!req.user) {
       res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
@@ -60,6 +80,12 @@ export class AuthController {
     }
   }
 
+  /**
+   * POST /auth/login — autentica por email e senha.
+   * @param req - Corpo: email, password.
+   * @param res - 200 com token e user ou 401.
+   * @returns Promise resolvida após enviar a resposta.
+   */
   async login(req: Request, res: Response): Promise<void> {
     const { email, password } = req.body as {
       email?: string;
@@ -82,6 +108,12 @@ export class AuthController {
     }
   }
 
+  /**
+   * PATCH /auth/users/:userId/role — altera papel (somente ADMIN).
+   * @param req - Parâmetro userId e corpo com role válido.
+   * @param res - 200 com user atualizado ou erro.
+   * @returns Promise resolvida após enviar a resposta.
+   */
   async updateUserRole(req: Request, res: Response): Promise<void> {
     const userIdParam = req.params.userId;
     const userId =
@@ -114,6 +146,7 @@ export class AuthController {
     }
   }
 
+  /** Mapeia erros de domínio e inesperados para respostas JSON. */
   private handleError(res: Response, error: unknown): void {
     if (error instanceof EmailAlreadyExistsError) {
       logger.warn(CONTEXT, "Registration failed", {
@@ -159,4 +192,5 @@ export class AuthController {
   }
 }
 
+/** Instância singleton do controlador de autenticação. */
 export const authController = new AuthController();

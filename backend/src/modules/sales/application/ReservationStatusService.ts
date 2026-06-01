@@ -1,4 +1,9 @@
-﻿import type Redis from "ioredis";
+﻿/**
+ * @file Agregação do estado de uma reserva entre Redis, fila, pedido e pagamento PIX.
+ * @module sales/application/ReservationStatusService
+ */
+
+import type Redis from "ioredis";
 import type { DataSource } from "typeorm";
 import {
   ORDER_CACHE_KEY_PREFIX,
@@ -18,6 +23,9 @@ import { QueueMonitorService } from "../../../shared/application/QueueMonitorSer
 
 const CONTEXT = "ReservationStatusService";
 
+/**
+ * Fase consolidada do ciclo de vida da reserva para polling do cliente.
+ */
 export type ReservationPhase =
   | "PENDING_PERSISTENCE"
   | "PENDING_PAYMENT"
@@ -27,6 +35,9 @@ export type ReservationPhase =
   | "FAILED"
   | "NOT_FOUND";
 
+/**
+ * Visão unificada do status da reserva, pedido, pagamento e metadados operacionais.
+ */
 export interface ReservationStatusView {
   reservationId: string;
   phase: ReservationPhase;
@@ -59,10 +70,17 @@ type ReservationRedisPayload = {
   expiresAt: string;
 };
 
+/**
+ * Consulta estado de reserva cruzando cache Redis, PostgreSQL e fila de persistência.
+ */
 export class ReservationStatusService {
   private readonly logger = Logger.getInstance();
   private readonly queueMonitor: QueueMonitorService;
 
+  /**
+   * @param dataSource - Conexão TypeORM.
+   * @param redis - Cliente Redis para caches de reserva, pedido e pagamento.
+   */
   constructor(
     private readonly dataSource: DataSource,
     private readonly redis: Redis,
@@ -70,6 +88,14 @@ export class ReservationStatusService {
     this.queueMonitor = new QueueMonitorService(redis);
   }
 
+  /**
+   * Obtém o status consolidado de uma reserva para o comprador.
+   * @param reservationId - Identificador da reserva.
+   * @param requesterUserId - Usuário autenticado que solicita a consulta.
+   * @returns Visão com fase, reserva, pedido, PIX e metadados da fila.
+   * @throws {ReservationNotFoundError} Se a reserva não existir em nenhuma camada.
+   * @throws {ReservationAccessDeniedError} Se o solicitante não for o dono.
+   */
   async getStatus(
     reservationId: string,
     requesterUserId: string,

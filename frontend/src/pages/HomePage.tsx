@@ -1,3 +1,8 @@
+/**
+ * @file Página inicial com busca, categorias, prateleiras de eventos e FAQ.
+ * @module pages/HomePage
+ */
+
 import { useMemo, useState } from "react";
 import {
   Alert,
@@ -33,6 +38,7 @@ import {
   type EventCategory,
 } from "../utils/eventVisuals";
 
+/** Placeholder de carregamento da vitrine de eventos. */
 function HomePageSkeleton() {
   return (
     <Stack gap="xl">
@@ -49,6 +55,9 @@ function HomePageSkeleton() {
   );
 }
 
+/**
+ * Landing page pública: hero, filtros, eventos em breve, por cidade e rodapé.
+ */
 export function HomePage() {
   const { events, loading, error } = usePublishedEvents();
   const [query, setQuery] = useState("");

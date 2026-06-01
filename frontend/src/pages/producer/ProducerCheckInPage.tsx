@@ -1,3 +1,8 @@
+/**
+ * @file Página de check-in na entrada com scanner QR e código manual.
+ * @module pages/producer/ProducerCheckInPage
+ */
+
 import { useCallback, useState } from "react";
 import {
   Badge,
@@ -39,6 +44,9 @@ const CHECKIN_TIPS = [
   "Se a câmera falhar, cole o código manualmente no campo ao lado.",
 ] as const;
 
+/**
+ * Valida ingressos via {@link QrScanner} ou campo de código único; exibe sucesso do check-in.
+ */
 export function ProducerCheckInPage() {
   const [submitting, setSubmitting] = useState(false);
   const [lastResult, setLastResult] = useState<checkInService.CheckInResult | null>(null);

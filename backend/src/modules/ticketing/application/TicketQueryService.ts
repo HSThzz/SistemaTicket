@@ -1,6 +1,14 @@
-﻿import type { DataSource } from "typeorm";
+﻿/**
+ * @file Consultas de ingressos do cliente autenticado.
+ * @module ticketing/application/TicketQueryService
+ */
+
+import type { DataSource } from "typeorm";
 import { Ticket } from "../../../shared/infrastructure/persistence/entities/Ticket";
 
+/**
+ * Item da listagem de ingressos do usuário com evento e pedido.
+ */
 export interface TicketListItem {
   id: string;
   status: string;
@@ -27,9 +35,19 @@ export interface TicketListItem {
   };
 }
 
+/**
+ * Serviço de leitura de ingressos vinculados a pedidos do usuário.
+ */
 export class TicketQueryService {
+  /**
+   * @param dataSource - Conexão TypeORM.
+   */
   constructor(private readonly dataSource: DataSource) {}
 
+  /**
+   * @param userId - Cliente autenticado.
+   * @returns Ingressos ordenados do mais recente ao mais antigo.
+   */
   async listUserTickets(userId: string): Promise<TicketListItem[]> {
     const tickets = await this.dataSource.getRepository(Ticket).find({
       where: { order: { userId } },

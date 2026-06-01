@@ -1,4 +1,9 @@
-﻿import type Redis from "ioredis";
+﻿/**
+ * @file Monitoramento de filas Redis de persistência de reservas.
+ * @module shared/application/QueueMonitorService
+ */
+
+import type Redis from "ioredis";
 import {
   RESERVATION_PERSIST_DLQ_KEY,
   RESERVATION_PERSIST_QUEUE_KEY,
@@ -9,6 +14,7 @@ import { Logger } from "../infrastructure/config/logger";
 
 const CONTEXT = "QueueMonitorService";
 
+/** Estatísticas amostradas das filas de persistência. */
 export interface QueueStats {
   persistQueueLength: number;
   persistQueueKey: string;
@@ -21,6 +27,7 @@ export interface QueueStats {
   sampledAt: string;
 }
 
+/** Item individual do agendamento de retry (ZSET). */
 export interface RetryScheduleItem {
   dueAtMs: number;
   dueAt: string;
@@ -33,6 +40,7 @@ export interface RetryScheduleItem {
   reason: string | null;
 }
 
+/** Visão paginada do agendamento de retries. */
 export interface RetryScheduleView {
   scheduleKey: string;
   total: number;
@@ -42,11 +50,21 @@ export interface RetryScheduleView {
   sampledAt: string;
 }
 
+/**
+ * Consulta tamanhos de filas e agenda de retries no Redis.
+ */
 export class QueueMonitorService {
   private readonly logger = Logger.getInstance();
 
+  /**
+   * @param redis - Cliente Redis.
+   */
   constructor(private readonly redis: Redis) {}
 
+  /**
+   * Obtém contadores das filas principal, retry, DLQ e ZSET de agendamento.
+   * @returns Estatísticas com timestamp de amostragem.
+   */
   async getStats(): Promise<QueueStats> {
     const [
       persistQueueLength,
@@ -77,6 +95,11 @@ export class QueueMonitorService {
     return stats;
   }
 
+  /**
+   * Lista itens do ZSET de retry com metadados parseados do payload JSON.
+   * @param limit - Quantidade máxima de itens (1–200, padrão 20).
+   * @returns Visão do agendamento com totais e contadores de atraso.
+   */
   async getRetrySchedule(limit = 20): Promise<RetryScheduleView> {
     const now = Date.now();
     const safeLimit = Math.max(1, Math.min(200, limit));

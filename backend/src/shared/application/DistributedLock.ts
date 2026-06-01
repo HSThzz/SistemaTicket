@@ -1,3 +1,8 @@
+/**
+ * @file Bloqueio distribuído via Redis para operações críticas concorrentes.
+ * @module shared/application/DistributedLock
+ */
+
 import { randomUUID } from "node:crypto";
 import type Redis from "ioredis";
 
@@ -9,15 +14,30 @@ const RELEASE_LOCK_SCRIPT = `
   end
 `;
 
+/** Identificador de um lock adquirido (chave + token de propriedade). */
 export interface LockHandle {
+  /** Chave Redis do lock. */
   key: string;
+  /** Token único do detentor do lock. */
   token: string;
 }
 
+/**
+ * Aguarda um intervalo em milissegundos.
+ * @param ms - Duração em milissegundos.
+ */
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Tenta adquirir um lock distribuído com TTL e retentativas com backoff.
+ * @param redis - Cliente Redis.
+ * @param key - Chave do lock.
+ * @param ttlMs - Tempo de vida do lock em milissegundos.
+ * @param maxAttempts - Número máximo de tentativas de aquisição.
+ * @returns Handle do lock ou `null` se não conseguir adquirir.
+ */
 export async function acquireLock(
   redis: Redis,
   key: string,
@@ -41,6 +61,12 @@ export async function acquireLock(
   return null;
 }
 
+/**
+ * Libera um lock somente se o token ainda pertence ao chamador (script atômico).
+ * @param redis - Cliente Redis.
+ * @param handle - Handle retornado por `acquireLock`.
+ * @returns Promise resolvida após a tentativa de liberação.
+ */
 export async function releaseLock(
   redis: Redis,
   handle: LockHandle,

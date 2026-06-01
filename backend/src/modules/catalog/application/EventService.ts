@@ -1,4 +1,9 @@
-﻿import type { DataSource } from "typeorm";
+﻿/**
+ * @file Serviço de aplicação de CRUD de eventos e lotes de ingressos.
+ * @module modules/catalog/application/EventService
+ */
+
+import type { DataSource } from "typeorm";
 import { Logger } from "../../../shared/infrastructure/config/logger";
 import { Event } from "../../../shared/infrastructure/persistence/entities/Event";
 import { TicketLot } from "../../../shared/infrastructure/persistence/entities/TicketLot";
@@ -7,11 +12,13 @@ import { EventAccessDeniedError, EventNotFoundError } from "../domain/errors/Eve
 
 const CONTEXT = "EventService";
 
+/** Ator autenticado que executa operações sobre eventos. */
 export interface EventActor {
   userId: string;
   role: UserRole;
 }
 
+/** Dados para criação de um evento. */
 export interface CreateEventInput {
   title: string;
   description: string;
@@ -21,6 +28,7 @@ export interface CreateEventInput {
   status?: EventStatus;
 }
 
+/** Dados parciais para atualização de evento. */
 export interface UpdateEventInput {
   title?: string;
   description?: string;
@@ -30,6 +38,7 @@ export interface UpdateEventInput {
   status?: EventStatus;
 }
 
+/** Dados para criação de lote de ingressos em um evento. */
 export interface CreateTicketLotInput {
   name: string;
   price: number;
@@ -37,11 +46,21 @@ export interface CreateTicketLotInput {
   availableQuantity?: number;
 }
 
+/**
+ * Regras de negócio de catálogo: listagem pública, gestão por produtor/admin e lotes.
+ */
 export class EventService {
   private readonly logger = Logger.getInstance();
 
+  /**
+   * @param dataSource - Fonte de dados TypeORM.
+   */
   constructor(private readonly dataSource: DataSource) {}
 
+  /**
+   * Lista eventos publicados para o catálogo público.
+   * @returns Eventos com lotes, ordenados por data.
+   */
   async listPublished(): Promise<Event[]> {
     return this.dataSource.getRepository(Event).find({
       where: { status: EventStatus.PUBLISHED },
@@ -50,6 +69,11 @@ export class EventService {
     });
   }
 
+  /**
+   * Lista eventos gerenciáveis pelo ator (todos para ADMIN, próprios para PRODUCER).
+   * @param actor - Usuário autenticado e seu papel.
+   * @returns Eventos com lotes.
+   */
   async listManaged(actor: EventActor): Promise<Event[]> {
     const repository = this.dataSource.getRepository(Event);
 
@@ -67,6 +91,11 @@ export class EventService {
     });
   }
 
+  /**
+   * Busca evento publicado por ID.
+   * @param eventId - Identificador do evento.
+   * @returns Evento com lotes ou `null` se não publicado ou inexistente.
+   */
   async getPublishedById(eventId: string): Promise<Event | null> {
     return this.dataSource.getRepository(Event).findOne({
       where: { id: eventId, status: EventStatus.PUBLISHED },
@@ -74,6 +103,13 @@ export class EventService {
     });
   }
 
+  /**
+   * Cria evento vinculado ao produtor do ator.
+   * @param input - Dados do evento.
+   * @param actor - Produtor ou admin que cria.
+   * @returns Evento persistido com lotes.
+   * @throws {Error} Quando a data é inválida.
+   */
   async createEvent(input: CreateEventInput, actor: EventActor): Promise<Event> {
     const date = new Date(input.date);
     if (Number.isNaN(date.getTime())) {
@@ -99,6 +135,16 @@ export class EventService {
     return this.loadEventWithLots(saved.id);
   }
 
+  /**
+   * Atualiza campos de um evento existente.
+   * @param eventId - ID do evento.
+   * @param input - Campos a atualizar.
+   * @param actor - Ator com permissão de gestão.
+   * @returns Evento atualizado com lotes.
+   * @throws {EventNotFoundError} Quando o evento não existe.
+   * @throws {EventAccessDeniedError} Quando o produtor não é dono do evento.
+   * @throws {Error} Quando a data informada é inválida.
+   */
   async updateEvent(
     eventId: string,
     input: UpdateEventInput,
@@ -135,6 +181,16 @@ export class EventService {
     return this.loadEventWithLots(saved.id);
   }
 
+  /**
+   * Cria lote de ingressos em um evento gerenciável pelo ator.
+   * @param eventId - ID do evento.
+   * @param input - Dados do lote.
+   * @param actor - Ator com permissão de gestão.
+   * @returns Lote persistido.
+   * @throws {EventNotFoundError} Quando o evento não existe.
+   * @throws {EventAccessDeniedError} Sem permissão de gestão.
+   * @throws {Error} Quando preço ou quantidades são inválidos.
+   */
   async createTicketLot(
     eventId: string,
     input: CreateTicketLotInput,
@@ -181,6 +237,7 @@ export class EventService {
     return saved;
   }
 
+  /** Carrega evento com relação `ticketLots`. */
   private async loadEventWithLots(eventId: string): Promise<Event> {
     const event = await this.dataSource.getRepository(Event).findOne({
       where: { id: eventId },
@@ -194,6 +251,7 @@ export class EventService {
     return event;
   }
 
+  /** Verifica se o ator pode alterar o evento (admin ou produtor dono). */
   private assertCanManage(event: Event, actor: EventActor): void {
     if (actor.role === UserRole.ADMIN) {
       return;
@@ -205,6 +263,11 @@ export class EventService {
   }
 }
 
+/**
+ * Normaliza URL de imagem: vazio ou só espaços vira `null`.
+ * @param value - URL bruta ou ausente.
+ * @returns URL trimada ou `null`.
+ */
 function normalizeImageUrl(value: string | null | undefined): string | null {
   if (value === undefined || value === null) {
     return null;

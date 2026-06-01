@@ -1,13 +1,23 @@
+/**
+ * @file Ações para adicionar ingresso à Apple Wallet ou Google Wallet.
+ * @module components/TicketWalletActions
+ */
+
 import { useState } from "react";
 import { Button, Group, Stack, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconBrandApple, IconBrandGoogle, IconWallet } from "@tabler/icons-react";
 import * as walletService from "../features/ticketing/api/walletService";
 
+/** Propriedades dos botões de carteira digital. */
 interface TicketWalletActionsProps {
+  /** ID do ingresso usado nas rotas `/wallet/apple` e `/wallet/google`. */
   ticketId: string;
 }
 
+/**
+ * Botões Apple Wallet e Google Wallet com feedback via notificações Mantine.
+ */
 export function TicketWalletActions({ ticketId }: TicketWalletActionsProps) {
   const [appleLoading, setAppleLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);

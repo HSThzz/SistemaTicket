@@ -1,6 +1,15 @@
+/**
+ * @file Assinatura HMAC para webhooks internos (gateway simulado / integrações próprias).
+ * @module payment/infrastructure/gateways/internalWebhookSignature
+ */
+
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Request } from "express";
 
+/**
+ * @param params - Secret, timestamp e corpo bruto da requisição.
+ * @returns Assinatura HMAC-SHA256 em hexadecimal.
+ */
 export function buildInternalWebhookSignature(params: {
   secret: string;
   timestamp: string;
@@ -11,6 +20,10 @@ export function buildInternalWebhookSignature(params: {
     .digest("hex");
 }
 
+/**
+ * @param params - Secret, timestamp, corpo e assinatura recebida.
+ * @returns `true` se a assinatura calculada coincidir.
+ */
 export function verifyInternalWebhookSignature(params: {
   secret: string;
   timestamp: string;
@@ -26,6 +39,12 @@ export function verifyInternalWebhookSignature(params: {
   return safeEqualHex(calculated, params.receivedSignature);
 }
 
+/**
+ * @param timestamp - Timestamp em ms (string).
+ * @param maxAgeSeconds - Idade máxima permitida.
+ * @param nowMs - Referência temporal.
+ * @returns `false` se futuro (>1 min à frente) ou expirado.
+ */
 export function isInternalTimestampValid(
   timestamp: string,
   maxAgeSeconds: number,
@@ -43,6 +62,10 @@ export function isInternalTimestampValid(
   return nowMs - ts <= maxAgeSeconds * 1000;
 }
 
+/**
+ * @param req - Requisição com `rawBody` (middleware JSON) ou body parseado.
+ * @returns Corpo exato usado na verificação HMAC.
+ */
 export function getInternalWebhookRawBody(req: Request): string {
   if (req.rawBody && req.rawBody.length > 0) {
     return req.rawBody.toString("utf8");

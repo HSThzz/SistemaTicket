@@ -1,3 +1,8 @@
+/**
+ * @file Gateway PIX simulado para desenvolvimento e testes locais.
+ * @module payment/infrastructure/gateways/SimulatedPixGateway
+ */
+
 import { randomUUID } from "node:crypto";
 import type {
   CreatePixChargeInput,
@@ -7,9 +12,16 @@ import type {
 
 const PIX_EXPIRATION_MS = 15 * 60 * 1000;
 
+/**
+ * Gera cobranças PIX fictícias sem chamada externa.
+ */
 export class SimulatedPixGateway implements PaymentGateway {
   readonly provider = "simulated" as const;
 
+  /**
+   * @param input - Dados do pedido para montar o payload EMV simulado.
+   * @returns Transação fictícia com QR/copia-e-cola e TTL de 15 minutos.
+   */
   async createPixCharge(input: CreatePixChargeInput): Promise<PixChargeResult> {
     const transactionId = `pix_sim_${randomUUID()}`;
     const expiresAt = new Date(Date.now() + PIX_EXPIRATION_MS);
@@ -28,11 +40,20 @@ export class SimulatedPixGateway implements PaymentGateway {
     };
   }
 
+  /**
+   * No-op: reembolso é refletido apenas no banco da aplicação.
+   * @param _transactionId - ID ignorado no simulador.
+   */
   async refundPayment(_transactionId: string): Promise<void> {
     // Simulador: reembolso registrado apenas no banco.
   }
 }
 
+/**
+ * Monta string no formato EMV simplificado para testes de UI.
+ * @param params - Metadados da cobrança simulada.
+ * @returns Payload PIX copia-e-cola fictício.
+ */
 function buildSimulatedPixCopyPaste(params: {
   transactionId: string;
   orderId: string;

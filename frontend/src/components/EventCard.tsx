@@ -1,3 +1,8 @@
+/**
+ * @file Card de evento para vitrine com variantes de layout.
+ * @module components/EventCard
+ */
+
 import { Link } from "react-router-dom";
 import { Badge, Box, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { IconCalendar, IconMapPin, IconTicket } from "@tabler/icons-react";
@@ -10,11 +15,18 @@ import {
 } from "../utils/eventVisuals";
 import { formatCurrencyFromCents, formatEventDateOnly, formatEventTimeOnly } from "../utils/format";
 
+/** Propriedades do card de evento na listagem. */
 interface EventCardProps {
+  /** Evento com lotes, data e imagem. */
   event: Event;
+  /** Layout: card vertical padrão, compacto ou lista horizontal. */
   variant?: "default" | "compact" | "horizontal";
 }
 
+/**
+ * Card clicável que leva à página de detalhe do evento.
+ * Exibe capa, preço mínimo, estoque e badges de esgotado/últimas unidades.
+ */
 export function EventCard({ event, variant = "default" }: EventCardProps) {
   const lowestPrice = getLowestPrice(event);
   const totalAvailable = getTotalAvailable(event);

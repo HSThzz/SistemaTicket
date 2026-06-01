@@ -1,13 +1,24 @@
+/**
+ * @file Leitor de QR Code via câmera (html5-qrcode) para check-in de ingressos.
+ * @module components/QrScanner
+ */
+
 import { useEffect, useId, useRef, useState } from "react";
 import { Alert, Button, Center, Stack, Text } from "@mantine/core";
 import { Html5Qrcode } from "html5-qrcode";
 import { IconCameraOff, IconScan } from "@tabler/icons-react";
 
+/** Propriedades do scanner de QR para check-in. */
 interface QrScannerProps {
+  /** Chamado uma vez por leitura única (deduplica leituras repetidas). */
   onScan: (decodedText: string) => void;
+  /** Pausa a câmera sem desmontar o componente. */
   paused?: boolean;
 }
 
+/**
+ * Scanner com ativação manual da câmera traseira e tratamento de permissão negada.
+ */
 export function QrScanner({ onScan, paused = false }: QrScannerProps) {
   const containerId = useId().replace(/:/g, "");
   const scannerRef = useRef<Html5Qrcode | null>(null);

@@ -1,4 +1,9 @@
-﻿import "reflect-metadata";
+﻿/**
+ * @file Configuração do TypeORM DataSource (PostgreSQL).
+ * @module shared/infrastructure/config/data-source
+ */
+
+import "reflect-metadata";
 import dotenv from "dotenv";
 import { DataSource } from "typeorm";
 import {
@@ -39,6 +44,9 @@ const postgresConfig = useConnectionUrl
       ssl: false,
     };
 
+/**
+ * Fonte de dados TypeORM da aplicação com entidades e caminho de migrations.
+ */
 export const AppDataSource = new DataSource({
   ...postgresConfig,
   synchronize: false,

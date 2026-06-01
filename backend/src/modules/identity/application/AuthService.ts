@@ -1,4 +1,9 @@
-﻿import bcrypt from "bcrypt";
+﻿/**
+ * @file Serviço de aplicação de registro, login e perfil de usuário.
+ * @module modules/identity/application/AuthService
+ */
+
+import bcrypt from "bcrypt";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import type { DataSource } from "typeorm";
 import { env } from "../../../shared/infrastructure/config/env";
@@ -15,6 +20,7 @@ import {
 const CONTEXT = "AuthService";
 const BCRYPT_ROUNDS = 12;
 
+/** Dados de entrada para cadastro de novo usuário. */
 export interface RegisterInput {
   name: string;
   email: string;
@@ -22,16 +28,19 @@ export interface RegisterInput {
   document: string;
 }
 
+/** Dados de entrada para autenticação por email e senha. */
 export interface LoginInput {
   email: string;
   password: string;
 }
 
+/** Claims embutidos no token JWT emitido. */
 export interface AuthTokenPayload {
   userId: string;
   role: UserRole;
 }
 
+/** Resposta de autenticação com token e dados públicos do usuário. */
 export interface AuthResponse {
   token: string;
   user: {
@@ -42,11 +51,23 @@ export interface AuthResponse {
   };
 }
 
+/**
+ * Orquestra registro, login, perfil e alteração de papel de usuários.
+ */
 export class AuthService {
   private readonly logger = Logger.getInstance();
 
+  /**
+   * @param dataSource - Fonte de dados TypeORM.
+   */
   constructor(private readonly dataSource: DataSource) {}
 
+  /**
+   * Registra um novo usuário com papel CLIENT.
+   * @param input - Dados de cadastro.
+   * @returns Token JWT e dados do usuário criado.
+   * @throws {EmailAlreadyExistsError} Quando o email já está em uso.
+   */
   async register(input: RegisterInput): Promise<AuthResponse> {
     const repository = this.dataSource.getRepository(User);
 
@@ -79,6 +100,12 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
+  /**
+   * Autentica usuário por email e senha.
+   * @param input - Credenciais de login.
+   * @returns Token JWT e dados do usuário.
+   * @throws {InvalidCredentialsError} Quando email ou senha não conferem.
+   */
   async login(input: LoginInput): Promise<AuthResponse> {
     const repository = this.dataSource.getRepository(User);
 
@@ -117,6 +144,12 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
+  /**
+   * Retorna dados públicos do perfil do usuário autenticado.
+   * @param userId - ID do usuário.
+   * @returns Objeto usuário sem credenciais.
+   * @throws {UserNotFoundError} Quando o usuário não existe.
+   */
   async getProfile(userId: string): Promise<AuthResponse["user"]> {
     const user = await this.dataSource.getRepository(User).findOne({
       where: { id: userId },
@@ -134,6 +167,14 @@ export class AuthService {
     };
   }
 
+  /**
+   * Atualiza o papel de um usuário (operação administrativa).
+   * @param userId - ID do usuário alvo.
+   * @param role - Novo papel.
+   * @returns Dados públicos atualizados do usuário.
+   * @throws {InvalidRoleError} Quando o papel não é válido.
+   * @throws {UserNotFoundError} Quando o usuário não existe.
+   */
   async updateUserRole(userId: string, role: UserRole): Promise<AuthResponse["user"]> {
     if (!(role in UserRole)) {
       throw new InvalidRoleError(String(role));
@@ -163,6 +204,7 @@ export class AuthService {
     };
   }
 
+  /** Monta resposta com JWT assinado e snapshot do usuário. */
   private buildAuthResponse(user: User): AuthResponse {
     const payload: AuthTokenPayload = {
       userId: user.id,

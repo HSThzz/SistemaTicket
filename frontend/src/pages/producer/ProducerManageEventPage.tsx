@@ -1,3 +1,8 @@
+/**
+ * @file Edição de evento, publicação e criação de lotes pelo produtor.
+ * @module pages/producer/ProducerManageEventPage
+ */
+
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -78,6 +83,9 @@ function parsePriceToCents(value: number | string): number {
   return Math.round(numeric * 100);
 }
 
+/**
+ * Gerencia um evento: formulário de edição, status e cadastro de lotes de ingressos.
+ */
 export function ProducerManageEventPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const [event, setEvent] = useState<Event | null>(null);

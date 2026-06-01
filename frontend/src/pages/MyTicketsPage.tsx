@@ -1,3 +1,8 @@
+/**
+ * @file Página “Meus ingressos” com carteira digital e filtros por status.
+ * @module pages/MyTicketsPage
+ */
+
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -33,10 +38,14 @@ const FILTER_OPTIONS: { label: string; value: TicketFilter }[] = [
   { label: "Cancelados", value: "CANCELLED" },
 ];
 
+/** Conta ingressos com status exato na lista carregada. */
 function countByStatus(tickets: TicketListItem[], status: string) {
   return tickets.filter((ticket) => ticket.status === status).length;
 }
 
+/**
+ * Lista ingressos do usuário com estatísticas, filtro por status e componente wallet.
+ */
 export function MyTicketsPage() {
   const [tickets, setTickets] = useState<TicketListItem[]>([]);
   const [loading, setLoading] = useState(true);

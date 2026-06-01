@@ -1,4 +1,9 @@
-﻿import {
+﻿/**
+ * @file Entidade TypeORM de evento (catálogo).
+ * @module shared/infrastructure/persistence/entities/Event
+ */
+
+import {
   Column,
   Entity,
   JoinColumn,
@@ -10,6 +15,7 @@ import { EventStatus } from "../../../kernel/enums";
 import { TicketLot } from "./TicketLot";
 import { User } from "./User";
 
+/** Evento criado por um produtor, com lotes de ingressos e metadados de publicação. */
 @Entity("events")
 export class Event {
   @PrimaryGeneratedColumn("uuid")

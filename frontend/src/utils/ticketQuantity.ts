@@ -1,5 +1,12 @@
+/**
+ * @file Validação e normalização da quantidade de ingressos no checkout.
+ * @module utils/ticketQuantity
+ */
+
+/** Motivo de falha na validação da quantidade solicitada. */
 export type QuantityValidationIssue = "sold_out" | "below_min" | "above_max";
 
+/** Resultado discriminado da validação de quantidade versus estoque do lote. */
 export type QuantityValidation =
   | { valid: true; quantity: number; maxAvailable: number }
   | {
@@ -9,6 +16,11 @@ export type QuantityValidation =
       maxAvailable: number;
     };
 
+/**
+ * Converte entrada do usuário em inteiro de quantidade (mínimo implícito 1 após validação).
+ *
+ * @param value - Valor digitado ou numérico do campo.
+ */
 export function normalizeTicketQuantity(value: string | number): number {
   const parsed = typeof value === "number" ? value : Number(value);
 
@@ -19,6 +31,12 @@ export function normalizeTicketQuantity(value: string | number): number {
   return Math.floor(parsed);
 }
 
+/**
+ * Valida quantidade solicitada contra o estoque disponível do lote.
+ *
+ * @param quantity - Quantidade desejada (será normalizada).
+ * @param maxAvailable - Estoque restante do lote.
+ */
 export function validateTicketQuantity(
   quantity: number,
   maxAvailable: number,
@@ -41,6 +59,11 @@ export function validateTicketQuantity(
   return { valid: true, quantity: normalized, maxAvailable: max };
 }
 
+/**
+ * Retorna mensagem de erro em português para validação inválida.
+ *
+ * @param validation - Resultado de {@link validateTicketQuantity}.
+ */
 export function getQuantityValidationMessage(validation: QuantityValidation): string {
   if (validation.valid) {
     return "";
@@ -58,6 +81,11 @@ export function getQuantityValidationMessage(validation: QuantityValidation): st
   }
 }
 
+/**
+ * Quantidade efetiva para cálculo de total quando a validação falhou por excesso.
+ *
+ * @param validation - Resultado de {@link validateTicketQuantity}.
+ */
 export function getBillableQuantity(validation: QuantityValidation): number {
   if (validation.valid) {
     return validation.quantity;

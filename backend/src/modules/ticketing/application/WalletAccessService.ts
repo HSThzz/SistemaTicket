@@ -1,19 +1,34 @@
-﻿import type { DataSource } from "typeorm";
+﻿/**
+ * @file Regras de autorização para download de passes de carteira digital.
+ * @module ticketing/application/WalletAccessService
+ */
+
+import type { DataSource } from "typeorm";
 import { Ticket } from "../../../shared/infrastructure/persistence/entities/Ticket";
 import { UserRole } from "../../../shared/kernel/enums";
 
+/**
+ * Ator que solicita acesso ao pass de um ingresso.
+ */
 export interface WalletActor {
   userId: string;
   role: UserRole;
 }
 
+/**
+ * Verifica se o usuário pode gerar pass Apple/Google para o ingresso.
+ */
 export class WalletAccessService {
+  /**
+   * @param dataSource - Conexão TypeORM.
+   */
   constructor(private readonly dataSource: DataSource) {}
 
   /**
-   * Owner can access their ticket.
-   * ADMIN can access any ticket.
-   * PRODUCER can access tickets for events they own.
+   * Dono do pedido, admin global ou produtor dono do evento podem acessar.
+   * @param ticketId - Identificador do ingresso.
+   * @param actor - Usuário autenticado.
+   * @returns `true` se o acesso for permitido.
    */
   async canAccessTicket(ticketId: string, actor: WalletActor): Promise<boolean> {
     if (actor.role === UserRole.ADMIN) {

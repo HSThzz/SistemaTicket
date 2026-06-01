@@ -1,9 +1,20 @@
-﻿import type { NextFunction, Request, Response } from "express";
+﻿/**
+ * @file Middleware de log de requisições HTTP concluídas.
+ * @module shared/interfaces/http/middlewares/requestLogger
+ */
+
+import type { NextFunction, Request, Response } from "express";
 import { Logger } from "../../../infrastructure/config/logger";
 
 const logger = Logger.getInstance();
 const CONTEXT = "HTTP";
 
+/**
+ * Registra método, URL, status e duração ao finalizar a resposta.
+ * @param req - Requisição Express.
+ * @param res - Resposta Express.
+ * @param next - Próximo middleware.
+ */
 export function requestLogger(
   req: Request,
   res: Response,

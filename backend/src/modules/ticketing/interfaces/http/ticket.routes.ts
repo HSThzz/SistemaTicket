@@ -1,4 +1,9 @@
-﻿import { Router } from "express";
+﻿/**
+ * @file Rotas HTTP de ingressos e check-in (`/tickets`).
+ * @module ticketing/interfaces/http/ticket.routes
+ */
+
+import { Router } from "express";
 import { checkInController } from "./CheckInController";
 import { ticketController } from "./TicketController";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
@@ -20,4 +25,5 @@ router.post(
   (req, res) => void checkInController.checkIn(req, res),
 );
 
+/** Router Express montado em `/tickets`. */
 export default router;

@@ -1,4 +1,9 @@
-﻿import { randomBytes } from "node:crypto";
+﻿/**
+ * @file Entidade TypeORM de ingresso emitido para um pedido.
+ * @module shared/infrastructure/persistence/entities/Ticket
+ */
+
+import { randomBytes } from "node:crypto";
 import {
   BeforeInsert,
   Column,
@@ -11,6 +16,7 @@ import { TicketStatus } from "../../../kernel/enums";
 import { Order } from "./Order";
 import { TicketLot } from "./TicketLot";
 
+/** Ingresso com código único, titular e controle de check-in. */
 @Entity("tickets")
 export class Ticket {
   @PrimaryGeneratedColumn("uuid")
@@ -51,6 +57,9 @@ export class Ticket {
   @JoinColumn({ name: "ticket_lot_id" })
   ticketLot!: TicketLot;
 
+  /**
+   * Gera código único hexadecimal antes da inserção, se ainda não definido.
+   */
   @BeforeInsert()
   generateUniqueCode(): void {
     if (!this.uniqueCode) {

@@ -1,4 +1,9 @@
-﻿import { readFileSync } from "node:fs";
+﻿/**
+ * @file Geração de passes Apple Wallet (.pkpass) e links Google Wallet.
+ * @module ticketing/application/WalletService
+ */
+
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { DataSource } from "typeorm";
 import { google } from "googleapis";
@@ -36,11 +41,23 @@ interface TicketWalletContext {
   user: User;
 }
 
+/**
+ * Monta passes digitais a partir do ingresso, evento e titular.
+ */
 export class WalletService {
   private readonly logger = Logger.getInstance();
 
+  /**
+   * @param dataSource - Conexão TypeORM para carregar ingresso e relações.
+   */
   constructor(private readonly dataSource: DataSource) {}
 
+  /**
+   * @param ticketId - Ingresso a exportar.
+   * @returns Buffer do arquivo `.pkpass`.
+   * @throws {TicketNotFoundError} Ingresso ou relações ausentes.
+   * @throws {WalletConfigError} Certificados Apple não configurados.
+   */
   async generateApplePass(ticketId: string): Promise<Buffer> {
     const { ticket, event, user } = await this.loadTicketContext(ticketId);
 
@@ -138,6 +155,12 @@ export class WalletService {
     }
   }
 
+  /**
+   * @param ticketId - Ingresso a exportar.
+   * @returns URL `pay.google.com` com JWT assinado (Save to Wallet).
+   * @throws {TicketNotFoundError} Ingresso inexistente.
+   * @throws {WalletConfigError} Credenciais Google ausentes.
+   */
   async generateGoogleWalletLink(ticketId: string): Promise<string> {
     const { ticket, event } = await this.loadTicketContext(ticketId);
 

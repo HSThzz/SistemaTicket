@@ -1,3 +1,8 @@
+/**
+ * @file Página “Meus pedidos” com cards premium e filtro por status de pagamento.
+ * @module pages/MyOrdersPage
+ */
+
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -36,6 +41,9 @@ const FILTER_OPTIONS: { label: string; value: OrderFilter }[] = [
   { label: "Reembolsados", value: "REFUNDED" },
 ];
 
+/**
+ * Lista pedidos do cliente com totais, filtro e {@link OrderCard} por item.
+ */
 export function MyOrdersPage() {
   const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [loading, setLoading] = useState(true);

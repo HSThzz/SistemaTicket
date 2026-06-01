@@ -1,4 +1,9 @@
-﻿import { Router } from "express";
+﻿/**
+ * @file Rotas HTTP de carteira digital (`/wallet`).
+ * @module ticketing/interfaces/http/wallet.routes
+ */
+
+import { Router } from "express";
 import { walletController } from "./WalletController";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
 
@@ -22,4 +27,5 @@ router.get(
   (req, res) => void walletController.getGoogleWalletLink(req, res),
 );
 
+/** Router Express montado em `/wallet`. */
 export default router;

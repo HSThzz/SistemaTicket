@@ -1,3 +1,8 @@
+/**
+ * @file Página pública de detalhe do evento com lotes e CTA de compra.
+ * @module pages/EventDetailPage
+ */
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -57,6 +62,13 @@ const EVENT_PERKS = [
   { icon: IconShieldCheck, label: "Compra segura", description: "Reserva garantida por 15 min" },
 ] as const;
 
+/**
+ * Card de oferta de um lote com preço, estoque e botão de compra.
+ *
+ * @param props.lot - Lote do evento.
+ * @param props.isAuthenticated - Altera rótulo do botão se visitante.
+ * @param props.onBuy - Callback com ID do lote ao iniciar compra.
+ */
 function LotOfferCard({
   lot,
   isAuthenticated,
@@ -111,6 +123,9 @@ function LotOfferCard({
   );
 }
 
+/**
+ * Exibe hero, informações, lotes disponíveis e link para checkout (autenticado).
+ */
 export function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();

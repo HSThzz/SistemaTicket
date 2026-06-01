@@ -1,4 +1,9 @@
-﻿import { Router } from "express";
+﻿/**
+ * @file Rotas HTTP de compra e reserva (`/purchases`).
+ * @module sales/interfaces/http/purchase.routes
+ */
+
+import { Router } from "express";
 import { purchaseController } from "./PurchaseController";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
 import { reserveRateLimiter } from "../../../../shared/interfaces/http/middlewares/rateLimiter";
@@ -55,4 +60,5 @@ router.post(
   (req, res) => void purchaseController.reprocessDlq(req, res),
 );
 
+/** Router Express montado em `/purchases`. */
 export default router;

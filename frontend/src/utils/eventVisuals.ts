@@ -1,3 +1,8 @@
+/**
+ * @file Helpers visuais e de filtragem para cards e listagens de eventos.
+ * @module utils/eventVisuals
+ */
+
 import type { CSSProperties } from "react";
 import type { Event } from "../types/api";
 
@@ -10,11 +15,17 @@ const GRADIENT_PAIRS: [string, string][] = [
   ["#22c55e", "#14b8a6"],
 ];
 
+/** Dados mínimos para renderizar capa ou gradiente de um evento. */
 export interface EventCoverSource {
   id: string;
   imageUrl?: string | null;
 }
 
+/**
+ * Gera um par de cores de gradiente determinístico a partir do ID do evento.
+ *
+ * @param eventId - Identificador único do evento.
+ */
 export function getEventGradient(eventId: string): [string, string] {
   let hash = 0;
   for (let i = 0; i < eventId.length; i += 1) {
@@ -23,6 +34,11 @@ export function getEventGradient(eventId: string): [string, string] {
   return GRADIENT_PAIRS[Math.abs(hash) % GRADIENT_PAIRS.length];
 }
 
+/**
+ * Retorna estilos CSS para capa do evento (imagem ou gradiente fallback).
+ *
+ * @param source - Evento ou objeto com `id` e `imageUrl` opcional.
+ */
 export function getEventCoverStyle(source: EventCoverSource): CSSProperties {
   const imageUrl = source.imageUrl?.trim();
 
@@ -41,6 +57,11 @@ export function getEventCoverStyle(source: EventCoverSource): CSSProperties {
   };
 }
 
+/**
+ * Extrai o nome da cidade a partir do campo de localização completo.
+ *
+ * @param location - Texto de local do evento.
+ */
 export function extractCity(location: string): string {
   const parts = location.split(/[—\-,|]/).map((part) => part.trim());
   const last = parts[parts.length - 1];
@@ -50,6 +71,12 @@ export function extractCity(location: string): string {
   return location.slice(0, 32);
 }
 
+/**
+ * Calcula o menor preço entre os lotes do evento, em centavos.
+ *
+ * @param event - Evento com lista de lotes.
+ * @returns Menor preço ou `null` se não houver lotes.
+ */
 export function getLowestPrice(event: Event): number | null {
   if (event.ticketLots.length === 0) {
     return null;
@@ -57,10 +84,21 @@ export function getLowestPrice(event: Event): number | null {
   return Math.min(...event.ticketLots.map((lot) => lot.price));
 }
 
+/**
+ * Soma a quantidade disponível em todos os lotes do evento.
+ *
+ * @param event - Evento com lista de lotes.
+ */
 export function getTotalAvailable(event: Event): number {
   return event.ticketLots.reduce((sum, lot) => sum + lot.availableQuantity, 0);
 }
 
+/**
+ * Indica se o evento ocorre nos próximos N dias (inclusive hoje).
+ *
+ * @param event - Evento com data ISO.
+ * @param withinDays - Janela em dias (padrão: 7).
+ */
 export function isEventSoon(event: Event, withinDays = 7): boolean {
   const eventDate = new Date(event.date);
   const now = new Date();
@@ -69,6 +107,7 @@ export function isEventSoon(event: Event, withinDays = 7): boolean {
   return diffDays >= 0 && diffDays <= withinDays;
 }
 
+/** Categorias de filtro exibidas na home e busca de eventos. */
 export type EventCategory = "all" | "festival" | "show" | "corporate" | "online";
 
 const CATEGORY_KEYWORDS: Record<Exclude<EventCategory, "all">, string[]> = {
@@ -78,6 +117,11 @@ const CATEGORY_KEYWORDS: Record<Exclude<EventCategory, "all">, string[]> = {
   online: ["online", "zoom", "virtual", "live"],
 };
 
+/**
+ * Infere a categoria do evento por palavras-chave no título, descrição e local.
+ *
+ * @param event - Evento a classificar.
+ */
 export function inferEventCategory(event: Event): Exclude<EventCategory, "all"> {
   const text = `${event.title} ${event.description} ${event.location}`.toLowerCase();
 
@@ -93,6 +137,7 @@ export function inferEventCategory(event: Event): Exclude<EventCategory, "all"> 
   return "show";
 }
 
+/** Rótulos em português para cada valor de {@link EventCategory}. */
 export const CATEGORY_LABELS: Record<EventCategory, string> = {
   all: "Todos",
   festival: "Festivais",
@@ -101,6 +146,13 @@ export const CATEGORY_LABELS: Record<EventCategory, string> = {
   online: "Online",
 };
 
+/**
+ * Filtra eventos por texto de busca e categoria inferida.
+ *
+ * @param events - Lista de eventos publicados.
+ * @param query - Termo de busca (título, descrição, local).
+ * @param category - Categoria selecionada ou `all`.
+ */
 export function filterEvents(
   events: Event[],
   query: string,
@@ -125,6 +177,11 @@ export function filterEvents(
   });
 }
 
+/**
+ * Agrupa eventos por cidade extraída do campo de localização.
+ *
+ * @param events - Lista de eventos.
+ */
 export function groupEventsByCity(events: Event[]): Map<string, Event[]> {
   const groups = new Map<string, Event[]>();
 

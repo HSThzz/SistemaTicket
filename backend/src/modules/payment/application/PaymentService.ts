@@ -1,4 +1,9 @@
-﻿import { randomBytes } from "node:crypto";
+﻿/**
+ * @file Orquestração de PIX, webhooks, expiração de reservas e reembolsos.
+ * @module payment/application/PaymentService
+ */
+
+import { randomBytes } from "node:crypto";
 import type Redis from "ioredis";
 import type { DataSource } from "typeorm";
 import {
@@ -36,8 +41,12 @@ import {
 
 const CONTEXT = "PaymentService";
 
+/** Tipos de evento aceitos no webhook interno. */
 export type PaymentWebhookEventType = "payment.succeeded" | "payment.failed";
 
+/**
+ * Payload normalizado de notificação de pagamento.
+ */
 export interface PaymentWebhookPayload {
   event: PaymentWebhookEventType;
   data: {
@@ -48,6 +57,9 @@ export interface PaymentWebhookPayload {
   };
 }
 
+/**
+ * Dados PIX expostos ao cliente para pagamento de pedido pendente.
+ */
 export interface PixPaymentDetails {
   orderId: string;
   transactionId: string;
@@ -56,16 +68,27 @@ export interface PixPaymentDetails {
   amountCents: number;
 }
 
+/**
+ * Resultado de reembolso com contagem de ingressos e estoque restaurado.
+ */
 export interface RefundOrderResult {
   orderId: string;
   ticketsCancelled: number;
   stockRestored: number;
 }
 
+/**
+ * Serviço central de pagamentos: cobrança PIX, webhooks e ciclo de vida do pedido.
+ */
 export class PaymentService {
   private readonly logger = Logger.getInstance();
   private readonly gateway: PaymentGateway;
 
+  /**
+   * @param dataSource - Conexão TypeORM.
+   * @param redis - Cliente Redis opcional para caches de PIX/reserva.
+   * @param gateway - Gateway injetável (padrão: factory por env).
+   */
   constructor(
     private readonly dataSource: DataSource,
     private readonly redis?: Redis,
@@ -74,10 +97,18 @@ export class PaymentService {
     this.gateway = gateway ?? createPaymentGateway();
   }
 
+  /**
+   * @returns Identificador do provedor ativo (`simulated` ou `mercadopago`).
+   */
   getGatewayProvider(): PaymentGateway["provider"] {
     return this.gateway.provider;
   }
 
+  /**
+   * Marca pedido como falho quando a criação do PIX falha após persistência da reserva.
+   * @param orderId - Pedido pendente.
+   * @param reason - Motivo registrado no fluxo de falha.
+   */
   async abortPendingOrderAfterPixCreationFailure(
     orderId: string,
     reason: string,
@@ -95,6 +126,13 @@ export class PaymentService {
     });
   }
 
+  /**
+   * Cria cobrança PIX no gateway e persiste metadados no pedido e cache Redis.
+   * @param orderId - Pedido em status pendente.
+   * @returns Detalhes PIX para o cliente.
+   * @throws {OrderNotFoundError} Se pedido ou usuário não existirem.
+   * @throws {PaymentGatewayError} Em falha do provedor.
+   */
   async processOrderPayment(orderId: string): Promise<PixPaymentDetails> {
     this.logger.info(CONTEXT, "Starting PIX charge creation", { orderId });
 
@@ -141,6 +179,11 @@ export class PaymentService {
     return details;
   }
 
+  /**
+   * Resolve PIX a partir do pedido, cache Redis ou consulta ao Mercado Pago.
+   * @param order - Entidade de pedido (idealmente com relações carregadas).
+   * @returns Detalhes PIX ou `null` se o pedido não estiver pendente/sem PIX.
+   */
   async resolvePixPaymentDetails(order: Order): Promise<PixPaymentDetails | null> {
     if (order.status !== OrderStatus.PENDING) {
       return null;
@@ -185,6 +228,13 @@ export class PaymentService {
     return null;
   }
 
+  /**
+   * @param orderId - Pedido do cliente.
+   * @param userId - Dono autenticado.
+   * @returns Detalhes PIX do pedido pendente.
+   * @throws {OrderNotFoundError} Se pedido inexistente ou de outro usuário.
+   * @throws {PaymentGatewayError} Com código `PIX_NOT_AVAILABLE` se não houver PIX.
+   */
   async getOrderPixPayment(orderId: string, userId: string): Promise<PixPaymentDetails> {
     const order = await this.dataSource.getRepository(Order).findOne({
       where: { id: orderId },
@@ -234,6 +284,15 @@ export class PaymentService {
     });
   }
 
+  /**
+   * Reembolsa pedido pago, cancela ingressos ativos e restaura estoque (DB + Redis).
+   * @param orderId - Pedido em status `PAID`.
+   * @returns Contagens de ingressos cancelados e unidades devolvidas ao lote.
+   * @throws {OrderNotFoundError} Pedido inexistente.
+   * @throws {OrderAlreadyRefundedError} Já reembolsado.
+   * @throws {OrderRefundNotAllowedError} Status inválido ou ingresso já utilizado.
+   * @throws {PaymentGatewayError} Falha no reembolso no provedor.
+   */
   async refundOrder(orderId: string): Promise<RefundOrderResult> {
     this.logger.info(CONTEXT, "Starting order refund", { orderId });
 
@@ -379,6 +438,14 @@ export class PaymentService {
     return result;
   }
 
+  /**
+   * Simula pagamento aprovado em ambiente de desenvolvimento (gateway simulado).
+   * @param orderId - Pedido pendente do solicitante.
+   * @param requesterUserId - Usuário autenticado (deve ser o dono).
+   * @throws {InvalidWebhookPayloadError} Em produção ou gateway não simulado.
+   * @throws {OrderNotFoundError} Pedido inexistente ou de outro usuário.
+   * @throws {PaymentAlreadyProcessedError} Pedido não pendente.
+   */
   async simulateDevPayment(orderId: string, requesterUserId: string): Promise<void> {
     if (isProduction) {
       throw new InvalidWebhookPayloadError("Dev payment simulation is disabled in production");
@@ -416,6 +483,13 @@ export class PaymentService {
     });
   }
 
+  /**
+   * Processa webhook interno de sucesso ou falha de pagamento.
+   * @param payload - Evento e dados com `orderId` e `transactionId`.
+   * @throws {InvalidWebhookPayloadError} Payload inválido.
+   * @throws {OrderNotFoundError} Pedido não encontrado.
+   * @throws {PaymentAlreadyProcessedError} Transição de estado inválida.
+   */
   async handleWebhook(payload: PaymentWebhookPayload): Promise<void> {
     this.validateWebhookPayload(payload);
 
@@ -433,6 +507,11 @@ export class PaymentService {
     await this.handlePaymentFailed(payload.data);
   }
 
+  /**
+   * Expira reserva pendente e pedido associado, restaurando estoque (TTL Redis).
+   * @param reservationId - ID da reserva.
+   * @returns `true` se houve expiração processada no banco.
+   */
   async expireUnpaidOrderByReservationId(reservationId: string): Promise<boolean> {
     this.logger.info(CONTEXT, "Expiring unpaid order by reservation TTL", {
       reservationId,
@@ -517,6 +596,12 @@ export class PaymentService {
     return expired;
   }
 
+  /**
+   * Busca pagamento no MP e dispara webhook interno conforme status.
+   * @param paymentId - ID numérico/string do pagamento Mercado Pago.
+   * @returns `processed`, `pending` ou `ignored`.
+   * @throws {InvalidWebhookPayloadError} Se o gateway ativo não for Mercado Pago.
+   */
   async handleMercadoPagoNotification(paymentId: string): Promise<"processed" | "pending" | "ignored"> {
     if (!isMercadoPagoPixGateway(this.gateway)) {
       throw new InvalidWebhookPayloadError("Mercado Pago gateway is not configured");

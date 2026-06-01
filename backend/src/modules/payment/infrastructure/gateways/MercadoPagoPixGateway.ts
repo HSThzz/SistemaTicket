@@ -1,4 +1,9 @@
-﻿import { randomUUID } from "node:crypto";
+﻿/**
+ * @file Integração PIX com a API REST do Mercado Pago.
+ * @module payment/infrastructure/gateways/MercadoPagoPixGateway
+ */
+
+import { randomUUID } from "node:crypto";
 import { env } from "../../../../shared/infrastructure/config/env";
 import { PaymentGatewayError } from "../../domain/errors/PaymentError";
 import type {
@@ -29,15 +34,27 @@ interface MercadoPagoPaymentResponse {
   error?: string;
 }
 
+/**
+ * Gateway PIX real via Mercado Pago (`/v1/payments`).
+ */
 export class MercadoPagoPixGateway implements PaymentGateway {
   readonly provider = "mercadopago" as const;
 
+  /**
+   * @param accessToken - Token de acesso da aplicação MP.
+   * @param apiBaseUrl - URL base da API (sandbox ou produção).
+   * @param notificationUrl - URL opcional de webhook registrada na cobrança.
+   */
   constructor(
     private readonly accessToken: string,
     private readonly apiBaseUrl: string,
     private readonly notificationUrl?: string,
   ) {}
 
+  /**
+   * @inheritdoc
+   * @throws {PaymentGatewayError} Se a API não retornar `qr_code` PIX.
+   */
   async createPixCharge(input: CreatePixChargeInput): Promise<PixChargeResult> {
     const expiresAt = new Date(Date.now() + DEFAULT_EXPIRATION_MINUTES * 60 * 1000);
 
@@ -89,6 +106,10 @@ export class MercadoPagoPixGateway implements PaymentGateway {
     };
   }
 
+  /**
+   * @param transactionId - ID do pagamento no Mercado Pago.
+   * @throws {PaymentGatewayError} Em erro HTTP da API de reembolso.
+   */
   async refundPayment(transactionId: string): Promise<void> {
     await this.request("POST", `/v1/payments/${transactionId}/refunds`, {
       body: {},
@@ -96,6 +117,11 @@ export class MercadoPagoPixGateway implements PaymentGateway {
     });
   }
 
+  /**
+   * @param transactionId - ID do pagamento no Mercado Pago.
+   * @returns Snapshot com `external_reference` como `orderId`.
+   * @throws {PaymentGatewayError} Se faltar `external_reference`.
+   */
   async getPayment(transactionId: string): Promise<GatewayPaymentSnapshot> {
     const response = await this.fetchPaymentResponse(transactionId);
 
@@ -114,6 +140,11 @@ export class MercadoPagoPixGateway implements PaymentGateway {
     };
   }
 
+  /**
+   * Recupera copia-e-cola PIX de um pagamento já criado.
+   * @param transactionId - ID do pagamento no Mercado Pago.
+   * @returns QR/copia-e-cola e expiração, ou `null` se indisponível.
+   */
   async getPixCopyPaste(transactionId: string): Promise<{
     pixCopyPaste: string;
     expiresAt: Date;
@@ -182,6 +213,11 @@ export class MercadoPagoPixGateway implements PaymentGateway {
   }
 }
 
+/**
+ * Cria gateway a partir de `env.payment.mercadoPago`.
+ * @returns Instância configurada.
+ * @throws {Error} Se `MERCADOPAGO_ACCESS_TOKEN` não estiver definido.
+ */
 export function createMercadoPagoPixGatewayFromEnv(): MercadoPagoPixGateway {
   const accessToken = env.payment.mercadoPago.accessToken;
   if (!accessToken) {
@@ -239,6 +275,11 @@ function sanitizeDocument(document: string): string {
   return document.replace(/\D/g, "");
 }
 
+/**
+ * Type guard para usar métodos exclusivos do Mercado Pago.
+ * @param gateway - Gateway genérico.
+ * @returns `true` se o provedor for `mercadopago`.
+ */
 export function isMercadoPagoPixGateway(
   gateway: PaymentGateway,
 ): gateway is MercadoPagoPixGateway {

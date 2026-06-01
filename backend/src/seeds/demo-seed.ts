@@ -1,4 +1,9 @@
-﻿import { randomBytes } from "node:crypto";
+﻿/**
+ * @file Definição e execução do seed de demonstração (usuários, eventos, ingressos).
+ * @module seeds/demo-seed
+ */
+
+import { randomBytes } from "node:crypto";
 import bcrypt from "bcrypt";
 import type Redis from "ioredis";
 import type { DataSource } from "typeorm";
@@ -17,10 +22,13 @@ import {
   UserRole,
 } from "../shared/kernel/enums";
 
+/** Senha padrão de todos os usuários criados pelo seed. */
 export const SEED_PASSWORD = "123456";
 const BCRYPT_ROUNDS = 12;
 
-/** Imagens de exemplo via Unsplash (uso demonstrativo). */
+/**
+ * URLs de imagens de exemplo (Unsplash) indexadas por tema do evento.
+ */
 export const SEED_EVENT_IMAGES = {
   festival: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1200&h=675&fit=crop&q=80",
   comedy: "https://images.unsplash.com/photo-1527228510675-8c9976d9abc2?w=1200&h=675&fit=crop&q=80",
@@ -186,12 +194,19 @@ const SEED_EVENTS: SeedEventDef[] = [
   },
 ];
 
+/**
+ * Resumo retornado após execução do seed para logs e CLI.
+ */
 export interface SeedSummary {
   users: Array<{ email: string; role: UserRole; password: string }>;
   events: Array<{ title: string; status: EventStatus; lots: number }>;
   sampleTickets: number;
 }
 
+/**
+ * Limpa tabelas principais e reinicia sequences (CASCADE).
+ * @param dataSource - Conexão TypeORM inicializada.
+ */
 export async function resetDatabase(dataSource: DataSource): Promise<void> {
   await dataSource.query(`
     TRUNCATE tickets, orders, reservations, ticket_lots, events, users
@@ -199,10 +214,20 @@ export async function resetDatabase(dataSource: DataSource): Promise<void> {
   `);
 }
 
+/**
+ * Esvazia o banco Redis atual (`FLUSHDB`).
+ * @param redis - Cliente Redis conectado.
+ */
 export async function resetRedis(redis: Redis): Promise<void> {
   await redis.flushdb();
 }
 
+/**
+ * Cria usuários demo, eventos, lotes, pedidos pagos de exemplo e sincroniza estoque Redis.
+ * @param dataSource - Conexão TypeORM.
+ * @param redis - Cliente Redis para chaves de estoque por lote.
+ * @returns Resumo com usuários, eventos e contagem de ingressos de amostra.
+ */
 export async function runDemoSeed(
   dataSource: DataSource,
   redis: Redis,

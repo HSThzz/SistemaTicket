@@ -1,23 +1,36 @@
+/**
+ * @file Constantes de chaves Redis e TTLs compartilhados entre módulos.
+ * @module shared/infrastructure/config/constants
+ */
+
+/** TTL padrão de reserva em segundos (15 minutos). */
 export const RESERVATION_TTL_SECONDS = 15 * 60;
+
+/** TTL padrão de reserva em milissegundos. */
 export const RESERVATION_TTL_MS = RESERVATION_TTL_SECONDS * 1000;
 
+/** Prefixo das chaves de reserva temporária no Redis. */
 export const RESERVATION_KEY_PREFIX = "reservation:";
 
-// Estoque é a fonte de verdade em Redis durante o pico.
+/** Prefixo das chaves de estoque de lote no Redis (fonte de verdade no pico). */
 export const TICKET_LOT_STOCK_KEY_PREFIX = "stock:ticket-lot:";
 
-// Fila simples (Redis LIST) para persistência assíncrona.
+/** Chave da fila LIST de persistência assíncrona de reservas. */
 export const RESERVATION_PERSIST_QUEUE_KEY = "queue:reservation:persist";
 
-// Retry/DLQ para jobs que falham ao persistir.
+/** Chave da fila LIST de retry para jobs que falham ao persistir. */
 export const RESERVATION_PERSIST_RETRY_QUEUE_KEY =
   "queue:reservation:persist:retry";
+
+/** Chave da fila LIST de dead-letter (DLQ) de persistência. */
 export const RESERVATION_PERSIST_DLQ_KEY = "queue:reservation:persist:dlq";
 
-// ZSET para agendar retries com backoff (score = timestamp ms)
+/** Chave do ZSET de agendamento de retries (score = timestamp em ms). */
 export const RESERVATION_PERSIST_RETRY_SCHEDULE_KEY =
   "queue:reservation:persist:retry:schedule";
 
-// Cache de pagamento PIX gerado após persistência do pedido.
+/** Prefixo do cache de pagamento PIX por reserva. */
 export const PAYMENT_CACHE_KEY_PREFIX = "payment:reservation:";
+
+/** Prefixo do cache de pedido por reserva. */
 export const ORDER_CACHE_KEY_PREFIX = "order:reservation:";

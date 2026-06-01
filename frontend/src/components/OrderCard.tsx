@@ -1,3 +1,8 @@
+/**
+ * @file Card premium de pedido com PIX embutido para status pendente.
+ * @module components/OrderCard
+ */
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { CSSProperties } from "react";
@@ -24,10 +29,13 @@ import { formatCurrencyFromCents } from "../utils/format";
 import { getApiErrorMessage } from "../utils/errors";
 import { getOrderStatusColor, getOrderStatusLabel } from "../utils/statusLabels";
 
+/** Propriedades do card de pedido na listagem do cliente. */
 interface OrderCardProps {
+  /** Pedido com status, total e dados opcionais de evento/PIX. */
   order: OrderListItem;
 }
 
+/** Gradiente da faixa lateral conforme status do pedido. */
 function getOrderAccentStyle(status: string): CSSProperties {
   switch (status) {
     case "PAID":
@@ -43,6 +51,7 @@ function getOrderAccentStyle(status: string): CSSProperties {
   }
 }
 
+/** Texto curto na aba lateral do card de pedido. */
 function getOrderStubLabel(status: string): string {
   switch (status) {
     case "PAID":
@@ -58,6 +67,9 @@ function getOrderStubLabel(status: string): string {
   }
 }
 
+/**
+ * Exibe resumo do pedido, carrega PIX automaticamente se pendente e link para ingressos se pago.
+ */
 export function OrderCard({ order }: OrderCardProps) {
   const isPaid = order.status === "PAID";
   const isPending = order.status === "PENDING";

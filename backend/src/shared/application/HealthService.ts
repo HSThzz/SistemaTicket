@@ -1,4 +1,9 @@
-﻿import type Redis from "ioredis";
+﻿/**
+ * @file Serviço de verificação de saúde dos componentes da aplicação.
+ * @module shared/application/HealthService
+ */
+
+import type Redis from "ioredis";
 import type { DataSource } from "typeorm";
 import { Logger } from "../infrastructure/config/logger";
 import { getReservationPersistenceWorker } from "../runtime/workerRegistry";
@@ -6,14 +11,17 @@ import { QueueMonitorService } from "./QueueMonitorService";
 
 const CONTEXT = "HealthService";
 
+/** Status agregado de saúde de um componente ou do sistema. */
 export type HealthStatus = "ok" | "degraded" | "down";
 
+/** Resultado da verificação de um componente individual. */
 export interface ComponentHealth {
   status: HealthStatus;
   latencyMs?: number;
   error?: string;
 }
 
+/** Relatório completo de saúde da aplicação. */
 export interface HealthReport {
   status: HealthStatus;
   timestamp: string;
@@ -39,10 +47,17 @@ export interface HealthReport {
   };
 }
 
+/**
+ * Agrega checagens de Postgres, Redis, filas e worker de persistência.
+ */
 export class HealthService {
   private readonly logger = Logger.getInstance();
   private readonly queueMonitor: QueueMonitorService;
 
+  /**
+   * @param dataSource - Fonte de dados TypeORM.
+   * @param redis - Cliente Redis.
+   */
   constructor(
     private readonly dataSource: DataSource,
     private readonly redis: Redis,
@@ -50,6 +65,10 @@ export class HealthService {
     this.queueMonitor = new QueueMonitorService(redis);
   }
 
+  /**
+   * Executa todas as verificações e monta o relatório de saúde.
+   * @returns Relatório com status geral e por componente.
+   */
   async check(): Promise<HealthReport> {
     const [postgres, redis, queues, worker] = await Promise.all([
       this.checkPostgres(),
@@ -78,6 +97,7 @@ export class HealthService {
     return report;
   }
 
+  /** Verifica conectividade e latência do PostgreSQL. */
   private async checkPostgres(): Promise<ComponentHealth> {
     const startedAt = Date.now();
 
@@ -101,6 +121,7 @@ export class HealthService {
     }
   }
 
+  /** Verifica resposta do comando PING no Redis. */
   private async checkRedis(): Promise<ComponentHealth> {
     const startedAt = Date.now();
 
@@ -127,6 +148,7 @@ export class HealthService {
     }
   }
 
+  /** Avalia filas de persistência e gera alertas de degradação. */
   private async checkQueues(): Promise<HealthReport["components"]["queues"]> {
     try {
       const stats = await this.queueMonitor.getStats();
@@ -168,6 +190,7 @@ export class HealthService {
     }
   }
 
+  /** Verifica se o worker de persistência de reservas está registrado e ativo. */
   private checkWorker(): HealthReport["components"]["worker"] {
     const worker = getReservationPersistenceWorker();
 
@@ -188,6 +211,7 @@ export class HealthService {
     };
   }
 
+  /** Deriva o status geral a partir dos componentes. */
   private resolveOverallStatus(
     components: HealthReport["components"],
   ): HealthStatus {

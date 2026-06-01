@@ -1,4 +1,9 @@
-﻿import "reflect-metadata";
+﻿/**
+ * @file Ponto de entrada do servidor HTTP: banco, Redis, workers e graceful shutdown.
+ * @module server
+ */
+
+import "reflect-metadata";
 import { createApp } from "./app";
 import { AppDataSource } from "./shared/infrastructure/config/data-source";
 import { env } from "./shared/infrastructure/config/env";
@@ -16,6 +21,11 @@ const CONTEXT = "Server";
 let expiryWorker: ReservationExpiryWorker | null = null;
 let persistenceWorker: ReservationPersistenceWorker | null = null;
 
+/**
+ * Inicializa dependências (PostgreSQL, Redis), workers de reserva e sobe o HTTP server.
+ * Encerra o processo com código 1 em falha de conexão ou de workers.
+ * @returns Promise resolvida quando o servidor estiver escutando na porta configurada.
+ */
 async function bootstrap(): Promise<void> {
   try {
     await AppDataSource.initialize();
@@ -76,6 +86,10 @@ async function bootstrap(): Promise<void> {
   });
 }
 
+/**
+ * Encerra workers, conexões TypeORM e Redis de forma ordenada.
+ * @returns Promise resolvida após `process.exit(0)`.
+ */
 async function shutdown(): Promise<void> {
   logger.info(CONTEXT, "Shutting down gracefully");
 

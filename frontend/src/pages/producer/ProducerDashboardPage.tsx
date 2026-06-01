@@ -1,3 +1,8 @@
+/**
+ * @file Dashboard do produtor com métricas agregadas e eventos em destaque.
+ * @module pages/producer/ProducerDashboardPage
+ */
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -31,6 +36,9 @@ import type { ProducerDashboardStats } from "../../types/api";
 import { formatCurrencyFromCents } from "../../utils/format";
 import { getApiErrorMessage } from "../../utils/errors";
 
+/**
+ * Painel inicial do produtor: receita, ingressos vendidos/check-in e cards por evento.
+ */
 export function ProducerDashboardPage() {
   const [stats, setStats] = useState<ProducerDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);

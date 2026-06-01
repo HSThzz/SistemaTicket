@@ -1,5 +1,15 @@
+/**
+ * @file Utilitários para identificar webhooks e extrair ID de pagamento do Mercado Pago.
+ * @module payment/infrastructure/gateways/mercadoPagoWebhook
+ */
+
 import type { Request } from "express";
 
+/**
+ * Extrai o ID do pagamento do body ou query string do webhook MP.
+ * @param req - Requisição HTTP do webhook.
+ * @returns ID do pagamento ou `null` se o payload não for de pagamento.
+ */
 export function extractMercadoPagoPaymentId(req: Request): string | null {
   const body = req.body as {
     type?: string;
@@ -29,6 +39,11 @@ export function extractMercadoPagoPaymentId(req: Request): string | null {
   return null;
 }
 
+/**
+ * Indica se a requisição parece ser notificação Mercado Pago (possui payment id).
+ * @param req - Requisição HTTP.
+ * @returns `true` quando {@link extractMercadoPagoPaymentId} retorna valor.
+ */
 export function isMercadoPagoWebhookRequest(req: Request): boolean {
   return extractMercadoPagoPaymentId(req) !== null;
 }

@@ -1,3 +1,8 @@
+/**
+ * @file Painel de pagamento PIX com QR Code, copia-e-cola e simulação em dev.
+ * @module components/PixPaymentPanel
+ */
+
 import {
   Box,
   Button,
@@ -14,14 +19,23 @@ import { QRCodeSVG } from "qrcode.react";
 import { PremiumPaper } from "./account/PremiumPaper";
 import { formatCurrencyFromCents, formatEventDateOnly, formatEventTimeOnly } from "../utils/format";
 
+/** Propriedades do painel PIX no checkout ou em pedidos pendentes. */
 interface PixPaymentPanelProps {
+  /** Código PIX copia e cola (payload do QR). */
   pixCopyPaste: string;
+  /** Valor em centavos. */
   amountCents: number;
+  /** Data/hora de expiração ISO. */
   expiresAt: string;
+  /** Exibe QR Code SVG; `false` apenas copia-e-cola. */
   showQrCode?: boolean;
+  /** Layout reduzido para mobile ou cards estreitos. */
   compact?: boolean;
 }
 
+/**
+ * UI de pagamento PIX com valor, validade, QR opcional e botão copiar.
+ */
 export function PixPaymentPanel({
   pixCopyPaste,
   amountCents,
@@ -119,11 +133,17 @@ export function PixPaymentPanel({
   );
 }
 
+/** Painel de simulação de pagamento apenas em ambiente de desenvolvimento. */
 interface DevSimulatePaymentPanelProps {
+  /** Indica requisição de simulação em andamento. */
   loading: boolean;
+  /** Callback ao confirmar simulação de PIX pago. */
   onSimulate: () => void;
 }
 
+/**
+ * Botão para simular confirmação PIX via endpoint de desenvolvimento.
+ */
 export function DevSimulatePaymentPanel({ loading, onSimulate }: DevSimulatePaymentPanelProps) {
   return (
     <PremiumPaper p="lg" className="checkout-dev-panel">

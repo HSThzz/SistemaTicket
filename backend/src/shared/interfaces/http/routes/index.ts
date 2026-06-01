@@ -1,4 +1,9 @@
-﻿import { Router } from "express";
+﻿/**
+ * @file Agregador de rotas HTTP da API (módulos e health).
+ * @module shared/interfaces/http/routes
+ */
+
+import { Router } from "express";
 import { healthController } from "../HealthController";
 import authRoutes from "../../../../modules/identity/interfaces/http/auth.routes";
 import eventRoutes from "../../../../modules/catalog/interfaces/http/event.routes";

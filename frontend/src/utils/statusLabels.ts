@@ -1,5 +1,15 @@
+/**
+ * @file Rótulos e cores de badges para status de pedidos, eventos e ingressos.
+ * @module utils/statusLabels
+ */
+
 import type { BadgeProps } from "@mantine/core";
 
+/**
+ * Retorna o rótulo em português do status de um pedido.
+ *
+ * @param status - Código de status do pedido (ex.: `PENDING`, `PAID`).
+ */
 export function getOrderStatusLabel(status: string): string {
   switch (status) {
     case "PENDING":
@@ -15,6 +25,11 @@ export function getOrderStatusLabel(status: string): string {
   }
 }
 
+/**
+ * Retorna a cor Mantine do badge conforme o status do pedido.
+ *
+ * @param status - Código de status do pedido.
+ */
 export function getOrderStatusColor(status: string): BadgeProps["color"] {
   switch (status) {
     case "PENDING":
@@ -30,6 +45,11 @@ export function getOrderStatusColor(status: string): BadgeProps["color"] {
   }
 }
 
+/**
+ * Retorna o rótulo em português do status de um evento.
+ *
+ * @param status - Código de status do evento (ex.: `PUBLISHED`, `DRAFT`).
+ */
 export function getEventStatusLabel(status: string): string {
   switch (status) {
     case "DRAFT":
@@ -45,6 +65,11 @@ export function getEventStatusLabel(status: string): string {
   }
 }
 
+/**
+ * Retorna a cor Mantine do badge conforme o status do evento.
+ *
+ * @param status - Código de status do evento.
+ */
 export function getEventStatusColor(status: string): BadgeProps["color"] {
   switch (status) {
     case "DRAFT":
@@ -60,6 +85,11 @@ export function getEventStatusColor(status: string): BadgeProps["color"] {
   }
 }
 
+/**
+ * Retorna o rótulo em português do status de um ingresso.
+ *
+ * @param status - Código de status do ingresso (ex.: `ACTIVE`, `USED`).
+ */
 export function getTicketStatusLabel(status: string): string {
   switch (status) {
     case "ACTIVE":
@@ -73,6 +103,11 @@ export function getTicketStatusLabel(status: string): string {
   }
 }
 
+/**
+ * Retorna a cor Mantine do badge conforme o status do ingresso.
+ *
+ * @param status - Código de status do ingresso.
+ */
 export function getTicketStatusColor(status: string): BadgeProps["color"] {
   switch (status) {
     case "ACTIVE":

@@ -1,4 +1,9 @@
-﻿import {
+﻿/**
+ * @file Entidade TypeORM de reserva temporária de ingressos.
+ * @module shared/infrastructure/persistence/entities/Reservation
+ */
+
+import {
   Column,
   Entity,
   JoinColumn,
@@ -9,6 +14,7 @@ import { ReservationStatus } from "../../../kernel/enums";
 import { TicketLot } from "./TicketLot";
 import { User } from "./User";
 
+/** Reserva de quantidade em um lote, com expiração e status de ciclo de vida. */
 @Entity("reservations")
 export class Reservation {
   @PrimaryGeneratedColumn("uuid")

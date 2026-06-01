@@ -1,3 +1,8 @@
+/**
+ * @file Entidade TypeORM de lote de ingressos de um evento.
+ * @module shared/infrastructure/persistence/entities/TicketLot
+ */
+
 import {
   Column,
   Entity,
@@ -10,6 +15,7 @@ import { Event } from "./Event";
 import { Reservation } from "./Reservation";
 import { Ticket } from "./Ticket";
 
+/** Lote com preço, quantidade total e estoque disponível vinculado a um evento. */
 @Entity("ticket_lots")
 export class TicketLot {
   @PrimaryGeneratedColumn("uuid")

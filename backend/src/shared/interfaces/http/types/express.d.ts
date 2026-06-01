@@ -1,14 +1,22 @@
-﻿import type { UserRole } from "../../../kernel/enums";
+﻿/**
+ * @file Extensões de tipos do Express para autenticação e corpo bruto.
+ * @module shared/interfaces/http/types/express
+ */
+
+import type { UserRole } from "../../../kernel/enums";
 
 declare global {
   namespace Express {
+    /** Payload do usuário autenticado anexado à requisição. */
     interface UserPayload {
       id: string;
       role: UserRole;
     }
 
     interface Request {
+      /** Usuário decodificado do JWT, quando autenticado. */
       user?: UserPayload;
+      /** Corpo bruto da requisição (ex.: validação de webhook). */
       rawBody?: Buffer;
     }
   }

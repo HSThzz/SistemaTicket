@@ -1,8 +1,20 @@
+/**
+ * @file Carregamento e validação de variáveis de ambiente da aplicação.
+ * @module shared/infrastructure/config/env
+ */
+
 import dotenv from "dotenv";
 import path from "node:path";
 
 dotenv.config();
 
+/**
+ * Exige que uma variável de ambiente esteja definida e não vazia.
+ * @param key - Nome da variável.
+ * @param fallback - Valor padrão opcional.
+ * @returns Valor da variável.
+ * @throws {Error} Quando a variável está ausente e não há fallback.
+ */
 function requireEnv(key: string, fallback?: string): string {
   const value = process.env[key] ?? fallback;
   if (value === undefined || value === "") {
@@ -17,6 +29,7 @@ const defaultCorsOrigins = [
   "http://127.0.0.1:5173",
 ];
 
+/** Configuração tipada e imutável derivada do ambiente de execução. */
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   port: Number(process.env.PORT ?? "3000"),
@@ -81,4 +94,5 @@ export const env = {
   },
 } as const;
 
+/** Indica se a aplicação está em modo produção. */
 export const isProduction = env.nodeEnv === "production";

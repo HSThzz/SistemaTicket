@@ -1,3 +1,8 @@
+/**
+ * @file Contexto React de autenticação com bootstrap de sessão e logout em 401.
+ * @module context/AuthContext
+ */
+
 import {
   createContext,
   useCallback,
@@ -11,17 +16,29 @@ import * as authService from "../features/identity/api/authService";
 import { api, getAuthToken, setAuthToken } from "../shared/api/client";
 import type { AuthUser } from "../types/api";
 
+/** Valor exposto pelo contexto de autenticação. */
 interface AuthContextValue {
+  /** Perfil carregado após bootstrap ou login. */
   user: AuthUser | null;
+  /** JWT persistido localmente. */
   token: string | null;
+  /** `true` quando token e usuário estão presentes. */
   isAuthenticated: boolean;
+  /** `true` enquanto valida token salvo com a API. */
   isBootstrapping: boolean;
+  /** Define token e usuário após login/cadastro. */
   setSession: (token: string, user: AuthUser) => void;
+  /** Remove sessão local e estado em memória. */
   clearSession: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/**
+ * Provedor que restaura sessão do token salvo, valida com `/auth/me` e limpa em 401.
+ *
+ * @param props.children - Árvore de componentes da aplicação.
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => getAuthToken());
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -106,6 +123,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+/**
+ * Hook para acessar usuário, token e ações de sessão.
+ *
+ * @throws Se usado fora de {@link AuthProvider}.
+ */
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
 

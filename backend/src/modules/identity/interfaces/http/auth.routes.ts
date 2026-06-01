@@ -1,4 +1,9 @@
-﻿import { Router } from "express";
+﻿/**
+ * @file Rotas HTTP de autenticação e gestão de papéis.
+ * @module modules/identity/interfaces/http/auth.routes
+ */
+
+import { Router } from "express";
 import { authController } from "./AuthController";
 import { UserRole } from "../../../../shared/kernel/enums";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
