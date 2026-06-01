@@ -7,14 +7,15 @@ import type Redis from "ioredis";
 import type { DataSource } from "typeorm";
 import { RESERVATION_KEY_PREFIX } from "../../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { env } from "../../../../shared/infrastructure/config/env";
 import {
   enableKeyspaceNotifications,
+  getRedisKeyspaceExpiredPattern,
   getRedisSubscriber,
 } from "../../../../shared/infrastructure/config/redis";
 import { PaymentService } from "../../../payment/application/PaymentService";
 
 const CONTEXT = "ReservationExpiryWorker";
-const EXPIRED_KEY_PATTERN = "__keyevent@0__:expired";
 
 /**
  * Reage a eventos `expired` do Redis para reservas com TTL esgotado.
@@ -22,6 +23,7 @@ const EXPIRED_KEY_PATTERN = "__keyevent@0__:expired";
 export class ReservationExpiryWorker {
   private readonly logger = Logger.getInstance();
   private readonly paymentService: PaymentService;
+  private readonly expiredKeyPattern = getRedisKeyspaceExpiredPattern();
   private subscriber: Redis | null = null;
 
   /**
@@ -46,16 +48,27 @@ export class ReservationExpiryWorker {
     await enableKeyspaceNotifications(this.redis);
 
     this.subscriber = getRedisSubscriber();
-    await this.subscriber.psubscribe(EXPIRED_KEY_PATTERN);
+    await this.subscriber.psubscribe(this.expiredKeyPattern);
 
     this.subscriber.on("pmessage", (_pattern, _channel, expiredKey) => {
       void this.onKeyExpired(expiredKey);
     });
 
     this.logger.info(CONTEXT, "Listening for expired reservation keys", {
-      pattern: EXPIRED_KEY_PATTERN,
+      pattern: this.expiredKeyPattern,
+      redisDb: env.redis.db,
       keyPrefix: RESERVATION_KEY_PREFIX,
     });
+  }
+
+  /** Indica se o listener de keyspace está ativo. */
+  isRunning(): boolean {
+    return this.subscriber !== null;
+  }
+
+  /** Padrão Redis usado na assinatura de expiração. */
+  getListenPattern(): string {
+    return this.expiredKeyPattern;
   }
 
   /**
@@ -67,7 +80,7 @@ export class ReservationExpiryWorker {
       return;
     }
 
-    await this.subscriber.punsubscribe(EXPIRED_KEY_PATTERN);
+    await this.subscriber.punsubscribe(this.expiredKeyPattern);
     this.subscriber.removeAllListeners("pmessage");
     this.subscriber = null;
 

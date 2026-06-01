@@ -7,6 +7,7 @@ import express from "express";
 import { corsMiddleware } from "./shared/interfaces/http/middlewares/corsMiddleware";
 import { globalRateLimiter } from "./shared/interfaces/http/middlewares/rateLimiter";
 import { requestLogger } from "./shared/interfaces/http/middlewares/requestLogger";
+import { errorHandler } from "./shared/interfaces/http/middlewares/errorHandler";
 import routes from "./shared/interfaces/http/routes";
 
 /**
@@ -32,6 +33,7 @@ export function createApp(): express.Application {
 
   app.use(requestLogger);
   app.use(routes);
+  app.use(errorHandler);
 
   return app;
 }

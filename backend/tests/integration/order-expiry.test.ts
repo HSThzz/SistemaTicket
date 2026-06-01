@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
-import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../src/shared/infrastructure/config/constants";
+import {
+  RESERVATION_KEY_PREFIX,
+  TICKET_LOT_STOCK_KEY_PREFIX,
+} from "../../src/shared/infrastructure/config/constants";
 import { Order } from "../../src/shared/infrastructure/persistence/entities/Order";
 import { Reservation } from "../../src/shared/infrastructure/persistence/entities/Reservation";
 import { TicketLot } from "../../src/shared/infrastructure/persistence/entities/TicketLot";
@@ -10,6 +13,7 @@ import {
   UserRole,
 } from "../../src/shared/kernel/enums";
 import { PaymentService } from "../../src/modules/payment/application/PaymentService";
+import { ReservationExpiryWorker } from "../../src/modules/sales/infrastructure/workers/ReservationExpiryWorker";
 import {
   createPublishedEventWithLot,
   createUser,
@@ -119,5 +123,74 @@ describe("Order expiry integration", () => {
       .expect(200);
 
     assert.equal(statusAfterExpiry.body.phase, "FAILED");
+  });
+
+  it("expires via ReservationExpiryWorker when Redis reservation TTL fires", async () => {
+    const expiryWorker = new ReservationExpiryWorker(
+      ctx.dataSource,
+      ctx.redis,
+      paymentService,
+    );
+    await expiryWorker.start();
+
+    try {
+      const initialStock = 5;
+      const quantity = 1;
+
+      const producer = await createUser(ctx.dataSource, {
+        name: "Producer TTL",
+        email: "producer-ttl-worker@test.com",
+        password: "pass123",
+        document: "14141414141",
+        role: UserRole.PRODUCER,
+      });
+
+      const client = await createUser(ctx.dataSource, {
+        name: "Client TTL",
+        email: "client-ttl-worker@test.com",
+        password: "pass123",
+        document: "15151515151",
+      });
+
+      const clientToken = await login(ctx.agent, client.email, client.password);
+      const { lot } = await createPublishedEventWithLot(
+        ctx.dataSource,
+        producer.id,
+        initialStock,
+      );
+
+      const reserveResponse = await ctx.agent
+        .post("/purchases/reserve")
+        .set("Authorization", `Bearer ${clientToken}`)
+        .send({ ticketLotId: lot.id, quantity })
+        .expect(201);
+
+      const reservationId = reserveResponse.body.reservation.id as string;
+
+      await pollReservationPhase(
+        ctx.agent,
+        clientToken,
+        reservationId,
+        "AWAITING_PAYMENT",
+      );
+
+      const reservationKey = `${RESERVATION_KEY_PREFIX}${reservationId}`;
+      await ctx.redis.expire(reservationKey, 1);
+
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+
+      const order = await ctx.dataSource.getRepository(Order).findOne({
+        where: { reservationId },
+      });
+      assert.ok(order);
+      assert.equal(order.status, OrderStatus.FAILED);
+
+      const redisStock = await ctx.redis.get(
+        `${TICKET_LOT_STOCK_KEY_PREFIX}${lot.id}`,
+      );
+      assert.equal(Number(redisStock), initialStock);
+    } finally {
+      await expiryWorker.stop();
+    }
   });
 });

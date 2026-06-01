@@ -17,15 +17,17 @@ const sharedOptions = {
 
 /** Monta URL ou opções de host/porta a partir de `env.redis`. */
 function buildRedisOptions(): string | RedisOptions {
-  const url = env.redis.url.trim();
+  const url = (process.env.REDIS_URL ?? env.redis.url).trim();
   if (url) {
     return url;
   }
 
+  const db = Number(process.env.REDIS_DB ?? String(env.redis.db));
+
   return {
     host: env.redis.host,
     port: env.redis.port,
-    db: env.redis.db,
+    db,
     ...sharedOptions,
   };
 }
@@ -75,6 +77,15 @@ export function getRedisWorker(): Redis {
     redisWorker = createRedisConnection();
   }
   return redisWorker;
+}
+
+/**
+ * Padrão PSUBSCRIBE para eventos `expired` no database Redis configurado.
+ * @returns Ex.: `__keyevent@1__:expired` quando `REDIS_DB=1`.
+ */
+export function getRedisKeyspaceExpiredPattern(): string {
+  const db = Number(process.env.REDIS_DB ?? String(env.redis.db));
+  return `__keyevent@${db}__:expired`;
 }
 
 /**

@@ -35,7 +35,7 @@ SistemaTicket/
 | **Payment** | Cobrança PIX, webhooks, reembolso |
 | **Ticketing** | Ingressos, check-in, wallet digital |
 
-Detalhes em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Detalhes em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Pendências e melhorias: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Pré-requisitos
 

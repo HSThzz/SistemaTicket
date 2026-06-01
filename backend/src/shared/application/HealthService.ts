@@ -6,7 +6,11 @@
 import type Redis from "ioredis";
 import type { DataSource } from "typeorm";
 import { Logger } from "../infrastructure/config/logger";
-import { getReservationPersistenceWorker } from "../runtime/workerRegistry";
+import {
+  getReservationExpiryWorker,
+  getReservationPersistenceWorker,
+} from "../runtime/workerRegistry";
+import { env } from "../infrastructure/config/env";
 import { QueueMonitorService } from "./QueueMonitorService";
 
 const CONTEXT = "HealthService";
@@ -36,6 +40,11 @@ export interface HealthReport {
         retryScheduledCount: number;
         dlqCount: number;
       };
+    };
+    expiryWorker: ComponentHealth & {
+      running: boolean;
+      redisDb: number;
+      listenPattern: string;
     };
     queues: ComponentHealth & {
       persistQueueLength: number;
@@ -70,14 +79,15 @@ export class HealthService {
    * @returns Relatório com status geral e por componente.
    */
   async check(): Promise<HealthReport> {
-    const [postgres, redis, queues, worker] = await Promise.all([
+    const [postgres, redis, queues, worker, expiryWorker] = await Promise.all([
       this.checkPostgres(),
       this.checkRedis(),
       this.checkQueues(),
-      this.checkWorker(),
+      Promise.resolve(this.checkWorker()),
+      Promise.resolve(this.checkExpiryWorker()),
     ]);
 
-    const components = { postgres, redis, worker, queues };
+    const components = { postgres, redis, worker, expiryWorker, queues };
     const status = this.resolveOverallStatus(components);
 
     const report: HealthReport = {
@@ -91,6 +101,7 @@ export class HealthService {
       postgres: postgres.status,
       redis: redis.status,
       worker: worker.status,
+      expiryWorker: expiryWorker.status,
       queues: queues.status,
     });
 
@@ -190,6 +201,31 @@ export class HealthService {
     }
   }
 
+  /** Verifica se o worker de expiração por TTL Redis está registrado e ativo. */
+  private checkExpiryWorker(): HealthReport["components"]["expiryWorker"] {
+    const worker = getReservationExpiryWorker();
+
+    if (!worker) {
+      return {
+        status: "degraded",
+        running: false,
+        redisDb: env.redis.db,
+        listenPattern: `__keyevent@${env.redis.db}__:expired`,
+        error: "ReservationExpiryWorker is not registered",
+      };
+    }
+
+    return {
+      status: worker.isRunning() ? "ok" : "degraded",
+      running: worker.isRunning(),
+      redisDb: env.redis.db,
+      listenPattern: worker.getListenPattern(),
+      ...(worker.isRunning()
+        ? {}
+        : { error: "ReservationExpiryWorker is not listening" }),
+    };
+  }
+
   /** Verifica se o worker de persistência de reservas está registrado e ativo. */
   private checkWorker(): HealthReport["components"]["worker"] {
     const worker = getReservationPersistenceWorker();
@@ -224,6 +260,7 @@ export class HealthService {
 
     if (
       components.worker.status === "degraded" ||
+      components.expiryWorker.status === "degraded" ||
       components.queues.status === "degraded"
     ) {
       return "degraded";

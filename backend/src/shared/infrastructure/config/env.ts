@@ -96,3 +96,38 @@ export const env = {
 
 /** Indica se a aplicação está em modo produção. */
 export const isProduction = env.nodeEnv === "production";
+
+const DEV_JWT_FALLBACK = "dev-secret-change-in-production";
+
+/**
+ * Valida variáveis críticas antes de subir em produção.
+ * @throws {Error} Quando algum segredo obrigatório estiver ausente ou inseguro.
+ */
+export function validateProductionConfig(): void {
+  if (!isProduction) {
+    return;
+  }
+
+  const errors: string[] = [];
+
+  if (env.jwt.secret === DEV_JWT_FALLBACK) {
+    errors.push("JWT_SECRET must be set to a strong value in production");
+  }
+
+  if (!env.payment.webhookSecret.trim()) {
+    errors.push("PAYMENT_WEBHOOK_SECRET is required in production");
+  }
+
+  if (env.payment.gateway === "mercadopago") {
+    if (!env.payment.mercadoPago.accessToken.trim()) {
+      errors.push("MERCADOPAGO_ACCESS_TOKEN is required when PAYMENT_GATEWAY=mercadopago");
+    }
+    if (!env.payment.mercadoPago.webhookSecret.trim()) {
+      errors.push("MERCADOPAGO_WEBHOOK_SECRET is required when PAYMENT_GATEWAY=mercadopago");
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Production configuration invalid:\n- ${errors.join("\n- ")}`);
+  }
+}

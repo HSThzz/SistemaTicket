@@ -7,8 +7,12 @@ import request from "supertest";
 import { createApp } from "../../src/app";
 import { AppDataSource } from "../../src/shared/infrastructure/config/data-source";
 import { getRedis, getRedisWorker, closeRedisConnections } from "../../src/shared/infrastructure/config/redis";
-import { setReservationPersistenceWorker } from "../../src/shared/runtime/workerRegistry";
+import {
+  setReservationExpiryWorker,
+  setReservationPersistenceWorker,
+} from "../../src/shared/runtime/workerRegistry";
 import { PaymentService } from "../../src/modules/payment/application/PaymentService";
+import { ReservationExpiryWorker } from "../../src/modules/sales/infrastructure/workers/ReservationExpiryWorker";
 import { ReservationPersistenceWorker } from "../../src/modules/sales/infrastructure/workers/ReservationPersistenceWorker";
 
 export interface TestContext {
@@ -17,16 +21,19 @@ export interface TestContext {
   dataSource: DataSource;
   redis: Redis;
   persistenceWorker: ReservationPersistenceWorker | null;
+  expiryWorker: ReservationExpiryWorker | null;
 }
 
 export interface SetupTestContextOptions {
   startWorker?: boolean;
+  startExpiryWorker?: boolean;
 }
 
 export async function setupTestContext(
   options: SetupTestContextOptions = {},
 ): Promise<TestContext> {
   const startWorker = options.startWorker ?? true;
+  const startExpiryWorker = options.startExpiryWorker ?? false;
 
   if (!AppDataSource.isInitialized) {
     await AppDataSource.initialize();
@@ -37,15 +44,27 @@ export async function setupTestContext(
   await redis.ping();
 
   let persistenceWorker: ReservationPersistenceWorker | null = null;
+  let expiryWorker: ReservationExpiryWorker | null = null;
+  const paymentService = new PaymentService(AppDataSource, redis);
 
   if (startWorker) {
     persistenceWorker = new ReservationPersistenceWorker(
       AppDataSource,
       getRedisWorker(),
-      new PaymentService(AppDataSource, redis),
+      paymentService,
     );
     await persistenceWorker.start();
     setReservationPersistenceWorker(persistenceWorker);
+  }
+
+  if (startExpiryWorker) {
+    expiryWorker = new ReservationExpiryWorker(
+      AppDataSource,
+      redis,
+      paymentService,
+    );
+    await expiryWorker.start();
+    setReservationExpiryWorker(expiryWorker);
   }
 
   const app = createApp();
@@ -56,10 +75,13 @@ export async function setupTestContext(
     dataSource: AppDataSource,
     redis,
     persistenceWorker,
+    expiryWorker,
   };
 }
 
 export async function teardownTestContext(ctx: TestContext): Promise<void> {
+  await ctx.expiryWorker?.stop();
+  setReservationExpiryWorker(null);
   await ctx.persistenceWorker?.stop();
   setReservationPersistenceWorker(null);
 
