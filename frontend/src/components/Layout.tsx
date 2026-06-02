@@ -24,6 +24,7 @@ import {
   IconChevronDown,
   IconLayoutDashboard,
   IconLogout,
+  IconShield,
   IconTicket,
   IconUser,
 } from "@tabler/icons-react";
@@ -47,14 +48,20 @@ function NavLinks({
   onNavigate,
   currentPath,
   isProducer,
+  isAdmin,
 }: {
   onNavigate?: () => void;
   currentPath: string;
   isProducer: boolean;
+  isAdmin: boolean;
 }) {
-  const links = isProducer
-    ? [...CLIENT_NAV_LINKS, { to: "/produtor", label: "Produtor", icon: IconLayoutDashboard } as const]
-    : CLIENT_NAV_LINKS;
+  const links = [
+    ...CLIENT_NAV_LINKS,
+    ...(isProducer
+      ? [{ to: "/produtor", label: "Produtor", icon: IconLayoutDashboard } as const]
+      : []),
+    ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: IconShield } as const] : []),
+  ];
 
   return (
     <Group gap="lg">
@@ -103,6 +110,7 @@ export function Layout() {
   const isFullWidthPage = isHome || isHeroPage;
 
   const isProducer = user?.role === "PRODUCER" || user?.role === "ADMIN";
+  const isAdmin = user?.role === "ADMIN";
 
   const handleLogout = () => {
     clearSession();
@@ -164,7 +172,7 @@ export function Layout() {
             </Group>
 
             <Group gap="lg" visibleFrom="sm">
-              <NavLinks onNavigate={close} currentPath={currentPath} isProducer={isProducer} />
+              <NavLinks onNavigate={close} currentPath={currentPath} isProducer={isProducer} isAdmin={isAdmin} />
             </Group>
 
             <Group gap="sm" wrap="nowrap">
@@ -240,7 +248,7 @@ export function Layout() {
 
       <AppShell.Navbar p="md" hiddenFrom="sm">
         <Stack gap="md">
-          <NavLinks onNavigate={close} currentPath={currentPath} isProducer={isProducer} />
+          <NavLinks onNavigate={close} currentPath={currentPath} isProducer={isProducer} isAdmin={isAdmin} />
           {isProducer ? (
             <Button
               component={Link}

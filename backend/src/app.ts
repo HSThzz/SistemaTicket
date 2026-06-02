@@ -4,6 +4,7 @@
  */
 
 import express from "express";
+import helmet from "helmet";
 import { corsMiddleware } from "./shared/interfaces/http/middlewares/corsMiddleware";
 import { globalRateLimiter } from "./shared/interfaces/http/middlewares/rateLimiter";
 import { requestLogger } from "./shared/interfaces/http/middlewares/requestLogger";
@@ -18,6 +19,7 @@ export function createApp(): express.Application {
   const app = express();
 
   app.set("trust proxy", 1);
+  app.use(helmet());
   app.use(corsMiddleware);
   app.use(
     express.json({

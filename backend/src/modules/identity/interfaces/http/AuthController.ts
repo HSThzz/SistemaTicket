@@ -13,6 +13,7 @@ import {
   InvalidRoleError,
   UserNotFoundError,
 } from "../../domain/errors/AuthError";
+import type { RegisterInput, LoginInput } from "../../application/AuthService";
 import { UserRole } from "../../../../shared/kernel/enums";
 import { AuthService } from "../../application/AuthService";
 
@@ -31,29 +32,10 @@ export class AuthController {
    * @returns Promise resolvida após enviar a resposta.
    */
   async register(req: Request, res: Response): Promise<void> {
-    const { name, email, password, document } = req.body as {
-      name?: string;
-      email?: string;
-      password?: string;
-      document?: string;
-    };
-
-    if (!name || !email || !password || !document) {
-      res.status(400).json({
-        error: "name, email, password and document are required",
-        code: "VALIDATION_ERROR",
-      });
-      return;
-    }
+    const body = req.body as RegisterInput;
 
     try {
-      const result = await authService.register({
-        name,
-        email,
-        password,
-        document,
-      });
-
+      const result = await authService.register(body);
       res.status(201).json(result);
     } catch (error) {
       this.handleError(res, error);
@@ -87,21 +69,10 @@ export class AuthController {
    * @returns Promise resolvida após enviar a resposta.
    */
   async login(req: Request, res: Response): Promise<void> {
-    const { email, password } = req.body as {
-      email?: string;
-      password?: string;
-    };
-
-    if (!email || !password) {
-      res.status(400).json({
-        error: "email and password are required",
-        code: "VALIDATION_ERROR",
-      });
-      return;
-    }
+    const body = req.body as LoginInput;
 
     try {
-      const result = await authService.login({ email, password });
+      const result = await authService.login(body);
       res.status(200).json(result);
     } catch (error) {
       this.handleError(res, error);
@@ -109,37 +80,28 @@ export class AuthController {
   }
 
   /**
-   * PATCH /auth/users/:userId/role — altera papel (somente ADMIN).
-   * @param req - Parâmetro userId e corpo com role válido.
-   * @param res - 200 com user atualizado ou erro.
-   * @returns Promise resolvida após enviar a resposta.
+   * GET /auth/users/lookup?email= — busca usuário por e-mail (ADMIN).
    */
-  async updateUserRole(req: Request, res: Response): Promise<void> {
-    const userIdParam = req.params.userId;
-    const userId =
-      typeof userIdParam === "string"
-        ? userIdParam
-        : Array.isArray(userIdParam)
-          ? userIdParam[0]
-          : "";
-
-    const { role } = req.body as { role?: string };
-
-    if (!userId) {
-      res.status(400).json({ error: "userId is required", code: "VALIDATION_ERROR" });
-      return;
-    }
-
-    if (!role || !(role in UserRole)) {
-      res.status(400).json({ error: "Valid role is required", code: "VALIDATION_ERROR" });
-      return;
-    }
+  async lookupUser(req: Request, res: Response): Promise<void> {
+    const { email } = req.query as { email: string };
 
     try {
-      const user = await authService.updateUserRole(
-        userId,
-        UserRole[role as keyof typeof UserRole],
-      );
+      const user = await authService.lookupUserByEmail(email);
+      res.status(200).json({ user });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * PATCH /auth/users/:userId/role — altera papel (somente ADMIN).
+   */
+  async updateUserRole(req: Request, res: Response): Promise<void> {
+    const { userId } = req.params as { userId: string };
+    const { role } = req.body as { role: UserRole };
+
+    try {
+      const user = await authService.updateUserRole(userId, role);
       res.status(200).json({ user });
     } catch (error) {
       this.handleError(res, error);

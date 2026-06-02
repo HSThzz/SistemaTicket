@@ -4,6 +4,7 @@
  */
 
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AdminRoute } from "./components/AdminRoute";
 import { GuestRoute } from "./components/GuestRoute";
 import { Layout } from "./components/Layout";
 import { ProducerRoute } from "./components/ProducerRoute";
@@ -21,6 +22,7 @@ import { ProducerCreateEventPage } from "./pages/producer/ProducerCreateEventPag
 import { ProducerDashboardPage } from "./pages/producer/ProducerDashboardPage";
 import { ProducerEventsPage } from "./pages/producer/ProducerEventsPage";
 import { ProducerManageEventPage } from "./pages/producer/ProducerManageEventPage";
+import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
 
 /**
  * Aplicação SPA: layout compartilhado, rotas públicas, protegidas e área do produtor.
@@ -51,6 +53,10 @@ export default function App() {
               <Route path="produtor/eventos/novo" element={<ProducerCreateEventPage />} />
               <Route path="produtor/eventos/:eventId" element={<ProducerManageEventPage />} />
               <Route path="produtor/check-in" element={<ProducerCheckInPage />} />
+            </Route>
+
+            <Route element={<AdminRoute />}>
+              <Route path="admin" element={<AdminDashboardPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

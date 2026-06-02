@@ -6,6 +6,7 @@
 import type { DataSource } from "typeorm";
 import { Order } from "../../../shared/infrastructure/persistence/entities/Order";
 import { OrderStatus } from "../../../shared/kernel/enums";
+import { OrderNotFoundError } from "../../payment/domain/errors/PaymentError";
 import type {
   PaymentService,
   PixPaymentDetails,
@@ -23,6 +24,13 @@ export interface OrderListItem {
   eventId: string | null;
   eventTitle: string | null;
   payment: PixPaymentDetails | null;
+}
+
+/** Detalhes de pedido para painel administrativo. */
+export interface OrderAdminDetails extends OrderListItem {
+  userId: string;
+  userName: string;
+  userEmail: string;
 }
 
 /**
@@ -76,5 +84,48 @@ export class OrderQueryService {
         };
       }),
     );
+  }
+
+  /**
+   * Busca pedido por ID com dados do cliente (admin).
+   * @param orderId - UUID do pedido.
+   * @throws {OrderNotFoundError} Pedido inexistente.
+   */
+  async getOrderByIdForAdmin(orderId: string): Promise<OrderAdminDetails> {
+    const order = await this.dataSource.getRepository(Order).findOne({
+      where: { id: orderId },
+      relations: {
+        user: true,
+        reservation: {
+          ticketLot: {
+            event: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new OrderNotFoundError(orderId);
+    }
+
+    const event = order.reservation?.ticketLot?.event;
+    const payment =
+      order.status === OrderStatus.PENDING
+        ? await this.paymentService.resolvePixPaymentDetails(order)
+        : null;
+
+    return {
+      id: order.id,
+      status: order.status,
+      totalPrice: order.totalPrice,
+      paymentGatewayId: order.paymentGatewayId,
+      reservationId: order.reservationId,
+      eventId: event?.id ?? null,
+      eventTitle: event?.title ?? null,
+      payment,
+      userId: order.userId,
+      userName: order.user.name,
+      userEmail: order.user.email,
+    };
   }
 }

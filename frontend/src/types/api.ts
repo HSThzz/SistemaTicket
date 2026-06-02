@@ -145,6 +145,13 @@ export interface OrderListItem {
   payment: PixPaymentDetails | null;
 }
 
+/** Pedido com dados do cliente (painel admin). */
+export interface OrderAdminDetails extends OrderListItem {
+  userId: string;
+  userName: string;
+  userEmail: string;
+}
+
 /** Métricas de vendas e check-in de um evento no painel do produtor. */
 export interface ProducerEventStats {
   eventId: string;

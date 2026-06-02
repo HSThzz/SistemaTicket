@@ -11,6 +11,10 @@ Itens priorizados para evolução do produto. Atualizado conforme entregas.
 - [x] Middleware global de erros HTTP (`errorHandler`)
 - [x] Health check inclui `expiryWorker`
 - [x] Teste de integração: expiração via TTL Redis + worker
+- [x] **Helmet** (headers de segurança HTTP)
+- [x] **Zod** nas rotas críticas (auth, reserva, admin)
+- [x] **Painel ADMIN** (`/admin`): buscar usuário, alterar papel, consultar e reembolsar pedidos
+- [x] CI frontend (lint + build)
 
 ## Crítico / curto prazo
 
@@ -18,23 +22,20 @@ Itens priorizados para evolução do produto. Atualizado conforme entregas.
 |------|-----------|
 | Reconciliação de estoque | Job que alinha `stock:ticket-lot:*` (Redis) com `availableQuantity` (PostgreSQL) |
 | Testes Mercado Pago | Integração com webhook real ou sandbox em CI |
-| Helmet + headers de segurança | Hardening HTTP na API |
+| Expandir Zod | Demais controllers (eventos, check-in, pagamentos) |
 
 ## Alta prioridade
 
 | Item | Descrição |
 |------|-----------|
-| Validação com Zod | Schemas nos controllers (substituir `if (!field)` manual) |
-| Painel ADMIN (frontend) | Promover produtor (`PATCH /auth/users/:id/role`), reembolso (`POST /orders/:id/refund`) |
 | OpenAPI + tipos gerados | Contrato único API ↔ frontend |
-| CI frontend | `npm run build` e `npm run lint` no GitHub Actions |
 | Repositórios DDD | Interfaces em `domain/`, implementação TypeORM em `infrastructure/` |
+| Domain events | Ex.: `OrderPaid` → emissão de tickets desacoplada |
 
 ## Média prioridade
 
 | Item | Descrição |
 |------|-----------|
-| Domain events | Ex.: `OrderPaid` → emissão de tickets desacoplada |
 | Upload de imagem de evento | Storage (S3/Supabase) em vez de só URL |
 | E2E Playwright | Fluxo reserva → PIX → ingressos |
 | React Query | Cache e polling de reserva no checkout |

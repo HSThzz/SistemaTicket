@@ -97,6 +97,29 @@ export class OrderController {
   }
 
   /**
+   * Detalhes de pedido para admin (confirmação antes de reembolso).
+   */
+  async getByIdAdmin(req: Request, res: Response): Promise<void> {
+    const { id } = req.params as { id: string };
+
+    try {
+      const order = await orderQueryService.getOrderByIdForAdmin(id);
+      res.status(200).json({ order });
+    } catch (error) {
+      if (error instanceof OrderNotFoundError) {
+        res.status(404).json({ error: error.message, code: error.code });
+        return;
+      }
+
+      logger.error(CONTEXT, "Failed to get order for admin", {
+        orderId: id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      res.status(500).json({ error: "Failed to get order", code: "INTERNAL_ERROR" });
+    }
+  }
+
+  /**
    * Reembolsa pedido pago (somente admin via rota).
    * @param req - Parâmetro `id` do pedido.
    * @param res - `{ refund }` ou erro de negócio/gateway.

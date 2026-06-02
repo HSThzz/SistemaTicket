@@ -47,17 +47,9 @@ export class PurchaseController {
     }
 
     const { ticketLotId, quantity } = req.body as {
-      ticketLotId?: string;
-      quantity?: number;
+      ticketLotId: string;
+      quantity: number;
     };
-
-    if (!ticketLotId || quantity === undefined) {
-      res.status(400).json({
-        error: "ticketLotId and quantity are required",
-        code: "VALIDATION_ERROR",
-      });
-      return;
-    }
 
     try {
       const result = await purchaseService.reserveTickets(

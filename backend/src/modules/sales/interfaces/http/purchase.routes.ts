@@ -9,6 +9,8 @@ import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/a
 import { reserveRateLimiter } from "../../../../shared/interfaces/http/middlewares/rateLimiter";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
 import { UserRole } from "../../../../shared/kernel/enums";
+import { validateBody } from "../../../../shared/interfaces/http/middlewares/validate";
+import { reserveBodySchema } from "../../../../shared/interfaces/http/validation/sales.schemas";
 
 const router = Router();
 
@@ -16,6 +18,7 @@ router.post(
   "/reserve",
   reserveRateLimiter,
   authMiddleware,
+  validateBody(reserveBodySchema),
   (req, res) => void purchaseController.reserve(req, res),
 );
 

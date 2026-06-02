@@ -13,7 +13,6 @@ import { UserRole } from "../../../shared/kernel/enums";
 import {
   EmailAlreadyExistsError,
   InvalidCredentialsError,
-  InvalidRoleError,
   UserNotFoundError,
 } from "../domain/errors/AuthError";
 
@@ -176,10 +175,6 @@ export class AuthService {
    * @throws {UserNotFoundError} Quando o usuário não existe.
    */
   async updateUserRole(userId: string, role: UserRole): Promise<AuthResponse["user"]> {
-    if (!(role in UserRole)) {
-      throw new InvalidRoleError(String(role));
-    }
-
     const repository = this.dataSource.getRepository(User);
     const user = await repository.findOne({ where: { id: userId } });
 
@@ -195,6 +190,29 @@ export class AuthService {
       email: user.email,
       role: user.role,
     });
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+  }
+
+  /**
+   * Busca usuário por e-mail (operação administrativa).
+   * @param email - E-mail exato do usuário.
+   * @returns Dados públicos do usuário.
+   * @throws {UserNotFoundError} Quando não há cadastro com esse e-mail.
+   */
+  async lookupUserByEmail(email: string): Promise<AuthResponse["user"]> {
+    const user = await this.dataSource.getRepository(User).findOne({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (!user) {
+      throw new UserNotFoundError(email);
+    }
 
     return {
       id: user.id,

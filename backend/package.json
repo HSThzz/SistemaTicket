@@ -27,6 +27,7 @@
     "express": "^5.1.0",
     "express-rate-limit": "^8.5.2",
     "googleapis": "^172.0.0",
+    "helmet": "^8.2.0",
     "ioredis": "^5.11.0",
     "jsonwebtoken": "^9.0.3",
     "passkit-generator": "^3.5.7",
@@ -35,7 +36,8 @@
     "pino-pretty": "^13.0.0",
     "rate-limit-redis": "^5.0.0",
     "reflect-metadata": "^0.2.2",
-    "typeorm": "^0.3.24"
+    "typeorm": "^0.3.24",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

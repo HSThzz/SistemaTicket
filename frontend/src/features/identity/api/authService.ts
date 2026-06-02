@@ -47,3 +47,27 @@ export async function getMe(): Promise<AuthUser> {
   const { data } = await api.get<{ user: AuthUser }>("/auth/me");
   return data.user;
 }
+
+/**
+ * Busca usuário por e-mail (admin).
+ */
+export async function lookupUserByEmail(email: string): Promise<AuthUser> {
+  const { data } = await api.get<{ user: AuthUser }>("/auth/users/lookup", {
+    params: { email },
+  });
+  return data.user;
+}
+
+/**
+ * Altera o papel de um usuário (admin).
+ */
+export async function updateUserRole(
+  userId: string,
+  role: AuthUser["role"],
+): Promise<AuthUser> {
+  const { data } = await api.patch<{ user: AuthUser }>(
+    `/auth/users/${userId}/role`,
+    { role },
+  );
+  return data.user;
+}
