@@ -70,6 +70,10 @@ export const env = {
     port: Number(process.env.REDIS_PORT ?? "6379"),
     db: Number(process.env.REDIS_DB ?? "0"),
   },
+  /** Intervalo do job de reconciliação Redis ↔ PostgreSQL (0 = desligado). */
+  stockReconciliationIntervalMs: Number(
+    process.env.STOCK_RECONCILIATION_INTERVAL_MS ?? "300000",
+  ),
   wallet: {
     apple: {
       wwdrCertPath: process.env.APPLE_WWDR_CERT_PATH ?? "",

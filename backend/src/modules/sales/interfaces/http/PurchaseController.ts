@@ -17,14 +17,22 @@ import {
   ReservationAccessDeniedError,
   ReservationNotFoundError,
 } from "../../domain/errors/PurchaseError";
-import { getReservationPersistenceWorker } from "../../../../shared/runtime/workerRegistry";
+import {
+  getReservationPersistenceWorker,
+  getStockReconciliationWorker,
+} from "../../../../shared/runtime/workerRegistry";
 import { QueueMonitorService } from "../../../../shared/application/QueueMonitorService";
 import { ReservationStatusService } from "../../application/ReservationStatusService";
 import { PurchaseService } from "../../application/PurchaseService";
+import { StockReconciliationService } from "../../application/StockReconciliationService";
 
 const CONTEXT = "PurchaseController";
 const logger = Logger.getInstance();
 const purchaseService = new PurchaseService(AppDataSource, getRedis());
+const stockReconciliationService = new StockReconciliationService(
+  AppDataSource,
+  getRedis(),
+);
 const reservationStatusService = new ReservationStatusService(
   AppDataSource,
   getRedis(),
@@ -273,6 +281,30 @@ export class PurchaseController {
       },
       sampledAt: new Date().toISOString(),
     });
+  }
+
+  /**
+   * Executa reconciliação manual de estoque Redis ↔ PostgreSQL (ADMIN).
+   * @param _req - Requisição autenticada com papel ADMIN.
+   * @param res - Relatório de lotes verificados e corrigidos.
+   */
+  async reconcileStock(_req: Request, res: Response): Promise<void> {
+    try {
+      const worker = getStockReconciliationWorker();
+      const report = worker
+        ? await worker.runOnce()
+        : await stockReconciliationService.reconcileAll();
+
+      res.status(200).json(report);
+    } catch (error) {
+      logger.error(CONTEXT, "Manual stock reconciliation failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      res.status(500).json({
+        error: "Stock reconciliation failed",
+        code: "INTERNAL_ERROR",
+      });
+    }
   }
 
   private handlePurchaseError(

@@ -26,30 +26,6 @@ const eventService = new EventService(AppDataSource);
 const eventDashboardService = new EventDashboardService(AppDataSource);
 
 /**
- * Converte valor de body em `EventStatus` quando válido.
- * @param value - Valor recebido do cliente.
- * @returns Status parseado ou `undefined` se omitido.
- * @throws {Error} Quando o valor não é string ou não é membro do enum.
- */
-function parseEventStatus(value: unknown): EventStatus | undefined {
-  if (value === undefined) return undefined;
-  if (typeof value !== "string") throw new Error("Invalid status");
-  if (!(value in EventStatus)) throw new Error("Invalid status");
-  return EventStatus[value as keyof typeof EventStatus];
-}
-
-/**
- * Extrai eventId de `req.params.eventId` (string ou array).
- * @param value - Parâmetro bruto do Express.
- * @returns ID normalizado ou string vazia.
- */
-function parseEventId(value: unknown): string {
-  if (typeof value === "string") return value;
-  if (Array.isArray(value) && typeof value[0] === "string") return value[0];
-  return "";
-}
-
-/**
  * Obtém ator autenticado da requisição ou responde 401.
  * @param req - Requisição Express.
  * @param res - Resposta Express.
@@ -157,11 +133,7 @@ export class EventController {
    * @returns Promise resolvida após enviar a resposta.
    */
   async getPublished(req: Request, res: Response): Promise<void> {
-    const eventId = parseEventId(req.params.eventId);
-    if (!eventId) {
-      res.status(400).json({ error: "eventId is required", code: "VALIDATION_ERROR" });
-      return;
-    }
+    const { eventId } = req.params as { eventId: string };
 
     const event = await eventService.getPublishedById(eventId);
     if (!event) {
@@ -183,23 +155,26 @@ export class EventController {
     if (!actor) return;
 
     try {
-      const { title, description, date, location, imageUrl, status } = req.body as Record<string, unknown>;
-      if (!title || !description || !date || !location) {
-        res.status(400).json({
-          error: "title, description, date and location are required",
-          code: "VALIDATION_ERROR",
-        });
-        return;
-      }
+      const { title, description, date, location, imageUrl, status } = req.body as {
+        title: string;
+        description: string;
+        date: string;
+        location: string;
+        imageUrl?: string | null;
+        status?: EventStatus;
+      };
 
       const created = await eventService.createEvent(
         {
-          title: String(title),
-          description: String(description),
-          date: String(date),
-          location: String(location),
-          imageUrl: imageUrl === undefined || imageUrl === null ? undefined : String(imageUrl),
-          status: parseEventStatus(status),
+          title,
+          description,
+          date,
+          location,
+          imageUrl:
+            imageUrl === undefined || imageUrl === null || imageUrl === ""
+              ? undefined
+              : imageUrl,
+          status,
         },
         actor,
       );
@@ -220,28 +195,32 @@ export class EventController {
     const actor = requireActor(req, res);
     if (!actor) return;
 
-    const eventId = parseEventId(req.params.eventId);
-    if (!eventId) {
-      res.status(400).json({ error: "eventId is required", code: "VALIDATION_ERROR" });
-      return;
-    }
+    const { eventId } = req.params as { eventId: string };
 
     try {
-      const { title, description, date, location, imageUrl, status } = req.body as Record<string, unknown>;
+      const { title, description, date, location, imageUrl, status } = req.body as {
+        title?: string;
+        description?: string;
+        date?: string;
+        location?: string;
+        imageUrl?: string | null;
+        status?: EventStatus;
+      };
+
       const updated = await eventService.updateEvent(
         eventId,
         {
-          title: title === undefined ? undefined : String(title),
-          description: description === undefined ? undefined : String(description),
-          date: date === undefined ? undefined : String(date),
-          location: location === undefined ? undefined : String(location),
+          title,
+          description,
+          date,
+          location,
           imageUrl:
             imageUrl === undefined
               ? undefined
-              : imageUrl === null
+              : imageUrl === null || imageUrl === ""
                 ? null
-                : String(imageUrl),
-          status: parseEventStatus(status),
+                : imageUrl,
+          status,
         },
         actor,
       );
@@ -262,30 +241,23 @@ export class EventController {
     const actor = requireActor(req, res);
     if (!actor) return;
 
-    const eventId = parseEventId(req.params.eventId);
-    if (!eventId) {
-      res.status(400).json({ error: "eventId is required", code: "VALIDATION_ERROR" });
-      return;
-    }
+    const { eventId } = req.params as { eventId: string };
 
     try {
-      const { name, price, totalQuantity, availableQuantity } = req.body as Record<string, unknown>;
-      if (!name || price === undefined || totalQuantity === undefined) {
-        res.status(400).json({
-          error: "name, price and totalQuantity are required",
-          code: "VALIDATION_ERROR",
-        });
-        return;
-      }
+      const { name, price, totalQuantity, availableQuantity } = req.body as {
+        name: string;
+        price: number;
+        totalQuantity: number;
+        availableQuantity?: number;
+      };
 
       const lot = await eventService.createTicketLot(
         eventId,
         {
-          name: String(name),
-          price: Number(price),
-          totalQuantity: Number(totalQuantity),
-          availableQuantity:
-            availableQuantity === undefined ? undefined : Number(availableQuantity),
+          name,
+          price,
+          totalQuantity,
+          availableQuantity,
         },
         actor,
       );

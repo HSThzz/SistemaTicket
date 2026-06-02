@@ -9,8 +9,8 @@ import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/a
 import { reserveRateLimiter } from "../../../../shared/interfaces/http/middlewares/rateLimiter";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
 import { UserRole } from "../../../../shared/kernel/enums";
-import { validateBody } from "../../../../shared/interfaces/http/middlewares/validate";
-import { reserveBodySchema } from "../../../../shared/interfaces/http/validation/sales.schemas";
+import { validateBody, validateParams } from "../../../../shared/interfaces/http/middlewares/validate";
+import { reserveBodySchema, reservationIdParamsSchema } from "../../../../shared/interfaces/http/validation/sales.schemas";
 
 const router = Router();
 
@@ -25,7 +25,15 @@ router.post(
 router.get(
   "/reservations/:reservationId",
   authMiddleware,
+  validateParams(reservationIdParamsSchema),
   (req, res) => void purchaseController.getReservationStatus(req, res),
+);
+
+router.post(
+  "/ops/stock/reconcile",
+  authMiddleware,
+  roleMiddleware([UserRole.ADMIN]),
+  (req, res) => void purchaseController.reconcileStock(req, res),
 );
 
 router.get(

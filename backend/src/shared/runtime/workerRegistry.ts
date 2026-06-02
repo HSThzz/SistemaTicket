@@ -5,9 +5,11 @@
 
 import type { ReservationExpiryWorker } from "../../modules/sales/infrastructure/workers/ReservationExpiryWorker";
 import type { ReservationPersistenceWorker } from "../../modules/sales/infrastructure/workers/ReservationPersistenceWorker";
+import type { StockReconciliationWorker } from "../../modules/sales/infrastructure/workers/StockReconciliationWorker";
 
 let persistenceWorker: ReservationPersistenceWorker | null = null;
 let expiryWorker: ReservationExpiryWorker | null = null;
+let stockReconciliationWorker: StockReconciliationWorker | null = null;
 
 /**
  * Registra ou remove a instância do worker de persistência (usado no health check).
@@ -45,4 +47,22 @@ export function setReservationExpiryWorker(
  */
 export function getReservationExpiryWorker(): ReservationExpiryWorker | null {
   return expiryWorker;
+}
+
+/**
+ * Registra ou remove a instância do worker de reconciliação de estoque.
+ * @param worker - Instância do worker ou `null` para limpar o registro.
+ */
+export function setStockReconciliationWorker(
+  worker: StockReconciliationWorker | null,
+): void {
+  stockReconciliationWorker = worker;
+}
+
+/**
+ * Retorna o worker de reconciliação de estoque registrado, se existir.
+ * @returns Worker de reconciliação ou `null` quando não registrado.
+ */
+export function getStockReconciliationWorker(): StockReconciliationWorker | null {
+  return stockReconciliationWorker;
 }

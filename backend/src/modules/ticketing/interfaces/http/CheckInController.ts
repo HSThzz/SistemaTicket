@@ -34,18 +34,10 @@ export class CheckInController {
       return;
     }
 
-    const { unique_code: uniqueCode } = req.body as { unique_code?: string };
-
-    if (!uniqueCode || typeof uniqueCode !== "string") {
-      res.status(400).json({
-        error: "unique_code is required",
-        code: "VALIDATION_ERROR",
-      });
-      return;
-    }
+    const { unique_code: uniqueCode } = req.body as { unique_code: string };
 
     try {
-      const result = await checkInService.checkIn(uniqueCode.trim(), {
+      const result = await checkInService.checkIn(uniqueCode, {
         userId: req.user.id,
         role: req.user.role,
       });

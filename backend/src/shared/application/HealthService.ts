@@ -9,6 +9,7 @@ import { Logger } from "../infrastructure/config/logger";
 import {
   getReservationExpiryWorker,
   getReservationPersistenceWorker,
+  getStockReconciliationWorker,
 } from "../runtime/workerRegistry";
 import { env } from "../infrastructure/config/env";
 import { QueueMonitorService } from "./QueueMonitorService";
@@ -46,6 +47,12 @@ export interface HealthReport {
       redisDb: number;
       listenPattern: string;
     };
+    stockReconciliation: ComponentHealth & {
+      running: boolean;
+      intervalMs?: number;
+      lastCheckedAt?: string;
+      lastCorrectedCount?: number;
+    };
     queues: ComponentHealth & {
       persistQueueLength: number;
       retryQueueLength: number;
@@ -79,15 +86,24 @@ export class HealthService {
    * @returns Relatório com status geral e por componente.
    */
   async check(): Promise<HealthReport> {
-    const [postgres, redis, queues, worker, expiryWorker] = await Promise.all([
+    const [postgres, redis, queues, worker, expiryWorker, stockReconciliation] =
+      await Promise.all([
       this.checkPostgres(),
       this.checkRedis(),
       this.checkQueues(),
       Promise.resolve(this.checkWorker()),
       Promise.resolve(this.checkExpiryWorker()),
+      Promise.resolve(this.checkStockReconciliation()),
     ]);
 
-    const components = { postgres, redis, worker, expiryWorker, queues };
+    const components = {
+      postgres,
+      redis,
+      worker,
+      expiryWorker,
+      stockReconciliation,
+      queues,
+    };
     const status = this.resolveOverallStatus(components);
 
     const report: HealthReport = {
@@ -102,6 +118,7 @@ export class HealthService {
       redis: redis.status,
       worker: worker.status,
       expiryWorker: expiryWorker.status,
+      stockReconciliation: stockReconciliation.status,
       queues: queues.status,
     });
 
@@ -226,6 +243,37 @@ export class HealthService {
     };
   }
 
+  /** Verifica se o worker de reconciliação de estoque está registrado e ativo. */
+  private checkStockReconciliation(): HealthReport["components"]["stockReconciliation"] {
+    const worker = getStockReconciliationWorker();
+
+    if (!worker) {
+      return {
+        status: env.stockReconciliationIntervalMs <= 0 ? "ok" : "degraded",
+        running: false,
+        ...(env.stockReconciliationIntervalMs <= 0
+          ? {}
+          : { error: "StockReconciliationWorker is not registered" }),
+      };
+    }
+
+    const lastReport = worker.getLastReport();
+    const lastError = worker.getLastError();
+
+    return {
+      status: worker.isRunning() && !lastError ? "ok" : "degraded",
+      running: worker.isRunning(),
+      intervalMs: worker.getIntervalMs(),
+      ...(lastReport
+        ? {
+            lastCheckedAt: lastReport.checkedAt,
+            lastCorrectedCount: lastReport.correctedCount,
+          }
+        : {}),
+      ...(lastError ? { error: lastError } : {}),
+    };
+  }
+
   /** Verifica se o worker de persistência de reservas está registrado e ativo. */
   private checkWorker(): HealthReport["components"]["worker"] {
     const worker = getReservationPersistenceWorker();
@@ -261,6 +309,7 @@ export class HealthService {
     if (
       components.worker.status === "degraded" ||
       components.expiryWorker.status === "degraded" ||
+      components.stockReconciliation.status === "degraded" ||
       components.queues.status === "degraded"
     ) {
       return "degraded";

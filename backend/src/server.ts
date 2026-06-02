@@ -13,16 +13,19 @@ import { closeRedisConnections, getRedis, getRedisWorker } from "./shared/infras
 import {
   setReservationExpiryWorker,
   setReservationPersistenceWorker,
+  setStockReconciliationWorker,
 } from "./shared/runtime/workerRegistry";
 import { PaymentService } from "./modules/payment/application/PaymentService";
 import { ReservationExpiryWorker } from "./modules/sales/infrastructure/workers/ReservationExpiryWorker";
 import { ReservationPersistenceWorker } from "./modules/sales/infrastructure/workers/ReservationPersistenceWorker";
+import { StockReconciliationWorker } from "./modules/sales/infrastructure/workers/StockReconciliationWorker";
 
 const logger = Logger.getInstance();
 const CONTEXT = "Server";
 
 let expiryWorker: ReservationExpiryWorker | null = null;
 let persistenceWorker: ReservationPersistenceWorker | null = null;
+let stockReconciliationWorker: StockReconciliationWorker | null = null;
 
 /**
  * Inicializa dependências (PostgreSQL, Redis), workers de reserva e sobe o HTTP server.
@@ -81,6 +84,26 @@ async function bootstrap(): Promise<void> {
     process.exit(1);
   }
 
+  if (env.stockReconciliationIntervalMs > 0) {
+    stockReconciliationWorker = new StockReconciliationWorker(
+      AppDataSource,
+      redis,
+      env.stockReconciliationIntervalMs,
+    );
+
+    try {
+      await stockReconciliationWorker.start();
+      setStockReconciliationWorker(stockReconciliationWorker);
+    } catch (error) {
+      logger.error(CONTEXT, "Failed to start stock reconciliation worker", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      process.exit(1);
+    }
+  } else {
+    logger.info(CONTEXT, "Stock reconciliation worker disabled (interval <= 0)");
+  }
+
   const app = createApp();
 
   app.listen(env.port, () => {
@@ -102,6 +125,8 @@ async function shutdown(): Promise<void> {
   setReservationExpiryWorker(null);
   await persistenceWorker?.stop();
   setReservationPersistenceWorker(null);
+  await stockReconciliationWorker?.stop();
+  setStockReconciliationWorker(null);
   await AppDataSource.destroy();
   await closeRedisConnections();
 

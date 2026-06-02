@@ -19,3 +19,8 @@ export const reserveBodySchema = z.object({
 export const orderIdParamsSchema = z.object({
   id: z.string().uuid("ID do pedido inválido"),
 });
+
+/** Parâmetro UUID de reserva. */
+export const reservationIdParamsSchema = z.object({
+  reservationId: z.string().uuid("ID da reserva inválido"),
+});

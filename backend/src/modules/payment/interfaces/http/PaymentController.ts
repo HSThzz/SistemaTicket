@@ -51,12 +51,7 @@ export class PaymentController {
       return;
     }
 
-    const { orderId } = req.body as { orderId?: string };
-
-    if (!orderId) {
-      res.status(400).json({ error: "orderId is required", code: "VALIDATION_ERROR" });
-      return;
-    }
+    const { orderId } = req.body as { orderId: string };
 
     try {
       await paymentService.simulateDevPayment(orderId, req.user.id);
