@@ -133,6 +133,13 @@ export interface TicketListItem {
   };
 }
 
+/** Resposta paginada da listagem de ingressos do usuário. */
+export interface TicketListPage {
+  tickets: TicketListItem[];
+  nextCursor: string | null;
+  hasNextPage: boolean;
+}
+
 /** Pedido listado na área do cliente com resumo do evento e PIX opcional. */
 export interface OrderListItem {
   id: string;
@@ -143,6 +150,13 @@ export interface OrderListItem {
   eventId: string | null;
   eventTitle: string | null;
   payment: PixPaymentDetails | null;
+}
+
+/** Resposta paginada da listagem de pedidos do usuário. */
+export interface OrderListPage {
+  orders: OrderListItem[];
+  nextCursor: string | null;
+  hasNextPage: boolean;
 }
 
 /** Pedido com dados do cliente (painel admin). */

@@ -4,7 +4,13 @@
  */
 
 import { api } from "../../../shared/api/client";
-import type { TicketListItem } from "../../../types/api";
+import type { TicketListItem, TicketListPage } from "../../../types/api";
+
+export interface ListMyTicketsParams {
+  limit?: number;
+  cursor?: string;
+  status?: "ACTIVE" | "USED" | "CANCELLED";
+}
 
 /**
  * Ordena ingressos: futuros primeiro (mais próximos), passados por data decrescente.
@@ -33,9 +39,21 @@ export function sortTicketsByEventDate(tickets: TicketListItem[]): TicketListIte
 }
 
 /**
- * Lista ingressos do cliente logado, já ordenados por data do evento.
+ * Busca uma página de ingressos do cliente logado.
+ */
+export async function fetchMyTicketsPage(
+  params: ListMyTicketsParams = {},
+): Promise<TicketListPage> {
+  const { data } = await api.get<TicketListPage>("/tickets/me", { params });
+  return data;
+}
+
+/**
+ * Lista a primeira página de ingressos, já ordenados por data do evento.
+ *
+ * @deprecated Prefira {@link fetchMyTicketsPage} para suportar paginação.
  */
 export async function listMyTickets(): Promise<TicketListItem[]> {
-  const { data } = await api.get<{ tickets: TicketListItem[] }>("/tickets/me");
-  return sortTicketsByEventDate(data.tickets);
+  const page = await fetchMyTicketsPage();
+  return sortTicketsByEventDate(page.tickets);
 }

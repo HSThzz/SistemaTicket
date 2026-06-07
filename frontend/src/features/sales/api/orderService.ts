@@ -4,14 +4,37 @@
  */
 
 import { api } from "../../../shared/api/client";
-import type { OrderAdminDetails, OrderListItem, PixPaymentDetails } from "../../../types/api";
+import type {
+  OrderAdminDetails,
+  OrderListItem,
+  OrderListPage,
+  PixPaymentDetails,
+} from "../../../types/api";
+
+export interface ListMyOrdersParams {
+  limit?: number;
+  cursor?: string;
+  status?: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+}
 
 /**
- * Lista pedidos do cliente logado.
+ * Busca uma página de pedidos do cliente logado.
+ */
+export async function fetchMyOrdersPage(
+  params: ListMyOrdersParams = {},
+): Promise<OrderListPage> {
+  const { data } = await api.get<OrderListPage>("/orders/me", { params });
+  return data;
+}
+
+/**
+ * Lista a primeira página de pedidos do cliente logado.
+ *
+ * @deprecated Prefira {@link fetchMyOrdersPage} para suportar paginação.
  */
 export async function listMyOrders(): Promise<OrderListItem[]> {
-  const { data } = await api.get<{ orders: OrderListItem[] }>("/orders/me");
-  return data.orders;
+  const page = await fetchMyOrdersPage();
+  return page.orders;
 }
 
 /**

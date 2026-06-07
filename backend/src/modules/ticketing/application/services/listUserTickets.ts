@@ -1,6 +1,7 @@
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { userIdSchema } from "../../../identity/validators/schema/userIdSchema";
-import { findTicketsByUserId } from "../queries/findTicketsByUserId";
+import { listUserTicketsQuerySchema } from "../../validators/schema/listUserTicketsQuerySchema";
+import { findManyTicketsByUserId } from "../queries/findManyTicketsByUserId";
 
 export interface TicketListItem {
   id: string;
@@ -28,13 +29,16 @@ export interface TicketListItem {
   };
 }
 
-export async function listUserTickets(
-  userId: string,
-) {
-  const id = validateSchema(userIdSchema, userId);
-  const tickets = await findTicketsByUserId(id);
+export interface ListUserTicketsResult {
+  tickets: TicketListItem[];
+  nextCursor: string | null;
+  hasNextPage: boolean;
+}
 
-  return tickets.map((ticket) => ({
+function mapTicketToListItem(
+  ticket: Awaited<ReturnType<typeof findManyTicketsByUserId>>["tickets"][number],
+): TicketListItem {
+  return {
     id: ticket.id,
     status: ticket.status,
     uniqueCode: ticket.uniqueCode,
@@ -58,5 +62,27 @@ export async function listUserTickets(
       status: ticket.order.status,
       totalPrice: ticket.order.totalPrice,
     },
-  }));
+  };
+}
+
+export async function listUserTickets(
+  userId: string,
+  query: unknown = {},
+): Promise<ListUserTicketsResult> {
+  const id = validateSchema(userIdSchema, userId);
+  const pagination = validateSchema(listUserTicketsQuerySchema, query);
+  const filters = pagination.status ? { status: pagination.status } : undefined;
+
+  const { tickets, hasNextPage, nextCursor } = await findManyTicketsByUserId({
+    userId: id,
+    limit: pagination.limit,
+    cursor: pagination.cursor,
+    filters,
+  });
+
+  return {
+    tickets: tickets.map(mapTicketToListItem),
+    nextCursor,
+    hasNextPage,
+  };
 }

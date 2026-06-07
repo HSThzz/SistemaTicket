@@ -6,6 +6,7 @@
 import type { Request, Response } from "express";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { getRedis } from "../../../../shared/infrastructure/config/redis";
+import { ValidationError } from "../../../../shared/kernel/validateSchema";
 import {
   OrderAlreadyRefundedError,
   OrderNotFoundError,
@@ -81,8 +82,8 @@ export class OrderController {
 
   /**
    * Lista pedidos do usuário autenticado com evento e PIX pendente.
-   * @param req - Usuário em `req.user`.
-   * @param res - `{ orders: OrderListItem[] }`.
+   * @param req - Usuário em `req.user`; query `limit`, `cursor` e `status` opcionais.
+   * @param res - `{ orders, nextCursor, hasNextPage }`.
    */
   async listMine(req: Request, res: Response): Promise<void> {
     if (!req.user) {
@@ -91,9 +92,18 @@ export class OrderController {
     }
 
     try {
-      const orders = await listUserOrders(req.user.id, redis);
-      res.status(200).json({ orders });
+      const result = await listUserOrders(req.user.id, req.query, redis);
+      res.status(200).json(result);
     } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(400).json({
+          error: error.message,
+          code: error.code,
+          field: error.issues[0]?.path || undefined,
+        });
+        return;
+      }
+
       logger.error(CONTEXT, "Failed to list user orders", {
         userId: req.user.id,
         error: error instanceof Error ? error.message : String(error),

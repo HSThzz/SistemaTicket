@@ -5,6 +5,7 @@
 
 import type { Request, Response } from "express";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { ValidationError } from "../../../../shared/kernel/validateSchema";
 import { listUserTickets } from "../../application/services/listUserTickets";
 
 const CONTEXT = "TicketController";
@@ -15,8 +16,8 @@ const logger = Logger.getInstance();
  */
 export class TicketController {
   /**
-   * @param req - Usuário em `req.user`.
-   * @param res - `{ tickets: TicketListItem[] }`.
+   * @param req - Usuário em `req.user`; query `limit` e `cursor` opcionais.
+   * @param res - `{ tickets, nextCursor, hasNextPage }`.
    */
   async listMine(req: Request, res: Response): Promise<void> {
     if (!req.user) {
@@ -25,9 +26,18 @@ export class TicketController {
     }
 
     try {
-      const tickets = await listUserTickets(req.user.id);
-      res.status(200).json({ tickets });
+      const result = await listUserTickets(req.user.id, req.query);
+      res.status(200).json(result);
     } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(400).json({
+          error: error.message,
+          code: error.code,
+          field: error.issues[0]?.path || undefined,
+        });
+        return;
+      }
+
       logger.error(CONTEXT, "Failed to list user tickets", {
         userId: req.user.id,
         error: error instanceof Error ? error.message : String(error),
@@ -39,4 +49,3 @@ export class TicketController {
 
 /** Instância singleton do controlador de ingressos. */
 export const ticketController = new TicketController();
-

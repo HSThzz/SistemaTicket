@@ -49,17 +49,27 @@ function countByStatus(tickets: TicketListItem[], status: string) {
 export function MyTicketsPage() {
   const [tickets, setTickets] = useState<TicketListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<TicketFilter>("all");
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasNextPage, setHasNextPage] = useState(false);
+
+  const statusParam = filter === "all" ? undefined : filter;
 
   useEffect(() => {
     let cancelled = false;
 
+    setLoading(true);
+    setError(null);
+
     ticketService
-      .listMyTickets()
-      .then((data) => {
+      .fetchMyTicketsPage({ status: statusParam })
+      .then((page) => {
         if (!cancelled) {
-          setTickets(data);
+          setTickets(page.tickets);
+          setNextCursor(page.nextCursor);
+          setHasNextPage(page.hasNextPage);
         }
       })
       .catch((err) => {
@@ -76,14 +86,35 @@ export function MyTicketsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [statusParam]);
 
-  const filteredTickets = useMemo(() => {
-    const filtered =
-      filter === "all" ? tickets : tickets.filter((ticket) => ticket.status === filter);
+  async function handleLoadMore() {
+    if (!hasNextPage || !nextCursor || loadingMore) {
+      return;
+    }
 
-    return ticketService.sortTicketsByEventDate(filtered);
-  }, [tickets, filter]);
+    setLoadingMore(true);
+    setError(null);
+
+    try {
+      const page = await ticketService.fetchMyTicketsPage({
+        cursor: nextCursor,
+        status: statusParam,
+      });
+      setTickets((current) => [...current, ...page.tickets]);
+      setNextCursor(page.nextCursor);
+      setHasNextPage(page.hasNextPage);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Não foi possível carregar mais ingressos."));
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  const displayedTickets = useMemo(
+    () => ticketService.sortTicketsByEventDate(tickets),
+    [tickets],
+  );
 
   const stats = useMemo(
     () => ({
@@ -161,7 +192,7 @@ export function MyTicketsPage() {
             />
           </AnimatedSection>
 
-          {filteredTickets.length === 0 ? (
+          {displayedTickets.length === 0 ? (
             <AnimatedSection delayMs={120}>
               <EmptyState
                 icon={<IconTicket size={32} />}
@@ -176,9 +207,22 @@ export function MyTicketsPage() {
             </AnimatedSection>
           ) : (
             <AnimatedSection delayMs={120}>
-              <TicketsWallet tickets={filteredTickets} />
+              <TicketsWallet tickets={displayedTickets} />
             </AnimatedSection>
           )}
+
+          <AnimatedSection delayMs={140}>
+            <Button
+              variant="light"
+              radius="xl"
+              fullWidth
+              loading={loadingMore}
+              disabled={!hasNextPage}
+              onClick={() => void handleLoadMore()}
+            >
+              Carregar mais
+            </Button>
+          </AnimatedSection>
         </>
       ) : null}
 

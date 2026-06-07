@@ -6,3 +6,4 @@
 export { reserveTicketsBodySchema as reserveBodySchema } from "../../../../modules/sales/validators/schema/reserveTicketsBodySchema";
 export { orderIdParamsSchema } from "../../../../modules/sales/validators/schema/orderIdSchema";
 export { reservationIdParamsSchema } from "../../../../modules/sales/validators/schema/orderIdSchema";
+export { listUserOrdersQuerySchema } from "../../../../modules/sales/validators/schema/listUserOrdersQuerySchema";

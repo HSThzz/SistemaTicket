@@ -8,8 +8,11 @@ import { checkInController } from "./CheckInController";
 import { ticketController } from "./TicketController";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
-import { validateBody } from "../../../../shared/interfaces/http/middlewares/validate";
-import { checkInBodySchema } from "../../../../shared/interfaces/http/validation/ticketing.schemas";
+import { validateBody, validateQuery } from "../../../../shared/interfaces/http/middlewares/validate";
+import {
+  checkInBodySchema,
+  listUserTicketsQuerySchema,
+} from "../../../../shared/interfaces/http/validation/ticketing.schemas";
 import { UserRole } from "../../../../shared/kernel/enums";
 
 const router = Router();
@@ -17,6 +20,7 @@ const router = Router();
 router.get(
   "/me",
   authMiddleware,
+  validateQuery(listUserTicketsQuerySchema),
   (req, res) => void ticketController.listMine(req, res),
 );
 

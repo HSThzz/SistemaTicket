@@ -47,17 +47,27 @@ const FILTER_OPTIONS: { label: string; value: OrderFilter }[] = [
 export function MyOrdersPage() {
   const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<OrderFilter>("all");
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasNextPage, setHasNextPage] = useState(false);
+
+  const statusParam = filter === "all" ? undefined : filter;
 
   useEffect(() => {
     let cancelled = false;
 
+    setLoading(true);
+    setError(null);
+
     orderService
-      .listMyOrders()
-      .then((data) => {
+      .fetchMyOrdersPage({ status: statusParam })
+      .then((page) => {
         if (!cancelled) {
-          setOrders(data);
+          setOrders(page.orders);
+          setNextCursor(page.nextCursor);
+          setHasNextPage(page.hasNextPage);
         }
       })
       .catch((err) => {
@@ -74,14 +84,30 @@ export function MyOrdersPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [statusParam]);
 
-  const filteredOrders = useMemo(() => {
-    if (filter === "all") {
-      return orders;
+  async function handleLoadMore() {
+    if (!hasNextPage || !nextCursor || loadingMore) {
+      return;
     }
-    return orders.filter((order) => order.status === filter);
-  }, [orders, filter]);
+
+    setLoadingMore(true);
+    setError(null);
+
+    try {
+      const page = await orderService.fetchMyOrdersPage({
+        cursor: nextCursor,
+        status: statusParam,
+      });
+      setOrders((current) => [...current, ...page.orders]);
+      setNextCursor(page.nextCursor);
+      setHasNextPage(page.hasNextPage);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Não foi possível carregar mais pedidos."));
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   const stats = useMemo(() => {
     const paidOrders = orders.filter((order) => order.status === "PAID");
@@ -93,6 +119,8 @@ export function MyOrdersPage() {
       totalSpent,
     };
   }, [orders]);
+
+  const showOrdersSection = orders.length > 0 || filter !== "all";
 
   if (loading) {
     return <OrdersPageSkeleton />;
@@ -127,7 +155,7 @@ export function MyOrdersPage() {
         </Alert>
       ) : null}
 
-      {!error && orders.length > 0 ? (
+      {!error && showOrdersSection ? (
         <>
           <AnimatedSection delayMs={60}>
             <SimpleGrid cols={{ base: 1, xs: 3 }} spacing="md">
@@ -161,7 +189,7 @@ export function MyOrdersPage() {
             />
           </AnimatedSection>
 
-          {filteredOrders.length === 0 ? (
+          {orders.length === 0 ? (
             <AnimatedSection delayMs={120}>
               <EmptyState
                 icon={<IconReceipt2 size={32} />}
@@ -176,7 +204,7 @@ export function MyOrdersPage() {
             </AnimatedSection>
           ) : (
             <Grid>
-              {filteredOrders.map((order, index) => (
+              {orders.map((order, index) => (
                 <Grid.Col key={order.id} span={{ base: 12, lg: 6 }}>
                   <AnimatedSection delayMs={120 + index * 40}>
                     <OrderCard order={order} />
@@ -185,10 +213,23 @@ export function MyOrdersPage() {
               ))}
             </Grid>
           )}
+
+          <AnimatedSection delayMs={140}>
+            <Button
+              variant="light"
+              radius="xl"
+              fullWidth
+              loading={loadingMore}
+              disabled={!hasNextPage}
+              onClick={() => void handleLoadMore()}
+            >
+              Carregar mais
+            </Button>
+          </AnimatedSection>
         </>
       ) : null}
 
-      {!error && orders.length === 0 ? (
+      {!error && !showOrdersSection ? (
         <AnimatedSection delayMs={60}>
           <EmptyState
             icon={<IconReceipt2 size={32} />}
