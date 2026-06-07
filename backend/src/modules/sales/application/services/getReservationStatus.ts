@@ -17,6 +17,8 @@ import {
 import { findOneOrderById } from "../queries/findOneOrderById";
 import { findOneOrderByReservationId } from "../queries/findOneOrderByReservationId";
 import { findOneReservationById } from "../queries/findOneReservationById";
+import { validateSchema } from "../../../../shared/kernel/validateSchema";
+import { getReservationStatusSchema } from "../../validators/schema/getReservationStatusSchema";
 import type {
   ReservationPhase,
   ReservationRedisPayload,
@@ -32,15 +34,20 @@ export async function getReservationStatus(
   reservationId: string,
   requesterUserId: string,
 ): Promise<ReservationStatusView> {
+  const data = validateSchema(getReservationStatusSchema, {
+    reservationId,
+    requesterUserId,
+  });
+
   const logger = Logger.getInstance();
   const queueMonitor = new QueueMonitorService(redis);
 
   const [redisRaw, paymentRaw, orderIdCached, dbReservation, queueStats] =
     await Promise.all([
-      redis.get(`${RESERVATION_KEY_PREFIX}${reservationId}`),
-      redis.get(`${PAYMENT_CACHE_KEY_PREFIX}${reservationId}`),
-      redis.get(`${ORDER_CACHE_KEY_PREFIX}${reservationId}`),
-      findOneReservationById(dataSource, reservationId),
+      redis.get(`${RESERVATION_KEY_PREFIX}${data.reservationId}`),
+      redis.get(`${PAYMENT_CACHE_KEY_PREFIX}${data.reservationId}`),
+      redis.get(`${ORDER_CACHE_KEY_PREFIX}${data.reservationId}`),
+      findOneReservationById(dataSource, data.reservationId),
       queueMonitor.getStats(),
     ]);
 
@@ -51,17 +58,17 @@ export async function getReservationStatus(
   const payment = paymentRaw ? (JSON.parse(paymentRaw) as PixPaymentDetails) : null;
 
   if (!redisPayload && !dbReservation) {
-    throw new ReservationNotFoundError(reservationId);
+    throw new ReservationNotFoundError(data.reservationId);
   }
 
   const ownerId = redisPayload?.userId ?? dbReservation?.userId;
-  if (!ownerId || ownerId !== requesterUserId) {
+  if (!ownerId || ownerId !== data.requesterUserId) {
     throw new ReservationAccessDeniedError();
   }
 
   let order: Order | null = null;
   if (dbReservation) {
-    order = await findOneOrderByReservationId(dataSource, reservationId);
+    order = await findOneOrderByReservationId(dataSource, data.reservationId);
   } else if (orderIdCached) {
     order = await findOneOrderById(dataSource, orderIdCached);
   }
@@ -69,14 +76,14 @@ export async function getReservationStatus(
   const phase = resolvePhase(dbReservation, order, payment, redisPayload);
 
   logger.info(CONTEXT, "Reservation status queried", {
-    reservationId,
+    reservationId: data.reservationId,
     phase,
-    requesterUserId,
+    requesterUserId: data.requesterUserId,
     queuePendingJobs: queueStats.persistQueueLength,
   });
 
   return {
-    reservationId,
+    reservationId: data.reservationId,
     phase,
     reservation: buildReservationView(dbReservation, redisPayload),
     order: order

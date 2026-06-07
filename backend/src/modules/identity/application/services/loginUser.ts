@@ -1,28 +1,35 @@
 import bcrypt from "bcrypt";
 import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { InvalidCredentialsError } from "../../domain/errors/AuthError";
+import {
+  loginUserSchema,
+  type LoginUserInputSchema,
+} from "../../validators/schema/loginUserSchema";
 import { buildAuthResponse } from "../helpers/buildAuthResponse";
 import { findOneUserByEmail } from "../queries/findOneUserByEmail";
-import type { AuthResponse, LoginInput } from "../types";
+import type { AuthResponse } from "../types";
 
 const CONTEXT = "loginUser";
 
 export async function loginUser(
   dataSource: DataSource,
-  input: LoginInput,
+  input: LoginUserInputSchema,
 ): Promise<AuthResponse> {
-  const user = await findOneUserByEmail(dataSource, input.email);
+  const data = validateSchema(loginUserSchema, input);
+
+  const user = await findOneUserByEmail(dataSource, data.email);
 
   if (!user) {
     Logger.getInstance().warn(CONTEXT, "Failed login attempt", {
-      email: input.email.toLowerCase(),
+      email: data.email.toLowerCase(),
       reason: "user_not_found",
     });
     throw new InvalidCredentialsError();
   }
 
-  const passwordMatches = await bcrypt.compare(input.password, user.passwordHash);
+  const passwordMatches = await bcrypt.compare(data.password, user.passwordHash);
 
   if (!passwordMatches) {
     Logger.getInstance().warn(CONTEXT, "Failed login attempt", {

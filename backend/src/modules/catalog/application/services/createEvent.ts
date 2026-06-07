@@ -2,31 +2,33 @@ import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import type { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
 import { EventStatus } from "../../../../shared/kernel/enums";
+import { validateSchema } from "../../../../shared/kernel/validateSchema";
+import {
+  createEventSchema,
+  type CreateEventInputSchema,
+} from "../../validators/schema/createEventSchema";
 import { createEvent as createEventCommand } from "../commands/createEvent";
 import { loadEventWithLots } from "../helpers/loadEventWithLots";
 import { normalizeImageUrl } from "../helpers/normalizeImageUrl";
-import type { CreateEventInput, EventActor } from "../types";
+import type { EventActor } from "../types";
 
 const CONTEXT = "createEvent";
 
 export async function createEvent(
   dataSource: DataSource,
-  input: CreateEventInput,
+  input: CreateEventInputSchema,
   actor: EventActor,
 ): Promise<Event> {
-  const date = new Date(input.date);
-  if (Number.isNaN(date.getTime())) {
-    throw new Error("Invalid date");
-  }
+  const data = validateSchema(createEventSchema, input);
 
   const saved = await createEventCommand(dataSource, {
     producerId: actor.userId,
-    title: input.title.trim(),
-    description: input.description.trim(),
-    date,
-    location: input.location.trim(),
-    imageUrl: normalizeImageUrl(input.imageUrl),
-    status: input.status ?? EventStatus.DRAFT,
+    title: data.title,
+    description: data.description,
+    date: new Date(data.date),
+    location: data.location,
+    imageUrl: normalizeImageUrl(data.imageUrl),
+    status: data.status ?? EventStatus.DRAFT,
   });
 
   Logger.getInstance().info(CONTEXT, "Event created", {

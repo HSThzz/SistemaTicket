@@ -1,4 +1,6 @@
 import type { DataSource } from "typeorm";
+import { validateSchema } from "../../../../shared/kernel/validateSchema";
+import { userIdSchema } from "../../../identity/validators/schema/userIdSchema";
 import { findTicketsByUserId } from "../queries/findTicketsByUserId";
 
 export interface TicketListItem {
@@ -31,7 +33,8 @@ export async function listUserTickets(
   dataSource: DataSource,
   userId: string,
 ): Promise<TicketListItem[]> {
-  const tickets = await findTicketsByUserId(dataSource, userId);
+  const id = validateSchema(userIdSchema, userId);
+  const tickets = await findTicketsByUserId(dataSource, id);
 
   return tickets.map((ticket) => ({
     id: ticket.id,

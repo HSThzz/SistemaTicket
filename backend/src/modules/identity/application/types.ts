@@ -4,20 +4,17 @@
  */
 
 import type { UserRole } from "../../../shared/kernel/enums";
+import type { LoginUserInputSchema } from "../validators/schema/loginUserSchema";
+import type { RegisterUserInputSchema } from "../validators/schema/registerUserSchema";
 
-/** Dados de entrada para cadastro de novo usuário. */
-export interface RegisterInput {
-  name: string;
-  email: string;
-  password: string;
-  document: string;
-}
+export type { LoginUserInputSchema } from "../validators/schema/loginUserSchema";
+export type { RegisterUserInputSchema } from "../validators/schema/registerUserSchema";
+export type { UpdateUserRoleInputSchema } from "../validators/schema/updateUserRoleSchema";
 
-/** Dados de entrada para autenticação por email e senha. */
-export interface LoginInput {
-  email: string;
-  password: string;
-}
+/** Alias legado — prefira `RegisterUserInputSchema`. */
+export type RegisterInput = RegisterUserInputSchema;
+/** Alias legado — prefira `LoginUserInputSchema`. */
+export type LoginInput = LoginUserInputSchema;
 
 /** Claims embutidos no token JWT emitido. */
 export interface AuthTokenPayload {

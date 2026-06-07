@@ -1,6 +1,8 @@
 import type Redis from "ioredis";
 import type { DataSource } from "typeorm";
 import { OrderStatus } from "../../../../shared/kernel/enums";
+import { validateSchema } from "../../../../shared/kernel/validateSchema";
+import { userIdSchema } from "../../../identity/validators/schema/userIdSchema";
 import { resolvePixPaymentDetails } from "../../../payment/application/services/resolvePixPaymentDetails";
 import { findOrdersByUserId } from "../queries/findOrdersByUserId";
 import type { OrderListItem } from "./types";
@@ -10,7 +12,8 @@ export async function listUserOrders(
   userId: string,
   redis?: Redis,
 ): Promise<OrderListItem[]> {
-  const orders = await findOrdersByUserId(dataSource, userId);
+  const id = validateSchema(userIdSchema, userId);
+  const orders = await findOrdersByUserId(dataSource, id);
 
   return Promise.all(
     orders.map(async (order) => {

@@ -8,6 +8,8 @@ import {
   InvalidTicketStatusError,
   TicketNotFoundError,
 } from "../../domain/errors/CheckInError";
+import { validateSchema } from "../../../../shared/kernel/validateSchema";
+import { checkInSchema } from "../../validators/schema/checkInSchema";
 import { checkInTicket } from "../commands/checkInTicket";
 import { findOneTicketByUniqueCode } from "../queries/findOneTicketByUniqueCode";
 
@@ -33,11 +35,12 @@ export async function checkIn(
   uniqueCode: string,
   actor: CheckInActor,
 ): Promise<CheckInResult> {
-  const ticket = await findOneTicketByUniqueCode(dataSource, uniqueCode);
+  const { uniqueCode: code } = validateSchema(checkInSchema, { uniqueCode });
+  const ticket = await findOneTicketByUniqueCode(dataSource, code);
 
   if (!ticket?.ticketLot?.event) {
     logger.warn(CONTEXT, "Check-in failed — ticket not found", {
-      uniqueCode,
+      uniqueCode: code,
     });
     throw new TicketNotFoundError();
   }
@@ -59,7 +62,7 @@ export async function checkIn(
       "Check-in rejected — invalid ticket status (possible duplicate or fraud)",
       {
         ticketId: ticket.id,
-        uniqueCode,
+        uniqueCode: code,
         currentStatus: ticket.status,
         eventId: event.id,
         ownerDocument: ticket.ownerDocument,
@@ -89,18 +92,18 @@ export async function checkIn(
     throw new CheckInNotAllowedTodayError(eventDay);
   }
 
-  const result = await checkInTicket(dataSource, uniqueCode);
+  const result = await checkInTicket(dataSource, code);
 
   if (!result) {
     logger.warn(CONTEXT, "Check-in failed — ticket not found", {
-      uniqueCode,
+      uniqueCode: code,
     });
     throw new TicketNotFoundError();
   }
 
   logger.info(CONTEXT, "Check-in completed successfully", {
     ticketId: result.ticketId,
-    uniqueCode,
+    uniqueCode: code,
     eventId: event.id,
     eventTitle: result.eventTitle,
     checkedInAt: result.checkedInAt.toISOString(),

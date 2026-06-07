@@ -1,34 +1,37 @@
 import type Redis from "ioredis";
 import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import type { PaymentGateway } from "../../infrastructure/gateways/PaymentGateway";
 import { createPaymentGateway } from "../../infrastructure/gateways/createPaymentGateway";
-import { validateWebhookPayload } from "../helpers/validateWebhookPayload";
-import type { PaymentWebhookPayload } from "../types";
+import {
+  paymentWebhookSchema,
+  type PaymentWebhookInputSchema,
+} from "../../validators/schema/paymentWebhookSchema";
 import { handlePaymentFailed } from "./handlePaymentFailed";
 import { handlePaymentSucceeded } from "./handlePaymentSucceeded";
 
-const CONTEXT = "PaymentService";
+const CONTEXT = "handleWebhook";
 const logger = Logger.getInstance();
 
 export async function handleWebhook(
   dataSource: DataSource,
   redis: Redis | undefined,
-  payload: PaymentWebhookPayload,
+  payload: PaymentWebhookInputSchema,
   _gateway: PaymentGateway = createPaymentGateway(),
 ): Promise<void> {
-  validateWebhookPayload(payload);
+  const data = validateSchema(paymentWebhookSchema, payload);
 
   logger.info(CONTEXT, "Webhook received", {
-    event: payload.event,
-    orderId: payload.data.orderId,
-    transactionId: payload.data.transactionId,
+    event: data.event,
+    orderId: data.data.orderId,
+    transactionId: data.data.transactionId,
   });
 
-  if (payload.event === "payment.succeeded") {
-    await handlePaymentSucceeded(dataSource, redis, payload.data);
+  if (data.event === "payment.succeeded") {
+    await handlePaymentSucceeded(dataSource, redis, data.data);
     return;
   }
 
-  await handlePaymentFailed(dataSource, redis, payload.data);
+  await handlePaymentFailed(dataSource, redis, data.data);
 }

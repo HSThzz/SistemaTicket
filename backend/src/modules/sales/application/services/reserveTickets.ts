@@ -9,11 +9,12 @@ import {
   TICKET_LOT_STOCK_KEY_PREFIX,
 } from "../../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
   InsufficientStockError,
-  InvalidQuantityError,
   TicketLotNotFoundError,
 } from "../../domain/errors/PurchaseError";
+import { reserveTicketsSchema } from "../../validators/schema/reserveTicketsSchema";
 import { findOneTicketLotById } from "../queries/findOneTicketLotById";
 import type { ReservationCachePayload, ReserveTicketsResult } from "./types";
 
@@ -53,25 +54,22 @@ export async function reserveTickets(
   quantity: number,
 ): Promise<ReserveTicketsResult> {
   const logger = Logger.getInstance();
+  const data = validateSchema(reserveTicketsSchema, { userId, ticketLotId, quantity });
 
-  if (!Number.isInteger(quantity) || quantity <= 0) {
-    throw new InvalidQuantityError(quantity);
-  }
-
-  await ensureRedisStockInitialized(dataSource, redis, ticketLotId, logger);
+  await ensureRedisStockInitialized(dataSource, redis, data.ticketLotId, logger);
 
   const reservationId = randomUUID();
   const expiresAt = new Date(Date.now() + RESERVATION_TTL_MS).toISOString();
 
   const payload: ReservationCachePayload & { expiresAt: string } = {
     reservationId,
-    userId,
-    ticketLotId,
-    quantity,
+    userId: data.userId,
+    ticketLotId: data.ticketLotId,
+    quantity: data.quantity,
     expiresAt,
   };
 
-  const stockKey = `${TICKET_LOT_STOCK_KEY_PREFIX}${ticketLotId}`;
+  const stockKey = `${TICKET_LOT_STOCK_KEY_PREFIX}${data.ticketLotId}`;
   const reservationKey = `${RESERVATION_KEY_PREFIX}${reservationId}`;
 
   const result = (await redis.eval(
@@ -80,7 +78,7 @@ export async function reserveTickets(
     stockKey,
     reservationKey,
     RESERVATION_PERSIST_QUEUE_KEY,
-    String(quantity),
+    String(data.quantity),
     JSON.stringify(payload),
     String(RESERVATION_TTL_SECONDS),
   )) as [number, number];
@@ -88,14 +86,14 @@ export async function reserveTickets(
   const [ok, remainingStock] = result;
 
   if (ok !== 1) {
-    throw new InsufficientStockError(remainingStock, quantity);
+    throw new InsufficientStockError(remainingStock, data.quantity);
   }
 
   logger.info(CONTEXT, "Reservation accepted in Redis (async persistence)", {
     reservationId,
-    ticketLotId,
-    userId,
-    quantity,
+    ticketLotId: data.ticketLotId,
+    userId: data.userId,
+    quantity: data.quantity,
     expiresAt,
     remainingStock,
     reservationKey,
@@ -106,8 +104,8 @@ export async function reserveTickets(
   return {
     reservationId,
     expiresAt,
-    ticketLotId,
-    quantity,
+    ticketLotId: data.ticketLotId,
+    quantity: data.quantity,
     remainingStock,
   };
 }

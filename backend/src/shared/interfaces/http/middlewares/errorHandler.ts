@@ -4,6 +4,7 @@
  */
 
 import type { NextFunction, Request, Response } from "express";
+import { ValidationError } from "../../../kernel/validateSchema";
 import { Logger } from "../../../infrastructure/config/logger";
 
 const CONTEXT = "ErrorHandler";
@@ -80,6 +81,15 @@ export function errorHandler(
 ): void {
   if (res.headersSent) {
     next(error);
+    return;
+  }
+
+  if (error instanceof ValidationError) {
+    res.status(400).json({
+      error: error.message,
+      code: error.code,
+      field: error.issues[0]?.path || undefined,
+    });
     return;
   }
 

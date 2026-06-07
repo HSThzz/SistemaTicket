@@ -1,14 +1,8 @@
-export type PaymentWebhookEventType = "payment.succeeded" | "payment.failed";
+import type { PaymentWebhookInputSchema } from "../validators/schema/paymentWebhookSchema";
 
-export interface PaymentWebhookPayload {
-  event: PaymentWebhookEventType;
-  data: {
-    transactionId: string;
-    orderId: string;
-    paidAt?: string;
-    failureReason?: string;
-  };
-}
+export type { PaymentWebhookInputSchema };
+export type PaymentWebhookPayload = PaymentWebhookInputSchema;
+export type PaymentWebhookEventType = PaymentWebhookInputSchema["event"];
 
 export interface PixPaymentDetails {
   orderId: string;

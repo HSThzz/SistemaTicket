@@ -10,3 +10,6 @@ export {
   TicketStatus,
   UserRole,
 } from "./enums";
+
+export { ValidationError, validateSchema } from "./validateSchema";
+export type { ValidationIssue } from "./validateSchema";

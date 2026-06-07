@@ -2,32 +2,39 @@ import bcrypt from "bcrypt";
 import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { UserRole } from "../../../../shared/kernel/enums";
+import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { EmailAlreadyExistsError } from "../../domain/errors/AuthError";
+import {
+  registerUserSchema,
+  type RegisterUserInputSchema,
+} from "../../validators/schema/registerUserSchema";
 import { createUser } from "../commands/createUser";
 import { buildAuthResponse } from "../helpers/buildAuthResponse";
 import { findOneUserByEmail } from "../queries/findOneUserByEmail";
-import type { AuthResponse, RegisterInput } from "../types";
+import type { AuthResponse } from "../types";
 
 const CONTEXT = "registerUser";
 const BCRYPT_ROUNDS = 12;
 
 export async function registerUser(
   dataSource: DataSource,
-  input: RegisterInput,
+  input: RegisterUserInputSchema,
 ): Promise<AuthResponse> {
-  const existingUser = await findOneUserByEmail(dataSource, input.email);
+  const data = validateSchema(registerUserSchema, input);
+
+  const existingUser = await findOneUserByEmail(dataSource, data.email);
 
   if (existingUser) {
-    throw new EmailAlreadyExistsError(input.email);
+    throw new EmailAlreadyExistsError(data.email);
   }
 
-  const passwordHash = await bcrypt.hash(input.password, BCRYPT_ROUNDS);
+  const passwordHash = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
 
   const user = await createUser(dataSource, {
-    name: input.name,
-    email: input.email.toLowerCase(),
+    name: data.name,
+    email: data.email.toLowerCase(),
     passwordHash,
-    document: input.document,
+    document: data.document,
     role: UserRole.CLIENT,
   });
 

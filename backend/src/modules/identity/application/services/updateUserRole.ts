@@ -1,7 +1,12 @@
 import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
-import type { UserRole } from "../../../../shared/kernel/enums";
+import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { UserNotFoundError } from "../../domain/errors/AuthError";
+import {
+  updateUserRoleSchema,
+  type UpdateUserRoleInputSchema,
+} from "../../validators/schema/updateUserRoleSchema";
+import { userIdSchema } from "../../validators/schema/userIdSchema";
 import { updateUser } from "../commands/updateUser";
 import { findOneUserById } from "../queries/findOneUserById";
 import type { AuthUserProfile } from "../types";
@@ -11,15 +16,18 @@ const CONTEXT = "updateUserRole";
 export async function updateUserRole(
   dataSource: DataSource,
   userId: string,
-  role: UserRole,
+  input: UpdateUserRoleInputSchema,
 ): Promise<AuthUserProfile> {
-  const user = await findOneUserById(dataSource, userId);
+  const id = validateSchema(userIdSchema, userId);
+  const data = validateSchema(updateUserRoleSchema, input);
+
+  const user = await findOneUserById(dataSource, id);
 
   if (!user) {
-    throw new UserNotFoundError(userId);
+    throw new UserNotFoundError(id);
   }
 
-  user.role = role;
+  user.role = data.role;
   await updateUser(dataSource, user);
 
   Logger.getInstance().info(CONTEXT, "User role updated", {

@@ -1,11 +1,12 @@
 /**
- * @file Schemas Zod para rotas de ingressos e check-in.
+ * @file Schemas Zod para rotas HTTP de ingressos (reexportam validators de domínio).
  * @module shared/interfaces/http/validation/ticketing.schemas
  */
 
 import { z } from "zod";
+import { checkInSchema } from "../../../../modules/ticketing/validators/schema/checkInSchema";
 
-/** Corpo de check-in na portaria. */
+/** Corpo HTTP de check-in (snake_case da API). */
 export const checkInBodySchema = z.object({
-  unique_code: z.string().trim().min(1, "Código do ingresso é obrigatório").max(128),
+  unique_code: checkInSchema.shape.uniqueCode,
 });

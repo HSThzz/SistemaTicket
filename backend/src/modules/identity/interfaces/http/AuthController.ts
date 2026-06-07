@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file Controlador HTTP de registro, login e perfil.
  * @module modules/identity/interfaces/http/AuthController
  */
@@ -15,6 +15,7 @@ import {
 } from "../../domain/errors/AuthError";
 import type { LoginInput, RegisterInput } from "../../application/types";
 import { UserRole } from "../../../../shared/kernel/enums";
+import { ValidationError } from "../../../../shared/kernel/validateSchema";
 import { getProfile } from "../../application/services/getProfile";
 import { loginUser } from "../../application/services/loginUser";
 import { lookupUserByEmail } from "../../application/services/lookupUserByEmail";
@@ -89,7 +90,7 @@ export class AuthController {
     const { email } = req.query as { email: string };
 
     try {
-      const user = await lookupUserByEmail(AppDataSource, email);
+      const user = await lookupUserByEmail(AppDataSource, { email });
       res.status(200).json({ user });
     } catch (error) {
       this.handleError(res, error);
@@ -104,7 +105,7 @@ export class AuthController {
     const { role } = req.body as { role: UserRole };
 
     try {
-      const user = await updateUserRole(AppDataSource, userId, role);
+      const user = await updateUserRole(AppDataSource, userId, { role });
       res.status(200).json({ user });
     } catch (error) {
       this.handleError(res, error);
@@ -113,6 +114,15 @@ export class AuthController {
 
   /** Mapeia erros de domínio e inesperados para respostas JSON. */
   private handleError(res: Response, error: unknown): void {
+    if (error instanceof ValidationError) {
+      res.status(400).json({
+        error: error.message,
+        code: error.code,
+        field: error.issues[0]?.path || undefined,
+      });
+      return;
+    }
+
     if (error instanceof EmailAlreadyExistsError) {
       logger.warn(CONTEXT, "Registration failed", {
         code: error.code,

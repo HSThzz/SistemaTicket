@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file Controlador HTTP de eventos e lotes de ingressos.
  * @module modules/catalog/interfaces/http/EventController
  */
@@ -10,6 +10,7 @@ import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { getRedis } from "../../../../shared/infrastructure/config/redis";
 import { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
 import { EventStatus, UserRole } from "../../../../shared/kernel/enums";
+import { ValidationError } from "../../../../shared/kernel/validateSchema";
 import {
   EventAccessDeniedError,
   EventError,
@@ -296,6 +297,15 @@ export class EventController {
     action: string,
     context: Record<string, unknown> = {},
   ): void {
+    if (error instanceof ValidationError) {
+      res.status(400).json({
+        error: error.message,
+        code: error.code,
+        field: error.issues[0]?.path || undefined,
+      });
+      return;
+    }
+
     if (error instanceof EventNotFoundError) {
       res.status(404).json({ error: error.message, code: error.code });
       return;
