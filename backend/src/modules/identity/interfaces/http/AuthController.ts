@@ -13,16 +13,19 @@ import {
   InvalidRoleError,
   UserNotFoundError,
 } from "../../domain/errors/AuthError";
-import type { RegisterInput, LoginInput } from "../../application/AuthService";
+import type { LoginInput, RegisterInput } from "../../application/types";
 import { UserRole } from "../../../../shared/kernel/enums";
-import { AuthService } from "../../application/AuthService";
+import { getProfile } from "../../application/services/getProfile";
+import { loginUser } from "../../application/services/loginUser";
+import { lookupUserByEmail } from "../../application/services/lookupUserByEmail";
+import { registerUser } from "../../application/services/registerUser";
+import { updateUserRole } from "../../application/services/updateUserRole";
 
 const CONTEXT = "AuthController";
 const logger = Logger.getInstance();
-const authService = new AuthService(AppDataSource);
 
 /**
- * Adapta requisições HTTP para o `AuthService` e mapeia erros para status HTTP.
+ * Adapta requisições HTTP para os serviços de identidade e mapeia erros para status HTTP.
  */
 export class AuthController {
   /**
@@ -35,7 +38,7 @@ export class AuthController {
     const body = req.body as RegisterInput;
 
     try {
-      const result = await authService.register(body);
+      const result = await registerUser(AppDataSource, body);
       res.status(201).json(result);
     } catch (error) {
       this.handleError(res, error);
@@ -55,7 +58,7 @@ export class AuthController {
     }
 
     try {
-      const user = await authService.getProfile(req.user.id);
+      const user = await getProfile(AppDataSource, req.user.id);
       res.status(200).json({ user });
     } catch (error) {
       this.handleError(res, error);
@@ -72,7 +75,7 @@ export class AuthController {
     const body = req.body as LoginInput;
 
     try {
-      const result = await authService.login(body);
+      const result = await loginUser(AppDataSource, body);
       res.status(200).json(result);
     } catch (error) {
       this.handleError(res, error);
@@ -86,7 +89,7 @@ export class AuthController {
     const { email } = req.query as { email: string };
 
     try {
-      const user = await authService.lookupUserByEmail(email);
+      const user = await lookupUserByEmail(AppDataSource, email);
       res.status(200).json({ user });
     } catch (error) {
       this.handleError(res, error);
@@ -101,7 +104,7 @@ export class AuthController {
     const { role } = req.body as { role: UserRole };
 
     try {
-      const user = await authService.updateUserRole(userId, role);
+      const user = await updateUserRole(AppDataSource, userId, role);
       res.status(200).json({ user });
     } catch (error) {
       this.handleError(res, error);

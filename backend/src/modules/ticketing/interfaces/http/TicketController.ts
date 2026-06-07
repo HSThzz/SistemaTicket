@@ -6,11 +6,10 @@
 import type { Request, Response } from "express";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
-import { TicketQueryService } from "../../application/TicketQueryService";
+import { listUserTickets } from "../../application/services/listUserTickets";
 
 const CONTEXT = "TicketController";
 const logger = Logger.getInstance();
-const ticketQueryService = new TicketQueryService(AppDataSource);
 
 /**
  * Endpoints de consulta de ingressos do usuário autenticado.
@@ -27,7 +26,7 @@ export class TicketController {
     }
 
     try {
-      const tickets = await ticketQueryService.listUserTickets(req.user.id);
+      const tickets = await listUserTickets(AppDataSource, req.user.id);
       res.status(200).json({ tickets });
     } catch (error) {
       logger.error(CONTEXT, "Failed to list user tickets", {

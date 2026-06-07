@@ -15,7 +15,6 @@ import {
   setReservationPersistenceWorker,
   setStockReconciliationWorker,
 } from "./shared/runtime/workerRegistry";
-import { PaymentService } from "./modules/payment/application/PaymentService";
 import { ReservationExpiryWorker } from "./modules/sales/infrastructure/workers/ReservationExpiryWorker";
 import { ReservationPersistenceWorker } from "./modules/sales/infrastructure/workers/ReservationPersistenceWorker";
 import { StockReconciliationWorker } from "./modules/sales/infrastructure/workers/StockReconciliationWorker";
@@ -61,7 +60,6 @@ async function bootstrap(): Promise<void> {
   persistenceWorker = new ReservationPersistenceWorker(
     AppDataSource,
     getRedisWorker(),
-    new PaymentService(AppDataSource, redis),
   );
 
   try {

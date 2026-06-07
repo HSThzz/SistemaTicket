@@ -22,22 +22,14 @@ import {
   getStockReconciliationWorker,
 } from "../../../../shared/runtime/workerRegistry";
 import { QueueMonitorService } from "../../../../shared/application/QueueMonitorService";
-import { ReservationStatusService } from "../../application/ReservationStatusService";
-import { PurchaseService } from "../../application/PurchaseService";
-import { StockReconciliationService } from "../../application/StockReconciliationService";
+import { getReservationStatus } from "../../application/services/getReservationStatus";
+import { reconcileAllStock } from "../../application/services/reconcileAllStock";
+import { reserveTickets } from "../../application/services/reserveTickets";
 
 const CONTEXT = "PurchaseController";
 const logger = Logger.getInstance();
-const purchaseService = new PurchaseService(AppDataSource, getRedis());
-const stockReconciliationService = new StockReconciliationService(
-  AppDataSource,
-  getRedis(),
-);
-const reservationStatusService = new ReservationStatusService(
-  AppDataSource,
-  getRedis(),
-);
-const queueMonitorService = new QueueMonitorService(getRedis());
+const redis = getRedis();
+const queueMonitorService = new QueueMonitorService(redis);
 
 /**
  * Endpoints de compra assíncrona e monitoramento operacional da fila de persistência.
@@ -60,7 +52,9 @@ export class PurchaseController {
     };
 
     try {
-      const result = await purchaseService.reserveTickets(
+      const result = await reserveTickets(
+        AppDataSource,
+        redis,
         req.user.id,
         ticketLotId,
         Number(quantity),
@@ -114,7 +108,9 @@ export class PurchaseController {
     }
 
     try {
-      const status = await reservationStatusService.getStatus(
+      const status = await getReservationStatus(
+        AppDataSource,
+        redis,
         reservationId,
         req.user.id,
       );
@@ -293,7 +289,7 @@ export class PurchaseController {
       const worker = getStockReconciliationWorker();
       const report = worker
         ? await worker.runOnce()
-        : await stockReconciliationService.reconcileAll();
+        : await reconcileAllStock(AppDataSource, redis);
 
       res.status(200).json(report);
     } catch (error) {

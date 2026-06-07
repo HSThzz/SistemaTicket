@@ -8,13 +8,12 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { UserRole } from "../../../../shared/kernel/enums";
 import { TicketNotFoundError, WalletError } from "../../domain/errors/WalletError";
-import { WalletAccessService } from "../../application/WalletAccessService";
-import { WalletService } from "../../application/WalletService";
+import { canAccessTicket } from "../../application/services/canAccessTicket";
+import { generateApplePass } from "../../application/services/generateApplePass";
+import { generateGoogleWalletLink } from "../../application/services/generateGoogleWalletLink";
 
 const CONTEXT = "WalletController";
 const logger = Logger.getInstance();
-const walletService = new WalletService(AppDataSource);
-const walletAccessService = new WalletAccessService(AppDataSource);
 
 /**
  * Download e redirecionamento de passes digitais por ingresso.
@@ -38,7 +37,7 @@ export class WalletController {
     }
 
     try {
-      const allowed = await walletAccessService.canAccessTicket(ticketId, {
+      const allowed = await canAccessTicket(AppDataSource, ticketId, {
         userId: req.user.id,
         role: req.user.role as UserRole,
       });
@@ -48,7 +47,7 @@ export class WalletController {
         return;
       }
 
-      const buffer = await walletService.generateApplePass(ticketId);
+      const buffer = await generateApplePass(AppDataSource, ticketId);
 
       res.setHeader("Content-Type", "application/vnd.apple.pkpass");
       res.setHeader(
@@ -79,7 +78,7 @@ export class WalletController {
     }
 
     try {
-      const allowed = await walletAccessService.canAccessTicket(ticketId, {
+      const allowed = await canAccessTicket(AppDataSource, ticketId, {
         userId: req.user.id,
         role: req.user.role as UserRole,
       });
@@ -89,7 +88,7 @@ export class WalletController {
         return;
       }
 
-      const url = await walletService.generateGoogleWalletLink(ticketId);
+      const url = await generateGoogleWalletLink(AppDataSource, ticketId);
       res.redirect(302, url);
     } catch (error) {
       this.handleError(res, "Google Wallet link generation failed", ticketId, error);
@@ -114,7 +113,7 @@ export class WalletController {
     }
 
     try {
-      const allowed = await walletAccessService.canAccessTicket(ticketId, {
+      const allowed = await canAccessTicket(AppDataSource, ticketId, {
         userId: req.user.id,
         role: req.user.role as UserRole,
       });
@@ -124,7 +123,7 @@ export class WalletController {
         return;
       }
 
-      const url = await walletService.generateGoogleWalletLink(ticketId);
+      const url = await generateGoogleWalletLink(AppDataSource, ticketId);
       res.json({ url });
     } catch (error) {
       this.handleError(res, "Google Wallet link generation failed", ticketId, error);

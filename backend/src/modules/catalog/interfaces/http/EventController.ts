@@ -17,13 +17,17 @@ import {
 } from "../../domain/errors/EventError";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
-import { EventService, type EventActor } from "../../application/EventService";
-import { EventDashboardService } from "../../application/EventDashboardService";
+import { createEvent } from "../../application/services/createEvent";
+import { createTicketLot } from "../../application/services/createTicketLot";
+import { getProducerDashboard } from "../../application/services/getProducerDashboard";
+import { getPublishedEventById } from "../../application/services/getPublishedEventById";
+import { listManagedEvents } from "../../application/services/listManagedEvents";
+import { listPublishedEvents } from "../../application/services/listPublishedEvents";
+import { updateEvent } from "../../application/services/updateEvent";
+import type { EventActor } from "../../application/types";
 
 const CONTEXT = "EventController";
 const logger = Logger.getInstance();
-const eventService = new EventService(AppDataSource);
-const eventDashboardService = new EventDashboardService(AppDataSource);
 
 /**
  * Obtém ator autenticado da requisição ou responde 401.
@@ -79,7 +83,7 @@ export class EventController {
    * @returns Promise resolvida após enviar 200.
    */
   async listPublished(_req: Request, res: Response): Promise<void> {
-    const events = await eventService.listPublished();
+    const events = await listPublishedEvents(AppDataSource);
     res.status(200).json({
       events: events.map((event) => serializeEvent(event)),
     });
@@ -95,7 +99,7 @@ export class EventController {
     const actor = requireActor(req, res);
     if (!actor) return;
 
-    const events = await eventService.listManaged(actor);
+    const events = await listManagedEvents(AppDataSource, actor);
     res.status(200).json({
       events: events.map((event) => serializeEvent(event)),
     });
@@ -112,7 +116,7 @@ export class EventController {
     if (!actor) return;
 
     try {
-      const stats = await eventDashboardService.getProducerDashboard(actor);
+      const stats = await getProducerDashboard(AppDataSource, actor);
       res.status(200).json(stats);
     } catch (error) {
       logger.error(CONTEXT, "Failed to load producer dashboard stats", {
@@ -135,7 +139,7 @@ export class EventController {
   async getPublished(req: Request, res: Response): Promise<void> {
     const { eventId } = req.params as { eventId: string };
 
-    const event = await eventService.getPublishedById(eventId);
+    const event = await getPublishedEventById(AppDataSource, eventId);
     if (!event) {
       res.status(404).json({ error: "Event not found", code: "NOT_FOUND" });
       return;
@@ -164,7 +168,8 @@ export class EventController {
         status?: EventStatus;
       };
 
-      const created = await eventService.createEvent(
+      const created = await createEvent(
+        AppDataSource,
         {
           title,
           description,
@@ -207,7 +212,8 @@ export class EventController {
         status?: EventStatus;
       };
 
-      const updated = await eventService.updateEvent(
+      const updated = await updateEvent(
+        AppDataSource,
         eventId,
         {
           title,
@@ -251,7 +257,8 @@ export class EventController {
         availableQuantity?: number;
       };
 
-      const lot = await eventService.createTicketLot(
+      const lot = await createTicketLot(
+        AppDataSource,
         eventId,
         {
           name,

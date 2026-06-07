@@ -39,3 +39,29 @@ export interface CreateTicketLotInput {
   totalQuantity: number;
   availableQuantity?: number;
 }
+
+/** Métricas agregadas por evento no painel do produtor. */
+export interface ProducerEventStats {
+  eventId: string;
+  title: string;
+  status: string;
+  date: string;
+  imageUrl: string | null;
+  ticketsSold: number;
+  ticketsCheckedIn: number;
+  grossRevenueCents: number;
+  capacityTotal: number;
+  capacityRemaining: number;
+}
+
+/** Resposta completa do dashboard com resumo e lista por evento. */
+export interface ProducerDashboardStats {
+  summary: {
+    totalEvents: number;
+    publishedEvents: number;
+    ticketsSold: number;
+    ticketsCheckedIn: number;
+    grossRevenueCents: number;
+  };
+  events: ProducerEventStats[];
+}

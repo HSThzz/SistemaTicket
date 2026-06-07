@@ -8,7 +8,7 @@ import jwt from "jsonwebtoken";
 import { env } from "../../../infrastructure/config/env";
 import type { UserRole } from "../../../kernel/enums";
 import { UnauthorizedError } from "../../../../modules/identity/domain/errors/AuthError";
-import type { AuthTokenPayload } from "../../../../modules/identity/application/AuthService";
+import type { AuthTokenPayload } from "../../../../modules/identity/application/types";
 
 /**
  * Valida o header Authorization Bearer, verifica o JWT e preenche `req.user`.

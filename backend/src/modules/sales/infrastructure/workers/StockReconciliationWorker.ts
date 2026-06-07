@@ -7,9 +7,9 @@ import type Redis from "ioredis";
 import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import {
-  StockReconciliationService,
   type StockReconciliationReport,
-} from "../../application/StockReconciliationService";
+} from "../../application/services/types";
+import { reconcileAllStock } from "../../application/services/reconcileAllStock";
 
 const CONTEXT = "StockReconciliationWorker";
 
@@ -18,7 +18,6 @@ const CONTEXT = "StockReconciliationWorker";
  */
 export class StockReconciliationWorker {
   private readonly logger = Logger.getInstance();
-  private readonly service: StockReconciliationService;
   private timer: ReturnType<typeof setInterval> | null = null;
   private running = false;
   private lastReport: StockReconciliationReport | null = null;
@@ -30,12 +29,10 @@ export class StockReconciliationWorker {
    * @param intervalMs - Intervalo entre execuções automáticas.
    */
   constructor(
-    dataSource: DataSource,
-    _redis: Redis,
+    private readonly dataSource: DataSource,
+    private readonly redis: Redis,
     private readonly intervalMs: number,
-  ) {
-    this.service = new StockReconciliationService(dataSource, _redis);
-  }
+  ) {}
 
   /**
    * Agenda a primeira execução e repetições periódicas.
@@ -100,7 +97,7 @@ export class StockReconciliationWorker {
    */
   async runOnce(): Promise<StockReconciliationReport> {
     try {
-      const report = await this.service.reconcileAll();
+      const report = await reconcileAllStock(this.dataSource, this.redis);
       this.lastReport = report;
       this.lastError = null;
       return report;

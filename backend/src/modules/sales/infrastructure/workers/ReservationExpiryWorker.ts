@@ -13,7 +13,7 @@ import {
   getRedisKeyspaceExpiredPattern,
   getRedisSubscriber,
 } from "../../../../shared/infrastructure/config/redis";
-import { PaymentService } from "../../../payment/application/PaymentService";
+import { expireUnpaidOrderByReservationId } from "../../../payment/application/services/expireUnpaidOrderByReservationId";
 
 const CONTEXT = "ReservationExpiryWorker";
 
@@ -22,23 +22,17 @@ const CONTEXT = "ReservationExpiryWorker";
  */
 export class ReservationExpiryWorker {
   private readonly logger = Logger.getInstance();
-  private readonly paymentService: PaymentService;
   private readonly expiredKeyPattern = getRedisKeyspaceExpiredPattern();
   private subscriber: Redis | null = null;
 
   /**
-   * @param dataSource - Conexão TypeORM usada pelo {@link PaymentService}.
+   * @param dataSource - Conexão TypeORM usada na expiração de pedidos.
    * @param redis - Cliente Redis principal.
-   * @param paymentService - Serviço de pagamento opcional (padrão: instância interna).
    */
   constructor(
-    dataSource: DataSource,
+    private readonly dataSource: DataSource,
     private readonly redis: Redis,
-    paymentService?: PaymentService,
-  ) {
-    this.paymentService =
-      paymentService ?? new PaymentService(dataSource, redis);
-  }
+  ) {}
 
   /**
    * Habilita notificações de keyspace e inscreve no padrão de chaves expiradas.
@@ -103,14 +97,18 @@ export class ReservationExpiryWorker {
   }
 
   /**
-   * Expira pedido/reserva associados e restaura estoque (via {@link PaymentService}).
+   * Expira pedido/reserva associados e restaura estoque.
    * @param reservationId - Identificador da reserva cujo TTL Redis expirou.
    * @returns Promise resolvida após processamento.
-   * @throws Propaga erros do serviço de pagamento em falha de persistência.
+   * @throws Propaga erros em falha de persistência.
    */
   async expireReservation(reservationId: string): Promise<void> {
     try {
-      await this.paymentService.expireUnpaidOrderByReservationId(reservationId);
+      await expireUnpaidOrderByReservationId(
+        this.dataSource,
+        this.redis,
+        reservationId,
+      );
     } catch (error) {
       this.logger.error(CONTEXT, "Failed to process reservation expiry", {
         reservationId,

@@ -14,13 +14,16 @@ import {
   PaymentError,
   PaymentGatewayError,
 } from "../../../payment/domain/errors/PaymentError";
-import { OrderQueryService } from "../../application/OrderQueryService";
-import { PaymentService } from "../../../payment/application/PaymentService";
+import { getOrderPixPayment } from "../../../payment/application/services/getOrderPixPayment";
+import { refundOrder } from "../../../payment/application/services/refundOrder";
+import { createPaymentGateway } from "../../../payment/infrastructure/gateways/createPaymentGateway";
+import { getOrderByIdForAdmin } from "../../application/services/getOrderByIdForAdmin";
+import { listUserOrders } from "../../application/services/listUserOrders";
 
 const CONTEXT = "OrderController";
 const logger = Logger.getInstance();
-const paymentService = new PaymentService(AppDataSource, getRedis());
-const orderQueryService = new OrderQueryService(AppDataSource, paymentService);
+const redis = getRedis();
+const paymentGateway = createPaymentGateway();
 
 function parseOrderId(value: unknown): string {
   if (typeof value === "string") return value;
@@ -51,7 +54,13 @@ export class OrderController {
     }
 
     try {
-      const payment = await paymentService.getOrderPixPayment(orderId, req.user.id);
+      const payment = await getOrderPixPayment(
+        AppDataSource,
+        redis,
+        orderId,
+        req.user.id,
+        paymentGateway,
+      );
       res.status(200).json({ payment });
     } catch (error) {
       if (error instanceof OrderNotFoundError) {
@@ -85,7 +94,7 @@ export class OrderController {
     }
 
     try {
-      const orders = await orderQueryService.listUserOrders(req.user.id);
+      const orders = await listUserOrders(AppDataSource, req.user.id, redis);
       res.status(200).json({ orders });
     } catch (error) {
       logger.error(CONTEXT, "Failed to list user orders", {
@@ -103,7 +112,7 @@ export class OrderController {
     const { id } = req.params as { id: string };
 
     try {
-      const order = await orderQueryService.getOrderByIdForAdmin(id);
+      const order = await getOrderByIdForAdmin(AppDataSource, id, redis);
       res.status(200).json({ order });
     } catch (error) {
       if (error instanceof OrderNotFoundError) {
@@ -133,7 +142,12 @@ export class OrderController {
     }
 
     try {
-      const result = await paymentService.refundOrder(orderId);
+      const result = await refundOrder(
+        AppDataSource,
+        redis,
+        orderId,
+        paymentGateway,
+      );
       res.status(200).json({ refund: result });
     } catch (error) {
       this.handleRefundError(res, orderId, error);

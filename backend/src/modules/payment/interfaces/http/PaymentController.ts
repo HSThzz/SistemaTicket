@@ -16,19 +16,21 @@ import {
   WebhookReplayError,
   WebhookUnauthorizedError,
 } from "../../../payment/domain/errors/PaymentError";
-import {
-  PaymentService,
-  type PaymentWebhookPayload,
-} from "../../application/PaymentService";
+import type { PaymentWebhookPayload } from "../../application/types";
+import { createPaymentGateway } from "../../infrastructure/gateways/createPaymentGateway";
 import { WebhookAuthService } from "../../infrastructure/gateways/WebhookAuthService";
 import {
   extractMercadoPagoPaymentId,
   isMercadoPagoWebhookRequest,
 } from "../../infrastructure/gateways/mercadoPagoWebhook";
+import { handleMercadoPagoNotification } from "../../application/services/handleMercadoPagoNotification";
+import { handleWebhook } from "../../application/services/handleWebhook";
+import { simulateDevPayment } from "../../application/services/simulateDevPayment";
 
 const CONTEXT = "PaymentController";
 const logger = Logger.getInstance();
-const paymentService = new PaymentService(AppDataSource, getRedis());
+const redis = getRedis();
+const paymentGateway = createPaymentGateway();
 const webhookAuthService = new WebhookAuthService(getRedis());
 
 /**
@@ -54,7 +56,13 @@ export class PaymentController {
     const { orderId } = req.body as { orderId: string };
 
     try {
-      await paymentService.simulateDevPayment(orderId, req.user.id);
+      await simulateDevPayment(
+        AppDataSource,
+        redis,
+        orderId,
+        req.user.id,
+        paymentGateway,
+      );
       res.status(200).json({ simulated: true, orderId });
     } catch (error) {
       this.handleWebhookError(
@@ -97,7 +105,7 @@ export class PaymentController {
     });
 
     try {
-      await paymentService.handleWebhook(payload);
+      await handleWebhook(AppDataSource, redis, payload, paymentGateway);
 
       logger.info(CONTEXT, "Webhook processed successfully", {
         event: payload.event,
@@ -124,11 +132,16 @@ export class PaymentController {
     logger.info(CONTEXT, "Incoming Mercado Pago webhook", {
       provider: "mercadopago",
       paymentId,
-      gateway: paymentService.getGatewayProvider(),
+      gateway: paymentGateway.provider,
     });
 
     try {
-      const result = await paymentService.handleMercadoPagoNotification(paymentId);
+      const result = await handleMercadoPagoNotification(
+        AppDataSource,
+        redis,
+        paymentId,
+        paymentGateway,
+      );
 
       res.status(200).json({
         received: true,

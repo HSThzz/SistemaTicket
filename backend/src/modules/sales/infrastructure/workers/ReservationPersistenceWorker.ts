@@ -18,7 +18,10 @@ import {
 } from "../../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { persistReservation } from "../../application/commands/persistReservation";
-import { PaymentService } from "../../../payment/application/PaymentService";
+import { abortPendingOrderAfterPixCreationFailure } from "../../../payment/application/services/abortPendingOrderAfterPixCreationFailure";
+import { processOrderPayment } from "../../../payment/application/services/processOrderPayment";
+import type { PaymentGateway } from "../../../payment/infrastructure/gateways/PaymentGateway";
+import { createPaymentGateway } from "../../../payment/infrastructure/gateways/createPaymentGateway";
 
 const CONTEXT = "ReservationPersistenceWorker";
 
@@ -49,12 +52,12 @@ export class ReservationPersistenceWorker {
   /**
    * @param dataSource - Conexão TypeORM para transações de reserva e pedido.
    * @param redis - Cliente Redis da fila principal e caches.
-   * @param paymentService - Serviço para gerar cobrança PIX após persistência.
+   * @param paymentGateway - Gateway opcional para cobrança PIX.
    */
   constructor(
     private readonly dataSource: DataSource,
     private readonly redis: Redis,
-    private readonly paymentService: PaymentService,
+    private readonly paymentGateway: PaymentGateway = createPaymentGateway(),
   ) {}
 
   /**
@@ -231,7 +234,12 @@ export class ReservationPersistenceWorker {
     orderId: string,
   ): Promise<void> {
     try {
-      const payment = await this.paymentService.processOrderPayment(orderId);
+      const payment = await processOrderPayment(
+        this.dataSource,
+        this.redis,
+        orderId,
+        this.paymentGateway,
+      );
 
       await this.redis.setex(
         `${PAYMENT_CACHE_KEY_PREFIX}${reservationId}`,
@@ -253,9 +261,12 @@ export class ReservationPersistenceWorker {
       });
 
       try {
-        await this.paymentService.abortPendingOrderAfterPixCreationFailure(
+        await abortPendingOrderAfterPixCreationFailure(
+          this.dataSource,
+          this.redis,
           orderId,
           message,
+          this.paymentGateway,
         );
       } catch (abortError) {
         this.logger.error(CONTEXT, "Failed to abort order after PIX error", {

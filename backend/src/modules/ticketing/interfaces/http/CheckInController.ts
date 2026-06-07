@@ -14,11 +14,10 @@ import {
   InvalidTicketStatusError,
   TicketNotFoundError,
 } from "../../domain/errors/CheckInError";
-import { CheckInService } from "../../application/CheckInService";
+import { checkIn } from "../../application/services/checkIn";
 
 const CONTEXT = "CheckInController";
 const logger = Logger.getInstance();
-const checkInService = new CheckInService(AppDataSource);
 
 /**
  * Endpoint de validação de ingresso por código único.
@@ -37,7 +36,7 @@ export class CheckInController {
     const { unique_code: uniqueCode } = req.body as { unique_code: string };
 
     try {
-      const result = await checkInService.checkIn(uniqueCode, {
+      const result = await checkIn(AppDataSource, uniqueCode, {
         userId: req.user.id,
         role: req.user.role,
       });
