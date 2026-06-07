@@ -11,7 +11,8 @@ import jwt from "jsonwebtoken";
 import { PKPass } from "passkit-generator";
 import { env } from "../../../shared/infrastructure/config/env";
 import { Logger } from "../../../shared/infrastructure/config/logger";
-import { Ticket } from "../../../shared/infrastructure/persistence/entities/Ticket";
+import type { Ticket } from "../../../shared/infrastructure/persistence/entities/Ticket";
+import { findOneTicketById } from "./queries/findOneTicketById";
 import type { Event } from "../../../shared/infrastructure/persistence/entities/Event";
 import type { User } from "../../../shared/infrastructure/persistence/entities/User";
 import {
@@ -255,13 +256,7 @@ export class WalletService {
   }
 
   private async loadTicketContext(ticketId: string): Promise<TicketWalletContext> {
-    const ticket = await this.dataSource.getRepository(Ticket).findOne({
-      where: { id: ticketId },
-      relations: {
-        order: { user: true },
-        ticketLot: { event: true },
-      },
-    });
+    const ticket = await findOneTicketById(this.dataSource, ticketId);
 
     if (!ticket?.ticketLot?.event || !ticket.order?.user) {
       throw new TicketNotFoundError(ticketId);

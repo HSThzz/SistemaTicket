@@ -8,13 +8,17 @@ import jwt, { type SignOptions } from "jsonwebtoken";
 import type { DataSource } from "typeorm";
 import { env } from "../../../shared/infrastructure/config/env";
 import { Logger } from "../../../shared/infrastructure/config/logger";
-import { User } from "../../../shared/infrastructure/persistence/entities/User";
+import type { User } from "../../../shared/infrastructure/persistence/entities/User";
 import { UserRole } from "../../../shared/kernel/enums";
 import {
   EmailAlreadyExistsError,
   InvalidCredentialsError,
   UserNotFoundError,
 } from "../domain/errors/AuthError";
+import { createUser } from "./commands/createUser";
+import { updateUser } from "./commands/updateUser";
+import { findOneUserByEmail } from "./queries/findOneUserByEmail";
+import { findOneUserById } from "./queries/findOneUserById";
 
 const CONTEXT = "AuthService";
 const BCRYPT_ROUNDS = 12;
@@ -68,11 +72,7 @@ export class AuthService {
    * @throws {EmailAlreadyExistsError} Quando o email já está em uso.
    */
   async register(input: RegisterInput): Promise<AuthResponse> {
-    const repository = this.dataSource.getRepository(User);
-
-    const existingUser = await repository.findOne({
-      where: { email: input.email.toLowerCase() },
-    });
+    const existingUser = await findOneUserByEmail(this.dataSource, input.email);
 
     if (existingUser) {
       throw new EmailAlreadyExistsError(input.email);
@@ -80,15 +80,13 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(input.password, BCRYPT_ROUNDS);
 
-    const user = repository.create({
+    const user = await createUser(this.dataSource, {
       name: input.name,
       email: input.email.toLowerCase(),
       passwordHash,
       document: input.document,
       role: UserRole.CLIENT,
     });
-
-    await repository.save(user);
 
     this.logger.info(CONTEXT, "User registered", {
       userId: user.id,
@@ -106,11 +104,7 @@ export class AuthService {
    * @throws {InvalidCredentialsError} Quando email ou senha não conferem.
    */
   async login(input: LoginInput): Promise<AuthResponse> {
-    const repository = this.dataSource.getRepository(User);
-
-    const user = await repository.findOne({
-      where: { email: input.email.toLowerCase() },
-    });
+    const user = await findOneUserByEmail(this.dataSource, input.email);
 
     if (!user) {
       this.logger.warn(CONTEXT, "Failed login attempt", {
@@ -150,9 +144,7 @@ export class AuthService {
    * @throws {UserNotFoundError} Quando o usuário não existe.
    */
   async getProfile(userId: string): Promise<AuthResponse["user"]> {
-    const user = await this.dataSource.getRepository(User).findOne({
-      where: { id: userId },
-    });
+    const user = await findOneUserById(this.dataSource, userId);
 
     if (!user) {
       throw new UserNotFoundError(userId);
@@ -175,15 +167,14 @@ export class AuthService {
    * @throws {UserNotFoundError} Quando o usuário não existe.
    */
   async updateUserRole(userId: string, role: UserRole): Promise<AuthResponse["user"]> {
-    const repository = this.dataSource.getRepository(User);
-    const user = await repository.findOne({ where: { id: userId } });
+    const user = await findOneUserById(this.dataSource, userId);
 
     if (!user) {
       throw new UserNotFoundError(userId);
     }
 
     user.role = role;
-    await repository.save(user);
+    await updateUser(this.dataSource, user);
 
     this.logger.info(CONTEXT, "User role updated", {
       userId: user.id,
@@ -206,9 +197,7 @@ export class AuthService {
    * @throws {UserNotFoundError} Quando não há cadastro com esse e-mail.
    */
   async lookupUserByEmail(email: string): Promise<AuthResponse["user"]> {
-    const user = await this.dataSource.getRepository(User).findOne({
-      where: { email: email.toLowerCase() },
-    });
+    const user = await findOneUserByEmail(this.dataSource, email);
 
     if (!user) {
       throw new UserNotFoundError(email);

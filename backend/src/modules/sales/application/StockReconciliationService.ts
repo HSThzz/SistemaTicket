@@ -13,7 +13,7 @@ import {
   TICKET_LOT_STOCK_KEY_PREFIX,
 } from "../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../shared/infrastructure/config/logger";
-import { TicketLot } from "../../../shared/infrastructure/persistence/entities/TicketLot";
+import { findAllTicketLotsStock } from "./queries/findAllTicketLotsStock";
 
 const CONTEXT = "StockReconciliationService";
 
@@ -60,9 +60,7 @@ export class StockReconciliationService {
    * @returns Relatório com lotes verificados e correções aplicadas.
    */
   async reconcileAll(): Promise<StockReconciliationReport> {
-    const lots = await this.dataSource.getRepository(TicketLot).find({
-      select: { id: true, availableQuantity: true, totalQuantity: true },
-    });
+    const lots = await findAllTicketLotsStock(this.dataSource);
 
     const pendingByLot = await this.sumPendingQuantitiesByLot();
     const results: LotReconciliationResult[] = [];

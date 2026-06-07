@@ -4,8 +4,8 @@
  */
 
 import type { DataSource } from "typeorm";
-import { Ticket } from "../../../shared/infrastructure/persistence/entities/Ticket";
 import { UserRole } from "../../../shared/kernel/enums";
+import { findOneTicketForAccessCheck } from "./queries/findOneTicketForAccessCheck";
 
 /**
  * Ator que solicita acesso ao pass de um ingresso.
@@ -35,18 +35,7 @@ export class WalletAccessService {
       return true;
     }
 
-    const ticket = await this.dataSource.getRepository(Ticket).findOne({
-      where: { id: ticketId },
-      relations: {
-        order: true,
-        ticketLot: { event: true },
-      },
-      select: {
-        id: true,
-        orderId: true,
-        ticketLotId: true,
-      },
-    });
+    const ticket = await findOneTicketForAccessCheck(this.dataSource, ticketId);
 
     if (!ticket?.order || !ticket.ticketLot?.event) {
       return false;
@@ -66,4 +55,3 @@ export class WalletAccessService {
     return false;
   }
 }
-

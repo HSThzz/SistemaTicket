@@ -4,13 +4,14 @@
  */
 
 import type { DataSource } from "typeorm";
-import { Order } from "../../../shared/infrastructure/persistence/entities/Order";
 import { OrderStatus } from "../../../shared/kernel/enums";
 import { OrderNotFoundError } from "../../payment/domain/errors/PaymentError";
 import type {
   PaymentService,
   PixPaymentDetails,
 } from "../../payment/application/PaymentService";
+import { findOneOrderByIdForAdmin } from "./queries/findOneOrderByIdForAdmin";
+import { findOrdersByUserId } from "./queries/findOrdersByUserId";
 
 /**
  * Representação resumida de um pedido na listagem do cliente.
@@ -52,17 +53,7 @@ export class OrderQueryService {
    * @returns Lista de pedidos com evento e dados PIX quando o status for pendente.
    */
   async listUserOrders(userId: string): Promise<OrderListItem[]> {
-    const orders = await this.dataSource.getRepository(Order).find({
-      where: { userId },
-      relations: {
-        reservation: {
-          ticketLot: {
-            event: true,
-          },
-        },
-      },
-      order: { id: "DESC" },
-    });
+    const orders = await findOrdersByUserId(this.dataSource, userId);
 
     return Promise.all(
       orders.map(async (order) => {
@@ -92,17 +83,7 @@ export class OrderQueryService {
    * @throws {OrderNotFoundError} Pedido inexistente.
    */
   async getOrderByIdForAdmin(orderId: string): Promise<OrderAdminDetails> {
-    const order = await this.dataSource.getRepository(Order).findOne({
-      where: { id: orderId },
-      relations: {
-        user: true,
-        reservation: {
-          ticketLot: {
-            event: true,
-          },
-        },
-      },
-    });
+    const order = await findOneOrderByIdForAdmin(this.dataSource, orderId);
 
     if (!order) {
       throw new OrderNotFoundError(orderId);

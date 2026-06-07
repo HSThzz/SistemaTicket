@@ -5,7 +5,6 @@
 
 import type { DataSource } from "typeorm";
 import { Logger } from "../../../shared/infrastructure/config/logger";
-import { Ticket } from "../../../shared/infrastructure/persistence/entities/Ticket";
 import { EventStatus, TicketStatus, UserRole } from "../../../shared/kernel/enums";
 import {
   CheckInAccessDeniedError,
@@ -14,6 +13,8 @@ import {
   InvalidTicketStatusError,
   TicketNotFoundError,
 } from "../domain/errors/CheckInError";
+import { checkInTicket } from "./commands/checkInTicket";
+import { findOneTicketByUniqueCode } from "./queries/findOneTicketByUniqueCode";
 
 const CONTEXT = "CheckInService";
 const CHECK_IN_TIMEZONE = "America/Sao_Paulo";
@@ -59,104 +60,90 @@ export class CheckInService {
    * @throws {CheckInNotAllowedTodayError} Fora do dia do evento (SP).
    */
   async checkIn(uniqueCode: string, actor: CheckInActor): Promise<CheckInResult> {
-    return this.dataSource.transaction(async (manager) => {
-      const locked = await manager.findOne(Ticket, {
-        where: { uniqueCode },
-        lock: { mode: "pessimistic_write" },
-      });
+    const ticket = await findOneTicketByUniqueCode(this.dataSource, uniqueCode);
 
-      if (!locked) {
-        this.logger.warn(CONTEXT, "Check-in failed — ticket not found", {
-          uniqueCode,
-        });
-        throw new TicketNotFoundError();
-      }
-
-      const ticket = await manager.findOne(Ticket, {
-        where: { id: locked.id },
-        relations: { ticketLot: { event: true } },
-      });
-
-      if (!ticket?.ticketLot?.event) {
-        this.logger.warn(CONTEXT, "Check-in failed — ticket not found", {
-          uniqueCode,
-        });
-        throw new TicketNotFoundError();
-      }
-
-      const event = ticket.ticketLot.event;
-
-      if (
-        actor.role !== UserRole.ADMIN &&
-        event.producerId !== actor.userId
-      ) {
-        this.logger.warn(CONTEXT, "Check-in rejected — producer does not own event", {
-          ticketId: ticket.id,
-          eventId: event.id,
-          actorUserId: actor.userId,
-        });
-        throw new CheckInAccessDeniedError();
-      }
-
-      if (ticket.status !== TicketStatus.ACTIVE) {
-        this.logger.warn(
-          CONTEXT,
-          "Check-in rejected — invalid ticket status (possible duplicate or fraud)",
-          {
-            ticketId: ticket.id,
-            uniqueCode,
-            currentStatus: ticket.status,
-            eventId: event.id,
-            ownerDocument: ticket.ownerDocument,
-          },
-        );
-        throw new InvalidTicketStatusError(ticket.status);
-      }
-
-      if (event.status !== EventStatus.PUBLISHED) {
-        this.logger.warn(CONTEXT, "Check-in rejected — event not published", {
-          ticketId: ticket.id,
-          eventId: event.id,
-          eventStatus: event.status,
-        });
-        throw new EventNotPublishedError(event.status);
-      }
-
-      if (!isEventDay(event.date)) {
-        const eventDay = formatCalendarDay(event.date);
-
-        this.logger.warn(CONTEXT, "Check-in rejected — wrong event day", {
-          ticketId: ticket.id,
-          eventId: event.id,
-          eventDay,
-          today: formatCalendarDay(new Date()),
-        });
-        throw new CheckInNotAllowedTodayError(eventDay);
-      }
-
-      const checkedInAt = new Date();
-
-      ticket.status = TicketStatus.USED;
-      ticket.checkedInAt = checkedInAt;
-      await manager.save(ticket);
-
-      this.logger.info(CONTEXT, "Check-in completed successfully", {
-        ticketId: ticket.id,
+    if (!ticket?.ticketLot?.event) {
+      this.logger.warn(CONTEXT, "Check-in failed — ticket not found", {
         uniqueCode,
-        eventId: event.id,
-        eventTitle: event.title,
-        checkedInAt: checkedInAt.toISOString(),
-        ownerDocument: ticket.ownerDocument,
       });
+      throw new TicketNotFoundError();
+    }
 
-      return {
-        ownerName: ticket.ownerName,
-        ownerDocument: ticket.ownerDocument,
-        checkedInAt: checkedInAt.toISOString(),
+    const event = ticket.ticketLot.event;
+
+    if (
+      actor.role !== UserRole.ADMIN &&
+      event.producerId !== actor.userId
+    ) {
+      this.logger.warn(CONTEXT, "Check-in rejected — producer does not own event", {
         ticketId: ticket.id,
-        eventTitle: event.title,
-      };
+        eventId: event.id,
+        actorUserId: actor.userId,
+      });
+      throw new CheckInAccessDeniedError();
+    }
+
+    if (ticket.status !== TicketStatus.ACTIVE) {
+      this.logger.warn(
+        CONTEXT,
+        "Check-in rejected — invalid ticket status (possible duplicate or fraud)",
+        {
+          ticketId: ticket.id,
+          uniqueCode,
+          currentStatus: ticket.status,
+          eventId: event.id,
+          ownerDocument: ticket.ownerDocument,
+        },
+      );
+      throw new InvalidTicketStatusError(ticket.status);
+    }
+
+    if (event.status !== EventStatus.PUBLISHED) {
+      this.logger.warn(CONTEXT, "Check-in rejected — event not published", {
+        ticketId: ticket.id,
+        eventId: event.id,
+        eventStatus: event.status,
+      });
+      throw new EventNotPublishedError(event.status);
+    }
+
+    if (!isEventDay(event.date)) {
+      const eventDay = formatCalendarDay(event.date);
+
+      this.logger.warn(CONTEXT, "Check-in rejected — wrong event day", {
+        ticketId: ticket.id,
+        eventId: event.id,
+        eventDay,
+        today: formatCalendarDay(new Date()),
+      });
+      throw new CheckInNotAllowedTodayError(eventDay);
+    }
+
+    const result = await checkInTicket(this.dataSource, uniqueCode);
+
+    if (!result) {
+      this.logger.warn(CONTEXT, "Check-in failed — ticket not found", {
+        uniqueCode,
+      });
+      throw new TicketNotFoundError();
+    }
+
+    this.logger.info(CONTEXT, "Check-in completed successfully", {
+      ticketId: result.ticketId,
+      uniqueCode,
+      eventId: event.id,
+      eventTitle: result.eventTitle,
+      checkedInAt: result.checkedInAt.toISOString(),
+      ownerDocument: result.ownerDocument,
     });
+
+    return {
+      ownerName: result.ownerName,
+      ownerDocument: result.ownerDocument,
+      checkedInAt: result.checkedInAt.toISOString(),
+      ticketId: result.ticketId,
+      eventTitle: result.eventTitle,
+    };
   }
 }
 

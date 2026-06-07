@@ -19,7 +19,7 @@ import {
   InvalidQuantityError,
   TicketLotNotFoundError,
 } from "../domain/errors/PurchaseError";
-import { TicketLot } from "../../../shared/infrastructure/persistence/entities/TicketLot";
+import { findOneTicketLotById } from "./queries/findOneTicketLotById";
 
 const CONTEXT = "PurchaseService";
 
@@ -171,10 +171,7 @@ export class PurchaseService {
       return;
     }
 
-    const lot = await this.dataSource.getRepository(TicketLot).findOne({
-      where: { id: ticketLotId },
-      select: { id: true, availableQuantity: true },
-    });
+    const lot = await findOneTicketLotById(this.dataSource, ticketLotId);
 
     if (!lot) {
       throw new TicketLotNotFoundError(ticketLotId);

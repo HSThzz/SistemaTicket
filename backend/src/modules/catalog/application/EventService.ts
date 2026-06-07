@@ -5,46 +5,28 @@
 
 import type { DataSource } from "typeorm";
 import { Logger } from "../../../shared/infrastructure/config/logger";
-import { Event } from "../../../shared/infrastructure/persistence/entities/Event";
-import { TicketLot } from "../../../shared/infrastructure/persistence/entities/TicketLot";
+import type { Event } from "../../../shared/infrastructure/persistence/entities/Event";
+import type { TicketLot } from "../../../shared/infrastructure/persistence/entities/TicketLot";
 import { EventStatus, UserRole } from "../../../shared/kernel/enums";
 import { EventAccessDeniedError, EventNotFoundError } from "../domain/errors/EventError";
+import { createEvent as createEventCommand } from "./commands/createEvent";
+import { createTicketLot as createTicketLotCommand } from "./commands/createTicketLot";
+import { updateEvent as updateEventCommand } from "./commands/updateEvent";
+import { findManagedEventsByActor } from "./queries/findManagedEventsByActor";
+import { findOneEventById } from "./queries/findOneEventById";
+import { findOneEventByIdWithLots } from "./queries/findOneEventByIdWithLots";
+import { findOnePublishedEventById } from "./queries/findOnePublishedEventById";
+import { findPublishedEvents } from "./queries/findPublishedEvents";
+import type {
+  CreateEventInput,
+  CreateTicketLotInput,
+  EventActor,
+  UpdateEventInput,
+} from "./types";
+
+export type { CreateEventInput, CreateTicketLotInput, EventActor, UpdateEventInput };
 
 const CONTEXT = "EventService";
-
-/** Ator autenticado que executa operações sobre eventos. */
-export interface EventActor {
-  userId: string;
-  role: UserRole;
-}
-
-/** Dados para criação de um evento. */
-export interface CreateEventInput {
-  title: string;
-  description: string;
-  date: string;
-  location: string;
-  imageUrl?: string | null;
-  status?: EventStatus;
-}
-
-/** Dados parciais para atualização de evento. */
-export interface UpdateEventInput {
-  title?: string;
-  description?: string;
-  date?: string;
-  location?: string;
-  imageUrl?: string | null;
-  status?: EventStatus;
-}
-
-/** Dados para criação de lote de ingressos em um evento. */
-export interface CreateTicketLotInput {
-  name: string;
-  price: number;
-  totalQuantity: number;
-  availableQuantity?: number;
-}
 
 /**
  * Regras de negócio de catálogo: listagem pública, gestão por produtor/admin e lotes.
@@ -62,11 +44,7 @@ export class EventService {
    * @returns Eventos com lotes, ordenados por data.
    */
   async listPublished(): Promise<Event[]> {
-    return this.dataSource.getRepository(Event).find({
-      where: { status: EventStatus.PUBLISHED },
-      order: { date: "ASC" },
-      relations: { ticketLots: true },
-    });
+    return findPublishedEvents(this.dataSource);
   }
 
   /**
@@ -75,20 +53,7 @@ export class EventService {
    * @returns Eventos com lotes.
    */
   async listManaged(actor: EventActor): Promise<Event[]> {
-    const repository = this.dataSource.getRepository(Event);
-
-    if (actor.role === UserRole.ADMIN) {
-      return repository.find({
-        order: { date: "ASC" },
-        relations: { ticketLots: true },
-      });
-    }
-
-    return repository.find({
-      where: { producerId: actor.userId },
-      order: { date: "ASC" },
-      relations: { ticketLots: true },
-    });
+    return findManagedEventsByActor(this.dataSource, actor);
   }
 
   /**
@@ -97,10 +62,7 @@ export class EventService {
    * @returns Evento com lotes ou `null` se não publicado ou inexistente.
    */
   async getPublishedById(eventId: string): Promise<Event | null> {
-    return this.dataSource.getRepository(Event).findOne({
-      where: { id: eventId, status: EventStatus.PUBLISHED },
-      relations: { ticketLots: true },
-    });
+    return findOnePublishedEventById(this.dataSource, eventId);
   }
 
   /**
@@ -116,7 +78,7 @@ export class EventService {
       throw new Error("Invalid date");
     }
 
-    const event = this.dataSource.getRepository(Event).create({
+    const saved = await createEventCommand(this.dataSource, {
       producerId: actor.userId,
       title: input.title.trim(),
       description: input.description.trim(),
@@ -126,7 +88,6 @@ export class EventService {
       status: input.status ?? EventStatus.DRAFT,
     });
 
-    const saved = await this.dataSource.getRepository(Event).save(event);
     this.logger.info(CONTEXT, "Event created", {
       eventId: saved.id,
       producerId: saved.producerId,
@@ -150,8 +111,7 @@ export class EventService {
     input: UpdateEventInput,
     actor: EventActor,
   ): Promise<Event> {
-    const repository = this.dataSource.getRepository(Event);
-    const event = await repository.findOne({ where: { id: eventId } });
+    const event = await findOneEventById(this.dataSource, eventId);
     if (!event) {
       throw new EventNotFoundError(eventId);
     }
@@ -171,7 +131,7 @@ export class EventService {
       event.date = date;
     }
 
-    const saved = await repository.save(event);
+    const saved = await updateEventCommand(this.dataSource, event);
     this.logger.info(CONTEXT, "Event updated", {
       eventId: saved.id,
       producerId: saved.producerId,
@@ -196,9 +156,7 @@ export class EventService {
     input: CreateTicketLotInput,
     actor: EventActor,
   ): Promise<TicketLot> {
-    const event = await this.dataSource.getRepository(Event).findOne({
-      where: { id: eventId },
-    });
+    const event = await findOneEventById(this.dataSource, eventId);
     if (!event) {
       throw new EventNotFoundError(eventId);
     }
@@ -220,7 +178,7 @@ export class EventService {
       throw new Error("Invalid availableQuantity");
     }
 
-    const lot = this.dataSource.getRepository(TicketLot).create({
+    const saved = await createTicketLotCommand(this.dataSource, {
       eventId: event.id,
       name: input.name.trim(),
       price: input.price,
@@ -228,7 +186,6 @@ export class EventService {
       availableQuantity,
     });
 
-    const saved = await this.dataSource.getRepository(TicketLot).save(lot);
     this.logger.info(CONTEXT, "Ticket lot created", {
       ticketLotId: saved.id,
       eventId: event.id,
@@ -239,10 +196,7 @@ export class EventService {
 
   /** Carrega evento com relação `ticketLots`. */
   private async loadEventWithLots(eventId: string): Promise<Event> {
-    const event = await this.dataSource.getRepository(Event).findOne({
-      where: { id: eventId },
-      relations: { ticketLots: true },
-    });
+    const event = await findOneEventByIdWithLots(this.dataSource, eventId);
 
     if (!event) {
       throw new EventNotFoundError(eventId);

@@ -4,7 +4,7 @@
  */
 
 import type { DataSource } from "typeorm";
-import { Ticket } from "../../../shared/infrastructure/persistence/entities/Ticket";
+import { findTicketsByUserId } from "./queries/findTicketsByUserId";
 
 /**
  * Item da listagem de ingressos do usuário com evento e pedido.
@@ -49,14 +49,7 @@ export class TicketQueryService {
    * @returns Ingressos ordenados do mais recente ao mais antigo.
    */
   async listUserTickets(userId: string): Promise<TicketListItem[]> {
-    const tickets = await this.dataSource.getRepository(Ticket).find({
-      where: { order: { userId } },
-      relations: {
-        order: true,
-        ticketLot: { event: true },
-      },
-      order: { id: "DESC" },
-    });
+    const tickets = await findTicketsByUserId(this.dataSource, userId);
 
     return tickets.map((ticket) => ({
       id: ticket.id,
@@ -85,4 +78,3 @@ export class TicketQueryService {
     }));
   }
 }
-

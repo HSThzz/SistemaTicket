@@ -3,7 +3,6 @@
  * @module payment/application/PaymentService
  */
 
-import { randomBytes } from "node:crypto";
 import type Redis from "ioredis";
 import type { DataSource } from "typeorm";
 import {
@@ -11,20 +10,11 @@ import {
   PAYMENT_CACHE_KEY_PREFIX,
   RESERVATION_KEY_PREFIX,
   RESERVATION_TTL_SECONDS,
-  TICKET_LOT_STOCK_KEY_PREFIX,
 } from "../../../shared/infrastructure/config/constants";
 import { env, isProduction } from "../../../shared/infrastructure/config/env";
 import { Logger } from "../../../shared/infrastructure/config/logger";
-import { Order } from "../../../shared/infrastructure/persistence/entities/Order";
-import { Reservation } from "../../../shared/infrastructure/persistence/entities/Reservation";
-import { Ticket } from "../../../shared/infrastructure/persistence/entities/Ticket";
-import { TicketLot } from "../../../shared/infrastructure/persistence/entities/TicketLot";
-import { User } from "../../../shared/infrastructure/persistence/entities/User";
-import {
-  OrderStatus,
-  ReservationStatus,
-  TicketStatus,
-} from "../../../shared/kernel/enums";
+import type { Order } from "../../../shared/infrastructure/persistence/entities/Order";
+import { OrderStatus, TicketStatus } from "../../../shared/kernel/enums";
 import {
   InvalidWebhookPayloadError,
   OrderAlreadyRefundedError,
@@ -38,6 +28,16 @@ import {
   createPaymentGateway,
   isMercadoPagoPixGateway,
 } from "../infrastructure/gateways/createPaymentGateway";
+import { expireUnpaidOrderByReservationId as expireUnpaidOrderCommand } from "./commands/expireUnpaidOrderByReservationId";
+import { processPaymentFailed } from "./commands/processPaymentFailed";
+import { processPaymentSucceeded } from "./commands/processPaymentSucceeded";
+import { refundOrder as refundOrderCommand } from "./commands/refundOrder";
+import { updateOrder } from "./commands/updateOrder";
+import { updateOrderPixFields } from "./commands/updateOrderPixFields";
+import { findOneOrderById } from "./queries/findOneOrderById";
+import { findOneOrderByIdWithPaymentRelations } from "./queries/findOneOrderByIdWithPaymentRelations";
+import { findOneOrderReservationIdById } from "./queries/findOneOrderReservationIdById";
+import { findTicketsByOrderId } from "./queries/findTicketsByOrderId";
 
 const CONTEXT = "PaymentService";
 
@@ -136,10 +136,7 @@ export class PaymentService {
   async processOrderPayment(orderId: string): Promise<PixPaymentDetails> {
     this.logger.info(CONTEXT, "Starting PIX charge creation", { orderId });
 
-    const order = await this.dataSource.getRepository(Order).findOne({
-      where: { id: orderId },
-      relations: { reservation: { ticketLot: true }, user: true },
-    });
+    const order = await findOneOrderByIdWithPaymentRelations(this.dataSource, orderId);
 
     if (!order?.user) {
       throw new OrderNotFoundError(orderId);
@@ -157,7 +154,7 @@ export class PaymentService {
     order.paymentGatewayId = charge.transactionId;
     order.pixCopyPaste = charge.pixCopyPaste;
     order.pixExpiresAt = charge.expiresAt;
-    await this.dataSource.getRepository(Order).save(order);
+    await updateOrder(this.dataSource, order);
 
     this.logger.info(CONTEXT, "PIX charge created", {
       orderId: order.id,
@@ -215,7 +212,7 @@ export class PaymentService {
       if (recovered) {
         order.pixCopyPaste = recovered.pixCopyPaste;
         order.pixExpiresAt = recovered.expiresAt;
-        await this.dataSource.getRepository(Order).save(order);
+        await updateOrder(this.dataSource, order);
 
         return this.buildPixPaymentDetails(order, {
           transactionId: order.paymentGatewayId,
@@ -236,9 +233,7 @@ export class PaymentService {
    * @throws {PaymentGatewayError} Com código `PIX_NOT_AVAILABLE` se não houver PIX.
    */
   async getOrderPixPayment(orderId: string, userId: string): Promise<PixPaymentDetails> {
-    const order = await this.dataSource.getRepository(Order).findOne({
-      where: { id: orderId },
-    });
+    const order = await findOneOrderById(this.dataSource, orderId);
 
     if (!order || order.userId !== userId) {
       throw new OrderNotFoundError(orderId);
@@ -278,7 +273,7 @@ export class PaymentService {
     orderId: string,
     details: PixPaymentDetails,
   ): Promise<void> {
-    await this.dataSource.getRepository(Order).update(orderId, {
+    await updateOrderPixFields(this.dataSource, orderId, {
       pixCopyPaste: details.pixCopyPaste,
       pixExpiresAt: new Date(details.expiresAt),
     });
@@ -296,9 +291,7 @@ export class PaymentService {
   async refundOrder(orderId: string): Promise<RefundOrderResult> {
     this.logger.info(CONTEXT, "Starting order refund", { orderId });
 
-    const order = await this.dataSource.getRepository(Order).findOne({
-      where: { id: orderId },
-    });
+    const order = await findOneOrderById(this.dataSource, orderId);
 
     if (!order) {
       throw new OrderNotFoundError(orderId);
@@ -314,9 +307,7 @@ export class PaymentService {
       );
     }
 
-    const tickets = await this.dataSource.getRepository(Ticket).find({
-      where: { orderId },
-    });
+    const tickets = await findTicketsByOrderId(this.dataSource, orderId);
 
     const hasUsedTicket = tickets.some(
       (ticket) =>
@@ -334,102 +325,12 @@ export class PaymentService {
       await this.gateway.refundPayment(order.paymentGatewayId);
     }
 
-    const result = await this.dataSource.transaction(async (manager) => {
-      const lockedOrder = await manager.findOne(Order, {
-        where: { id: orderId },
-        lock: { mode: "pessimistic_write" },
-      });
+    const result = await refundOrderCommand(this.dataSource, orderId, this.redis);
 
-      if (!lockedOrder) {
-        throw new OrderNotFoundError(orderId);
-      }
-
-      if (lockedOrder.status === OrderStatus.REFUNDED) {
-        throw new OrderAlreadyRefundedError(orderId);
-      }
-
-      if (lockedOrder.status !== OrderStatus.PAID) {
-        throw new OrderRefundNotAllowedError(
-          `Order ${orderId} with status ${lockedOrder.status} cannot be refunded`,
-        );
-      }
-
-      const orderTickets = await manager.find(Ticket, {
-        where: { orderId },
-        lock: { mode: "pessimistic_write" },
-      });
-
-      const activeTickets = orderTickets.filter(
-        (ticket) => ticket.status === TicketStatus.ACTIVE,
-      );
-
-      const checkedIn = orderTickets.some(
-        (ticket) =>
-          ticket.status === TicketStatus.USED || ticket.checkedInAt !== null,
-      );
-
-      if (checkedIn) {
-        throw new OrderRefundNotAllowedError(
-          `Order ${orderId} has checked-in tickets and cannot be refunded`,
-          "TICKET_ALREADY_USED",
-        );
-      }
-
-      for (const ticket of activeTickets) {
-        ticket.status = TicketStatus.CANCELLED;
-        await manager.save(ticket);
-      }
-
-      const stockByLot = new Map<string, number>();
-      for (const ticket of activeTickets) {
-        stockByLot.set(
-          ticket.ticketLotId,
-          (stockByLot.get(ticket.ticketLotId) ?? 0) + 1,
-        );
-      }
-
-      let stockRestored = 0;
-
-      for (const [ticketLotId, quantity] of stockByLot) {
-        const ticketLot = await manager.findOne(TicketLot, {
-          where: { id: ticketLotId },
-          lock: { mode: "pessimistic_write" },
-        });
-
-        if (!ticketLot) {
-          this.logger.error(CONTEXT, "Ticket lot not found during refund", {
-            orderId,
-            ticketLotId,
-          });
-          continue;
-        }
-
-        ticketLot.availableQuantity += quantity;
-        await manager.save(ticketLot);
-        stockRestored += quantity;
-
-        if (this.redis) {
-          await this.redis.incrby(
-            `${TICKET_LOT_STOCK_KEY_PREFIX}${ticketLotId}`,
-            quantity,
-          );
-        }
-      }
-
-      lockedOrder.status = OrderStatus.REFUNDED;
-      await manager.save(lockedOrder);
-
-      this.logger.info(CONTEXT, "Order refunded successfully", {
-        orderId,
-        ticketsCancelled: activeTickets.length,
-        stockRestored,
-      });
-
-      return {
-        orderId,
-        ticketsCancelled: activeTickets.length,
-        stockRestored,
-      };
+    this.logger.info(CONTEXT, "Order refunded successfully", {
+      orderId,
+      ticketsCancelled: result.ticketsCancelled,
+      stockRestored: result.stockRestored,
     });
 
     await this.clearPaymentCache(orderId);
@@ -457,9 +358,7 @@ export class PaymentService {
       );
     }
 
-    const order = await this.dataSource.getRepository(Order).findOne({
-      where: { id: orderId },
-    });
+    const order = await findOneOrderById(this.dataSource, orderId);
 
     if (!order) {
       throw new OrderNotFoundError(orderId);
@@ -517,75 +416,24 @@ export class PaymentService {
       reservationId,
     });
 
-    let orderId: string | null = null;
+    const { expired, orderId } = await expireUnpaidOrderCommand(
+      this.dataSource,
+      reservationId,
+      this.redis,
+    );
 
-    const expired = await this.dataSource.transaction(async (manager) => {
-      const reservation = await manager.findOne(Reservation, {
-        where: { id: reservationId },
-        lock: { mode: "pessimistic_write" },
-      });
+    if (!expired) {
+      this.logger.warn(
+        CONTEXT,
+        "Reservation not found or no longer pending on expiry",
+        { reservationId },
+      );
+      return false;
+    }
 
-      if (!reservation) {
-        this.logger.warn(
-          CONTEXT,
-          "Reservation not found on expiry (likely not persisted yet)",
-          { reservationId },
-        );
-        return false;
-      }
-
-      if (reservation.status !== ReservationStatus.PENDING) {
-        this.logger.info(CONTEXT, "Skipping expiry — reservation is no longer pending", {
-          reservationId,
-          status: reservation.status,
-        });
-        return false;
-      }
-
-      const order = await manager.findOne(Order, {
-        where: { reservationId },
-        lock: { mode: "pessimistic_write" },
-      });
-
-      if (order?.status === OrderStatus.PENDING) {
-        order.status = OrderStatus.FAILED;
-        await manager.save(order);
-        orderId = order.id;
-      }
-
-      reservation.status = ReservationStatus.EXPIRED;
-      await manager.save(reservation);
-
-      const ticketLot = await manager.findOne(TicketLot, {
-        where: { id: reservation.ticketLotId },
-        lock: { mode: "pessimistic_write" },
-      });
-
-      if (!ticketLot) {
-        this.logger.error(CONTEXT, "Ticket lot not found when restoring stock on expiry", {
-          reservationId,
-          ticketLotId: reservation.ticketLotId,
-        });
-        return Boolean(orderId);
-      }
-
-      ticketLot.availableQuantity += reservation.quantity;
-      await manager.save(ticketLot);
-
-      if (this.redis) {
-        const stockKey = `${TICKET_LOT_STOCK_KEY_PREFIX}${ticketLot.id}`;
-        await this.redis.incrby(stockKey, reservation.quantity);
-      }
-
-      this.logger.info(CONTEXT, "Unpaid order expired — stock restored", {
-        reservationId,
-        orderId,
-        ticketLotId: ticketLot.id,
-        quantity: reservation.quantity,
-        availableQuantity: ticketLot.availableQuantity,
-      });
-
-      return true;
+    this.logger.info(CONTEXT, "Unpaid order expired — stock restored", {
+      reservationId,
+      orderId,
     });
 
     if (orderId) {
@@ -593,7 +441,7 @@ export class PaymentService {
       await this.clearPaymentCache(orderId);
     }
 
-    return expired;
+    return true;
   }
 
   /**
@@ -658,98 +506,27 @@ export class PaymentService {
       transactionId: data.transactionId,
     });
 
-    await this.dataSource.transaction(async (manager) => {
-      const order = await manager.findOne(Order, {
-        where: { id: data.orderId },
-        lock: { mode: "pessimistic_write" },
+    try {
+      const result = await processPaymentSucceeded(this.dataSource, {
+        orderId: data.orderId,
+        transactionId: data.transactionId,
       });
-
-      if (!order) {
-        throw new OrderNotFoundError(data.orderId);
-      }
-
-      if (order.status === OrderStatus.PAID) {
-        this.logger.warn(CONTEXT, "Payment success ignored — order already paid", {
-          orderId: order.id,
-        });
-        throw new PaymentAlreadyProcessedError(order.id, order.status);
-      }
-
-      if (order.status !== OrderStatus.PENDING) {
-        this.logger.warn(CONTEXT, "Payment success ignored — invalid order status", {
-          orderId: order.id,
-          status: order.status,
-        });
-        throw new PaymentAlreadyProcessedError(order.id, order.status);
-      }
-
-      const reservation = await manager.findOne(Reservation, {
-        where: { id: order.reservationId },
-        lock: { mode: "pessimistic_write" },
-      });
-
-      if (!reservation) {
-        this.logger.error(CONTEXT, "Reservation not found for paid order", {
-          orderId: order.id,
-          reservationId: order.reservationId,
-        });
-        throw new OrderNotFoundError(data.orderId);
-      }
-
-      if (reservation.status !== ReservationStatus.PENDING) {
-        this.logger.warn(CONTEXT, "Payment success on non-pending reservation", {
-          orderId: order.id,
-          reservationId: reservation.id,
-          reservationStatus: reservation.status,
-        });
-        throw new PaymentAlreadyProcessedError(
-          order.id,
-          reservation.status,
-        );
-      }
-
-      const user = await manager.findOne(User, {
-        where: { id: order.userId },
-      });
-
-      if (!user) {
-        this.logger.error(CONTEXT, "User not found for paid order", {
-          orderId: order.id,
-          userId: order.userId,
-        });
-        throw new OrderNotFoundError(data.orderId);
-      }
-
-      order.status = OrderStatus.PAID;
-      order.paymentGatewayId = data.transactionId;
-      await manager.save(order);
-
-      reservation.status = ReservationStatus.COMPLETED;
-      await manager.save(reservation);
-
-      const tickets: Ticket[] = [];
-
-      for (let index = 0; index < reservation.quantity; index += 1) {
-        const ticket = manager.create(Ticket, {
-          orderId: order.id,
-          ticketLotId: reservation.ticketLotId,
-          ownerName: user.name,
-          ownerDocument: user.document,
-          uniqueCode: randomBytes(32).toString("hex"),
-          status: TicketStatus.ACTIVE,
-        });
-
-        tickets.push(await manager.save(ticket));
-      }
 
       this.logger.info(CONTEXT, "Payment succeeded — tickets issued", {
-        orderId: order.id,
-        reservationId: reservation.id,
-        transactionId: data.transactionId,
-        ticketsCreated: tickets.length,
-        ticketIds: tickets.map((ticket) => ticket.id),
+        orderId: result.orderId,
+        reservationId: result.reservationId,
+        transactionId: result.transactionId,
+        ticketsCreated: result.ticketsCreated,
+        ticketIds: result.ticketIds,
       });
-    });
+    } catch (error) {
+      if (error instanceof PaymentAlreadyProcessedError) {
+        this.logger.warn(CONTEXT, "Payment success ignored — already processed", {
+          orderId: data.orderId,
+        });
+      }
+      throw error;
+    }
 
     await this.clearReservationCache(data.orderId);
     await this.clearPaymentCache(data.orderId);
@@ -764,74 +541,33 @@ export class PaymentService {
       failureReason: data.failureReason,
     });
 
-    await this.dataSource.transaction(async (manager) => {
-      const order = await manager.findOne(Order, {
-        where: { id: data.orderId },
-        lock: { mode: "pessimistic_write" },
+    const result = await processPaymentFailed(
+      this.dataSource,
+      {
+        orderId: data.orderId,
+        transactionId: data.transactionId,
+      },
+      this.redis,
+    );
+
+    if (result.status === "already_failed") {
+      this.logger.info(CONTEXT, "Payment failure ignored — order already failed", {
+        orderId: data.orderId,
       });
+      return;
+    }
 
-      if (!order) {
-        throw new OrderNotFoundError(data.orderId);
-      }
-
-      if (order.status === OrderStatus.FAILED) {
-        this.logger.info(CONTEXT, "Payment failure ignored — order already failed", {
-          orderId: order.id,
-        });
-        return;
-      }
-
-      if (order.status === OrderStatus.PAID) {
-        this.logger.error(CONTEXT, "Cannot fail order that is already paid", {
-          orderId: order.id,
-        });
-        throw new PaymentAlreadyProcessedError(order.id, order.status);
-      }
-
-      order.status = OrderStatus.FAILED;
-      order.paymentGatewayId = data.transactionId;
-      await manager.save(order);
-
-      const reservation = await manager.findOne(Reservation, {
-        where: { id: order.reservationId },
-        lock: { mode: "pessimistic_write" },
+    if (result.status === "reservation_not_restored") {
+      this.logger.info(CONTEXT, "Payment failed — reservation not restored", {
+        orderId: data.orderId,
       });
-
-      if (!reservation || reservation.status !== ReservationStatus.PENDING) {
-        this.logger.info(CONTEXT, "Payment failed — reservation not restored", {
-          orderId: order.id,
-          reservationId: order.reservationId,
-          reservationStatus: reservation?.status,
-        });
-        return;
-      }
-
-      reservation.status = ReservationStatus.EXPIRED;
-      await manager.save(reservation);
-
-      const ticketLot = await manager.findOne(TicketLot, {
-        where: { id: reservation.ticketLotId },
-        lock: { mode: "pessimistic_write" },
+    } else if (result.status === "processed") {
+      this.logger.info(CONTEXT, "Payment failed — stock restored to lot", {
+        orderId: data.orderId,
+        ticketLotId: result.ticketLotId,
+        quantityRestored: result.stockRestored,
       });
-
-      if (ticketLot) {
-        ticketLot.availableQuantity += reservation.quantity;
-        await manager.save(ticketLot);
-
-        if (this.redis) {
-          const stockKey = `${TICKET_LOT_STOCK_KEY_PREFIX}${ticketLot.id}`;
-          await this.redis.incrby(stockKey, reservation.quantity);
-        }
-
-        this.logger.info(CONTEXT, "Payment failed — stock restored to lot", {
-          orderId: order.id,
-          reservationId: reservation.id,
-          ticketLotId: ticketLot.id,
-          quantityRestored: reservation.quantity,
-          availableQuantity: ticketLot.availableQuantity,
-        });
-      }
-    });
+    }
 
     await this.clearReservationCache(data.orderId);
     await this.clearPaymentCache(data.orderId);
@@ -842,10 +578,7 @@ export class PaymentService {
       return;
     }
 
-    const order = await this.dataSource.getRepository(Order).findOne({
-      where: { id: orderId },
-      select: { id: true, reservationId: true },
-    });
+    const order = await findOneOrderReservationIdById(this.dataSource, orderId);
 
     if (!order) {
       return;
@@ -866,10 +599,7 @@ export class PaymentService {
       return;
     }
 
-    const order = await this.dataSource.getRepository(Order).findOne({
-      where: { id: orderId },
-      select: { id: true, reservationId: true },
-    });
+    const order = await findOneOrderReservationIdById(this.dataSource, orderId);
 
     if (!order) {
       return;

@@ -17,10 +17,7 @@ import {
   TICKET_LOT_STOCK_KEY_PREFIX,
 } from "../../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
-import { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
-import { Reservation } from "../../../../shared/infrastructure/persistence/entities/Reservation";
-import { TicketLot } from "../../../../shared/infrastructure/persistence/entities/TicketLot";
-import { OrderStatus, ReservationStatus } from "../../../../shared/kernel/enums";
+import { persistReservation } from "../../application/commands/persistReservation";
 import { PaymentService } from "../../../payment/application/PaymentService";
 
 const CONTEXT = "ReservationPersistenceWorker";
@@ -165,78 +162,37 @@ export class ReservationPersistenceWorker {
     }
 
     try {
-      const orderId = await this.dataSource.transaction(async (manager) => {
-        const existing = await manager.findOne(Reservation, {
-          where: { id: payload.reservationId },
-        });
+      const result = await persistReservation(this.dataSource, payload);
 
-        if (existing) {
-          this.logger.warn(CONTEXT, "Reservation already persisted (duplicate job)", {
-            reservationId: payload.reservationId,
-          });
+      let orderId: string | null = null;
 
-          const existingOrder = await manager.findOne(Order, {
-            where: { reservationId: payload.reservationId },
-          });
-          return existingOrder?.id ?? null;
-        }
-
-        const lot = await manager.findOne(TicketLot, {
-          where: { id: payload.ticketLotId },
-          lock: { mode: "pessimistic_write" },
-        });
-
-        if (!lot) {
-          this.logger.error(CONTEXT, "Ticket lot not found during persistence", {
-            reservationId: payload.reservationId,
-            ticketLotId: payload.ticketLotId,
-          });
-          await this.compensateRedis(stockKey, reservationKey, payload.quantity);
-          return null;
-        }
-
-        lot.availableQuantity -= payload.quantity;
-        if (lot.availableQuantity < 0) {
-          this.logger.error(CONTEXT, "DB stock would become negative — compensating Redis", {
-            reservationId: payload.reservationId,
-            ticketLotId: payload.ticketLotId,
-            dbAvailableAfter: lot.availableQuantity,
-          });
-          await this.compensateRedis(stockKey, reservationKey, payload.quantity);
-          return null;
-        }
-
-        await manager.save(lot);
-
-        const reservation = manager.create(Reservation, {
-          id: payload.reservationId,
-          userId: payload.userId,
-          ticketLotId: payload.ticketLotId,
-          quantity: payload.quantity,
-          status: ReservationStatus.PENDING,
-          expiresAt: new Date(payload.expiresAt),
-        });
-        await manager.save(reservation);
-
-        const order = manager.create(Order, {
-          userId: payload.userId,
+      if (result.status === "duplicate") {
+        this.logger.warn(CONTEXT, "Reservation already persisted (duplicate job)", {
           reservationId: payload.reservationId,
-          totalPrice: lot.price * payload.quantity,
-          status: OrderStatus.PENDING,
-          paymentGatewayId: null,
         });
-        await manager.save(order);
-
+        orderId = result.orderId;
+      } else if (result.status === "lot_not_found") {
+        this.logger.error(CONTEXT, "Ticket lot not found during persistence", {
+          reservationId: payload.reservationId,
+          ticketLotId: payload.ticketLotId,
+        });
+        await this.compensateRedis(stockKey, reservationKey, payload.quantity);
+      } else if (result.status === "negative_stock") {
+        this.logger.error(CONTEXT, "DB stock would become negative — compensating Redis", {
+          reservationId: payload.reservationId,
+          ticketLotId: payload.ticketLotId,
+        });
+        await this.compensateRedis(stockKey, reservationKey, payload.quantity);
+      } else {
+        orderId = result.orderId;
         this.logger.info(CONTEXT, "Reservation persisted successfully", {
           reservationId: payload.reservationId,
-          orderId: order.id,
+          orderId: result.orderId,
           ticketLotId: payload.ticketLotId,
           userId: payload.userId,
           quantity: payload.quantity,
         });
-
-        return order.id;
-      });
+      }
 
       if (!orderId) {
         this.failedCount += 1;

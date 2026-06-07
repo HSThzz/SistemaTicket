@@ -4,11 +4,11 @@
  */
 
 import type { DataSource } from "typeorm";
-import { Event } from "../../../shared/infrastructure/persistence/entities/Event";
-import { Order } from "../../../shared/infrastructure/persistence/entities/Order";
-import { Ticket } from "../../../shared/infrastructure/persistence/entities/Ticket";
-import { OrderStatus, TicketStatus, UserRole } from "../../../shared/kernel/enums";
-import type { EventActor } from "./EventService";
+import { OrderStatus, TicketStatus } from "../../../shared/kernel/enums";
+import type { EventActor } from "./types";
+import { countTicketsByEventIds } from "./queries/countTicketsByEventIds";
+import { findManagedEventsByActor } from "./queries/findManagedEventsByActor";
+import { sumRevenueByEventIds } from "./queries/sumRevenueByEventIds";
 
 /** Métricas agregadas por evento no painel do produtor. */
 export interface ProducerEventStats {
@@ -51,7 +51,7 @@ export class EventDashboardService {
    * @returns Estatísticas resumidas e por evento.
    */
   async getProducerDashboard(actor: EventActor): Promise<ProducerDashboardStats> {
-    const events = await this.loadManagedEvents(actor);
+    const events = await findManagedEventsByActor(this.dataSource, actor);
     const eventIds = events.map((event) => event.id);
 
     if (eventIds.length === 0) {
@@ -68,9 +68,14 @@ export class EventDashboardService {
     }
 
     const [soldByEvent, checkedInByEvent, revenueByEvent] = await Promise.all([
-      this.countTicketsByEvent(eventIds, OrderStatus.PAID),
-      this.countTicketsByEvent(eventIds, OrderStatus.PAID, TicketStatus.USED),
-      this.sumRevenueByEvent(eventIds),
+      countTicketsByEventIds(this.dataSource, eventIds, OrderStatus.PAID),
+      countTicketsByEventIds(
+        this.dataSource,
+        eventIds,
+        OrderStatus.PAID,
+        TicketStatus.USED,
+      ),
+      sumRevenueByEventIds(this.dataSource, eventIds),
     ]);
 
     const eventStats: ProducerEventStats[] = events.map((event) => {
@@ -116,77 +121,5 @@ export class EventDashboardService {
     );
 
     return { summary, events: eventStats };
-  }
-
-  /** Lista eventos visíveis ao ator com lotes carregados. */
-  private async loadManagedEvents(actor: EventActor): Promise<Event[]> {
-    const repository = this.dataSource.getRepository(Event);
-
-    if (actor.role === UserRole.ADMIN) {
-      return repository.find({
-        order: { date: "ASC" },
-        relations: { ticketLots: true },
-      });
-    }
-
-    return repository.find({
-      where: { producerId: actor.userId },
-      order: { date: "ASC" },
-      relations: { ticketLots: true },
-    });
-  }
-
-  /**
-   * Conta ingressos por evento conforme status de pedido e opcionalmente de ticket.
-   * @param eventIds - IDs dos eventos.
-   * @param orderStatus - Status do pedido exigido.
-   * @param ticketStatus - Status do ingresso opcional.
-   * @returns Mapa eventId → quantidade.
-   */
-  private async countTicketsByEvent(
-    eventIds: string[],
-    orderStatus: OrderStatus,
-    ticketStatus?: TicketStatus,
-  ): Promise<Map<string, number>> {
-    const qb = this.dataSource
-      .getRepository(Ticket)
-      .createQueryBuilder("ticket")
-      .innerJoin("ticket.order", "order")
-      .innerJoin("ticket.ticketLot", "lot")
-      .innerJoin("lot.event", "event")
-      .select("event.id", "eventId")
-      .addSelect("COUNT(ticket.id)", "count")
-      .where("event.id IN (:...eventIds)", { eventIds })
-      .andWhere("order.status = :orderStatus", { orderStatus })
-      .groupBy("event.id");
-
-    if (ticketStatus) {
-      qb.andWhere("ticket.status = :ticketStatus", { ticketStatus });
-    }
-
-    const rows = await qb.getRawMany<{ eventId: string; count: string }>();
-    return new Map(rows.map((row) => [row.eventId, Number(row.count)]));
-  }
-
-  /**
-   * Soma receita bruta (centavos) de pedidos pagos por evento.
-   * @param eventIds - IDs dos eventos.
-   * @returns Mapa eventId → receita em centavos.
-   */
-  private async sumRevenueByEvent(eventIds: string[]): Promise<Map<string, number>> {
-    const rows = await this.dataSource
-      .getRepository(Order)
-      .createQueryBuilder("order")
-      .innerJoin("order.tickets", "ticket")
-      .innerJoin("ticket.ticketLot", "lot")
-      .innerJoin("lot.event", "event")
-      .select("event.id", "eventId")
-      .addSelect("SUM(DISTINCT order.totalPrice)", "revenue")
-      .where("event.id IN (:...eventIds)", { eventIds })
-      .andWhere("order.status = :status", { status: OrderStatus.PAID })
-      .groupBy("event.id")
-      .getRawMany<{ eventId: string; revenue: string }>();
-
-    return new Map(rows.map((row) => [row.eventId, Number(row.revenue)]));
   }
 }

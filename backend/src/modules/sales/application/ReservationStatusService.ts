@@ -11,8 +11,11 @@ import {
   RESERVATION_KEY_PREFIX,
 } from "../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../shared/infrastructure/config/logger";
-import { Order } from "../../../shared/infrastructure/persistence/entities/Order";
-import { Reservation } from "../../../shared/infrastructure/persistence/entities/Reservation";
+import type { Order } from "../../../shared/infrastructure/persistence/entities/Order";
+import type { Reservation } from "../../../shared/infrastructure/persistence/entities/Reservation";
+import { findOneOrderById } from "./queries/findOneOrderById";
+import { findOneOrderByReservationId } from "./queries/findOneOrderByReservationId";
+import { findOneReservationById } from "./queries/findOneReservationById";
 import { OrderStatus, ReservationStatus } from "../../../shared/kernel/enums";
 import {
   ReservationAccessDeniedError,
@@ -105,10 +108,7 @@ export class ReservationStatusService {
         this.redis.get(`${RESERVATION_KEY_PREFIX}${reservationId}`),
         this.redis.get(`${PAYMENT_CACHE_KEY_PREFIX}${reservationId}`),
         this.redis.get(`${ORDER_CACHE_KEY_PREFIX}${reservationId}`),
-        this.dataSource.getRepository(Reservation).findOne({
-          where: { id: reservationId },
-          relations: { ticketLot: true },
-        }),
+        findOneReservationById(this.dataSource, reservationId),
         this.queueMonitor.getStats(),
       ]);
 
@@ -131,13 +131,9 @@ export class ReservationStatusService {
 
     let order: Order | null = null;
     if (dbReservation) {
-      order = await this.dataSource.getRepository(Order).findOne({
-        where: { reservationId },
-      });
+      order = await findOneOrderByReservationId(this.dataSource, reservationId);
     } else if (orderIdCached) {
-      order = await this.dataSource.getRepository(Order).findOne({
-        where: { id: orderIdCached },
-      });
+      order = await findOneOrderById(this.dataSource, orderIdCached);
     }
 
     const phase = this.resolvePhase(dbReservation, order, payment, redisPayload);
