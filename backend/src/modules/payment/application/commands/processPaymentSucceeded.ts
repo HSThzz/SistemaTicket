@@ -14,35 +14,44 @@ import {
   ReservationStatus,
   TicketStatus,
 } from "../../../../shared/kernel/enums";
+import type { Prettify } from "../../../../shared/kernel/prettify";
 import {
   OrderNotFoundError,
   PaymentAlreadyProcessedError,
 } from "../../domain/errors/PaymentError";
 
-export interface ProcessPaymentSucceededData {
-  orderId: string;
-  transactionId: string;
-}
+export type ProcessPaymentSucceededData = Prettify<
+  Pick<Order, "id"> & {
+    paymentGatewayId: NonNullable<Order["paymentGatewayId"]>;
+  }
+>;
 
-export interface ProcessPaymentSucceededResult {
-  orderId: string;
-  reservationId: string;
-  transactionId: string;
-  ticketsCreated: number;
-  ticketIds: string[];
-}
+export type ProcessPaymentSucceededResult = Prettify<
+  Pick<Order, "id" | "reservationId"> & {
+    paymentGatewayId: NonNullable<Order["paymentGatewayId"]>;
+    ticketsCreated: number;
+    ticketIds: Ticket["id"][];
+  }
+>;
+
+type CreateTicketData = Prettify<
+  Pick<
+    Ticket,
+    "orderId" | "ticketLotId" | "ownerName" | "ownerDocument" | "uniqueCode" | "status"
+  >
+>;
 
 export async function processPaymentSucceeded(
   data: ProcessPaymentSucceededData,
 ): Promise<ProcessPaymentSucceededResult> {
   return AppDataSource.transaction(async (manager) => {
     const order = await manager.findOne(Order, {
-      where: { id: data.orderId },
+      where: { id: data.id },
       lock: { mode: "pessimistic_write" },
     });
 
     if (!order) {
-      throw new OrderNotFoundError(data.orderId);
+      throw new OrderNotFoundError(data.id);
     }
 
     if (order.status === OrderStatus.PAID) {
@@ -59,7 +68,7 @@ export async function processPaymentSucceeded(
     });
 
     if (!reservation) {
-      throw new OrderNotFoundError(data.orderId);
+      throw new OrderNotFoundError(data.id);
     }
 
     if (reservation.status !== ReservationStatus.PENDING) {
@@ -71,11 +80,11 @@ export async function processPaymentSucceeded(
     });
 
     if (!user) {
-      throw new OrderNotFoundError(data.orderId);
+      throw new OrderNotFoundError(data.id);
     }
 
     order.status = OrderStatus.PAID;
-    order.paymentGatewayId = data.transactionId;
+    order.paymentGatewayId = data.paymentGatewayId;
     await manager.save(order);
 
     reservation.status = ReservationStatus.COMPLETED;
@@ -84,26 +93,25 @@ export async function processPaymentSucceeded(
     const tickets: Ticket[] = [];
 
     for (let index = 0; index < reservation.quantity; index += 1) {
-      const ticket = manager.create(Ticket, {
+      const ticketData: CreateTicketData = {
         orderId: order.id,
         ticketLotId: reservation.ticketLotId,
         ownerName: user.name,
         ownerDocument: user.document,
         uniqueCode: randomBytes(32).toString("hex"),
         status: TicketStatus.ACTIVE,
-      });
+      };
+      const ticket = manager.create(Ticket, ticketData);
 
       tickets.push(await manager.save(ticket));
     }
 
     return {
-      orderId: order.id,
+      id: order.id,
       reservationId: reservation.id,
-      transactionId: data.transactionId,
+      paymentGatewayId: data.paymentGatewayId,
       ticketsCreated: tickets.length,
       ticketIds: tickets.map((ticket) => ticket.id),
     };
   });
 }
-
-

@@ -45,9 +45,10 @@ export async function resolvePixPaymentDetails(
     const recovered = await gateway.getPixCopyPaste(order.paymentGatewayId);
 
     if (recovered) {
-      order.pixCopyPaste = recovered.pixCopyPaste;
-      order.pixExpiresAt = recovered.expiresAt;
-      await updateOrder(order);
+      await updateOrder(order, {
+        pixCopyPaste: recovered.pixCopyPaste,
+        pixExpiresAt: recovered.expiresAt,
+      });
 
       return buildPixPaymentDetails(order, {
         transactionId: order.paymentGatewayId,

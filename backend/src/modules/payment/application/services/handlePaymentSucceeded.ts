@@ -20,14 +20,14 @@ export async function handlePaymentSucceeded(
 
   try {
     const result = await processPaymentSucceeded({
-      orderId: data.orderId,
-      transactionId: data.transactionId,
+      id: data.orderId,
+      paymentGatewayId: data.transactionId,
     });
 
     logger.info(CONTEXT, "Payment succeeded — tickets issued", {
-      orderId: result.orderId,
+      orderId: result.id,
       reservationId: result.reservationId,
-      transactionId: result.transactionId,
+      transactionId: result.paymentGatewayId,
       ticketsCreated: result.ticketsCreated,
       ticketIds: result.ticketIds,
     });

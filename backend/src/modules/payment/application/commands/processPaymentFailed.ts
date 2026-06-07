@@ -10,18 +10,24 @@ import { Order } from "../../../../shared/infrastructure/persistence/entities/Or
 import { Reservation } from "../../../../shared/infrastructure/persistence/entities/Reservation";
 import { TicketLot } from "../../../../shared/infrastructure/persistence/entities/TicketLot";
 import { OrderStatus, ReservationStatus } from "../../../../shared/kernel/enums";
+import type { Prettify } from "../../../../shared/kernel/prettify";
 import {
   OrderNotFoundError,
   PaymentAlreadyProcessedError,
 } from "../../domain/errors/PaymentError";
 
-export interface ProcessPaymentFailedData {
-  orderId: string;
-  transactionId: string;
-}
+export type ProcessPaymentFailedData = Prettify<
+  Pick<Order, "id"> & {
+    paymentGatewayId: NonNullable<Order["paymentGatewayId"]>;
+  }
+>;
 
 export type ProcessPaymentFailedResult =
-  | { status: "processed"; stockRestored: number; ticketLotId: string | null }
+  | Prettify<{
+      status: "processed";
+      stockRestored: number;
+      ticketLotId: TicketLot["id"] | null;
+    }>
   | { status: "already_failed" }
   | { status: "already_paid" }
   | { status: "reservation_not_restored" };
@@ -32,12 +38,12 @@ export async function processPaymentFailed(
 ): Promise<ProcessPaymentFailedResult> {
   return AppDataSource.transaction(async (manager) => {
     const order = await manager.findOne(Order, {
-      where: { id: data.orderId },
+      where: { id: data.id },
       lock: { mode: "pessimistic_write" },
     });
 
     if (!order) {
-      throw new OrderNotFoundError(data.orderId);
+      throw new OrderNotFoundError(data.id);
     }
 
     if (order.status === OrderStatus.FAILED) {
@@ -49,7 +55,7 @@ export async function processPaymentFailed(
     }
 
     order.status = OrderStatus.FAILED;
-    order.paymentGatewayId = data.transactionId;
+    order.paymentGatewayId = data.paymentGatewayId;
     await manager.save(order);
 
     const reservation = await manager.findOne(Reservation, {
@@ -92,5 +98,3 @@ export async function processPaymentFailed(
     };
   });
 }
-
-

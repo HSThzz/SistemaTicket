@@ -5,7 +5,10 @@ import {
   updateEventSchema,
   type UpdateEventInputSchema,
 } from "../../validators/schema/updateEventSchema";
-import { updateEvent as updateEventCommand } from "../commands/updateEvent";
+import {
+  updateEvent as updateEventCommand,
+  type UpdateEventData,
+} from "../commands/updateEvent";
 import { assertCanManageEvent } from "../helpers/assertCanManageEvent";
 import { loadEventWithLots } from "../helpers/loadEventWithLots";
 import { normalizeImageUrl } from "../helpers/normalizeImageUrl";
@@ -14,6 +17,19 @@ import type { EventActor } from "../types";
 import { EventNotFoundError } from "../../domain/errors/EventError";
 
 const CONTEXT = "updateEvent";
+
+function buildUpdateEventData(input: UpdateEventInputSchema): UpdateEventData {
+  const changes: UpdateEventData = {};
+
+  if (input.title !== undefined) changes.title = input.title;
+  if (input.description !== undefined) changes.description = input.description;
+  if (input.location !== undefined) changes.location = input.location;
+  if (input.imageUrl !== undefined) changes.imageUrl = normalizeImageUrl(input.imageUrl);
+  if (input.status !== undefined) changes.status = input.status;
+  if (input.date !== undefined) changes.date = new Date(input.date);
+
+  return changes;
+}
 
 export async function updateEvent(
   eventId: string,
@@ -30,14 +46,8 @@ export async function updateEvent(
 
   assertCanManageEvent(event, actor);
 
-  if (data.title !== undefined) event.title = data.title;
-  if (data.description !== undefined) event.description = data.description;
-  if (data.location !== undefined) event.location = data.location;
-  if (data.imageUrl !== undefined) event.imageUrl = normalizeImageUrl(data.imageUrl);
-  if (data.status !== undefined) event.status = data.status;
-  if (data.date !== undefined) event.date = new Date(data.date);
-
-  const saved = await updateEventCommand(event);
+  const changes = buildUpdateEventData(data);
+  const saved = await updateEventCommand(event, changes);
 
   Logger.getInstance().info(CONTEXT, "Event updated", {
     eventId: saved.id,

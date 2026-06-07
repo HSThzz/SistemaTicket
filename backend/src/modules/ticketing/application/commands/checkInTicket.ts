@@ -3,17 +3,25 @@
  * @module modules/ticketing/application/commands/checkInTicket
  */
 
+import { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
 import { Ticket } from "../../../../shared/infrastructure/persistence/entities/Ticket";
 import { TicketStatus } from "../../../../shared/kernel/enums";
+import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export interface CheckInTicketResult {
-  ownerName: string;
-  ownerDocument: string;
-  checkedInAt: Date;
-  ticketId: string;
-  eventTitle: string;
-}
+export type CheckInTicketResult = Prettify<
+  Pick<Ticket, "ownerName" | "ownerDocument"> & {
+    checkedInAt: NonNullable<Ticket["checkedInAt"]>;
+    ticketId: Ticket["id"];
+    eventTitle: Event["title"];
+  }
+>;
+
+type CheckInTicketChanges = Prettify<
+  Pick<Ticket, "status" | "checkedInAt"> & {
+    checkedInAt: NonNullable<Ticket["checkedInAt"]>;
+  }
+>;
 
 export async function checkInTicket(uniqueCode: string,
 ): Promise<CheckInTicketResult | null> {
@@ -37,9 +45,12 @@ export async function checkInTicket(uniqueCode: string,
     }
 
     const checkedInAt = new Date();
+    const changes: CheckInTicketChanges = {
+      status: TicketStatus.USED,
+      checkedInAt,
+    };
 
-    ticket.status = TicketStatus.USED;
-    ticket.checkedInAt = checkedInAt;
+    Object.assign(ticket, changes);
     await manager.save(ticket);
 
     return {
@@ -51,5 +62,3 @@ export async function checkInTicket(uniqueCode: string,
     };
   });
 }
-
-

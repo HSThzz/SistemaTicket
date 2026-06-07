@@ -7,19 +7,30 @@ import { Order } from "../../../../shared/infrastructure/persistence/entities/Or
 import { Reservation } from "../../../../shared/infrastructure/persistence/entities/Reservation";
 import { TicketLot } from "../../../../shared/infrastructure/persistence/entities/TicketLot";
 import { OrderStatus, ReservationStatus } from "../../../../shared/kernel/enums";
+import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export interface PersistReservationPayload {
-  reservationId: string;
-  userId: string;
-  ticketLotId: string;
-  quantity: number;
-  expiresAt: string;
-}
+export type PersistReservationPayload = Prettify<
+  Pick<Reservation, "userId" | "ticketLotId" | "quantity"> & {
+    reservationId: Reservation["id"];
+    expiresAt: string;
+  }
+>;
+
+type CreateReservationData = Prettify<
+  Pick<
+    Reservation,
+    "id" | "userId" | "ticketLotId" | "quantity" | "status" | "expiresAt"
+  >
+>;
+
+type CreateOrderData = Prettify<
+  Pick<Order, "userId" | "reservationId" | "totalPrice" | "status" | "paymentGatewayId">
+>;
 
 export type PersistReservationResult =
-  | { status: "created"; orderId: string }
-  | { status: "duplicate"; orderId: string | null }
+  | Prettify<{ status: "created"; orderId: Order["id"] }>
+  | Prettify<{ status: "duplicate"; orderId: Order["id"] | null }>
   | { status: "lot_not_found" }
   | { status: "negative_stock" };
 
@@ -53,27 +64,27 @@ export async function persistReservation(payload: PersistReservationPayload,
 
     await manager.save(lot);
 
-    const reservation = manager.create(Reservation, {
+    const reservationData: CreateReservationData = {
       id: payload.reservationId,
       userId: payload.userId,
       ticketLotId: payload.ticketLotId,
       quantity: payload.quantity,
       status: ReservationStatus.PENDING,
       expiresAt: new Date(payload.expiresAt),
-    });
+    };
+    const reservation = manager.create(Reservation, reservationData);
     await manager.save(reservation);
 
-    const order = manager.create(Order, {
+    const orderData: CreateOrderData = {
       userId: payload.userId,
       reservationId: payload.reservationId,
       totalPrice: lot.price * payload.quantity,
       status: OrderStatus.PENDING,
       paymentGatewayId: null,
-    });
+    };
+    const order = manager.create(Order, orderData);
     await manager.save(order);
 
     return { status: "created", orderId: order.id };
   });
 }
-
-

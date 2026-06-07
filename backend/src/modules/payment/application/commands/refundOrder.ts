@@ -10,17 +10,20 @@ import { Order } from "../../../../shared/infrastructure/persistence/entities/Or
 import { Ticket } from "../../../../shared/infrastructure/persistence/entities/Ticket";
 import { TicketLot } from "../../../../shared/infrastructure/persistence/entities/TicketLot";
 import { OrderStatus, TicketStatus } from "../../../../shared/kernel/enums";
+import type { Prettify } from "../../../../shared/kernel/prettify";
 import {
   OrderAlreadyRefundedError,
   OrderNotFoundError,
   OrderRefundNotAllowedError,
 } from "../../domain/errors/PaymentError";
 
-export interface RefundOrderResult {
-  orderId: string;
+export type RefundOrderResult = Prettify<{
+  orderId: Order["id"];
   ticketsCancelled: number;
   stockRestored: number;
-}
+}>;
+
+type CancelTicketChanges = Prettify<Pick<Ticket, "status">>;
 
 export async function refundOrder(
   orderId: string,
@@ -67,8 +70,10 @@ export async function refundOrder(
       );
     }
 
+    const cancelChanges: CancelTicketChanges = { status: TicketStatus.CANCELLED };
+
     for (const ticket of activeTickets) {
-      ticket.status = TicketStatus.CANCELLED;
+      Object.assign(ticket, cancelChanges);
       await manager.save(ticket);
     }
 
@@ -114,5 +119,3 @@ export async function refundOrder(
     };
   });
 }
-
-

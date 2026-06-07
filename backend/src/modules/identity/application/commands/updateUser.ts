@@ -4,11 +4,20 @@
  */
 
 import { User } from "../../../../shared/infrastructure/persistence/entities/User";
+import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export async function updateUser(user: User,
+export type UpdateUserData = Prettify<
+  Partial<Pick<User, "name" | "email" | "passwordHash" | "document" | "role">>
+>;
+
+export async function updateUser(
+  user: User,
+  changes?: UpdateUserData,
 ): Promise<User> {
+  if (changes) {
+    Object.assign(user, changes);
+  }
+
   return AppDataSource.getRepository(User).save(user);
 }
-
-

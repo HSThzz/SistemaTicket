@@ -18,9 +18,10 @@ export async function handlePaymentFailed(
     failureReason: data.failureReason,
   });
 
-  const result = await processPaymentFailed({
-      orderId: data.orderId,
-      transactionId: data.transactionId,
+  const result = await processPaymentFailed(
+    {
+      id: data.orderId,
+      paymentGatewayId: data.transactionId,
     },
     redis,
   );

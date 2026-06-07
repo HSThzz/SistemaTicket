@@ -36,10 +36,11 @@ export async function processOrderPayment(
     payerDocument: order.user.document,
   });
 
-  order.paymentGatewayId = charge.transactionId;
-  order.pixCopyPaste = charge.pixCopyPaste;
-  order.pixExpiresAt = charge.expiresAt;
-  await updateOrder(order);
+  await updateOrder(order, {
+    paymentGatewayId: charge.transactionId,
+    pixCopyPaste: charge.pixCopyPaste,
+    pixExpiresAt: charge.expiresAt,
+  });
 
   logger.info(CONTEXT, "PIX charge created", {
     orderId: order.id,

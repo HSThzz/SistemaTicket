@@ -13,3 +13,4 @@ export {
 
 export { ValidationError, validateSchema } from "./validateSchema";
 export type { ValidationIssue } from "./validateSchema";
+export type { Prettify } from "./prettify";

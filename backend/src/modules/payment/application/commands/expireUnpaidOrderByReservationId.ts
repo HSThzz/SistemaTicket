@@ -9,12 +9,16 @@ import { Order } from "../../../../shared/infrastructure/persistence/entities/Or
 import { Reservation } from "../../../../shared/infrastructure/persistence/entities/Reservation";
 import { TicketLot } from "../../../../shared/infrastructure/persistence/entities/TicketLot";
 import { OrderStatus, ReservationStatus } from "../../../../shared/kernel/enums";
+import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export interface ExpireUnpaidOrderResult {
+export type ExpireUnpaidOrderResult = Prettify<{
   expired: boolean;
-  orderId: string | null;
-}
+  orderId: Order["id"] | null;
+}>;
+
+type ExpireOrderChanges = Prettify<Pick<Order, "status">>;
+type ExpireReservationChanges = Prettify<Pick<Reservation, "status">>;
 
 export async function expireUnpaidOrderByReservationId(reservationId: string,
   redis?: Redis,
@@ -41,12 +45,16 @@ export async function expireUnpaidOrderByReservationId(reservationId: string,
     });
 
     if (order?.status === OrderStatus.PENDING) {
-      order.status = OrderStatus.FAILED;
+      const orderChanges: ExpireOrderChanges = { status: OrderStatus.FAILED };
+      Object.assign(order, orderChanges);
       await manager.save(order);
       orderId = order.id;
     }
 
-    reservation.status = ReservationStatus.EXPIRED;
+    const reservationChanges: ExpireReservationChanges = {
+      status: ReservationStatus.EXPIRED,
+    };
+    Object.assign(reservation, reservationChanges);
     await manager.save(reservation);
 
     const ticketLot = await manager.findOne(TicketLot, {
@@ -67,5 +75,3 @@ export async function expireUnpaidOrderByReservationId(reservationId: string,
     return { expired: true, orderId };
   });
 }
-
-

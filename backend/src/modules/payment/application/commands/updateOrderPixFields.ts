@@ -4,12 +4,15 @@
  */
 
 import { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
+import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export interface UpdateOrderPixFieldsData {
-  pixCopyPaste: string;
-  pixExpiresAt: Date;
-}
+export type UpdateOrderPixFieldsData = Prettify<
+  Pick<Order, "pixCopyPaste" | "pixExpiresAt"> & {
+    pixCopyPaste: NonNullable<Order["pixCopyPaste"]>;
+    pixExpiresAt: NonNullable<Order["pixExpiresAt"]>;
+  }
+>;
 
 export async function updateOrderPixFields(orderId: string,
   data: UpdateOrderPixFieldsData,
@@ -19,5 +22,3 @@ export async function updateOrderPixFields(orderId: string,
     pixExpiresAt: data.pixExpiresAt,
   });
 }
-
-

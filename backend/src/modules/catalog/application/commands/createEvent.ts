@@ -4,18 +4,21 @@
  */
 
 import { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
-import type { EventStatus } from "../../../../shared/kernel/enums";
+import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export interface CreateEventData {
-  producerId: string;
-  title: string;
-  description: string;
-  date: Date;
-  location: string;
-  imageUrl: string | null;
-  status: EventStatus;
-}
+export type CreateEventData = Prettify<
+  Pick<
+    Event,
+    | "producerId"
+    | "title"
+    | "description"
+    | "date"
+    | "location"
+    | "imageUrl"
+    | "status"
+  >
+>;
 
 export async function createEvent(data: CreateEventData,
 ): Promise<Event> {
@@ -23,5 +26,3 @@ export async function createEvent(data: CreateEventData,
   const event = repository.create(data);
   return repository.save(event);
 }
-
-

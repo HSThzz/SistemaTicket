@@ -24,8 +24,7 @@ export async function updateUserRole(
     throw new UserNotFoundError(id);
   }
 
-  user.role = data.role;
-  await updateUser(user);
+  await updateUser(user, { role: data.role });
 
   Logger.getInstance().info(CONTEXT, "User role updated", {
     userId: user.id,
