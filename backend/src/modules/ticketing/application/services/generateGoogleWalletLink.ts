@@ -1,4 +1,3 @@
-import type { DataSource } from "typeorm";
 import jwt from "jsonwebtoken";
 import { env } from "../../../../shared/infrastructure/config/env";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
@@ -14,10 +13,9 @@ const GOOGLE_WALLET_SAVE_URL = "https://pay.google.com/gp/v/save";
 const logger = Logger.getInstance();
 
 export async function generateGoogleWalletLink(
-  dataSource: DataSource,
   ticketId: string,
-): Promise<string> {
-  const { ticket, event } = await loadTicketContext(dataSource, ticketId);
+) {
+  const { ticket, event } = await loadTicketContext(ticketId);
 
   try {
     const credentials = await loadGoogleCredentials();

@@ -4,7 +4,6 @@
  */
 
 import type { Request, Response } from "express";
-import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { UserRole } from "../../../../shared/kernel/enums";
 import { TicketNotFoundError, WalletError } from "../../domain/errors/WalletError";
@@ -37,7 +36,7 @@ export class WalletController {
     }
 
     try {
-      const allowed = await canAccessTicket(AppDataSource, ticketId, {
+      const allowed = await canAccessTicket(ticketId, {
         userId: req.user.id,
         role: req.user.role as UserRole,
       });
@@ -47,7 +46,7 @@ export class WalletController {
         return;
       }
 
-      const buffer = await generateApplePass(AppDataSource, ticketId);
+      const buffer = await generateApplePass(ticketId);
 
       res.setHeader("Content-Type", "application/vnd.apple.pkpass");
       res.setHeader(
@@ -78,7 +77,7 @@ export class WalletController {
     }
 
     try {
-      const allowed = await canAccessTicket(AppDataSource, ticketId, {
+      const allowed = await canAccessTicket(ticketId, {
         userId: req.user.id,
         role: req.user.role as UserRole,
       });
@@ -88,7 +87,7 @@ export class WalletController {
         return;
       }
 
-      const url = await generateGoogleWalletLink(AppDataSource, ticketId);
+      const url = await generateGoogleWalletLink(ticketId);
       res.redirect(302, url);
     } catch (error) {
       this.handleError(res, "Google Wallet link generation failed", ticketId, error);
@@ -113,7 +112,7 @@ export class WalletController {
     }
 
     try {
-      const allowed = await canAccessTicket(AppDataSource, ticketId, {
+      const allowed = await canAccessTicket(ticketId, {
         userId: req.user.id,
         role: req.user.role as UserRole,
       });
@@ -123,7 +122,7 @@ export class WalletController {
         return;
       }
 
-      const url = await generateGoogleWalletLink(AppDataSource, ticketId);
+      const url = await generateGoogleWalletLink(ticketId);
       res.json({ url });
     } catch (error) {
       this.handleError(res, "Google Wallet link generation failed", ticketId, error);

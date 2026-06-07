@@ -1,5 +1,4 @@
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import {
   ORDER_CACHE_KEY_PREFIX,
   PAYMENT_CACHE_KEY_PREFIX,
@@ -29,11 +28,10 @@ import type { PixPaymentDetails } from "../../../payment/application/types";
 const CONTEXT = "getReservationStatus";
 
 export async function getReservationStatus(
-  dataSource: DataSource,
   redis: Redis,
   reservationId: string,
   requesterUserId: string,
-): Promise<ReservationStatusView> {
+) {
   const data = validateSchema(getReservationStatusSchema, {
     reservationId,
     requesterUserId,
@@ -47,7 +45,7 @@ export async function getReservationStatus(
       redis.get(`${RESERVATION_KEY_PREFIX}${data.reservationId}`),
       redis.get(`${PAYMENT_CACHE_KEY_PREFIX}${data.reservationId}`),
       redis.get(`${ORDER_CACHE_KEY_PREFIX}${data.reservationId}`),
-      findOneReservationById(dataSource, data.reservationId),
+      findOneReservationById(data.reservationId),
       queueMonitor.getStats(),
     ]);
 
@@ -68,9 +66,9 @@ export async function getReservationStatus(
 
   let order: Order | null = null;
   if (dbReservation) {
-    order = await findOneOrderByReservationId(dataSource, data.reservationId);
+    order = await findOneOrderByReservationId(data.reservationId);
   } else if (orderIdCached) {
-    order = await findOneOrderById(dataSource, orderIdCached);
+    order = await findOneOrderById(orderIdCached);
   }
 
   const phase = resolvePhase(dbReservation, order, payment, redisPayload);

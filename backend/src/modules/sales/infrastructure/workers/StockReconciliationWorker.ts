@@ -4,7 +4,6 @@
  */
 
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import {
   type StockReconciliationReport,
@@ -24,12 +23,10 @@ export class StockReconciliationWorker {
   private lastError: string | null = null;
 
   /**
-   * @param dataSource - Conexão TypeORM.
-   * @param redis - Cliente Redis.
+   *    * @param redis - Cliente Redis.
    * @param intervalMs - Intervalo entre execuções automáticas.
    */
   constructor(
-    private readonly dataSource: DataSource,
     private readonly redis: Redis,
     private readonly intervalMs: number,
   ) {}
@@ -97,7 +94,7 @@ export class StockReconciliationWorker {
    */
   async runOnce(): Promise<StockReconciliationReport> {
     try {
-      const report = await reconcileAllStock(this.dataSource, this.redis);
+      const report = await reconcileAllStock(this.redis);
       this.lastReport = report;
       this.lastError = null;
       return report;

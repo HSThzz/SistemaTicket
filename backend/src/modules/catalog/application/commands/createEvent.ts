@@ -1,11 +1,11 @@
-/**
+﻿/**
  * @file Command: persiste novo evento.
  * @module modules/catalog/application/commands/createEvent
  */
 
-import type { DataSource } from "typeorm";
 import { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
 import type { EventStatus } from "../../../../shared/kernel/enums";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
 export interface CreateEventData {
   producerId: string;
@@ -17,11 +17,11 @@ export interface CreateEventData {
   status: EventStatus;
 }
 
-export async function createEvent(
-  dataSource: DataSource,
-  data: CreateEventData,
+export async function createEvent(data: CreateEventData,
 ): Promise<Event> {
-  const repository = dataSource.getRepository(Event);
+  const repository = AppDataSource.getRepository(Event);
   const event = repository.create(data);
   return repository.save(event);
 }
+
+

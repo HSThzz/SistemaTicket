@@ -1,5 +1,4 @@
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { OrderStatus, TicketStatus } from "../../../../shared/kernel/enums";
 import {
@@ -14,20 +13,18 @@ import { clearPaymentCache } from "../helpers/clearPaymentCache";
 import { clearReservationCache } from "../helpers/clearReservationCache";
 import { findOneOrderById } from "../queries/findOneOrderById";
 import { findTicketsByOrderId } from "../queries/findTicketsByOrderId";
-import type { RefundOrderResult } from "../types";
 
 const CONTEXT = "PaymentService";
 const logger = Logger.getInstance();
 
 export async function refundOrder(
-  dataSource: DataSource,
   redis: Redis | undefined,
   orderId: string,
   gateway: PaymentGateway = createPaymentGateway(),
-): Promise<RefundOrderResult> {
+) {
   logger.info(CONTEXT, "Starting order refund", { orderId });
 
-  const order = await findOneOrderById(dataSource, orderId);
+  const order = await findOneOrderById(orderId);
 
   if (!order) {
     throw new OrderNotFoundError(orderId);
@@ -43,7 +40,7 @@ export async function refundOrder(
     );
   }
 
-  const tickets = await findTicketsByOrderId(dataSource, orderId);
+  const tickets = await findTicketsByOrderId(orderId);
 
   const hasUsedTicket = tickets.some(
     (ticket) =>
@@ -61,7 +58,7 @@ export async function refundOrder(
     await gateway.refundPayment(order.paymentGatewayId);
   }
 
-  const result = await refundOrderCommand(dataSource, orderId, redis);
+  const result = await refundOrderCommand(orderId, redis);
 
   logger.info(CONTEXT, "Order refunded successfully", {
     orderId,
@@ -69,8 +66,8 @@ export async function refundOrder(
     stockRestored: result.stockRestored,
   });
 
-  await clearPaymentCache(dataSource, redis, orderId);
-  await clearReservationCache(dataSource, redis, orderId);
+  await clearPaymentCache(redis, orderId);
+  await clearReservationCache(redis, orderId);
 
   return result;
 }

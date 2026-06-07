@@ -1,27 +1,25 @@
-/**
+﻿/**
  * @file Command: expira reserva pendente e restaura estoque em transação.
  * @module modules/payment/application/commands/expireUnpaidOrderByReservationId
  */
 
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../../../shared/infrastructure/config/constants";
 import { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
 import { Reservation } from "../../../../shared/infrastructure/persistence/entities/Reservation";
 import { TicketLot } from "../../../../shared/infrastructure/persistence/entities/TicketLot";
 import { OrderStatus, ReservationStatus } from "../../../../shared/kernel/enums";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
 export interface ExpireUnpaidOrderResult {
   expired: boolean;
   orderId: string | null;
 }
 
-export async function expireUnpaidOrderByReservationId(
-  dataSource: DataSource,
-  reservationId: string,
+export async function expireUnpaidOrderByReservationId(reservationId: string,
   redis?: Redis,
 ): Promise<ExpireUnpaidOrderResult> {
-  return dataSource.transaction(async (manager) => {
+  return AppDataSource.transaction(async (manager) => {
     const reservation = await manager.findOne(Reservation, {
       where: { id: reservationId },
       lock: { mode: "pessimistic_write" },
@@ -69,3 +67,5 @@ export async function expireUnpaidOrderByReservationId(
     return { expired: true, orderId };
   });
 }
+
+

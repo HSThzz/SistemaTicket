@@ -1,5 +1,4 @@
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { InvalidWebhookPayloadError } from "../../domain/errors/PaymentError";
 import type { PaymentGateway } from "../../infrastructure/gateways/PaymentGateway";
@@ -13,11 +12,10 @@ const CONTEXT = "PaymentService";
 const logger = Logger.getInstance();
 
 export async function handleMercadoPagoNotification(
-  dataSource: DataSource,
   redis: Redis | undefined,
   paymentId: string,
   gateway: PaymentGateway = createPaymentGateway(),
-): Promise<"processed" | "pending" | "ignored"> {
+) {
   if (!isMercadoPagoPixGateway(gateway)) {
     throw new InvalidWebhookPayloadError("Mercado Pago gateway is not configured");
   }
@@ -35,9 +33,7 @@ export async function handleMercadoPagoNotification(
   }
 
   if (snapshot.status === "approved") {
-    await handleWebhook(
-      dataSource,
-      redis,
+    await handleWebhook(redis,
       {
         event: "payment.succeeded",
         data: {
@@ -56,9 +52,7 @@ export async function handleMercadoPagoNotification(
     snapshot.status === "cancelled" ||
     snapshot.status === "failed"
   ) {
-    await handleWebhook(
-      dataSource,
-      redis,
+    await handleWebhook(redis,
       {
         event: "payment.failed",
         data: {

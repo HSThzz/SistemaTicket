@@ -1,13 +1,13 @@
-/**
+﻿/**
  * @file Command: persiste reserva, pedido e decrementa estoque do lote em transação.
  * @module modules/sales/application/commands/persistReservation
  */
 
-import type { DataSource } from "typeorm";
 import { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
 import { Reservation } from "../../../../shared/infrastructure/persistence/entities/Reservation";
 import { TicketLot } from "../../../../shared/infrastructure/persistence/entities/TicketLot";
 import { OrderStatus, ReservationStatus } from "../../../../shared/kernel/enums";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
 export interface PersistReservationPayload {
   reservationId: string;
@@ -23,11 +23,9 @@ export type PersistReservationResult =
   | { status: "lot_not_found" }
   | { status: "negative_stock" };
 
-export async function persistReservation(
-  dataSource: DataSource,
-  payload: PersistReservationPayload,
+export async function persistReservation(payload: PersistReservationPayload,
 ): Promise<PersistReservationResult> {
-  return dataSource.transaction(async (manager) => {
+  return AppDataSource.transaction(async (manager) => {
     const existing = await manager.findOne(Reservation, {
       where: { id: payload.reservationId },
     });
@@ -77,3 +75,5 @@ export async function persistReservation(
     return { status: "created", orderId: order.id };
   });
 }
+
+

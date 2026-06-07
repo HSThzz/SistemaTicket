@@ -4,7 +4,6 @@
  */
 
 import type { Request, Response } from "express";
-import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import {
   CheckInAccessDeniedError,
@@ -36,7 +35,7 @@ export class CheckInController {
     const { unique_code: uniqueCode } = req.body as { unique_code: string };
 
     try {
-      const result = await checkIn(AppDataSource, uniqueCode, {
+      const result = await checkIn(uniqueCode, {
         userId: req.user.id,
         role: req.user.role,
       });

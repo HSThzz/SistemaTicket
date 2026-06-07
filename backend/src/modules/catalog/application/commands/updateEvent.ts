@@ -1,14 +1,14 @@
-/**
+﻿/**
  * @file Command: persiste alterações em evento existente.
  * @module modules/catalog/application/commands/updateEvent
  */
 
-import type { DataSource } from "typeorm";
 import { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export async function updateEvent(
-  dataSource: DataSource,
-  event: Event,
+export async function updateEvent(event: Event,
 ): Promise<Event> {
-  return dataSource.getRepository(Event).save(event);
+  return AppDataSource.getRepository(Event).save(event);
 }
+
+

@@ -1,5 +1,4 @@
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import {
   PAYMENT_CACHE_KEY_PREFIX,
   RESERVATION_TTL_SECONDS,
@@ -11,20 +10,18 @@ import { createPaymentGateway } from "../../infrastructure/gateways/createPaymen
 import { updateOrder } from "../commands/updateOrder";
 import { findOneOrderByIdWithPaymentRelations } from "../queries/findOneOrderByIdWithPaymentRelations";
 import { buildPixPaymentDetails } from "../helpers/buildPixPaymentDetails";
-import type { PixPaymentDetails } from "../types";
 
 const CONTEXT = "PaymentService";
 const logger = Logger.getInstance();
 
 export async function processOrderPayment(
-  dataSource: DataSource,
   redis: Redis | undefined,
   orderId: string,
   gateway: PaymentGateway = createPaymentGateway(),
-): Promise<PixPaymentDetails> {
+) {
   logger.info(CONTEXT, "Starting PIX charge creation", { orderId });
 
-  const order = await findOneOrderByIdWithPaymentRelations(dataSource, orderId);
+  const order = await findOneOrderByIdWithPaymentRelations(orderId);
 
   if (!order?.user) {
     throw new OrderNotFoundError(orderId);
@@ -42,7 +39,7 @@ export async function processOrderPayment(
   order.paymentGatewayId = charge.transactionId;
   order.pixCopyPaste = charge.pixCopyPaste;
   order.pixExpiresAt = charge.expiresAt;
-  await updateOrder(dataSource, order);
+  await updateOrder(order);
 
   logger.info(CONTEXT, "PIX charge created", {
     orderId: order.id,

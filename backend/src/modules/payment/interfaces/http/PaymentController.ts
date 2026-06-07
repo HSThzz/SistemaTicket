@@ -4,7 +4,6 @@
  */
 
 import type { Request, Response } from "express";
-import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { isProduction } from "../../../../shared/infrastructure/config/env";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { getRedis } from "../../../../shared/infrastructure/config/redis";
@@ -56,9 +55,7 @@ export class PaymentController {
     const { orderId } = req.body as { orderId: string };
 
     try {
-      await simulateDevPayment(
-        AppDataSource,
-        redis,
+      await simulateDevPayment(redis,
         orderId,
         req.user.id,
         paymentGateway,
@@ -105,7 +102,7 @@ export class PaymentController {
     });
 
     try {
-      await handleWebhook(AppDataSource, redis, payload, paymentGateway);
+      await handleWebhook(redis, payload, paymentGateway);
 
       logger.info(CONTEXT, "Webhook processed successfully", {
         event: payload.event,
@@ -136,9 +133,7 @@ export class PaymentController {
     });
 
     try {
-      const result = await handleMercadoPagoNotification(
-        AppDataSource,
-        redis,
+      const result = await handleMercadoPagoNotification(redis,
         paymentId,
         paymentGateway,
       );

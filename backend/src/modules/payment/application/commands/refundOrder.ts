@@ -1,10 +1,10 @@
-/**
+﻿/**
  * @file Command: reembolsa pedido, cancela ingressos e restaura estoque em transação.
  * @module modules/payment/application/commands/refundOrder
  */
 
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../../../shared/infrastructure/config/constants";
 import { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
 import { Ticket } from "../../../../shared/infrastructure/persistence/entities/Ticket";
@@ -23,11 +23,10 @@ export interface RefundOrderResult {
 }
 
 export async function refundOrder(
-  dataSource: DataSource,
   orderId: string,
   redis?: Redis,
 ): Promise<RefundOrderResult> {
-  return dataSource.transaction(async (manager) => {
+  return AppDataSource.transaction(async (manager) => {
     const lockedOrder = await manager.findOne(Order, {
       where: { id: orderId },
       lock: { mode: "pessimistic_write" },
@@ -115,3 +114,5 @@ export async function refundOrder(
     };
   });
 }
+
+

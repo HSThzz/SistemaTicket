@@ -4,7 +4,6 @@
  */
 
 import type { Request, Response } from "express";
-import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { getRedis } from "../../../../shared/infrastructure/config/redis";
 import {
@@ -54,9 +53,7 @@ export class OrderController {
     }
 
     try {
-      const payment = await getOrderPixPayment(
-        AppDataSource,
-        redis,
+      const payment = await getOrderPixPayment(redis,
         orderId,
         req.user.id,
         paymentGateway,
@@ -94,7 +91,7 @@ export class OrderController {
     }
 
     try {
-      const orders = await listUserOrders(AppDataSource, req.user.id, redis);
+      const orders = await listUserOrders(req.user.id, redis);
       res.status(200).json({ orders });
     } catch (error) {
       logger.error(CONTEXT, "Failed to list user orders", {
@@ -112,7 +109,7 @@ export class OrderController {
     const { id } = req.params as { id: string };
 
     try {
-      const order = await getOrderByIdForAdmin(AppDataSource, id, redis);
+      const order = await getOrderByIdForAdmin(id, redis);
       res.status(200).json({ order });
     } catch (error) {
       if (error instanceof OrderNotFoundError) {
@@ -142,9 +139,7 @@ export class OrderController {
     }
 
     try {
-      const result = await refundOrder(
-        AppDataSource,
-        redis,
+      const result = await refundOrder(redis,
         orderId,
         paymentGateway,
       );

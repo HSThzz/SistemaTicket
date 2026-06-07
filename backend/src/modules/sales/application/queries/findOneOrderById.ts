@@ -1,16 +1,16 @@
-/**
+﻿/**
  * @file Query: busca pedido por ID.
  * @module modules/sales/application/queries/findOneOrderById
  */
 
-import type { DataSource } from "typeorm";
 import { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export async function findOneOrderById(
-  dataSource: DataSource,
-  orderId: string,
+export async function findOneOrderById(orderId: string,
 ): Promise<Order | null> {
-  return dataSource.getRepository(Order).findOne({
+  return AppDataSource.getRepository(Order).findOne({
     where: { id: orderId },
   });
 }
+
+

@@ -1,5 +1,4 @@
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import {
   OrderNotFoundError,
   PaymentGatewayError,
@@ -8,22 +7,20 @@ import type { PaymentGateway } from "../../infrastructure/gateways/PaymentGatewa
 import { createPaymentGateway } from "../../infrastructure/gateways/createPaymentGateway";
 import { findOneOrderById } from "../queries/findOneOrderById";
 import { resolvePixPaymentDetails } from "./resolvePixPaymentDetails";
-import type { PixPaymentDetails } from "../types";
 
 export async function getOrderPixPayment(
-  dataSource: DataSource,
   redis: Redis | undefined,
   orderId: string,
   userId: string,
   gateway: PaymentGateway = createPaymentGateway(),
-): Promise<PixPaymentDetails> {
-  const order = await findOneOrderById(dataSource, orderId);
+) {
+  const order = await findOneOrderById(orderId);
 
   if (!order || order.userId !== userId) {
     throw new OrderNotFoundError(orderId);
   }
 
-  const details = await resolvePixPaymentDetails(dataSource, redis, order, gateway);
+  const details = await resolvePixPaymentDetails(redis, order, gateway);
 
   if (!details) {
     throw new PaymentGatewayError(

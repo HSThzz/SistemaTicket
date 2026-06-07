@@ -1,5 +1,4 @@
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import {
   ORDER_CACHE_KEY_PREFIX,
   PAYMENT_CACHE_KEY_PREFIX,
@@ -10,7 +9,6 @@ import { findOneOrderReservationIdById } from "../queries/findOneOrderReservatio
 const CONTEXT = "PaymentService";
 
 export async function clearPaymentCache(
-  dataSource: DataSource,
   redis: Redis | undefined,
   orderId: string,
 ): Promise<void> {
@@ -18,7 +16,7 @@ export async function clearPaymentCache(
     return;
   }
 
-  const order = await findOneOrderReservationIdById(dataSource, orderId);
+  const order = await findOneOrderReservationIdById(orderId);
 
   if (!order) {
     return;

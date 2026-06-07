@@ -1,5 +1,4 @@
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { expireUnpaidOrderByReservationId as expireUnpaidOrderCommand } from "../commands/expireUnpaidOrderByReservationId";
 import { clearPaymentCache } from "../helpers/clearPaymentCache";
@@ -9,17 +8,14 @@ const CONTEXT = "PaymentService";
 const logger = Logger.getInstance();
 
 export async function expireUnpaidOrderByReservationId(
-  dataSource: DataSource,
   redis: Redis | undefined,
   reservationId: string,
-): Promise<boolean> {
+) {
   logger.info(CONTEXT, "Expiring unpaid order by reservation TTL", {
     reservationId,
   });
 
-  const { expired, orderId } = await expireUnpaidOrderCommand(
-    dataSource,
-    reservationId,
+  const { expired, orderId } = await expireUnpaidOrderCommand(reservationId,
     redis,
   );
 
@@ -38,8 +34,8 @@ export async function expireUnpaidOrderByReservationId(
   });
 
   if (orderId) {
-    await clearReservationCache(dataSource, redis, orderId);
-    await clearPaymentCache(dataSource, redis, orderId);
+    await clearReservationCache(redis, orderId);
+    await clearPaymentCache(redis, orderId);
   }
 
   return true;

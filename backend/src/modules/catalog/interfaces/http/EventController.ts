@@ -1,10 +1,9 @@
-/**
+﻿/**
  * @file Controlador HTTP de eventos e lotes de ingressos.
  * @module modules/catalog/interfaces/http/EventController
  */
 
 import type { Request, Response } from "express";
-import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { getRedis } from "../../../../shared/infrastructure/config/redis";
@@ -84,7 +83,7 @@ export class EventController {
    * @returns Promise resolvida após enviar 200.
    */
   async listPublished(_req: Request, res: Response): Promise<void> {
-    const events = await listPublishedEvents(AppDataSource);
+    const events = await listPublishedEvents();
     res.status(200).json({
       events: events.map((event) => serializeEvent(event)),
     });
@@ -100,7 +99,7 @@ export class EventController {
     const actor = requireActor(req, res);
     if (!actor) return;
 
-    const events = await listManagedEvents(AppDataSource, actor);
+    const events = await listManagedEvents(actor);
     res.status(200).json({
       events: events.map((event) => serializeEvent(event)),
     });
@@ -117,7 +116,7 @@ export class EventController {
     if (!actor) return;
 
     try {
-      const stats = await getProducerDashboard(AppDataSource, actor);
+      const stats = await getProducerDashboard(actor);
       res.status(200).json(stats);
     } catch (error) {
       logger.error(CONTEXT, "Failed to load producer dashboard stats", {
@@ -140,7 +139,7 @@ export class EventController {
   async getPublished(req: Request, res: Response): Promise<void> {
     const { eventId } = req.params as { eventId: string };
 
-    const event = await getPublishedEventById(AppDataSource, eventId);
+    const event = await getPublishedEventById(eventId);
     if (!event) {
       res.status(404).json({ error: "Event not found", code: "NOT_FOUND" });
       return;
@@ -169,9 +168,7 @@ export class EventController {
         status?: EventStatus;
       };
 
-      const created = await createEvent(
-        AppDataSource,
-        {
+      const created = await createEvent({
           title,
           description,
           date,
@@ -213,9 +210,7 @@ export class EventController {
         status?: EventStatus;
       };
 
-      const updated = await updateEvent(
-        AppDataSource,
-        eventId,
+      const updated = await updateEvent(eventId,
         {
           title,
           description,
@@ -258,9 +253,7 @@ export class EventController {
         availableQuantity?: number;
       };
 
-      const lot = await createTicketLot(
-        AppDataSource,
-        eventId,
+      const lot = await createTicketLot(eventId,
         {
           name,
           price,

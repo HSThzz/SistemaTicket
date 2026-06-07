@@ -1,11 +1,11 @@
-/**
+﻿/**
  * @file Command: registra check-in de ingresso em transação com lock pessimista.
  * @module modules/ticketing/application/commands/checkInTicket
  */
 
-import type { DataSource } from "typeorm";
 import { Ticket } from "../../../../shared/infrastructure/persistence/entities/Ticket";
 import { TicketStatus } from "../../../../shared/kernel/enums";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
 export interface CheckInTicketResult {
   ownerName: string;
@@ -15,11 +15,9 @@ export interface CheckInTicketResult {
   eventTitle: string;
 }
 
-export async function checkInTicket(
-  dataSource: DataSource,
-  uniqueCode: string,
+export async function checkInTicket(uniqueCode: string,
 ): Promise<CheckInTicketResult | null> {
-  return dataSource.transaction(async (manager) => {
+  return AppDataSource.transaction(async (manager) => {
     const locked = await manager.findOne(Ticket, {
       where: { uniqueCode },
       lock: { mode: "pessimistic_write" },
@@ -53,3 +51,5 @@ export async function checkInTicket(
     };
   });
 }
+
+

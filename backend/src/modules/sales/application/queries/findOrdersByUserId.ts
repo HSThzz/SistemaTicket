@@ -1,16 +1,14 @@
-/**
+﻿/**
  * @file Query: lista pedidos de um usuário com relações.
  * @module modules/sales/application/queries/findOrdersByUserId
  */
 
-import type { DataSource } from "typeorm";
 import { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export async function findOrdersByUserId(
-  dataSource: DataSource,
-  userId: string,
+export async function findOrdersByUserId(userId: string,
 ): Promise<Order[]> {
-  return dataSource.getRepository(Order).find({
+  return AppDataSource.getRepository(Order).find({
     where: { userId },
     relations: {
       reservation: {
@@ -22,3 +20,5 @@ export async function findOrdersByUserId(
     order: { id: "DESC" },
   });
 }
+
+

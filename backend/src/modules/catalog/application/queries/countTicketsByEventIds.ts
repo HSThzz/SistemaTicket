@@ -1,19 +1,17 @@
-/**
+﻿/**
  * @file Query: conta ingressos por evento conforme status de pedido e ticket.
  * @module modules/catalog/application/queries/countTicketsByEventIds
  */
 
-import type { DataSource } from "typeorm";
 import { Ticket } from "../../../../shared/infrastructure/persistence/entities/Ticket";
 import type { OrderStatus, TicketStatus } from "../../../../shared/kernel/enums";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export async function countTicketsByEventIds(
-  dataSource: DataSource,
-  eventIds: string[],
+export async function countTicketsByEventIds(eventIds: string[],
   orderStatus: OrderStatus,
   ticketStatus?: TicketStatus,
 ): Promise<Map<string, number>> {
-  const qb = dataSource
+  const qb = AppDataSource
     .getRepository(Ticket)
     .createQueryBuilder("ticket")
     .innerJoin("ticket.order", "order")
@@ -32,3 +30,4 @@ export async function countTicketsByEventIds(
   const rows = await qb.getRawMany<{ eventId: string; count: string }>();
   return new Map(rows.map((row) => [row.eventId, Number(row.count)]));
 }
+

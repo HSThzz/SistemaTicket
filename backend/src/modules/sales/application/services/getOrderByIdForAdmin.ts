@@ -1,20 +1,17 @@
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import { OrderStatus } from "../../../../shared/kernel/enums";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { orderIdSchema } from "../../validators/schema/orderIdSchema";
 import { OrderNotFoundError } from "../../../payment/domain/errors/PaymentError";
 import { resolvePixPaymentDetails } from "../../../payment/application/services/resolvePixPaymentDetails";
 import { findOneOrderByIdForAdmin } from "../queries/findOneOrderByIdForAdmin";
-import type { OrderAdminDetails } from "./types";
 
 export async function getOrderByIdForAdmin(
-  dataSource: DataSource,
   orderId: string,
   redis?: Redis,
-): Promise<OrderAdminDetails> {
+) {
   const id = validateSchema(orderIdSchema, orderId);
-  const order = await findOneOrderByIdForAdmin(dataSource, id);
+  const order = await findOneOrderByIdForAdmin(id);
 
   if (!order) {
     throw new OrderNotFoundError(id);
@@ -23,7 +20,7 @@ export async function getOrderByIdForAdmin(
   const event = order.reservation?.ticketLot?.event;
   const payment =
     order.status === OrderStatus.PENDING
-      ? await resolvePixPaymentDetails(dataSource, redis, order)
+      ? await resolvePixPaymentDetails(redis, order)
       : null;
 
   return {

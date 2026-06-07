@@ -1,16 +1,16 @@
-/**
+﻿/**
  * @file Query: busca usuário por ID.
  * @module modules/identity/application/queries/findOneUserById
  */
 
-import type { DataSource } from "typeorm";
 import { User } from "../../../../shared/infrastructure/persistence/entities/User";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export async function findOneUserById(
-  dataSource: DataSource,
-  userId: string,
+export async function findOneUserById(userId: string,
 ): Promise<User | null> {
-  return dataSource.getRepository(User).findOne({
+  return AppDataSource.getRepository(User).findOne({
     where: { id: userId },
   });
 }
+
+

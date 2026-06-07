@@ -1,5 +1,4 @@
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import {
   RESERVATION_PERSIST_DLQ_KEY,
   RESERVATION_PERSIST_QUEUE_KEY,
@@ -14,11 +13,10 @@ import type { PersistJobPayload, StockReconciliationReport } from "./types";
 const CONTEXT = "reconcileAllStock";
 
 export async function reconcileAllStock(
-  dataSource: DataSource,
   redis: Redis,
-): Promise<StockReconciliationReport> {
+) {
   const logger = Logger.getInstance();
-  const lots = await findAllTicketLotsStock(dataSource);
+  const lots = await findAllTicketLotsStock();
 
   const pendingByLot = await sumPendingQuantitiesByLot(redis);
   const results: StockReconciliationReport["lots"] = [];
@@ -73,7 +71,7 @@ export async function reconcileAllStock(
   };
 }
 
-async function sumPendingQuantitiesByLot(redis: Redis): Promise<Map<string, number>> {
+async function sumPendingQuantitiesByLot(redis: Redis) {
   const pending = new Map<string, number>();
   const queueKeys = [
     RESERVATION_PERSIST_QUEUE_KEY,

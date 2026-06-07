@@ -1,6 +1,5 @@
 import type Redis from "ioredis";
 import { randomUUID } from "node:crypto";
-import type { DataSource } from "typeorm";
 import {
   RESERVATION_KEY_PREFIX,
   RESERVATION_PERSIST_QUEUE_KEY,
@@ -16,7 +15,7 @@ import {
 } from "../../domain/errors/PurchaseError";
 import { reserveTicketsSchema } from "../../validators/schema/reserveTicketsSchema";
 import { findOneTicketLotById } from "../queries/findOneTicketLotById";
-import type { ReservationCachePayload, ReserveTicketsResult } from "./types";
+import type { ReservationCachePayload } from "./types";
 
 const CONTEXT = "reserveTickets";
 
@@ -47,16 +46,15 @@ const RESERVE_TICKETS_LUA = `
 `;
 
 export async function reserveTickets(
-  dataSource: DataSource,
   redis: Redis,
   userId: string,
   ticketLotId: string,
   quantity: number,
-): Promise<ReserveTicketsResult> {
+) {
   const logger = Logger.getInstance();
   const data = validateSchema(reserveTicketsSchema, { userId, ticketLotId, quantity });
 
-  await ensureRedisStockInitialized(dataSource, redis, data.ticketLotId, logger);
+  await ensureRedisStockInitialized(redis, data.ticketLotId, logger);
 
   const reservationId = randomUUID();
   const expiresAt = new Date(Date.now() + RESERVATION_TTL_MS).toISOString();
@@ -111,11 +109,10 @@ export async function reserveTickets(
 }
 
 async function ensureRedisStockInitialized(
-  dataSource: DataSource,
   redis: Redis,
   ticketLotId: string,
   logger: Logger,
-): Promise<void> {
+) {
   const stockKey = `${TICKET_LOT_STOCK_KEY_PREFIX}${ticketLotId}`;
 
   const existing = await redis.get(stockKey);
@@ -123,7 +120,7 @@ async function ensureRedisStockInitialized(
     return;
   }
 
-  const lot = await findOneTicketLotById(dataSource, ticketLotId);
+  const lot = await findOneTicketLotById(ticketLotId);
   if (!lot) {
     throw new TicketLotNotFoundError(ticketLotId);
   }

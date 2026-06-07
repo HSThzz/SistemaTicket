@@ -1,23 +1,23 @@
-/**
+﻿/**
  * @file Command: atualiza campos PIX de um pedido.
  * @module modules/payment/application/commands/updateOrderPixFields
  */
 
-import type { DataSource } from "typeorm";
 import { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
 export interface UpdateOrderPixFieldsData {
   pixCopyPaste: string;
   pixExpiresAt: Date;
 }
 
-export async function updateOrderPixFields(
-  dataSource: DataSource,
-  orderId: string,
+export async function updateOrderPixFields(orderId: string,
   data: UpdateOrderPixFieldsData,
 ): Promise<void> {
-  await dataSource.getRepository(Order).update(orderId, {
+  await AppDataSource.getRepository(Order).update(orderId, {
     pixCopyPaste: data.pixCopyPaste,
     pixExpiresAt: data.pixExpiresAt,
   });
 }
+
+

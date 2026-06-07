@@ -4,7 +4,6 @@
  */
 
 import type { Request, Response } from "express";
-import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import {
   AuthError,
@@ -39,7 +38,7 @@ export class AuthController {
     const body = req.body as RegisterInput;
 
     try {
-      const result = await registerUser(AppDataSource, body);
+      const result = await registerUser(body);
       res.status(201).json(result);
     } catch (error) {
       this.handleError(res, error);
@@ -59,7 +58,7 @@ export class AuthController {
     }
 
     try {
-      const user = await getProfile(AppDataSource, req.user.id);
+      const user = await getProfile(req.user.id);
       res.status(200).json({ user });
     } catch (error) {
       this.handleError(res, error);
@@ -76,7 +75,7 @@ export class AuthController {
     const body = req.body as LoginInput;
 
     try {
-      const result = await loginUser(AppDataSource, body);
+      const result = await loginUser(body);
       res.status(200).json(result);
     } catch (error) {
       this.handleError(res, error);
@@ -90,7 +89,7 @@ export class AuthController {
     const { email } = req.query as { email: string };
 
     try {
-      const user = await lookupUserByEmail(AppDataSource, { email });
+      const user = await lookupUserByEmail({ email });
       res.status(200).json({ user });
     } catch (error) {
       this.handleError(res, error);
@@ -105,7 +104,7 @@ export class AuthController {
     const { role } = req.body as { role: UserRole };
 
     try {
-      const user = await updateUserRole(AppDataSource, userId, { role });
+      const user = await updateUserRole(userId, { role });
       res.status(200).json({ user });
     } catch (error) {
       this.handleError(res, error);

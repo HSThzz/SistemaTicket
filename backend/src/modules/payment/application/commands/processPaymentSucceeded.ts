@@ -1,10 +1,10 @@
-/**
+﻿/**
  * @file Command: processa pagamento aprovado e emite ingressos em transação.
  * @module modules/payment/application/commands/processPaymentSucceeded
  */
 
 import { randomBytes } from "node:crypto";
-import type { DataSource } from "typeorm";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
 import { Reservation } from "../../../../shared/infrastructure/persistence/entities/Reservation";
 import { Ticket } from "../../../../shared/infrastructure/persistence/entities/Ticket";
@@ -33,10 +33,9 @@ export interface ProcessPaymentSucceededResult {
 }
 
 export async function processPaymentSucceeded(
-  dataSource: DataSource,
   data: ProcessPaymentSucceededData,
 ): Promise<ProcessPaymentSucceededResult> {
-  return dataSource.transaction(async (manager) => {
+  return AppDataSource.transaction(async (manager) => {
     const order = await manager.findOne(Order, {
       where: { id: data.orderId },
       lock: { mode: "pessimistic_write" },
@@ -106,3 +105,5 @@ export async function processPaymentSucceeded(
     };
   });
 }
+
+

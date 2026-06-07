@@ -1,17 +1,17 @@
-/**
+﻿/**
  * @file Query: busca evento por ID com lotes carregados.
  * @module modules/catalog/application/queries/findOneEventByIdWithLots
  */
 
-import type { DataSource } from "typeorm";
 import { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export async function findOneEventByIdWithLots(
-  dataSource: DataSource,
-  eventId: string,
+export async function findOneEventByIdWithLots(eventId: string,
 ): Promise<Event | null> {
-  return dataSource.getRepository(Event).findOne({
+  return AppDataSource.getRepository(Event).findOne({
     where: { id: eventId },
     relations: { ticketLots: true },
   });
 }
+
+

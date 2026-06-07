@@ -1,6 +1,4 @@
-import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
-import type { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
 import { EventStatus } from "../../../../shared/kernel/enums";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
@@ -15,13 +13,12 @@ import type { EventActor } from "../types";
 const CONTEXT = "createEvent";
 
 export async function createEvent(
-  dataSource: DataSource,
   input: CreateEventInputSchema,
   actor: EventActor,
-): Promise<Event> {
+) {
   const data = validateSchema(createEventSchema, input);
 
-  const saved = await createEventCommand(dataSource, {
+  const saved = await createEventCommand({
     producerId: actor.userId,
     title: data.title,
     description: data.description,
@@ -37,5 +34,5 @@ export async function createEvent(
     status: saved.status,
   });
 
-  return loadEventWithLots(dataSource, saved.id);
+  return loadEventWithLots(saved.id);
 }

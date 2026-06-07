@@ -1,4 +1,3 @@
-import type { DataSource } from "typeorm";
 import { PKPass } from "passkit-generator";
 import { env } from "../../../../shared/infrastructure/config/env";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
@@ -13,10 +12,9 @@ const CONTEXT = "WalletService";
 const logger = Logger.getInstance();
 
 export async function generateApplePass(
-  dataSource: DataSource,
   ticketId: string,
-): Promise<Buffer> {
-  const { ticket, event, user } = await loadTicketContext(dataSource, ticketId);
+) {
+  const { ticket, event, user } = await loadTicketContext(ticketId);
 
   try {
     const certificates = loadAppleCertificates();

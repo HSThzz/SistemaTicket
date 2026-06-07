@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import type { DataSource } from "typeorm";
 import { google } from "googleapis";
 import { PKPass } from "passkit-generator";
 import { env } from "../../../../shared/infrastructure/config/env";
@@ -30,10 +29,9 @@ export interface TicketWalletContext {
 }
 
 export async function loadTicketContext(
-  dataSource: DataSource,
   ticketId: string,
 ): Promise<TicketWalletContext> {
-  const ticket = await findOneTicketById(dataSource, ticketId);
+  const ticket = await findOneTicketById(ticketId);
 
   if (!ticket?.ticketLot?.event || !ticket.order?.user) {
     throw new TicketNotFoundError(ticketId);

@@ -1,17 +1,17 @@
-/**
+﻿/**
  * @file Query: busca reserva por ID com lote.
  * @module modules/sales/application/queries/findOneReservationById
  */
 
-import type { DataSource } from "typeorm";
 import { Reservation } from "../../../../shared/infrastructure/persistence/entities/Reservation";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export async function findOneReservationById(
-  dataSource: DataSource,
-  reservationId: string,
+export async function findOneReservationById(reservationId: string,
 ): Promise<Reservation | null> {
-  return dataSource.getRepository(Reservation).findOne({
+  return AppDataSource.getRepository(Reservation).findOne({
     where: { id: reservationId },
     relations: { ticketLot: true },
   });
 }
+
+

@@ -4,7 +4,6 @@
  */
 
 import type { Request, Response } from "express";
-import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { listUserTickets } from "../../application/services/listUserTickets";
 
@@ -26,7 +25,7 @@ export class TicketController {
     }
 
     try {
-      const tickets = await listUserTickets(AppDataSource, req.user.id);
+      const tickets = await listUserTickets(req.user.id);
       res.status(200).json({ tickets });
     } catch (error) {
       logger.error(CONTEXT, "Failed to list user tickets", {

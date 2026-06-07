@@ -1,5 +1,4 @@
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { processPaymentFailed } from "../commands/processPaymentFailed";
 import { clearPaymentCache } from "../helpers/clearPaymentCache";
@@ -10,19 +9,16 @@ const CONTEXT = "PaymentService";
 const logger = Logger.getInstance();
 
 export async function handlePaymentFailed(
-  dataSource: DataSource,
   redis: Redis | undefined,
   data: PaymentWebhookPayload["data"],
-): Promise<void> {
+) {
   logger.warn(CONTEXT, "Processing payment failure", {
     orderId: data.orderId,
     transactionId: data.transactionId,
     failureReason: data.failureReason,
   });
 
-  const result = await processPaymentFailed(
-    dataSource,
-    {
+  const result = await processPaymentFailed({
       orderId: data.orderId,
       transactionId: data.transactionId,
     },
@@ -48,6 +44,6 @@ export async function handlePaymentFailed(
     });
   }
 
-  await clearReservationCache(dataSource, redis, data.orderId);
-  await clearPaymentCache(dataSource, redis, data.orderId);
+  await clearReservationCache(redis, data.orderId);
+  await clearPaymentCache(redis, data.orderId);
 }

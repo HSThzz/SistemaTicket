@@ -1,5 +1,4 @@
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import type { PaymentGateway } from "../../infrastructure/gateways/PaymentGateway";
@@ -15,11 +14,10 @@ const CONTEXT = "handleWebhook";
 const logger = Logger.getInstance();
 
 export async function handleWebhook(
-  dataSource: DataSource,
   redis: Redis | undefined,
   payload: PaymentWebhookInputSchema,
   _gateway: PaymentGateway = createPaymentGateway(),
-): Promise<void> {
+) {
   const data = validateSchema(paymentWebhookSchema, payload);
 
   logger.info(CONTEXT, "Webhook received", {
@@ -29,9 +27,9 @@ export async function handleWebhook(
   });
 
   if (data.event === "payment.succeeded") {
-    await handlePaymentSucceeded(dataSource, redis, data.data);
+    await handlePaymentSucceeded(redis, data.data);
     return;
   }
 
-  await handlePaymentFailed(dataSource, redis, data.data);
+  await handlePaymentFailed(redis, data.data);
 }

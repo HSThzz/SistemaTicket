@@ -1,4 +1,3 @@
-import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { UserNotFoundError } from "../../domain/errors/AuthError";
@@ -9,26 +8,24 @@ import {
 import { userIdSchema } from "../../validators/schema/userIdSchema";
 import { updateUser } from "../commands/updateUser";
 import { findOneUserById } from "../queries/findOneUserById";
-import type { AuthUserProfile } from "../types";
 
 const CONTEXT = "updateUserRole";
 
 export async function updateUserRole(
-  dataSource: DataSource,
   userId: string,
   input: UpdateUserRoleInputSchema,
-): Promise<AuthUserProfile> {
+) {
   const id = validateSchema(userIdSchema, userId);
   const data = validateSchema(updateUserRoleSchema, input);
 
-  const user = await findOneUserById(dataSource, id);
+  const user = await findOneUserById(id);
 
   if (!user) {
     throw new UserNotFoundError(id);
   }
 
   user.role = data.role;
-  await updateUser(dataSource, user);
+  await updateUser(user);
 
   Logger.getInstance().info(CONTEXT, "User role updated", {
     userId: user.id,

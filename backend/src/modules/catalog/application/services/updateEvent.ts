@@ -1,6 +1,4 @@
-import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
-import type { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { eventIdSchema } from "../../validators/schema/eventIdSchema";
 import {
@@ -18,15 +16,14 @@ import { EventNotFoundError } from "../../domain/errors/EventError";
 const CONTEXT = "updateEvent";
 
 export async function updateEvent(
-  dataSource: DataSource,
   eventId: string,
   input: UpdateEventInputSchema,
   actor: EventActor,
-): Promise<Event> {
+) {
   const id = validateSchema(eventIdSchema, eventId);
   const data = validateSchema(updateEventSchema, input);
 
-  const event = await findOneEventById(dataSource, id);
+  const event = await findOneEventById(id);
   if (!event) {
     throw new EventNotFoundError(id);
   }
@@ -40,7 +37,7 @@ export async function updateEvent(
   if (data.status !== undefined) event.status = data.status;
   if (data.date !== undefined) event.date = new Date(data.date);
 
-  const saved = await updateEventCommand(dataSource, event);
+  const saved = await updateEventCommand(event);
 
   Logger.getInstance().info(CONTEXT, "Event updated", {
     eventId: saved.id,
@@ -49,5 +46,5 @@ export async function updateEvent(
     actorUserId: actor.userId,
   });
 
-  return loadEventWithLots(dataSource, saved.id);
+  return loadEventWithLots(saved.id);
 }

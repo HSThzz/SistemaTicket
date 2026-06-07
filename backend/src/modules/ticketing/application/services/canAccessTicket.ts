@@ -1,4 +1,3 @@
-import type { DataSource } from "typeorm";
 import { UserRole } from "../../../../shared/kernel/enums";
 import { findOneTicketForAccessCheck } from "../queries/findOneTicketForAccessCheck";
 
@@ -8,15 +7,14 @@ export interface WalletActor {
 }
 
 export async function canAccessTicket(
-  dataSource: DataSource,
   ticketId: string,
   actor: WalletActor,
-): Promise<boolean> {
+) {
   if (actor.role === UserRole.ADMIN) {
     return true;
   }
 
-  const ticket = await findOneTicketForAccessCheck(dataSource, ticketId);
+  const ticket = await findOneTicketForAccessCheck(ticketId);
 
   if (!ticket?.order || !ticket.ticketLot?.event) {
     return false;

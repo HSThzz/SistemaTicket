@@ -56,11 +56,8 @@ async function bootstrap(): Promise<void> {
     process.exit(1);
   }
 
-  expiryWorker = new ReservationExpiryWorker(AppDataSource, redis);
-  persistenceWorker = new ReservationPersistenceWorker(
-    AppDataSource,
-    getRedisWorker(),
-  );
+  expiryWorker = new ReservationExpiryWorker(redis);
+  persistenceWorker = new ReservationPersistenceWorker(getRedisWorker());
 
   try {
     await expiryWorker.start();
@@ -84,7 +81,6 @@ async function bootstrap(): Promise<void> {
 
   if (env.stockReconciliationIntervalMs > 0) {
     stockReconciliationWorker = new StockReconciliationWorker(
-      AppDataSource,
       redis,
       env.stockReconciliationIntervalMs,
     );

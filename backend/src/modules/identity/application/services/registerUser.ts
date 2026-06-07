@@ -1,5 +1,4 @@
 import bcrypt from "bcrypt";
-import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { UserRole } from "../../../../shared/kernel/enums";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
@@ -11,18 +10,16 @@ import {
 import { createUser } from "../commands/createUser";
 import { buildAuthResponse } from "../helpers/buildAuthResponse";
 import { findOneUserByEmail } from "../queries/findOneUserByEmail";
-import type { AuthResponse } from "../types";
 
 const CONTEXT = "registerUser";
 const BCRYPT_ROUNDS = 12;
 
 export async function registerUser(
-  dataSource: DataSource,
   input: RegisterUserInputSchema,
-): Promise<AuthResponse> {
+) {
   const data = validateSchema(registerUserSchema, input);
 
-  const existingUser = await findOneUserByEmail(dataSource, data.email);
+  const existingUser = await findOneUserByEmail(data.email);
 
   if (existingUser) {
     throw new EmailAlreadyExistsError(data.email);
@@ -30,7 +27,7 @@ export async function registerUser(
 
   const passwordHash = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
 
-  const user = await createUser(dataSource, {
+  const user = await createUser({
     name: data.name,
     email: data.email.toLowerCase(),
     passwordHash,

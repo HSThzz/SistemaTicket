@@ -4,7 +4,6 @@
  */
 
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import { RESERVATION_KEY_PREFIX } from "../../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { env } from "../../../../shared/infrastructure/config/env";
@@ -26,13 +25,9 @@ export class ReservationExpiryWorker {
   private subscriber: Redis | null = null;
 
   /**
-   * @param dataSource - Conexão TypeORM usada na expiração de pedidos.
-   * @param redis - Cliente Redis principal.
+   *    * @param redis - Cliente Redis principal.
    */
-  constructor(
-    private readonly dataSource: DataSource,
-    private readonly redis: Redis,
-  ) {}
+  constructor(private readonly redis: Redis) {}
 
   /**
    * Habilita notificações de keyspace e inscreve no padrão de chaves expiradas.
@@ -104,9 +99,7 @@ export class ReservationExpiryWorker {
    */
   async expireReservation(reservationId: string): Promise<void> {
     try {
-      await expireUnpaidOrderByReservationId(
-        this.dataSource,
-        this.redis,
+      await expireUnpaidOrderByReservationId(this.redis,
         reservationId,
       );
     } catch (error) {

@@ -4,7 +4,6 @@
  */
 
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import {
   ORDER_CACHE_KEY_PREFIX,
   PAYMENT_CACHE_KEY_PREFIX,
@@ -50,12 +49,10 @@ export class ReservationPersistenceWorker {
   private dlqCount = 0;
 
   /**
-   * @param dataSource - Conexão TypeORM para transações de reserva e pedido.
    * @param redis - Cliente Redis da fila principal e caches.
    * @param paymentGateway - Gateway opcional para cobrança PIX.
    */
   constructor(
-    private readonly dataSource: DataSource,
     private readonly redis: Redis,
     private readonly paymentGateway: PaymentGateway = createPaymentGateway(),
   ) {}
@@ -165,7 +162,7 @@ export class ReservationPersistenceWorker {
     }
 
     try {
-      const result = await persistReservation(this.dataSource, payload);
+      const result = await persistReservation(payload);
 
       let orderId: string | null = null;
 
@@ -235,7 +232,6 @@ export class ReservationPersistenceWorker {
   ): Promise<void> {
     try {
       const payment = await processOrderPayment(
-        this.dataSource,
         this.redis,
         orderId,
         this.paymentGateway,
@@ -262,7 +258,6 @@ export class ReservationPersistenceWorker {
 
       try {
         await abortPendingOrderAfterPixCreationFailure(
-          this.dataSource,
           this.redis,
           orderId,
           message,

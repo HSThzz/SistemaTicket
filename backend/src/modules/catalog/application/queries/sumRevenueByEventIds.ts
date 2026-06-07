@@ -1,17 +1,15 @@
-/**
+﻿/**
  * @file Query: soma receita bruta de pedidos pagos por evento.
  * @module modules/catalog/application/queries/sumRevenueByEventIds
  */
 
-import type { DataSource } from "typeorm";
 import { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
 import { OrderStatus } from "../../../../shared/kernel/enums";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export async function sumRevenueByEventIds(
-  dataSource: DataSource,
-  eventIds: string[],
+export async function sumRevenueByEventIds(eventIds: string[],
 ): Promise<Map<string, number>> {
-  const rows = await dataSource
+  const rows = await AppDataSource
     .getRepository(Order)
     .createQueryBuilder("order")
     .innerJoin("order.tickets", "ticket")
@@ -26,3 +24,4 @@ export async function sumRevenueByEventIds(
 
   return new Map(rows.map((row) => [row.eventId, Number(row.revenue)]));
 }
+

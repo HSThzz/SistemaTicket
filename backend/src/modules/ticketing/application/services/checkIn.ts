@@ -1,4 +1,3 @@
-import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { EventStatus, TicketStatus, UserRole } from "../../../../shared/kernel/enums";
 import {
@@ -12,31 +11,15 @@ import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { checkInSchema } from "../../validators/schema/checkInSchema";
 import { checkInTicket } from "../commands/checkInTicket";
 import { findOneTicketByUniqueCode } from "../queries/findOneTicketByUniqueCode";
+import type { CheckInActor } from "./types";
 
 const CONTEXT = "CheckInService";
 const CHECK_IN_TIMEZONE = "America/Sao_Paulo";
 const logger = Logger.getInstance();
 
-export interface CheckInActor {
-  userId: string;
-  role: UserRole;
-}
-
-export interface CheckInResult {
-  ownerName: string;
-  ownerDocument: string;
-  checkedInAt: string;
-  ticketId: string;
-  eventTitle: string;
-}
-
-export async function checkIn(
-  dataSource: DataSource,
-  uniqueCode: string,
-  actor: CheckInActor,
-): Promise<CheckInResult> {
+export async function checkIn(uniqueCode: string, actor: CheckInActor) {
   const { uniqueCode: code } = validateSchema(checkInSchema, { uniqueCode });
-  const ticket = await findOneTicketByUniqueCode(dataSource, code);
+  const ticket = await findOneTicketByUniqueCode(code);
 
   if (!ticket?.ticketLot?.event) {
     logger.warn(CONTEXT, "Check-in failed — ticket not found", {
@@ -92,7 +75,7 @@ export async function checkIn(
     throw new CheckInNotAllowedTodayError(eventDay);
   }
 
-  const result = await checkInTicket(dataSource, code);
+  const result = await checkInTicket(code);
 
   if (!result) {
     logger.warn(CONTEXT, "Check-in failed — ticket not found", {

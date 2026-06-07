@@ -1,5 +1,4 @@
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import { PAYMENT_CACHE_KEY_PREFIX } from "../../../../shared/infrastructure/config/constants";
 import type { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
 import { OrderStatus } from "../../../../shared/kernel/enums";
@@ -14,11 +13,10 @@ import { persistPixOnOrder } from "../helpers/persistPixOnOrder";
 import type { PixPaymentDetails } from "../types";
 
 export async function resolvePixPaymentDetails(
-  dataSource: DataSource,
   redis: Redis | undefined,
   order: Order,
   gateway: PaymentGateway = createPaymentGateway(),
-): Promise<PixPaymentDetails | null> {
+) {
   if (order.status !== OrderStatus.PENDING) {
     return null;
   }
@@ -38,7 +36,7 @@ export async function resolvePixPaymentDetails(
 
     if (cached) {
       const parsed = JSON.parse(cached) as PixPaymentDetails;
-      await persistPixOnOrder(dataSource, order.id, parsed);
+      await persistPixOnOrder(order.id, parsed);
       return parsed;
     }
   }
@@ -49,7 +47,7 @@ export async function resolvePixPaymentDetails(
     if (recovered) {
       order.pixCopyPaste = recovered.pixCopyPaste;
       order.pixExpiresAt = recovered.expiresAt;
-      await updateOrder(dataSource, order);
+      await updateOrder(order);
 
       return buildPixPaymentDetails(order, {
         transactionId: order.paymentGatewayId,

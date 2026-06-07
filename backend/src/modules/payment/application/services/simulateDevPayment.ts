@@ -1,5 +1,4 @@
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
 import { env, isProduction } from "../../../../shared/infrastructure/config/env";
 import { OrderStatus } from "../../../../shared/kernel/enums";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
@@ -15,12 +14,11 @@ import { findOneOrderById } from "../queries/findOneOrderById";
 import { handleWebhook } from "./handleWebhook";
 
 export async function simulateDevPayment(
-  dataSource: DataSource,
   redis: Redis | undefined,
   orderId: string,
   requesterUserId: string,
   gateway: PaymentGateway = createPaymentGateway(),
-): Promise<void> {
+) {
   const data = validateSchema(simulateDevPaymentSchema, { orderId, requesterUserId });
 
   if (isProduction) {
@@ -33,7 +31,7 @@ export async function simulateDevPayment(
     );
   }
 
-  const order = await findOneOrderById(dataSource, data.orderId);
+  const order = await findOneOrderById(data.orderId);
 
   if (!order) {
     throw new OrderNotFoundError(data.orderId);
@@ -47,9 +45,7 @@ export async function simulateDevPayment(
     throw new PaymentAlreadyProcessedError(data.orderId, order.status);
   }
 
-  await handleWebhook(
-    dataSource,
-    redis,
+  await handleWebhook(redis,
     {
       event: "payment.succeeded",
       data: {

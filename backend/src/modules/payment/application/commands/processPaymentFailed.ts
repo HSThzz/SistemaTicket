@@ -1,10 +1,10 @@
-/**
+﻿/**
  * @file Command: processa falha de pagamento e restaura estoque em transação.
  * @module modules/payment/application/commands/processPaymentFailed
  */
 
 import type Redis from "ioredis";
-import type { DataSource } from "typeorm";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../../../shared/infrastructure/config/constants";
 import { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
 import { Reservation } from "../../../../shared/infrastructure/persistence/entities/Reservation";
@@ -27,11 +27,10 @@ export type ProcessPaymentFailedResult =
   | { status: "reservation_not_restored" };
 
 export async function processPaymentFailed(
-  dataSource: DataSource,
   data: ProcessPaymentFailedData,
   redis?: Redis,
 ): Promise<ProcessPaymentFailedResult> {
-  return dataSource.transaction(async (manager) => {
+  return AppDataSource.transaction(async (manager) => {
     const order = await manager.findOne(Order, {
       where: { id: data.orderId },
       lock: { mode: "pessimistic_write" },
@@ -93,3 +92,5 @@ export async function processPaymentFailed(
     };
   });
 }
+
+

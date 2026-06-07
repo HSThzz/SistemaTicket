@@ -1,11 +1,11 @@
-/**
+﻿/**
  * @file Command: persiste novo usuário.
  * @module modules/identity/application/commands/createUser
  */
 
-import type { DataSource } from "typeorm";
 import { User } from "../../../../shared/infrastructure/persistence/entities/User";
 import type { UserRole } from "../../../../shared/kernel/enums";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
 export interface CreateUserData {
   name: string;
@@ -15,11 +15,11 @@ export interface CreateUserData {
   role: UserRole;
 }
 
-export async function createUser(
-  dataSource: DataSource,
-  data: CreateUserData,
+export async function createUser(data: CreateUserData,
 ): Promise<User> {
-  const repository = dataSource.getRepository(User);
+  const repository = AppDataSource.getRepository(User);
   const user = repository.create(data);
   return repository.save(user);
 }
+
+

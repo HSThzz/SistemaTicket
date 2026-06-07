@@ -4,7 +4,6 @@
  */
 
 import type { Request, Response } from "express";
-import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { getRedis } from "../../../../shared/infrastructure/config/redis";
 import {
@@ -52,9 +51,7 @@ export class PurchaseController {
     };
 
     try {
-      const result = await reserveTickets(
-        AppDataSource,
-        redis,
+      const result = await reserveTickets(redis,
         req.user.id,
         ticketLotId,
         Number(quantity),
@@ -108,9 +105,7 @@ export class PurchaseController {
     }
 
     try {
-      const status = await getReservationStatus(
-        AppDataSource,
-        redis,
+      const status = await getReservationStatus(redis,
         reservationId,
         req.user.id,
       );
@@ -289,7 +284,7 @@ export class PurchaseController {
       const worker = getStockReconciliationWorker();
       const report = worker
         ? await worker.runOnce()
-        : await reconcileAllStock(AppDataSource, redis);
+        : await reconcileAllStock(redis);
 
       res.status(200).json(report);
     } catch (error) {

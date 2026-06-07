@@ -1,15 +1,13 @@
-import type { DataSource } from "typeorm";
 import { OrderStatus, TicketStatus } from "../../../../shared/kernel/enums";
 import { countTicketsByEventIds } from "../queries/countTicketsByEventIds";
 import { findManagedEventsByActor } from "../queries/findManagedEventsByActor";
 import { sumRevenueByEventIds } from "../queries/sumRevenueByEventIds";
-import type { EventActor, ProducerDashboardStats, ProducerEventStats } from "../types";
+import type { EventActor, ProducerEventStats } from "../types";
 
 export async function getProducerDashboard(
-  dataSource: DataSource,
   actor: EventActor,
-): Promise<ProducerDashboardStats> {
-  const events = await findManagedEventsByActor(dataSource, actor);
+) {
+  const events = await findManagedEventsByActor(actor);
   const eventIds = events.map((event) => event.id);
 
   if (eventIds.length === 0) {
@@ -26,14 +24,12 @@ export async function getProducerDashboard(
   }
 
   const [soldByEvent, checkedInByEvent, revenueByEvent] = await Promise.all([
-    countTicketsByEventIds(dataSource, eventIds, OrderStatus.PAID),
-    countTicketsByEventIds(
-      dataSource,
-      eventIds,
+    countTicketsByEventIds(eventIds, OrderStatus.PAID),
+    countTicketsByEventIds(eventIds,
       OrderStatus.PAID,
       TicketStatus.USED,
     ),
-    sumRevenueByEventIds(dataSource, eventIds),
+    sumRevenueByEventIds(eventIds),
   ]);
 
   const eventStats: ProducerEventStats[] = events.map((event) => {

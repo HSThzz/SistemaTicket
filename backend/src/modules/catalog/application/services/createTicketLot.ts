@@ -1,6 +1,4 @@
-import type { DataSource } from "typeorm";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
-import type { TicketLot } from "../../../../shared/infrastructure/persistence/entities/TicketLot";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { eventIdSchema } from "../../validators/schema/eventIdSchema";
 import {
@@ -16,15 +14,14 @@ import type { EventActor } from "../types";
 const CONTEXT = "createTicketLot";
 
 export async function createTicketLot(
-  dataSource: DataSource,
   eventId: string,
   input: CreateTicketLotInputSchema,
   actor: EventActor,
-): Promise<TicketLot> {
+) {
   const id = validateSchema(eventIdSchema, eventId);
   const data = validateSchema(createTicketLotSchema, input);
 
-  const event = await findOneEventById(dataSource, id);
+  const event = await findOneEventById(id);
   if (!event) {
     throw new EventNotFoundError(id);
   }
@@ -33,7 +30,7 @@ export async function createTicketLot(
 
   const availableQuantity = data.availableQuantity ?? data.totalQuantity;
 
-  const saved = await createTicketLotCommand(dataSource, {
+  const saved = await createTicketLotCommand({
     eventId: event.id,
     name: data.name,
     price: data.price,
