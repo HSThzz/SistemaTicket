@@ -125,6 +125,8 @@ export function MyTicketsPage() {
     [tickets],
   );
 
+  const showTicketsSection = tickets.length > 0 || filter !== "all";
+
   if (loading) {
     return <TicketsPageSkeleton />;
   }
@@ -158,7 +160,7 @@ export function MyTicketsPage() {
         </Alert>
       ) : null}
 
-      {!error && tickets.length > 0 ? (
+      {!error && showTicketsSection ? (
         <>
           <AnimatedSection delayMs={60}>
             <SimpleGrid cols={{ base: 1, xs: 3 }} spacing="md">
@@ -192,7 +194,7 @@ export function MyTicketsPage() {
             />
           </AnimatedSection>
 
-          {displayedTickets.length === 0 ? (
+          {tickets.length === 0 ? (
             <AnimatedSection delayMs={120}>
               <EmptyState
                 icon={<IconTicket size={32} />}
@@ -226,7 +228,7 @@ export function MyTicketsPage() {
         </>
       ) : null}
 
-      {!error && tickets.length === 0 ? (
+      {!error && !showTicketsSection ? (
         <AnimatedSection delayMs={60}>
           <EmptyState
             icon={<IconTicket size={32} />}

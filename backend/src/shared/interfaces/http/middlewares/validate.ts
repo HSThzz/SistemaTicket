@@ -7,6 +7,22 @@ import type { NextFunction, Request, Response } from "express";
 import type { ZodType } from "zod";
 
 /**
+ * Express 5 expõe `query` e `params` como getters; substituímos via `defineProperty`.
+ */
+function replaceReadonlyRequestField<K extends "query" | "params">(
+  req: Request,
+  key: K,
+  value: Request[K],
+): void {
+  Object.defineProperty(req, key, {
+    value,
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
+}
+
+/**
  * Valida `req.body` e substitui pelo resultado parseado.
  * @param schema - Schema Zod do corpo.
  */
@@ -47,7 +63,7 @@ export function validateQuery<T>(schema: ZodType<T>) {
       return;
     }
 
-    req.query = result.data as Request["query"];
+    replaceReadonlyRequestField(req, "query", result.data as Request["query"]);
     next();
   };
 }
@@ -70,7 +86,7 @@ export function validateParams<T>(schema: ZodType<T>) {
       return;
     }
 
-    req.params = result.data as Request["params"];
+    replaceReadonlyRequestField(req, "params", result.data as Request["params"]);
     next();
   };
 }

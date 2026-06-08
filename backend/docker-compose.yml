@@ -32,7 +32,9 @@ services:
       timeout: 5s
       retries: 5
 
+  # Stack completo (API em Docker). Para dev local use só postgres + redis e `npm run dev`.
   app:
+    profiles: ["full"]
     build:
       context: .
       dockerfile: Dockerfile
@@ -45,6 +47,10 @@ services:
       NODE_ENV: production
       PORT: 3000
       LOG_LEVEL: info
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      JWT_SECRET: ${JWT_SECRET:-local-docker-jwt-secret-change-me-32chars}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-local-docker-webhook-secret}
+      PAYMENT_GATEWAY: simulated
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USERNAME: postgres
@@ -59,6 +65,7 @@ services:
         condition: service_healthy
 
   migrate:
+    profiles: ["full"]
     build:
       context: .
       dockerfile: Dockerfile
