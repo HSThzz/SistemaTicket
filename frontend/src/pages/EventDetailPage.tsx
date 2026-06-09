@@ -173,9 +173,12 @@ export function EventDetailPage() {
   if (error || !event) {
     return (
       <Container size="lg" py="md">
-        <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro" radius="lg">
-          {error ?? "Evento não encontrado."}
-        </Alert>
+        <Stack gap="md">
+          <BackButton to="/eventos" label="Voltar aos eventos" />
+          <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro" radius="lg">
+            {error ?? "Evento não encontrado."}
+          </Alert>
+        </Stack>
       </Container>
     );
   }
@@ -220,10 +223,10 @@ export function EventDetailPage() {
         />
         <Box className="producer-manage-hero-overlay" />
         <Container size="lg" px="md" className="event-detail-hero-content">
-          <BackButton to="/" label="Voltar aos eventos" inverted style={{ alignSelf: "flex-start" }} />
+          <Stack gap="md" className="event-detail-hero-info">
+            <BackButton to="/eventos" label="Voltar aos eventos" inverted />
 
-          <Stack gap="md">
-              <Group gap="xs" wrap="wrap">
+            <Group gap="xs" wrap="wrap">
                 <Badge color="white" c="dark" variant="filled" radius="sm">
                   {CATEGORY_LABELS[category]}
                 </Badge>

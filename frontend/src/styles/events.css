@@ -1,0 +1,260 @@
+.events-page {
+  background-color: var(--mantine-color-body);
+  min-height: calc(100vh - var(--app-shell-header-height, 4.5rem));
+}
+
+.events-page-section {
+  padding-top: calc(var(--app-shell-header-height, 4.5rem) + var(--mantine-spacing-md));
+}
+
+.events-toolbar {
+  gap: var(--mantine-spacing-md);
+}
+
+/* Busca estilo DICE */
+.events-search-input .mantine-TextInput-input {
+  background: light-dark(#f0f0ee, #141414);
+  border: 1px solid light-dark(#e0e0dc, rgba(255, 255, 255, 0.08));
+  color: var(--mantine-color-text);
+  font-size: var(--mantine-font-size-sm);
+  padding-left: 42px;
+  height: 44px;
+}
+
+.events-search-input .mantine-TextInput-input::placeholder {
+  color: var(--mantine-color-dimmed);
+}
+
+.events-search-input .mantine-TextInput-section {
+  color: var(--mantine-color-dimmed);
+}
+
+/* Filtros: Local · Data · Preço */
+.events-filter-bar {
+  padding-top: var(--mantine-spacing-xs);
+}
+
+.events-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 100px;
+  border: 1px solid light-dark(#e0e0dc, rgba(255, 255, 255, 0.1));
+  background: light-dark(#fff, #111);
+  color: var(--mantine-color-text);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.events-filter-pill:hover {
+  border-color: var(--vibra-border-accent-hover);
+}
+
+.events-filter-pill--active {
+  border-color: var(--vibra-border-accent-hover);
+  background: light-dark(rgba(22, 163, 74, 0.06), rgba(74, 222, 128, 0.08));
+}
+
+.events-filter-pill span {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Categorias em tiles */
+.events-category-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 72px;
+  padding: 12px 8px;
+  border-radius: var(--mantine-radius-md);
+  border: 1px solid light-dark(#e0e0dc, rgba(255, 255, 255, 0.08));
+  background: light-dark(#f5f5f3, #111);
+  color: var(--mantine-color-dimmed);
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.events-category-tile:hover {
+  color: var(--mantine-color-text);
+  border-color: var(--vibra-border-accent-hover);
+}
+
+.events-category-tile--active {
+  color: var(--mantine-color-text);
+  border-color: var(--vibra-v-light);
+  background: light-dark(rgba(22, 163, 74, 0.08), rgba(74, 222, 128, 0.1));
+}
+
+/* Banner promocional */
+.events-promo-banner {
+  padding: var(--mantine-spacing-xl);
+  border-radius: var(--mantine-radius-md);
+  background: light-dark(#f0f0ee, #141414);
+  border: 1px solid light-dark(#e0e0dc, rgba(255, 255, 255, 0.08));
+}
+
+.events-promo-title {
+  font-family: var(--vibra-font-display);
+  font-size: clamp(1.25rem, 3vw, 1.65rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--mantine-color-text);
+}
+
+.events-promo-sub {
+  color: var(--mantine-color-dimmed);
+  line-height: 1.65;
+}
+
+.events-promo-btn {
+  font-weight: 700;
+}
+
+.events-promo-btn-outline {
+  border-color: light-dark(#d4d4d0, rgba(255, 255, 255, 0.2)) !important;
+  color: var(--mantine-color-text) !important;
+}
+
+.events-promo-mascot {
+  flex-shrink: 0;
+}
+
+/* Título da seção */
+.events-page-heading {
+  font-family: var(--vibra-font-display);
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--mantine-color-text);
+}
+
+.events-page-heading-muted {
+  color: var(--mantine-color-dimmed);
+  font-weight: 700;
+}
+
+/* Cards de evento */
+.dice-event-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.dice-event-card__link {
+  display: block;
+  width: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.dice-event-card__cover {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--mantine-radius-md);
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: opacity 0.25s ease;
+}
+
+.dice-event-card:hover .dice-event-card__cover {
+  opacity: 0.92;
+}
+
+.dice-event-card__badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  z-index: 1;
+}
+
+.dice-event-card__heart {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.55) !important;
+  color: #fff !important;
+  border: none;
+  backdrop-filter: blur(4px);
+}
+
+.dice-event-card__heart:hover {
+  background: rgba(0, 0, 0, 0.72) !important;
+}
+
+.dice-event-card__body {
+  padding-top: 10px;
+}
+
+.dice-event-card__title {
+  font-weight: 700;
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--mantine-color-text);
+  text-decoration: none;
+}
+
+.dice-event-card__title:hover {
+  text-decoration: underline;
+}
+
+.dice-event-card__date {
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  color: var(--vibra-amarelo);
+}
+
+[data-mantine-color-scheme="light"] .dice-event-card__date {
+  color: #b45309;
+}
+
+.dice-event-card__venue {
+  font-size: var(--mantine-font-size-xs);
+  color: var(--mantine-color-dimmed);
+  line-height: 1.4;
+}
+
+.dice-event-card__price {
+  font-size: var(--mantine-font-size-xs);
+  color: var(--mantine-color-dimmed);
+}
+
+.layout-events .layout-events-main,
+.layout-events .layout-events-header.mantine-AppShell-header {
+  background-color: var(--mantine-color-body);
+}
+
+[data-mantine-color-scheme="dark"] .events-page {
+  background-color: #050505;
+}
+
+[data-mantine-color-scheme="dark"] .layout-events .layout-events-header.mantine-AppShell-header,
+[data-mantine-color-scheme="dark"] .layout-events .layout-events-main {
+  background-color: #050505;
+}

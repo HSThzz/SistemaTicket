@@ -66,3 +66,18 @@ export function formatEventTimeOnly(isoDate: string): string {
     minute: "2-digit",
   }).format(new Date(isoDate));
 }
+
+/**
+ * Data compacta estilo vitrine (ex.: "sáb., 19 de set.").
+ *
+ * @param isoDate - Data em formato ISO 8601.
+ */
+export function formatEventDateDice(isoDate: string): string {
+  const formatted = new Intl.DateTimeFormat("pt-BR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(new Date(isoDate));
+
+  return formatted.replace(/\.$/, "");
+}

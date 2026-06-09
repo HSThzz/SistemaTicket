@@ -17,7 +17,7 @@ export function AuthCard({ title, highlight, description, children }: AuthCardPr
             <Title order={1} className="page-title">
               {title}{" "}
               {highlight ? (
-                <Text span inherit c="brand">
+                <Text span inherit c="brand.7">
                   {highlight}
                 </Text>
               ) : null}

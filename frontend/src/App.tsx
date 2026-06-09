@@ -12,6 +12,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { EventDetailPage } from "./pages/EventDetailPage";
+import { EventsPage } from "./pages/EventsPage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { MyOrdersPage } from "./pages/MyOrdersPage";
@@ -34,6 +35,7 @@ export default function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<HomePage />} />
+            <Route path="eventos" element={<EventsPage />} />
             <Route path="eventos/:eventId" element={<EventDetailPage />} />
 
             <Route element={<GuestRoute />}>

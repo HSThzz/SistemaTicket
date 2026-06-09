@@ -15,7 +15,8 @@ const FOOTER_COLUMNS = [
   {
     title: "Explorar",
     links: [
-      { label: "Eventos", to: "/" },
+      { label: "Início", to: "/" },
+      { label: "Eventos", to: "/eventos" },
       { label: "Meus ingressos", to: "/ingressos" },
       { label: "Meus pedidos", to: "/pedidos" },
     ],

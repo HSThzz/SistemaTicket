@@ -39,7 +39,7 @@ export function HomeHero({ eventCount }: HomeHeroProps) {
 
             <Title order={1} className="home-hero-title">
               Ingressos do jeito que o{" "}
-              <Text span inherit c="brand">
+              <Text span inherit c="brand.7" className="home-hero-accent">
                 Brasil merece.
               </Text>
             </Title>

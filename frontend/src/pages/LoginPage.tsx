@@ -111,7 +111,7 @@ export function LoginPage() {
 
       <Button
         component={Link}
-        to="/"
+        to="/eventos"
         variant="subtle"
         radius="xl"
         fullWidth

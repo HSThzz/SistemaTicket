@@ -33,9 +33,10 @@ import { ColorSchemeToggle } from "./ColorSchemeToggle";
 import { useAuth } from "../context/AuthContext";
 
 const CLIENT_NAV_LINKS = [
-  { to: "/", label: "Eventos", icon: null },
-  { to: "/ingressos", label: "Meus ingressos", icon: IconTicket },
-  { to: "/pedidos", label: "Meus pedidos", icon: null },
+  { to: "/", label: "Início", icon: null, exact: true },
+  { to: "/eventos", label: "Eventos", icon: null, exact: true },
+  { to: "/ingressos", label: "Meus ingressos", icon: IconTicket, exact: false },
+  { to: "/pedidos", label: "Meus pedidos", icon: null, exact: false },
 ] as const;
 
 /**
@@ -68,7 +69,9 @@ function NavLinks({
     <Group gap="lg">
       {links.map((link) => {
         const isActive =
-          link.to === "/" ? currentPath === "/" : currentPath.startsWith(link.to);
+          "exact" in link && link.exact
+            ? currentPath === link.to
+            : currentPath.startsWith(link.to);
 
         return (
           <Anchor
@@ -76,7 +79,7 @@ function NavLinks({
             component={Link}
             to={link.to}
             fw={isActive ? 600 : 500}
-            c={isActive ? "brand.6" : "dimmed"}
+            c={isActive ? "brand.7" : "dimmed"}
             underline="never"
             onClick={onNavigate}
             style={{
@@ -103,12 +106,14 @@ export function Layout() {
   const location = useLocation();
   const currentPath = location.pathname;
   const isHome = currentPath === "/";
+  const isEventsPage = currentPath === "/eventos";
   const isHeroPage =
     /^\/eventos\/[^/]+$/.test(currentPath) ||
     /^\/eventos\/[^/]+\/comprar$/.test(currentPath) ||
     /^\/produtor\/eventos\/[^/]+$/.test(currentPath) ||
     currentPath === "/produtor/check-in";
-  const isFullWidthPage = isHome || isHeroPage;
+  const isFullWidthPage = isHome || isEventsPage || isHeroPage;
+  const layoutVariant = isHome ? "home" : isEventsPage ? "events" : isHeroPage ? "hero" : undefined;
 
   const isProducer = user?.role === "PRODUCER" || user?.role === "ADMIN";
   const isAdmin = user?.role === "ADMIN";
@@ -133,10 +138,10 @@ export function Layout() {
         collapsed: { mobile: !opened, desktop: true },
       }}
       padding={isFullWidthPage ? 0 : "md"}
-      className={isHome ? "layout-home" : isHeroPage ? "layout-hero" : undefined}
+      className={layoutVariant ? `layout-${layoutVariant}` : undefined}
       classNames={{
-        header: isHome ? "layout-home-header" : undefined,
-        main: isHome ? "layout-home-main" : isHeroPage ? "layout-hero-main" : undefined,
+        header: layoutVariant ? `layout-${layoutVariant}-header` : undefined,
+        main: layoutVariant ? `layout-${layoutVariant}-main` : undefined,
       }}
     >
       <AppShell.Header>
