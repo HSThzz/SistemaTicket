@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 import { Box, Button, Text } from "@mantine/core";
 import { IconArrowRight } from "@tabler/icons-react";
 import { AnimatedSection } from "../home/AnimatedSection";
+import { LandingMascotPanel } from "./LandingMascotPanel";
 import { LandingShowcase } from "./LandingShowcase";
-import { PhoneMockup } from "./PhoneMockup";
 
 export function LandingCta() {
   return (
@@ -31,13 +31,16 @@ export function LandingCta() {
               className="landing-pill-cta"
               rightSection={<IconArrowRight size={18} />}
             >
-              Baixar / explorar
+              Explorar eventos
             </Button>
           }
           visual={
-            <Box className="landing-device-stage">
-              <PhoneMockup screen="checkout" />
-            </Box>
+            <LandingMascotPanel
+              variant="hero"
+              size={180}
+              animated
+              label="Zé · pronto para o show"
+            />
           }
         />
       </Box>

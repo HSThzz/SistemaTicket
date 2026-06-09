@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Box, Button, Stack, Text, Title } from "@mantine/core";
 import { IconArrowRight } from "@tabler/icons-react";
-import { PhoneMockup } from "./PhoneMockup";
+import { LandingMascotPanel } from "./LandingMascotPanel";
 
 export function LandingHero() {
   return (
@@ -40,8 +40,12 @@ export function LandingHero() {
           </Button>
         </Stack>
 
-        <Box className="landing-hero-device-panel" visibleFrom="md">
-          <PhoneMockup screen="checkout" />
+        <Box visibleFrom="md">
+          <LandingMascotPanel
+            variant="hero"
+            size={200}
+            label="Zé · O Mascote Oficial"
+          />
         </Box>
       </Box>
     </Box>

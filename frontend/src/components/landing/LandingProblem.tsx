@@ -20,12 +20,10 @@ export function LandingProblem() {
           body="Sympla e Ingresse são ferramentas — não experiências."
           visual={
             <LandingVisualPanel
-              variant="social"
+              variant="photo"
+              tone="crowd"
               label="Ao vivo"
-              cards={[
-                { label: "Taxa média", value: "20%", detail: "cobrada do fã" },
-                { label: "Personalização", value: "0%", detail: "zero histórico" },
-              ]}
+              caption="10 anos de mercado. Zero amor de marca."
             />
           }
         />

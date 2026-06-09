@@ -8,20 +8,52 @@ const PARTNERS = [
   "Festival Virada",
   "Red Bull",
   "Boiler Room",
+  "Rock in Rio",
+  "Lollapalooza",
+  "Primavera Sound",
+  "Circo Voador",
+  "Audio Club",
+  "D-Edge",
+  "Sónar SP",
+  "The Town",
+  "Planeta Atlântida",
+  "VillaMix",
+  "Qualistage",
+  "Espaço das Américas",
+  "Memorial LATAM",
+  "Kia Arena",
+  "Shotgun",
+  "Universal Music",
+  "Sony Music",
+  "Warner Music",
+  "Multishow",
+  "Amazon Music",
 ] as const;
+
+function PartnerTrack({ id }: { id: string }) {
+  return (
+    <Box className="landing-partners-segment" aria-hidden={id === "b" ? true : undefined}>
+      {PARTNERS.map((name) => (
+        <Text key={`${id}-${name}`} className="landing-partner-logo" component="span">
+          {name}
+        </Text>
+      ))}
+    </Box>
+  );
+}
 
 export function LandingPartnerStrip() {
   return (
     <AnimatedSection delayMs={30}>
       <Box className="landing-band landing-band--partners">
-        <Box className="landing-band-inner landing-partners-row">
+        <Box className="landing-partners-header">
           <Text className="landing-partners-kicker">Rede de venues e produtores</Text>
-          <Box className="landing-partners-logos" role="list">
-            {PARTNERS.map((name) => (
-              <Text key={name} className="landing-partner-logo" role="listitem">
-                {name}
-              </Text>
-            ))}
+        </Box>
+
+        <Box className="landing-partners-marquee" aria-label="Marcas parceiras">
+          <Box className="landing-partners-track">
+            <PartnerTrack id="a" />
+            <PartnerTrack id="b" />
           </Box>
         </Box>
       </Box>

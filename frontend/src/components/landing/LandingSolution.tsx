@@ -2,6 +2,7 @@ import { Box, Button } from "@mantine/core";
 import { Link } from "react-router-dom";
 import { IconArrowRight } from "@tabler/icons-react";
 import { AnimatedSection } from "../home/AnimatedSection";
+import { LandingDeviceStage } from "./LandingDeviceStage";
 import { LandingShowcase } from "./LandingShowcase";
 import { PhoneMockup } from "./PhoneMockup";
 
@@ -28,9 +29,9 @@ export function LandingSolution() {
             </Button>
           }
           visual={
-            <Box className="landing-device-stage">
+            <LandingDeviceStage>
               <PhoneMockup screen="spotify" />
-            </Box>
+            </LandingDeviceStage>
           }
         />
       </Box>

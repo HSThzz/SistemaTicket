@@ -1,6 +1,7 @@
 import { Box, Text } from "@mantine/core";
 import { IconCoin, IconSparkles, IconUsers } from "@tabler/icons-react";
 import { AnimatedSection } from "../home/AnimatedSection";
+import { LandingDeviceStage } from "./LandingDeviceStage";
 import { LandingFeatureList } from "./LandingFeatureList";
 import { LandingShowcase } from "./LandingShowcase";
 import { LandingVisualPanel } from "./LandingVisualPanel";
@@ -36,9 +37,9 @@ export function LandingFeatures() {
             body={null}
             footer={<LandingFeatureList items={[...FAN_FEATURES]} activeIndex={1} />}
             visual={
-              <Box className="landing-device-stage">
+              <LandingDeviceStage>
                 <PhoneMockup screen="feed" />
-              </Box>
+              </LandingDeviceStage>
             }
           />
         </Box>
@@ -58,6 +59,7 @@ export function LandingFeatures() {
             visual={
               <LandingVisualPanel
                 variant="social"
+                label="Depoimentos"
                 cards={[
                   { label: "Satisfação", value: "4.9", detail: "★ ★ ★ ★ ★" },
                   { label: "Recompra", value: "87%", detail: "voltariam a usar" },
@@ -86,9 +88,14 @@ export function LandingFeatures() {
             }
             body="Taxa justa, caixa em D+3 e dashboard ao vivo."
             visual={
-              <Box className="landing-device-stage">
-                <PhoneMockup screen="dashboard" />
-              </Box>
+              <LandingVisualPanel
+                variant="stats"
+                items={[
+                  { label: "Taxa", value: "8%", detail: "vs. 10–12% do mercado" },
+                  { label: "Recebimento", value: "D+3", detail: "enquanto outros pagam D+30" },
+                  { label: "Dashboard", value: "Live", detail: "vendas e público em tempo real" },
+                ]}
+              />
             }
           />
         </Box>
