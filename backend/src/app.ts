@@ -19,8 +19,11 @@ export function createApp(): express.Application {
   const app = express();
 
   app.set("trust proxy", 1);
+
   app.use(helmet());
+
   app.use(corsMiddleware);
+
   app.use(
     express.json({
       verify: (req, _res, buf) => {
@@ -34,7 +37,9 @@ export function createApp(): express.Application {
   }
 
   app.use(requestLogger);
+  
   app.use(routes);
+
   app.use(errorHandler);
 
   return app;

@@ -13,9 +13,9 @@ export const dateStringSchema = z
   .refine((value) => !Number.isNaN(new Date(value).getTime()), "Data inválida");
 
 /** UUID genérico. */
-export const uuidSchema = z.string().uuid("ID inválido");
+export const uuidSchema = z.uuid("ID inválido");
 
 /** URL de imagem opcional (aceita vazio ou null). */
 export const optionalImageUrlSchema = z
-  .union([z.string().url("URL de imagem inválida"), z.literal(""), z.null()])
+  .union([z.url("URL de imagem inválida"), z.literal(""), z.null()])
   .optional();

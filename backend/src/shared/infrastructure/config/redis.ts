@@ -18,6 +18,7 @@ const sharedOptions = {
 /** Monta URL ou opções de host/porta a partir de `env.redis`. */
 function buildRedisOptions(): string | RedisOptions {
   const url = (process.env.REDIS_URL ?? env.redis.url).trim();
+  
   if (url) {
     return url;
   }

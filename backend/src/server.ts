@@ -41,6 +41,7 @@ async function bootstrap(): Promise<void> {
     logger.error(CONTEXT, "Failed to connect to database", {
       error: error instanceof Error ? error.message : String(error),
     });
+    
     process.exit(1);
   }
 
@@ -53,14 +54,17 @@ async function bootstrap(): Promise<void> {
     logger.error(CONTEXT, "Failed to connect to Redis", {
       error: error instanceof Error ? error.message : String(error),
     });
+
     process.exit(1);
   }
 
   expiryWorker = new ReservationExpiryWorker(redis);
+
   persistenceWorker = new ReservationPersistenceWorker(getRedisWorker());
 
   try {
     await expiryWorker.start();
+
     setReservationExpiryWorker(expiryWorker);
   } catch (error) {
     logger.error(CONTEXT, "Failed to start reservation expiry worker", {
@@ -71,11 +75,14 @@ async function bootstrap(): Promise<void> {
 
   try {
     await persistenceWorker.start();
+
     setReservationPersistenceWorker(persistenceWorker);
+
   } catch (error) {
     logger.error(CONTEXT, "Failed to start reservation persistence worker", {
       error: error instanceof Error ? error.message : String(error),
     });
+
     process.exit(1);
   }
 
@@ -87,11 +94,13 @@ async function bootstrap(): Promise<void> {
 
     try {
       await stockReconciliationWorker.start();
+
       setStockReconciliationWorker(stockReconciliationWorker);
     } catch (error) {
       logger.error(CONTEXT, "Failed to start stock reconciliation worker", {
         error: error instanceof Error ? error.message : String(error),
       });
+
       process.exit(1);
     }
   } else {
@@ -116,12 +125,19 @@ async function shutdown(): Promise<void> {
   logger.info(CONTEXT, "Shutting down gracefully");
 
   await expiryWorker?.stop();
+
   setReservationExpiryWorker(null);
+
   await persistenceWorker?.stop();
+
   setReservationPersistenceWorker(null);
+
   await stockReconciliationWorker?.stop();
+
   setStockReconciliationWorker(null);
+
   await AppDataSource.destroy();
+
   await closeRedisConnections();
 
   process.exit(0);
@@ -139,5 +155,6 @@ bootstrap().catch((error) => {
   logger.fatal(CONTEXT, "Unhandled bootstrap error", {
     error: error instanceof Error ? error.message : String(error),
   });
+
   process.exit(1);
 });
