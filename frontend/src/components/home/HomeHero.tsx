@@ -1,5 +1,6 @@
-import { Badge, Box, Group, Stack, Text, Title } from "@mantine/core";
-import { IconBolt, IconQrcode, IconShieldCheck, IconSparkles } from "@tabler/icons-react";
+import { Badge, Box, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
+import { IconBolt, IconQrcode, IconShieldCheck } from "@tabler/icons-react";
+import { ZeMascot } from "../brand/ZeMascot";
 
 interface HomeHeroProps {
   eventCount: number;
@@ -17,53 +18,62 @@ export function HomeHero({ eventCount }: HomeHeroProps) {
       <Box className="home-hero-glow home-hero-glow--primary" />
       <Box className="home-hero-glow home-hero-glow--secondary" />
 
-      <Stack gap="xl" pos="relative" style={{ zIndex: 1 }}>
-        <Stack gap="md" maw={640}>
-          <Badge
-            variant="light"
-            color="brand"
-            radius="xl"
-            size="lg"
-            leftSection={<IconSparkles size={14} />}
-            w="fit-content"
-          >
-            {eventCount > 0
-              ? `${eventCount} experiência${eventCount === 1 ? "" : "s"} disponíve${eventCount === 1 ? "l" : "is"}`
-              : "Novas experiências em breve"}
-          </Badge>
-
-          <Title
-            order={1}
-            className="home-hero-title"
-          >
-            Descubra experiências{" "}
-            <Text span inherit c="brand">
-              incríveis
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl" pos="relative" style={{ zIndex: 1 }}>
+        <Stack gap="xl">
+          <Stack gap="md" maw={640}>
+            <Text className="vibra-kicker">
+              Ingressos · Shows · Cultura · Brasil
             </Text>
-          </Title>
 
-          <Text c="dimmed" size="lg" style={{ lineHeight: 1.65 }}>
-            Shows, festivais e eventos exclusivos. Compre com PIX e receba seu ingresso digital
-            na hora — sem filas, sem complicação.
-          </Text>
-        </Stack>
-
-        <Group gap="sm" wrap="wrap">
-          {TRUST_BADGES.map((item) => (
             <Badge
-              key={item.label}
-              variant="outline"
-              color="gray"
+              variant="light"
+              color="brand"
               radius="xl"
               size="lg"
-              leftSection={<item.icon size={14} />}
-              className="home-trust-badge"
+              w="fit-content"
             >
-              {item.label}
+              {eventCount > 0
+                ? `${eventCount} experiência${eventCount === 1 ? "" : "s"} disponíve${eventCount === 1 ? "l" : "is"}`
+                : "Novas experiências em breve"}
             </Badge>
-          ))}
-        </Group>
-      </Stack>
+
+            <Title order={1} className="home-hero-title">
+              Ingressos do jeito que o{" "}
+              <Text span inherit c="brand">
+                Brasil merece.
+              </Text>
+            </Title>
+
+            <Text c="dimmed" size="lg" style={{ lineHeight: 1.65 }}>
+              A plataforma feita para o fã brasileiro. Shows, festivais e eventos exclusivos —
+              com PIX na hora e o Zé te guiando em cada passo.
+            </Text>
+          </Stack>
+
+          <Group gap="sm" wrap="wrap">
+            {TRUST_BADGES.map((item) => (
+              <Badge
+                key={item.label}
+                variant="outline"
+                color="gray"
+                radius="xl"
+                size="lg"
+                leftSection={<item.icon size={14} />}
+                className="home-trust-badge"
+              >
+                {item.label}
+              </Badge>
+            ))}
+          </Group>
+        </Stack>
+
+        <Box className="home-hero-mascot" visibleFrom="md">
+          <Box className="home-hero-mascot-panel">
+            <ZeMascot size={200} animated variant="dark" />
+            <Text className="home-hero-mascot-label">Zé · O Mascote Oficial</Text>
+          </Box>
+        </Box>
+      </SimpleGrid>
     </Box>
   );
 }

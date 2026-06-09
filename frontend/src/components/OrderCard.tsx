@@ -47,7 +47,7 @@ function getOrderAccentStyle(status: string): CSSProperties {
     case "REFUNDED":
       return { background: "linear-gradient(160deg, #94a3b8 0%, #64748b 100%)" };
     default:
-      return { background: "linear-gradient(160deg, #6366f1 0%, #4a6fe8 100%)" };
+      return { background: "linear-gradient(160deg, #4ADE80 0%, #22C55E 100%)" };
   }
 }
 

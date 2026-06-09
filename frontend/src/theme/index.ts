@@ -1,16 +1,16 @@
 import { createTheme, type MantineColorsTuple } from "@mantine/core";
 
 const brand: MantineColorsTuple = [
-  "#f0f4ff",
-  "#dce4ff",
-  "#b8c9ff",
-  "#8fa8ff",
-  "#6688f5",
-  "#4a6fe8",
-  "#3d5fd4",
-  "#354fb8",
-  "#2f4594",
-  "#283d75",
+  "#e8f5e8",
+  "#c8f0c8",
+  "#9ee89e",
+  "#78e078",
+  "#5cd65c",
+  "#4ADE80",
+  "#22C55E",
+  "#16A34A",
+  "#15803D",
+  "#052e16",
 ];
 
 export const appTheme = createTheme({
@@ -19,13 +19,12 @@ export const appTheme = createTheme({
     brand,
   },
   fontFamily:
-    '"Plus Jakarta Sans", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    '"DM Sans", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   headings: {
-    fontFamily:
-      '"Plus Jakarta Sans", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    fontWeight: "700",
+    fontFamily: '"Unbounded", "DM Sans", sans-serif',
+    fontWeight: "900",
   },
-  defaultRadius: "md",
+  defaultRadius: "sm",
   components: {
     AppShell: {
       styles: {
@@ -50,13 +49,18 @@ export const appTheme = createTheme({
     },
     Button: {
       defaultProps: {
-        radius: "md",
+        radius: "xl",
       },
     },
     Paper: {
       defaultProps: {
-        radius: "md",
+        radius: "sm",
         shadow: "sm",
+      },
+    },
+    Badge: {
+      defaultProps: {
+        radius: "xl",
       },
     },
   },

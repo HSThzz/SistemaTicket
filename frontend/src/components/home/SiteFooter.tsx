@@ -8,9 +8,8 @@ import {
   Group,
   Stack,
   Text,
-  ThemeIcon,
 } from "@mantine/core";
-import { IconBrandGithub, IconTicket } from "@tabler/icons-react";
+import { VibraLogo } from "../brand/VibraLogo";
 
 const FOOTER_COLUMNS = [
   {
@@ -45,29 +44,21 @@ export function SiteFooter() {
         <Grid gap="xl">
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Stack gap="md">
-              <Group gap="xs">
-                <ThemeIcon size={36} radius="md" variant="light" color="brand">
-                  <IconTicket size={20} />
-                </ThemeIcon>
-                <Text fw={800} size="xl">
-                  TicketFlow
-                </Text>
-              </Group>
+              <VibraLogo mascotSize={36} wordmarkSize="lg" />
               <Text c="dimmed" size="sm" maw={320}>
-                Plataforma moderna para descobrir experiências, comprar ingressos com PIX e
-                gerenciar eventos do início ao check-in.
+                A plataforma de ingressos feita para o fã brasileiro. Com alma, com tecnologia,
+                com o Zé.
               </Text>
-              <Group gap="xs" c="dimmed">
-                <IconBrandGithub size={16} />
-                <Text size="xs">Demo · v1.0</Text>
-              </Group>
+              <Text className="vibra-kicker" style={{ letterSpacing: "0.2em" }}>
+                "Ingressos do jeito que o Brasil merece."
+              </Text>
             </Stack>
           </Grid.Col>
 
           {FOOTER_COLUMNS.map((column) => (
             <Grid.Col key={column.title} span={{ base: 6, sm: 4, md: 2 }}>
               <Stack gap="sm">
-                <Text fw={700} size="sm">
+                <Text fw={700} size="sm" className="vibra-kicker" style={{ letterSpacing: "0.15em" }}>
                   {column.title}
                 </Text>
                 {column.links.map((link) => (
@@ -92,7 +83,7 @@ export function SiteFooter() {
 
         <Group justify="space-between" wrap="wrap" gap="sm">
           <Text size="xs" c="dimmed">
-            © {new Date().getFullYear()} TicketFlow. Todos os direitos reservados.
+            © {new Date().getFullYear()} VIBRA. Todos os direitos reservados.
           </Text>
           <Text size="xs" c="dimmed">
             Feito para experiências inesquecíveis.

@@ -1,3 +1,16 @@
+:root {
+  --vibra-v: #4ade80;
+  --vibra-v2: #22c55e;
+  --vibra-preto: #030903;
+  --vibra-off-black: #050d05;
+  --vibra-carbono: #0a1a0a;
+  --vibra-laranja: #ff5c1a;
+  --vibra-amarelo: #ffd60a;
+  --vibra-off-white: #e8f5e8;
+  --vibra-font-display: "Unbounded", "DM Sans", sans-serif;
+  --vibra-font-mono: "Space Mono", ui-monospace, monospace;
+}
+
 *,
 *::before,
 *::after {
@@ -16,6 +29,30 @@ body {
   overflow-x: hidden;
   background-color: var(--mantine-color-body);
   color: var(--mantine-color-text);
+}
+
+[data-mantine-color-scheme="dark"] {
+  --mantine-color-body: var(--vibra-preto);
+  --mantine-color-dark-6: var(--vibra-off-black);
+  --mantine-color-dark-7: var(--vibra-carbono);
+}
+
+.vibra-wordmark {
+  font-family: var(--vibra-font-display);
+  color: var(--vibra-v);
+}
+
+.vibra-kicker {
+  font-family: var(--vibra-font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--mantine-color-brand-5);
+}
+
+.mantine-Title-root {
+  font-family: var(--vibra-font-display);
+  letter-spacing: -0.03em;
 }
 
 /* Superfícies do shell = mesma cor do body (evita faixa clara no footer/header) */

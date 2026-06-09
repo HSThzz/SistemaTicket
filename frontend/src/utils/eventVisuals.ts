@@ -7,12 +7,12 @@ import type { CSSProperties } from "react";
 import type { Event } from "../types/api";
 
 const GRADIENT_PAIRS: [string, string][] = [
-  ["#6366f1", "#a855f7"],
-  ["#0ea5e9", "#6366f1"],
-  ["#14b8a6", "#0ea5e9"],
-  ["#f97316", "#ef4444"],
-  ["#ec4899", "#8b5cf6"],
-  ["#22c55e", "#14b8a6"],
+  ["#4ADE80", "#22C55E"],
+  ["#22C55E", "#16A34A"],
+  ["#4ADE80", "#16A34A"],
+  ["#FF5C1A", "#FFD60A"],
+  ["#22C55E", "#4ADE80"],
+  ["#15803D", "#4ADE80"],
 ];
 
 /** Dados mínimos para renderizar capa ou gradiente de um evento. */

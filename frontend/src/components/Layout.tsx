@@ -28,6 +28,7 @@ import {
   IconTicket,
   IconUser,
 } from "@tabler/icons-react";
+import { VibraLogo } from "./brand/VibraLogo";
 import { ColorSchemeToggle } from "./ColorSchemeToggle";
 import { useAuth } from "../context/AuthContext";
 
@@ -92,7 +93,7 @@ function NavLinks({
 }
 
 /**
- * Layout global com cabeçalho TicketFlow, navegação responsiva e área de conteúdo.
+ * Layout global com cabeçalho VIBRA, navegação responsiva e área de conteúdo.
  * Ajusta padding e classes para home, páginas hero e demais rotas.
  */
 export function Layout() {
@@ -150,24 +151,7 @@ export function Layout() {
                 aria-label="Abrir menu"
               />
               <UnstyledButton component={Link} to="/" onClick={close}>
-                <Group gap="xs" wrap="nowrap">
-                  <Box
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 10,
-                      background: "linear-gradient(135deg, var(--mantine-color-brand-5), var(--mantine-color-brand-7))",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <IconTicket size={20} color="white" stroke={1.8} />
-                  </Box>
-                  <Text fw={800} size="lg" visibleFrom="xs" style={{ letterSpacing: "-0.02em" }}>
-                    TicketFlow
-                  </Text>
-                </Group>
+                <VibraLogo mascotSize={28} wordmarkSize="md" />
               </UnstyledButton>
             </Group>
 

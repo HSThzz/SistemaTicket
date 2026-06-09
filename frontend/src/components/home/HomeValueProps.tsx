@@ -14,19 +14,19 @@ const VALUE_PROPS = [
     icon: IconBolt,
     title: "Pagamento rápido",
     description: "Reserva em segundos e confirmação automática. Sem burocracia na compra.",
-    color: "yellow",
+    color: "orange",
   },
   {
     icon: IconMapPin,
     title: "Eventos perto de você",
     description: "Explore por cidade e encontre experiências na sua região ou onde for viajar.",
-    color: "grape",
+    color: "brand",
   },
   {
     icon: IconCalendarEvent,
     title: "Vitrine sempre atualizada",
     description: "Novos eventos e lotes publicados pelos produtores em tempo real na plataforma.",
-    color: "teal",
+    color: "brand",
   },
 ] as const;
 
@@ -36,11 +36,10 @@ export function HomeValueProps() {
       <Stack gap="lg">
         <Stack gap={4} maw={520}>
           <Title order={2} size="h3" className="home-section-title">
-            Por que escolher o TicketFlow
+            Por que escolher a VIBRA
           </Title>
           <Text c="dimmed">
-            Uma experiência pensada para quem quer descobrir eventos e garantir ingressos sem
-            fricção.
+            Uma experiência pensada para o fã brasileiro — simples, rápida e com personalidade.
           </Text>
         </Stack>
 
