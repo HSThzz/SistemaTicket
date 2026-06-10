@@ -24,6 +24,13 @@ import {
 
 /** Senha padrão de todos os usuários criados pelo seed. */
 export const SEED_PASSWORD = "123456";
+
+/** E-mails dos usuários demo criados pelo seed. */
+export const SEED_DEMO_EMAILS = {
+  admin: "admin@ticketflow.com.br",
+  producer: "producer@ticketflow.com.br",
+  client: "client@ticketflow.com.br",
+} as const;
 const BCRYPT_ROUNDS = 12;
 
 /**
@@ -238,7 +245,7 @@ export async function runDemoSeed(
   const admin = await userRepo.save(
     userRepo.create({
       name: "Admin TicketFlow",
-      email: "admin@ticketflow.test",
+      email: SEED_DEMO_EMAILS.admin,
       passwordHash,
       document: "10000000001",
       role: UserRole.ADMIN,
@@ -248,7 +255,7 @@ export async function runDemoSeed(
   const producer = await userRepo.save(
     userRepo.create({
       name: "Produtor Demo",
-      email: "producer@ticketflow.test",
+      email: SEED_DEMO_EMAILS.producer,
       passwordHash,
       document: "20000000002",
       role: UserRole.PRODUCER,
@@ -258,7 +265,7 @@ export async function runDemoSeed(
   const client = await userRepo.save(
     userRepo.create({
       name: "Cliente Demo",
-      email: "client@ticketflow.test",
+      email: SEED_DEMO_EMAILS.client,
       passwordHash,
       document: "30000000003",
       role: UserRole.CLIENT,

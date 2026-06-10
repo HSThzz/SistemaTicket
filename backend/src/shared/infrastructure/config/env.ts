@@ -50,6 +50,8 @@ export const env = {
       apiBaseUrl:
         process.env.MERCADOPAGO_API_BASE_URL ?? "https://api.mercadopago.com",
       notificationUrl: process.env.MERCADOPAGO_NOTIFICATION_URL ?? "",
+      /** E-mail de comprador de teste do painel MP (fallback quando o usuário tem e-mail .test etc.). */
+      testPayerEmail: process.env.MERCADOPAGO_TEST_PAYER_EMAIL ?? "",
     },
   },
   jwt: {

@@ -10,6 +10,7 @@ import { createPaymentGateway } from "../../infrastructure/gateways/createPaymen
 import { updateOrder } from "../commands/updateOrder";
 import { findOneOrderByIdWithPaymentRelations } from "../queries/findOneOrderByIdWithPaymentRelations";
 import { buildPixPaymentDetails } from "../helpers/buildPixPaymentDetails";
+import { normalizePayerEmail } from "../helpers/resolveMercadoPagoPayerEmail";
 
 const CONTEXT = "PaymentService";
 const logger = Logger.getInstance();
@@ -31,7 +32,7 @@ export async function processOrderPayment(
     orderId: order.id,
     amountCents: order.totalPrice,
     description: `Ingressos pedido ${order.id.slice(0, 8)}`,
-    payerEmail: order.user.email,
+    payerEmail: normalizePayerEmail(order.user.email),
     payerFirstName: order.user.name.split(" ")[0] ?? order.user.name,
     payerDocument: order.user.document,
   });

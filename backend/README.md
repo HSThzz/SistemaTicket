@@ -62,15 +62,46 @@ npm run dev
 
 | Papel | E-mail | Senha |
 |-------|--------|-------|
-| ADMIN | `admin@ticketflow.test` | `123456` |
-| PRODUCER | `producer@ticketflow.test` | `123456` |
-| CLIENT | `client@ticketflow.test` | `123456` |
+| ADMIN | `admin@ticketflow.com.br` | `123456` |
+| PRODUCER | `producer@ticketflow.com.br` | `123456` |
+| CLIENT | `client@ticketflow.com.br` | `123456` |
 
 Inclui 2 eventos publicados + 1 rascunho, estoque no Redis e 3 ingressos de exemplo para o cliente (2 ativos com QR, 1 já usado no check-in).
 
 ```bash
 npm run seed:keep   # não apaga o banco; aborta se os usuários demo já existirem
 ```
+
+### Seed no Railway
+
+O seed precisa de **Postgres** (`DATABASE_URL`) e **Redis** (`REDIS_URL`) do mesmo projeto Railway.
+
+**Opção A — da sua máquina (recomendado):**
+
+```bash
+cd backend
+npm install
+railway link          # selecione o projeto e o serviço da API
+railway run npm run seed
+```
+
+**Opção B — no container após deploy:**
+
+```bash
+railway ssh
+node dist/seeds/run.js
+```
+
+**Opção C — variáveis manuais (sem CLI):**
+
+```bash
+cd backend
+# Cole DATABASE_URL e REDIS_URL do painel Railway no .env ou exporte no terminal
+npm run migration:run
+npm run seed
+```
+
+> `npm run seed` **apaga** todas as tabelas principais e o Redis (`TRUNCATE` + `FLUSHDB`) antes de popular. Use `npm run seed:keep` para não truncar (só insere se os usuários demo ainda não existirem).
 
 ## Variáveis de ambiente
 
@@ -231,6 +262,7 @@ TTL da reserva e do PIX: **15 minutos**. Se o pagamento não for confirmado ness
 PAYMENT_GATEWAY=mercadopago
 MERCADOPAGO_ACCESS_TOKEN=TEST-xxxxxxxx
 MERCADOPAGO_NOTIFICATION_URL=https://seu-dominio.com/payments/webhook
+MERCADOPAGO_TEST_PAYER_EMAIL=test_user_XXXXX@testuser.com
 PAYMENT_WEBHOOK_SECRET=seu-secret
 ```
 

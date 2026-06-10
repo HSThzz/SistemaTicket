@@ -26,6 +26,8 @@ const requiresSsl =
   useConnectionUrl &&
   (isProduction ||
     databaseUrl!.includes("supabase") ||
+    databaseUrl!.includes("railway") ||
+    databaseUrl!.includes("rlwy.net") ||
     databaseUrl!.includes("sslmode=require"));
 
 const postgresConfig = useConnectionUrl

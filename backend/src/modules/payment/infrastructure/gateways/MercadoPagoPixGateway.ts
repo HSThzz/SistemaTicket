@@ -5,6 +5,7 @@
 
 import { randomUUID } from "node:crypto";
 import { env } from "../../../../shared/infrastructure/config/env";
+import { resolveMercadoPagoPayerEmail } from "../../application/helpers/resolveMercadoPagoPayerEmail";
 import { PaymentGatewayError } from "../../domain/errors/PaymentError";
 import type {
   CreatePixChargeInput,
@@ -65,7 +66,7 @@ export class MercadoPagoPixGateway implements PaymentGateway {
       external_reference: input.orderId,
       date_of_expiration: formatMercadoPagoExpiration(expiresAt),
       payer: {
-        email: input.payerEmail,
+        email: resolveMercadoPagoPayerEmail(input.payerEmail),
         ...(input.payerFirstName ? { first_name: input.payerFirstName } : {}),
         ...(input.payerDocument
           ? {
