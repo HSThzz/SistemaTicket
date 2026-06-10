@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Badge,
@@ -35,6 +35,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { AnimatedSection } from "../components/home/AnimatedSection";
+import { EventCoverHero } from "../components/EventCoverHero";
 import { BackButton } from "../components/account/BackButton";
 import { PageLoader } from "../components/account/PageLoader";
 import { PremiumPaper } from "../components/account/PremiumPaper";
@@ -44,11 +45,16 @@ import {
   PixPaymentSkeleton,
 } from "../components/PixPaymentPanel";
 import { PhaseBadge } from "../components/PhaseBadge";
+import { useEventCoverPreload } from "../hooks/useEventCoverPreload";
 import { useReservationPoller } from "../hooks/useReservationPoller";
 import * as eventService from "../features/catalog/api/eventService";
 import * as purchaseService from "../features/sales/api/purchaseService";
 import type { Event, TicketLot } from "../types/api";
-import { getEventCoverStyle } from "../utils/eventVisuals";
+import {
+  getEventCoverImageUrl,
+  getEventCoverStyle,
+  preloadEventCoverImage,
+} from "../utils/eventVisuals";
 import { formatCurrencyFromCents, formatEventDateOnly, formatEventTimeOnly } from "../utils/format";
 import { getApiErrorMessage } from "../utils/errors";
 import {
@@ -57,6 +63,10 @@ import {
   normalizeTicketQuantity,
   validateTicketQuantity,
 } from "../utils/ticketQuantity";
+
+interface CheckoutLocationState {
+  coverImageUrl?: string | null;
+}
 
 /** Mapeia fase da reserva para índice do stepper Mantine (0–4). */
 function getActiveStep(phase: string | undefined): number {
@@ -174,7 +184,10 @@ function CheckoutOrderSummary({
  */
 export function CheckoutPage() {
   const { eventId } = useParams<{ eventId: string }>();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+  const coverImageFromNavigation = (location.state as CheckoutLocationState | null)
+    ?.coverImageUrl;
 
   const lotIdFromQuery = searchParams.get("lot") ?? "";
   const reservationFromQuery = searchParams.get("reservation");
@@ -200,6 +213,8 @@ export function CheckoutPage() {
       : purchaseService.CHECKOUT_POLL_STOP_PHASES,
   });
 
+  useEventCoverPreload(coverImageFromNavigation ?? getEventCoverImageUrl(event ?? {}));
+
   useEffect(() => {
     if (!eventId) {
       setEventError("Evento inválido.");
@@ -217,6 +232,7 @@ export function CheckoutPage() {
         }
 
         setEvent(data);
+        preloadEventCoverImage(data.imageUrl);
 
         const lot =
           data.ticketLots.find((item) => item.id === lotIdFromQuery) ??
@@ -372,7 +388,7 @@ export function CheckoutPage() {
 
   return (
     <Stack gap={0}>
-      <Box className="checkout-hero full-bleed" style={getEventCoverStyle(event)}>
+      <EventCoverHero source={event} className="checkout-hero full-bleed" priority>
         <Box className="producer-manage-hero-overlay" />
         <Container size="lg" px="md" className="checkout-hero-content">
           <Stack gap="sm" maw={640}>
@@ -422,7 +438,7 @@ export function CheckoutPage() {
               </Group>
           </Stack>
         </Container>
-      </Box>
+      </EventCoverHero>
 
       <Box className="checkout-body">
         <Container size="lg" py="xl" px="md">

@@ -35,14 +35,56 @@ export function getEventGradient(eventId: string): [string, string] {
 }
 
 /**
+ * URL da capa do evento, se houver imagem publicada.
+ *
+ * @param source - Evento ou objeto com `imageUrl` opcional.
+ */
+export function getEventCoverImageUrl(
+  source: Pick<EventCoverSource, "imageUrl">,
+): string | null {
+  const imageUrl = source.imageUrl?.trim();
+  return imageUrl || null;
+}
+
+/**
+ * Dispara preload da capa no `<head>` e aquece o cache do navegador.
+ * Seguro chamar várias vezes com a mesma URL.
+ *
+ * @param imageUrl - URL absoluta ou relativa da imagem.
+ */
+export function preloadEventCoverImage(imageUrl: string | null | undefined): void {
+  const url = imageUrl?.trim();
+  if (!url || typeof document === "undefined") {
+    return;
+  }
+
+  const selector = `link[data-vibra-cover-preload="${CSS.escape(url)}"]`;
+  if (document.head.querySelector(selector)) {
+    return;
+  }
+
+  const link = document.createElement("link");
+  link.rel = "preload";
+  link.as = "image";
+  link.href = url;
+  link.setAttribute("fetchpriority", "high");
+  link.setAttribute("data-vibra-cover-preload", url);
+  document.head.appendChild(link);
+
+  const img = new Image();
+  img.decoding = "async";
+  img.src = url;
+}
+
+/**
  * Retorna estilos CSS para capa do evento (imagem ou gradiente fallback).
  *
  * @param source - Evento ou objeto com `id` e `imageUrl` opcional.
  */
 export function getEventCoverStyle(source: EventCoverSource): CSSProperties {
-  const imageUrl = source.imageUrl?.trim();
+  const imageUrl = getEventCoverImageUrl(source);
 
-  if (imageUrl) {
+  if (imageUrl !== null) {
     return {
       backgroundImage: `url("${imageUrl}")`,
       backgroundSize: "cover",

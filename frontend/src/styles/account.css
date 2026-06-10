@@ -705,6 +705,17 @@
   border: 1px dashed var(--mantine-color-default-border);
 }
 
+.event-cover-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+  z-index: 0;
+}
+
 /* Checkout */
 .checkout-hero {
   position: relative;

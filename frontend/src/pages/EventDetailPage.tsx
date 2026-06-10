@@ -39,15 +39,18 @@ import { StatCard } from "../components/account/StatCard";
 import { useAuth } from "../context/AuthContext";
 import * as eventService from "../features/catalog/api/eventService";
 import type { Event, TicketLot } from "../types/api";
+import { useEventCoverPreload } from "../hooks/useEventCoverPreload";
 import {
   CATEGORY_LABELS,
   extractCity,
+  getEventCoverImageUrl,
   getEventCoverStyle,
   getEventGradient,
   getLowestPrice,
   getTotalAvailable,
   inferEventCategory,
   isEventSoon,
+  preloadEventCoverImage,
 } from "../utils/eventVisuals";
 import {
   formatCurrencyFromCents,
@@ -148,6 +151,7 @@ export function EventDetailPage() {
       .then((data) => {
         if (!cancelled) {
           setEvent(data);
+          preloadEventCoverImage(data.imageUrl);
         }
       })
       .catch((err) => {
@@ -165,6 +169,8 @@ export function EventDetailPage() {
       cancelled = true;
     };
   }, [eventId]);
+
+  useEventCoverPreload(getEventCoverImageUrl(event ?? {}));
 
   if (loading) {
     return <PageLoader label="Carregando evento..." />;
@@ -196,7 +202,10 @@ export function EventDetailPage() {
       return;
     }
 
-    navigate(`/eventos/${event.id}/comprar?lot=${lotId}`);
+    preloadEventCoverImage(event.imageUrl);
+    navigate(`/eventos/${event.id}/comprar?lot=${lotId}`, {
+      state: { coverImageUrl: event.imageUrl },
+    });
   };
 
   return (
