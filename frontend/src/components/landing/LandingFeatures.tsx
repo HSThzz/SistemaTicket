@@ -1,11 +1,11 @@
-import { Box, Text } from "@mantine/core";
+import { Box } from "@mantine/core";
 import { IconCoin, IconSparkles, IconUsers } from "@tabler/icons-react";
 import { AnimatedSection } from "../home/AnimatedSection";
 import { LandingDeviceStage } from "./LandingDeviceStage";
 import { LandingFeatureList } from "./LandingFeatureList";
 import { LandingShowcase } from "./LandingShowcase";
-import { LandingVisualPanel } from "./LandingVisualPanel";
 import { PhoneMockup } from "./PhoneMockup";
+import { StaggerTestimonials } from "./StaggerTestimonials";
 
 const FAN_FEATURES = [
   {
@@ -31,7 +31,6 @@ export function LandingFeatures() {
       <AnimatedSection delayMs={40}>
         <Box className="landing-section landing-section--loose">
           <LandingShowcase
-            flip
             visualBleed
             title="O que mais?"
             body={null}
@@ -46,60 +45,9 @@ export function LandingFeatures() {
       </AnimatedSection>
 
       <AnimatedSection delayMs={60}>
-        <Box className="landing-section landing-section--loose">
-          <LandingShowcase
-            titleClassName="landing-display-title landing-display-title--sm"
-            title="Amado por quem vive música."
-            body="&ldquo;Finalmente uma plataforma que entende que show é experiência social — não só checkout.&rdquo;"
-            footer={
-              <Text size="sm" c="dimmed" className="landing-showcase-credit">
-                — Fã beta, São Paulo
-              </Text>
-            }
-            visual={
-              <LandingVisualPanel
-                variant="social"
-                label="Depoimentos"
-                cards={[
-                  { label: "Satisfação", value: "4.9", detail: "★ ★ ★ ★ ★" },
-                  { label: "Recompra", value: "87%", detail: "voltariam a usar" },
-                ]}
-              />
-            }
-          />
-        </Box>
+        <StaggerTestimonials />
       </AnimatedSection>
 
-      <AnimatedSection delayMs={80}>
-        <Box className="landing-section landing-section--loose">
-          <LandingShowcase
-            flip
-            visualBleed
-            kicker="Para o produtor"
-            titleClassName="landing-display-title landing-display-title--sm"
-            title={
-              <>
-                Não só vende.{" "}
-                <Text span inherit className="landing-producer-accent">
-                  Trabalha
-                </Text>{" "}
-                por você.
-              </>
-            }
-            body="Taxa justa, caixa em D+3 e dashboard ao vivo."
-            visual={
-              <LandingVisualPanel
-                variant="stats"
-                items={[
-                  { label: "Taxa", value: "8%", detail: "vs. 10–12% do mercado" },
-                  { label: "Recebimento", value: "D+3", detail: "enquanto outros pagam D+30" },
-                  { label: "Dashboard", value: "Live", detail: "vendas e público em tempo real" },
-                ]}
-              />
-            }
-          />
-        </Box>
-      </AnimatedSection>
     </>
   );
 }

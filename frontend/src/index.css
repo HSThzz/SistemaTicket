@@ -130,11 +130,16 @@ body {
 
 /* Superfícies do shell = mesma cor do body (evita faixa clara no footer/header) */
 .mantine-AppShell-root,
-.mantine-AppShell-header,
 .mantine-AppShell-navbar,
 .mantine-AppShell-main,
 .site-footer {
   background-color: var(--mantine-color-body);
+}
+
+.mantine-AppShell-header {
+  background-color: light-dark(rgba(250, 250, 250, 0.7), rgba(5, 5, 5, 0.7)) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 [data-mantine-color-scheme="light"] .mantine-Paper-root.premium-panel,

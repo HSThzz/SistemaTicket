@@ -15,8 +15,8 @@ export function LandingCta() {
           titleClassName="landing-display-title landing-display-title--sm"
           title={
             <>
-              O Zé tá pronto.{" "}
-              <Text span inherit c="brand.7">
+              <span style={{ display: "block", whiteSpace: "nowrap" }}>O Zé tá pronto.</span>
+              <Text span inherit c="brand.7" style={{ display: "block" }}>
                 E você?
               </Text>
             </>

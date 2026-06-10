@@ -17,10 +17,10 @@ export function LandingHero() {
             </Text>
           </Box>
 
-          <Title order={1} className="landing-hero-title landing-display-title">
-            Bem-vindo à{" "}
-            <Text span inherit className="landing-hero-accent">
-              alternativa.
+          <Title order={1} className="landing-hero-title landing-display-title" style={{ textAlign: "left" }}>
+            <span style={{ display: "block", whiteSpace: "nowrap" }}>Bem-vindo à</span>
+            <Text span inherit className="landing-hero-accent" style={{ display: "block" }}>
+              VIBRA
             </Text>
           </Title>
 

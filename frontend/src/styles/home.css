@@ -395,7 +395,7 @@
 .layout-home .layout-home-header.mantine-AppShell-header,
 .layout-events .layout-events-header.mantine-AppShell-header {
   border-bottom: none;
-  background-color: var(--mantine-color-body);
+  background-color: light-dark(rgba(250, 250, 250, 0.7), rgba(5, 5, 5, 0.7)) !important;
   background-image: none;
 }
 

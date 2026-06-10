@@ -12,23 +12,21 @@ type LandingFeatureListProps = {
   activeIndex?: number;
 };
 
-export function LandingFeatureList({ items, activeIndex = 0 }: LandingFeatureListProps) {
+export function LandingFeatureList({ items }: LandingFeatureListProps) {
   return (
     <Box className="landing-feature-list" role="list">
-      {items.map((item, index) => {
+      {items.map((item) => {
         const Icon = item.icon;
-        const isActive = index === activeIndex;
-
         return (
           <Box
             key={item.title}
-            className={`landing-feature-list-item${isActive ? " is-active" : ""}`}
+            className="landing-feature-list-item is-active"
             role="listitem"
           >
             <Icon size={20} stroke={1.5} className="landing-feature-list-icon" />
             <Box>
               <Text className="landing-feature-list-title">{item.title}</Text>
-              {isActive && item.description ? (
+              {item.description ? (
                 <Text size="sm" c="dimmed" className="landing-feature-list-desc">
                   {item.description}
                 </Text>

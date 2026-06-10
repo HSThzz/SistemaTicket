@@ -24,6 +24,7 @@ import { ProducerDashboardPage } from "./pages/producer/ProducerDashboardPage";
 import { ProducerEventsPage } from "./pages/producer/ProducerEventsPage";
 import { ProducerManageEventPage } from "./pages/producer/ProducerManageEventPage";
 import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
+import { ProducerLandingPage } from "./pages/ProducerLandingPage";
 
 /**
  * Aplicação SPA: layout compartilhado, rotas públicas, protegidas e área do produtor.
@@ -36,6 +37,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route index element={<HomePage />} />
             <Route path="eventos" element={<EventsPage />} />
+            <Route path="para-produtores" element={<ProducerLandingPage />} />
             <Route path="eventos/:eventId" element={<EventDetailPage />} />
 
             <Route element={<GuestRoute />}>

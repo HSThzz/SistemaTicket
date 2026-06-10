@@ -32,9 +32,13 @@ import { VibraLogo } from "./brand/VibraLogo";
 import { ColorSchemeToggle } from "./ColorSchemeToggle";
 import { useAuth } from "../context/AuthContext";
 
-const CLIENT_NAV_LINKS = [
+const PUBLIC_NAV_LINKS = [
   { to: "/", label: "Início", icon: null, exact: true },
   { to: "/eventos", label: "Eventos", icon: null, exact: true },
+  { to: "/para-produtores", label: "Para produtores", icon: null, exact: true },
+] as const;
+
+const PRIVATE_NAV_LINKS = [
   { to: "/ingressos", label: "Meus ingressos", icon: IconTicket, exact: false },
   { to: "/pedidos", label: "Meus pedidos", icon: null, exact: false },
 ] as const;
@@ -49,16 +53,19 @@ const CLIENT_NAV_LINKS = [
 function NavLinks({
   onNavigate,
   currentPath,
+  isAuthenticated,
   isProducer,
   isAdmin,
 }: {
   onNavigate?: () => void;
   currentPath: string;
+  isAuthenticated: boolean;
   isProducer: boolean;
   isAdmin: boolean;
 }) {
   const links = [
-    ...CLIENT_NAV_LINKS,
+    ...PUBLIC_NAV_LINKS,
+    ...(isAuthenticated ? [...PRIVATE_NAV_LINKS] : []),
     ...(isProducer
       ? [{ to: "/produtor", label: "Produtor", icon: IconLayoutDashboard } as const]
       : []),
@@ -161,7 +168,7 @@ export function Layout() {
             </Group>
 
             <Group gap="lg" visibleFrom="sm">
-              <NavLinks onNavigate={close} currentPath={currentPath} isProducer={isProducer} isAdmin={isAdmin} />
+              <NavLinks onNavigate={close} currentPath={currentPath} isAuthenticated={isAuthenticated} isProducer={isProducer} isAdmin={isAdmin} />
             </Group>
 
             <Group gap="sm" wrap="nowrap">
@@ -237,7 +244,7 @@ export function Layout() {
 
       <AppShell.Navbar p="md" hiddenFrom="sm">
         <Stack gap="md">
-          <NavLinks onNavigate={close} currentPath={currentPath} isProducer={isProducer} isAdmin={isAdmin} />
+          <NavLinks onNavigate={close} currentPath={currentPath} isAuthenticated={isAuthenticated} isProducer={isProducer} isAdmin={isAdmin} />
           {isProducer ? (
             <Button
               component={Link}
