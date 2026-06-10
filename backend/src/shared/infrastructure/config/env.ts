@@ -103,6 +103,11 @@ export const env = {
 /** Indica se a aplicação está em modo produção. */
 export const isProduction = env.nodeEnv === "production";
 
+/** Credenciais Mercado Pago de sandbox (token `TEST-...`). */
+export function isMercadoPagoSandbox(): boolean {
+  return env.payment.mercadoPago.accessToken.trim().startsWith("TEST-");
+}
+
 const DEV_JWT_FALLBACK = "dev-secret-change-in-production";
 
 /**
@@ -128,8 +133,10 @@ export function validateProductionConfig(): void {
     if (!env.payment.mercadoPago.accessToken.trim()) {
       errors.push("MERCADOPAGO_ACCESS_TOKEN is required when PAYMENT_GATEWAY=mercadopago");
     }
-    if (!env.payment.mercadoPago.webhookSecret.trim()) {
-      errors.push("MERCADOPAGO_WEBHOOK_SECRET is required when PAYMENT_GATEWAY=mercadopago");
+    if (!env.payment.mercadoPago.webhookSecret.trim() && !isMercadoPagoSandbox()) {
+      errors.push(
+        "MERCADOPAGO_WEBHOOK_SECRET is required when PAYMENT_GATEWAY=mercadopago (except sandbox TEST- token)",
+      );
     }
   }
 

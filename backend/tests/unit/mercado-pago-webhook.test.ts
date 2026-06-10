@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import type { Request } from "express";
 import {
   extractMercadoPagoPaymentId,
+  isMercadoPagoPanelTestRequest,
   isMercadoPagoWebhookRequest,
 } from "../../src/modules/payment/infrastructure/gateways/mercadoPagoWebhook";
 
@@ -34,6 +35,20 @@ describe("Mercado Pago webhook parser", () => {
     });
 
     assert.equal(extractMercadoPagoPaymentId(req), "987654321");
+  });
+
+  it("detects Mercado Pago panel URL test payload", () => {
+    const req = mockRequest({
+      body: {
+        action: "payment.updated",
+        type: "payment",
+        data: { id: "123456" },
+      },
+      query: {},
+    });
+
+    assert.equal(isMercadoPagoPanelTestRequest(req), true);
+    assert.equal(isMercadoPagoWebhookRequest(req), true);
   });
 
   it("returns null for unrelated payloads", () => {

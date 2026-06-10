@@ -5,6 +5,9 @@
 
 import type { Request } from "express";
 
+/** ID fixo usado pelo botão "testar URL" no painel do Mercado Pago. */
+export const MERCADO_PAGO_PANEL_TEST_PAYMENT_ID = "123456";
+
 /**
  * Extrai o ID do pagamento do body ou query string do webhook MP.
  * @param req - Requisição HTTP do webhook.
@@ -46,6 +49,14 @@ export function extractMercadoPagoPaymentId(req: Request): string | null {
  */
 export function isMercadoPagoWebhookRequest(req: Request): boolean {
   return extractMercadoPagoPaymentId(req) !== null;
+}
+
+/**
+ * Detecta a simulação de webhook do painel Mercado Pago (sempre `data.id = 123456`).
+ */
+export function isMercadoPagoPanelTestRequest(req: Request): boolean {
+  const paymentId = extractMercadoPagoPaymentId(req);
+  return paymentId === MERCADO_PAGO_PANEL_TEST_PAYMENT_ID;
 }
 
 function readQueryValue(value: unknown): string | null {

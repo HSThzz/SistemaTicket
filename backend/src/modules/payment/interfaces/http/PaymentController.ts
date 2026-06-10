@@ -20,6 +20,7 @@ import { createPaymentGateway } from "../../infrastructure/gateways/createPaymen
 import { WebhookAuthService } from "../../infrastructure/gateways/WebhookAuthService";
 import {
   extractMercadoPagoPaymentId,
+  isMercadoPagoPanelTestRequest,
   isMercadoPagoWebhookRequest,
 } from "../../infrastructure/gateways/mercadoPagoWebhook";
 import { handleMercadoPagoNotification } from "../../application/services/handleMercadoPagoNotification";
@@ -116,6 +117,15 @@ export class PaymentController {
   }
 
   private async handleMercadoPagoWebhook(req: Request, res: Response): Promise<void> {
+    if (isMercadoPagoPanelTestRequest(req)) {
+      res.status(200).json({
+        received: true,
+        provider: "mercadopago",
+        test: true,
+      });
+      return;
+    }
+
     const paymentId = extractMercadoPagoPaymentId(req);
 
     if (!paymentId) {

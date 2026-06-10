@@ -268,6 +268,23 @@ PAYMENT_WEBHOOK_SECRET=seu-secret
 
 Obtenha o access token em [Mercado Pago Developers](https://www.mercadopago.com.br/developers/panel/app) (credenciais de teste para sandbox).
 
+**Webhook Mercado Pago (`POST /payments/webhook`):**
+
+1. No painel MP: **Suas integrações → Webhooks → Configurar** — copie o **secret** da assinatura.
+2. No Railway, defina:
+   ```env
+   MERCADOPAGO_WEBHOOK_SECRET=<secret do painel MP>
+   MERCADOPAGO_NOTIFICATION_URL=https://sua-api.railway.app/payments/webhook
+   ```
+3. O botão **"Testar URL"** do painel envia `data.id: 123456` (sem assinatura) — a API responde `200` para validar conectividade.
+4. Notificações **reais em produção** exigem headers `x-signature` + `x-request-id` validados com o secret acima.
+
+**Staging / sandbox no Railway:**
+
+Com `MERCADOPAGO_ACCESS_TOKEN=TEST-...`, a API aceita simulações do painel MP **sem assinatura** (mesmo com `NODE_ENV=production`). Para staging mais permissivo, use também `NODE_ENV=development`.
+
+> `PAYMENT_WEBHOOK_SECRET` é só para o gateway **simulado** interno — não substitui `MERCADOPAGO_WEBHOOK_SECRET`.
+
 ### Webhook interno (simulado / testes manuais)
 
 **Produção — HMAC obrigatório:**

@@ -6,7 +6,11 @@
 import { createHash } from "node:crypto";
 import type { Request } from "express";
 import type Redis from "ioredis";
-import { env, isProduction } from "../../../../shared/infrastructure/config/env";
+import {
+  env,
+  isMercadoPagoSandbox,
+  isProduction,
+} from "../../../../shared/infrastructure/config/env";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { WebhookReplayError, WebhookUnauthorizedError } from "../../domain/errors/PaymentError";
 import {
@@ -22,7 +26,10 @@ import {
   parseMercadoPagoSignatureHeader,
   verifyMercadoPagoSignature,
 } from "./mercadoPagoSignature";
-import { isMercadoPagoWebhookRequest } from "./mercadoPagoWebhook";
+import {
+  isMercadoPagoPanelTestRequest,
+  isMercadoPagoWebhookRequest,
+} from "./mercadoPagoWebhook";
 
 const CONTEXT = "WebhookAuthService";
 const REPLAY_KEY_PREFIX = "webhook:dedupe:";
@@ -52,6 +59,13 @@ export class WebhookAuthService {
    * @throws {WebhookUnauthorizedError} Se assinatura ou timestamp forem inválidos.
    */
   async authorizeMercadoPago(req: Request): Promise<WebhookAuthResult> {
+    if (isMercadoPagoPanelTestRequest(req)) {
+      this.logger.info(CONTEXT, "Mercado Pago panel URL test accepted");
+      return {
+        replayKey: `${REPLAY_KEY_PREFIX}mercadopago-panel:${Date.now()}`,
+      };
+    }
+
     const xSignature = req.header("x-signature");
     const xRequestId = req.header("x-request-id");
     const secret = env.payment.mercadoPago.webhookSecret;
@@ -91,22 +105,30 @@ export class WebhookAuthService {
       return { replayKey: `${REPLAY_KEY_PREFIX}mercadopago:${xRequestId}` };
     }
 
-    if (isProduction && env.payment.gateway === "mercadopago") {
+    const requiresSignedWebhook =
+      isProduction &&
+      env.payment.gateway === "mercadopago" &&
+      !isMercadoPagoSandbox();
+
+    if (requiresSignedWebhook) {
       throw new WebhookUnauthorizedError(
         "Mercado Pago webhook requires x-signature validation in production",
       );
     }
 
     if (this.isLegacySecretAuthorized(req)) {
-      this.logger.warn(CONTEXT, "Mercado Pago webhook accepted via legacy secret (non-production)");
+      this.logger.warn(CONTEXT, "Mercado Pago webhook accepted via legacy secret");
       const paymentId = extractMercadoPagoManifestId(req) ?? "unknown";
       return {
         replayKey: `${REPLAY_KEY_PREFIX}mercadopago-legacy:${paymentId}:${req.header("x-webhook-timestamp") ?? Date.now()}`,
       };
     }
 
-    if (!isProduction) {
-      this.logger.warn(CONTEXT, "Mercado Pago webhook accepted without signature (non-production)");
+    if (!isProduction || isMercadoPagoSandbox()) {
+      this.logger.warn(CONTEXT, "Mercado Pago webhook accepted without signature (dev/sandbox)", {
+        nodeEnv: env.nodeEnv,
+        sandbox: isMercadoPagoSandbox(),
+      });
       const paymentId = extractMercadoPagoManifestId(req) ?? "unknown";
       return {
         replayKey: `${REPLAY_KEY_PREFIX}mercadopago-open:${paymentId}:${Date.now()}`,
