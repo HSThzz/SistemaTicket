@@ -38,7 +38,11 @@ import { AnimatedSection } from "../components/home/AnimatedSection";
 import { BackButton } from "../components/account/BackButton";
 import { PageLoader } from "../components/account/PageLoader";
 import { PremiumPaper } from "../components/account/PremiumPaper";
-import { DevSimulatePaymentPanel, PixPaymentPanel } from "../components/PixPaymentPanel";
+import {
+  DevSimulatePaymentPanel,
+  PixPaymentPanel,
+  PixPaymentSkeleton,
+} from "../components/PixPaymentPanel";
 import { PhaseBadge } from "../components/PhaseBadge";
 import { useReservationPoller } from "../hooks/useReservationPoller";
 import * as eventService from "../features/catalog/api/eventService";
@@ -359,9 +363,12 @@ export function CheckoutPage() {
   }
 
   const phase = status?.phase;
-  const isCheckoutStarted = Boolean(reservationId);
+  const isCheckoutStarted = Boolean(reservationId) || reserving;
   const isPaid = phase === "PAID";
   const isFailed = phase === "EXPIRED" || phase === "FAILED";
+  const isPixReady = phase === "AWAITING_PAYMENT" && Boolean(status?.payment);
+  const showPixSkeleton =
+    isCheckoutStarted && !isPaid && !isFailed && !isPixReady;
 
   return (
     <Stack gap={0}>
@@ -424,7 +431,7 @@ export function CheckoutPage() {
             <Grid.Col span={{ base: 12, md: 7 }}>
               <Stack gap="lg">
                 {!isCheckoutStarted ? (
-                  <AnimatedSection>
+                  <AnimatedSection animate={false}>
                     <PremiumPaper p="xl">
                       <Stack gap="lg">
                         <Group gap="sm" className="producer-form-section-title">
@@ -516,8 +523,8 @@ export function CheckoutPage() {
                     </PremiumPaper>
                   </AnimatedSection>
                 ) : (
-                  <AnimatedSection>
-                    <Stack gap="lg">
+                  <AnimatedSection animate={false}>
+                    <Stack gap="lg" className="checkout-flow">
                       <PremiumPaper p="xl">
                         <Stack gap="lg">
                           <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
@@ -529,7 +536,9 @@ export function CheckoutPage() {
                                 Acompanhe cada etapa até a emissão dos ingressos.
                               </Text>
                             </Stack>
-                            {phase ? <PhaseBadge phase={phase} /> : null}
+                            <Box className="checkout-phase-slot">
+                              {phase ? <PhaseBadge phase={phase} /> : null}
+                            </Box>
                           </Group>
 
                           <Stepper
@@ -544,14 +553,17 @@ export function CheckoutPage() {
                             <Stepper.Step label="Concluído" description="Ingressos" />
                           </Stepper>
 
-                          {polling ? (
-                            <Group gap="sm" className="checkout-status-loading">
+                          <Box
+                            className={`checkout-status-loading${polling ? " is-active" : ""}`}
+                            aria-hidden={!polling}
+                          >
+                            <Group gap="sm">
                               <Loader size="sm" color="brand" />
                               <Text size="sm" c="dimmed">
                                 Atualizando status...
                               </Text>
                             </Group>
-                          ) : null}
+                          </Box>
 
                           {pollError ? (
                             <Alert color="red" icon={<IconAlertCircle size={18} />} radius="lg">
@@ -561,20 +573,23 @@ export function CheckoutPage() {
                         </Stack>
                       </PremiumPaper>
 
-                      {phase === "AWAITING_PAYMENT" && status?.payment ? (
-                        <>
+                      <Box className="checkout-payment-slot">
+                        {isPixReady && status?.payment ? (
                           <PixPaymentPanel
                             pixCopyPaste={status.payment.pixCopyPaste}
                             amountCents={status.payment.amountCents}
                             expiresAt={status.payment.expiresAt}
                           />
-                          {import.meta.env.DEV ? (
-                            <DevSimulatePaymentPanel
-                              loading={simulating}
-                              onSimulate={() => void handleSimulatePayment()}
-                            />
-                          ) : null}
-                        </>
+                        ) : showPixSkeleton ? (
+                          <PixPaymentSkeleton />
+                        ) : null}
+                      </Box>
+
+                      {isPixReady && import.meta.env.DEV ? (
+                        <DevSimulatePaymentPanel
+                          loading={simulating}
+                          onSimulate={() => void handleSimulatePayment()}
+                        />
                       ) : null}
 
                       {isPaid ? (
@@ -656,7 +671,7 @@ export function CheckoutPage() {
             </Grid.Col>
 
             <Grid.Col span={{ base: 12, md: 5 }}>
-              <AnimatedSection delayMs={80}>
+              <AnimatedSection delayMs={80} animate={false}>
                 <Box className="checkout-summary-sticky">
                   <CheckoutOrderSummary
                     event={event}

@@ -9,11 +9,12 @@ import {
   Center,
   CopyButton,
   Group,
+  Loader,
+  Skeleton,
   Stack,
   Text,
   ThemeIcon,
 } from "@mantine/core";
-import { useMediaQuery } from "@mantine/hooks";
 import { IconBolt, IconCheck, IconCopy, IconQrcode } from "@tabler/icons-react";
 import { QRCodeSVG } from "qrcode.react";
 import { PremiumPaper } from "./account/PremiumPaper";
@@ -36,6 +37,8 @@ interface PixPaymentPanelProps {
 /**
  * UI de pagamento PIX com valor, validade, QR opcional e botão copiar.
  */
+const QR_RENDER_SIZE = 200;
+
 export function PixPaymentPanel({
   pixCopyPaste,
   amountCents,
@@ -43,14 +46,7 @@ export function PixPaymentPanel({
   showQrCode = true,
   compact = false,
 }: PixPaymentPanelProps) {
-  const isMobile = useMediaQuery("(max-width: 48em)");
-  const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 360;
-  const qrSize =
-    isMobile === true
-      ? Math.min(220, Math.max(160, viewportWidth - 80))
-      : compact
-        ? 168
-        : 200;
+  const qrSize = compact ? 168 : QR_RENDER_SIZE;
 
   return (
     <PremiumPaper p={compact ? "lg" : "xl"} className="pix-payment-panel">
@@ -73,7 +69,12 @@ export function PixPaymentPanel({
 
         {showQrCode ? (
           <Center className="pix-qr-wrap">
-            <Box className="pix-qr-box" p="md" bg="white" aria-label="QR Code PIX">
+            <Box
+              className={`pix-qr-slot${compact ? " pix-qr-slot--compact" : ""}`}
+              p="md"
+              bg="white"
+              aria-label="QR Code PIX"
+            >
               <QRCodeSVG value={pixCopyPaste} size={qrSize} level="M" className="pix-qr-svg" />
             </Box>
           </Center>
@@ -128,6 +129,47 @@ export function PixPaymentPanel({
         <Text size="sm" c="dimmed" ta="center" style={{ lineHeight: 1.55 }}>
           Após o pagamento, a confirmação pode levar alguns segundos. Esta página atualiza automaticamente.
         </Text>
+      </Stack>
+    </PremiumPaper>
+  );
+}
+
+/** Placeholder com dimensões fixas enquanto o PIX é gerado (evita layout shift). */
+export function PixPaymentSkeleton({ compact = false }: { compact?: boolean }) {
+  return (
+    <PremiumPaper
+      p={compact ? "lg" : "xl"}
+      className="pix-payment-panel pix-payment-panel--skeleton"
+      aria-busy="true"
+      aria-label="Gerando pagamento PIX"
+    >
+      <Stack gap={compact ? "md" : "lg"}>
+        <Group gap="sm" align="flex-start">
+          <Skeleton height={compact ? 40 : 48} width={compact ? 40 : 48} radius="xl" />
+          <Stack gap={6} style={{ flex: 1 }}>
+            <Skeleton height={18} width="55%" radius="sm" />
+            <Skeleton height={14} width="90%" radius="sm" />
+            <Skeleton height={14} width="75%" radius="sm" />
+          </Stack>
+        </Group>
+
+        <Center className="pix-qr-wrap">
+          <Box className={`pix-qr-slot pix-qr-slot--loading${compact ? " pix-qr-slot--compact" : ""}`}>
+            <Loader size="sm" color="brand" />
+          </Box>
+        </Center>
+
+        <Group justify="space-between" wrap="wrap" gap="sm">
+          <Skeleton height={42} width={120} radius="sm" />
+          <Skeleton height={42} width={140} radius="sm" />
+        </Group>
+
+        <Stack gap="xs">
+          <Skeleton height={12} width={100} radius="sm" />
+          <Skeleton height={72} radius="md" />
+        </Stack>
+
+        <Skeleton height={44} radius="xl" />
       </Stack>
     </PremiumPaper>
   );

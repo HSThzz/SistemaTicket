@@ -5,13 +5,25 @@ interface AnimatedSectionProps {
   children: ReactNode;
   delayMs?: number;
   className?: string;
+  /** Desliga fade-in (recomendado em fluxos funcionais como checkout). */
+  animate?: boolean;
 }
 
-export function AnimatedSection({ children, delayMs = 0, className }: AnimatedSectionProps) {
+export function AnimatedSection({
+  children,
+  delayMs = 0,
+  className,
+  animate = true,
+}: AnimatedSectionProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (!animate) {
+      setVisible(true);
+      return;
+    }
+
     const node = ref.current;
     if (!node) {
       return;
@@ -29,13 +41,21 @@ export function AnimatedSection({ children, delayMs = 0, className }: AnimatedSe
 
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [animate]);
+
+  const classNames = [
+    animate ? "animate-in-view" : "",
+    animate && visible ? "is-visible" : "",
+    className ?? "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <Box
       ref={ref}
-      className={`animate-in-view ${visible ? "is-visible" : ""} ${className ?? ""}`}
-      style={{ animationDelay: `${delayMs}ms` }}
+      className={classNames}
+      style={animate ? { animationDelay: `${delayMs}ms` } : undefined}
     >
       {children}
     </Box>
