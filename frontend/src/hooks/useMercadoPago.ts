@@ -27,10 +27,20 @@ export interface InstallmentOption {
   label: string;
 }
 
+/** Bandeira e emissor detectados a partir do BIN do cartão. */
+export interface DetectedPaymentMethod {
+  paymentMethodId: string;
+  issuerId: number;
+}
+
 interface MercadoPagoInstance {
   createCardToken(data: CardTokenData): Promise<{ id: string }>;
   getPaymentMethods(params: { bin: string }): Promise<{
-    results: Array<{ id: string; name: string }>;
+    results: Array<{
+      id: string;
+      name: string;
+      issuer?: { id: number | string; name?: string };
+    }>;
   }>;
   getInstallments(params: {
     amount: string;
@@ -82,8 +92,8 @@ export interface UseMercadoPagoResult {
   error: string | null;
   /** Gera o `card_token` a partir dos dados do cartão (somente no navegador). */
   createCardToken: (data: CardTokenData) => Promise<string>;
-  /** Detecta o `payment_method_id` (bandeira) pelos primeiros dígitos do cartão. */
-  detectPaymentMethodId: (bin: string) => Promise<string | null>;
+  /** Detecta bandeira e emissor pelos primeiros dígitos do cartão. */
+  detectPaymentMethod: (bin: string) => Promise<DetectedPaymentMethod | null>;
   /** Lista opções de parcelamento para um valor (em reais) e BIN do cartão. */
   fetchInstallments: (amountReais: number, bin: string) => Promise<InstallmentOption[]>;
 }
@@ -162,13 +172,28 @@ export function useMercadoPago(): UseMercadoPagoResult {
     return token.id;
   };
 
-  const detectPaymentMethodId = async (bin: string): Promise<string | null> => {
+  const detectPaymentMethod = async (
+    bin: string,
+  ): Promise<DetectedPaymentMethod | null> => {
     if (!mpRef.current || bin.length < 6) {
       return null;
     }
     try {
       const response = await mpRef.current.getPaymentMethods({ bin });
-      return response.results[0]?.id ?? null;
+      const method = response.results[0];
+      if (!method?.id) {
+        return null;
+      }
+
+      const issuerId = Number(method.issuer?.id);
+      if (!Number.isFinite(issuerId) || issuerId <= 0) {
+        return null;
+      }
+
+      return {
+        paymentMethodId: method.id,
+        issuerId,
+      };
     } catch {
       return null;
     }
@@ -203,7 +228,7 @@ export function useMercadoPago(): UseMercadoPagoResult {
     available,
     error,
     createCardToken,
-    detectPaymentMethodId,
+    detectPaymentMethod,
     fetchInstallments,
   };
 }

@@ -108,6 +108,7 @@ export class PaymentController {
       orderId: string;
       token: string;
       paymentMethodId: string;
+      issuerId: number;
       installments?: number;
       payerEmail?: string;
       payerDocument?: string;

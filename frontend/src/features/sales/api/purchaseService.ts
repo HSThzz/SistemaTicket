@@ -67,6 +67,7 @@ export interface CardPaymentPayload {
   orderId: string;
   token: string;
   paymentMethodId: string;
+  issuerId: number;
   installments: number;
   payerEmail?: string;
   payerDocument?: string;

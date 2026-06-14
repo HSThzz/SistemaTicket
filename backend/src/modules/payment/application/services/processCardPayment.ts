@@ -41,6 +41,7 @@ export interface ProcessCardPaymentInput {
   requesterUserId: string;
   token: string;
   paymentMethodId: string;
+  issuerId: number;
   installments?: number;
   payerEmail?: string;
   payerDocument?: string;
@@ -84,6 +85,7 @@ export async function processCardPayment(
   logger.info(CONTEXT, "Starting credit card charge", {
     orderId: order.id,
     paymentMethodId: data.paymentMethodId,
+    issuerId: data.issuerId,
     installments: data.installments,
   });
 
@@ -93,6 +95,7 @@ export async function processCardPayment(
     description: `Ingressos pedido ${order.id.slice(0, 8)}`,
     token: data.token,
     paymentMethodId: data.paymentMethodId,
+    issuerId: data.issuerId,
     installments: data.installments,
     payerEmail: normalizePayerEmail(data.payerEmail ?? order.user.email),
     payerDocument: data.payerDocument ?? order.user.document,

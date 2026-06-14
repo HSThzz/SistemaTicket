@@ -160,16 +160,17 @@ export function CardPaymentPanel({
         identificationNumber: onlyDigits(document),
       });
 
-      const paymentMethodId = await mp.detectPaymentMethodId(bin);
+      const paymentMethod = await mp.detectPaymentMethod(bin);
 
-      if (!paymentMethodId) {
+      if (!paymentMethod) {
         setFormError("Não foi possível identificar a bandeira do cartão.");
         return;
       }
 
       onSubmit({
         token,
-        paymentMethodId,
+        paymentMethodId: paymentMethod.paymentMethodId,
+        issuerId: paymentMethod.issuerId,
         installments: Number(installments),
         payerEmail: email.trim() || undefined,
         payerDocument: onlyDigits(document),

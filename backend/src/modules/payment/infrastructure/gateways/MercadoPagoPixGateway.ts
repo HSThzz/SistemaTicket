@@ -128,6 +128,7 @@ export class MercadoPagoPixGateway implements PaymentGateway, PaymentGatewayWith
       description: input.description,
       token: input.token,
       payment_method_id: input.paymentMethodId,
+      issuer_id: input.issuerId,
       installments: input.installments,
       external_reference: input.orderId,
       payer: {

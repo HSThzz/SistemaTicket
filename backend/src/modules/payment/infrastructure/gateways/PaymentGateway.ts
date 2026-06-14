@@ -38,6 +38,8 @@ export interface CreateCardChargeInput {
   token: string;
   /** Bandeira/meio de pagamento (ex.: `visa`, `master`). */
   paymentMethodId: string;
+  /** Emissor do cartão (obrigatório para cartão no Brasil). */
+  issuerId: number;
   /** Número de parcelas (default 1). */
   installments: number;
   payerEmail: string;

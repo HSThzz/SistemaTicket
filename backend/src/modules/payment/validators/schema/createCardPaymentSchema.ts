@@ -10,6 +10,10 @@ export const createCardPaymentSchema = z.object({
     .string()
     .trim()
     .min(1, "payment_method_id é obrigatório"),
+  issuerId: z.coerce
+    .number()
+    .int("issuer_id deve ser um número inteiro")
+    .positive("issuer_id é obrigatório para cartão no Brasil"),
   installments: z.coerce
     .number()
     .int("Parcelas deve ser um número inteiro")
