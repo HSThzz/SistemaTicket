@@ -1,5 +1,5 @@
 /**
- * @file Hook de polling do status de reserva durante checkout e pagamento PIX.
+ * @file Hook de polling do status de reserva durante checkout e pagamento.
  * @module hooks/useReservationPoller
  */
 
@@ -18,8 +18,11 @@ interface UseReservationPollerOptions {
   enabled?: boolean;
   /** Intervalo entre consultas em milissegundos. */
   intervalMs?: number;
-  /** Fases em que o polling para automaticamente. */
-  stopOn?: Set<ReservationStatusView["phase"]>;
+  /**
+   * Define se o polling deve continuar após uma fase.
+   * Quando omitido, continua até fase terminal.
+   */
+  shouldContinuePolling?: (phase: ReservationStatusView["phase"]) => boolean;
 }
 
 /**
@@ -55,26 +58,30 @@ function isSameStatus(
   return previous.payment?.amountCents === next.payment?.amountCents;
 }
 
+const defaultShouldContinue = (phase: ReservationStatusView["phase"]) =>
+  !purchaseService.TERMINAL_PHASES.has(phase);
+
 /**
- * Consulta periodicamente o status da reserva até atingir fase terminal ou `stopOn`.
+ * Consulta periodicamente o status da reserva até `shouldContinuePolling` retornar `false`.
  *
- * @param options - ID da reserva, intervalo e conjunto de fases de parada.
+ * @param options - ID da reserva, intervalo e regra de continuação.
  * @returns `status` atual, flags `loading`/`error` e função `refresh` manual.
  */
 export function useReservationPoller({
   reservationId,
   enabled = true,
   intervalMs = DEFAULT_INTERVAL_MS,
-  stopOn = purchaseService.TERMINAL_PHASES,
+  shouldContinuePolling = defaultShouldContinue,
 }: UseReservationPollerOptions) {
   const [status, setStatus] = useState<ReservationStatusView | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
-  const stopOnRef = useRef(stopOn);
+  const shouldContinueRef = useRef(shouldContinuePolling);
+  const scheduleRef = useRef<(delay: number) => void>(() => {});
   const isFirstPollRef = useRef(true);
 
-  stopOnRef.current = stopOn;
+  shouldContinueRef.current = shouldContinuePolling;
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -102,13 +109,17 @@ export function useReservationPoller({
     setError(null);
 
     try {
-      await pollOnce();
+      const next = await pollOnce();
+      if (next && shouldContinueRef.current(next.phase)) {
+        scheduleRef.current(intervalMs);
+      }
     } catch (err) {
       setError(getApiErrorMessage(err, "Falha ao consultar reserva."));
+      scheduleRef.current(intervalMs);
     } finally {
       setLoading(false);
     }
-  }, [pollOnce, reservationId]);
+  }, [intervalMs, pollOnce, reservationId]);
 
   useEffect(() => {
     isFirstPollRef.current = true;
@@ -131,6 +142,8 @@ export function useReservationPoller({
       }, delay);
     };
 
+    scheduleRef.current = schedule;
+
     const tick = async () => {
       if (cancelled) {
         return;
@@ -146,7 +159,7 @@ export function useReservationPoller({
         const next = await pollOnce();
         setError(null);
 
-        if (next && !stopOnRef.current.has(next.phase)) {
+        if (next && shouldContinueRef.current(next.phase)) {
           schedule(intervalMs);
         }
       } catch (err) {
@@ -166,7 +179,7 @@ export function useReservationPoller({
       cancelled = true;
       clearTimer();
     };
-  }, [enabled, reservationId, intervalMs, pollOnce, stopOn, clearTimer]);
+  }, [enabled, reservationId, intervalMs, pollOnce, clearTimer]);
 
   return { status, loading, error, refresh };
 }

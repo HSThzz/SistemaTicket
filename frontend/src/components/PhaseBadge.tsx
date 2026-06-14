@@ -3,7 +3,7 @@ import type { ReservationPhase } from "../types/api";
 
 const PHASE_LABELS: Record<ReservationPhase, string> = {
   PENDING_PERSISTENCE: "Processando reserva",
-  PENDING_PAYMENT: "Gerando PIX",
+  PENDING_PAYMENT: "Aguardando pagamento",
   AWAITING_PAYMENT: "Aguardando pagamento",
   PAID: "Pago",
   EXPIRED: "Expirado",

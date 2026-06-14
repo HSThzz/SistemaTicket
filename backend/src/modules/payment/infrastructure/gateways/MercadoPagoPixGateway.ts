@@ -6,11 +6,17 @@
 import { randomUUID } from "node:crypto";
 import { env } from "../../../../shared/infrastructure/config/env";
 import { resolveMercadoPagoPayerEmail } from "../../application/helpers/resolveMercadoPagoPayerEmail";
+import {
+  resolveMercadoPagoPayerIdentification,
+} from "../../application/helpers/resolveMercadoPagoPayerDocument";
 import { PaymentGatewayError } from "../../domain/errors/PaymentError";
 import type {
+  CardChargeResult,
+  CreateCardChargeInput,
   CreatePixChargeInput,
   GatewayPaymentSnapshot,
   PaymentGateway,
+  PaymentGatewayWithCard,
   PixChargeResult,
 } from "./PaymentGateway";
 
@@ -36,9 +42,9 @@ interface MercadoPagoPaymentResponse {
 }
 
 /**
- * Gateway PIX real via Mercado Pago (`/v1/payments`).
+ * Gateway PIX e cartão de crédito real via Mercado Pago (`/v1/payments`).
  */
-export class MercadoPagoPixGateway implements PaymentGateway {
+export class MercadoPagoPixGateway implements PaymentGateway, PaymentGatewayWithCard {
   readonly provider = "mercadopago" as const;
 
   /**
@@ -58,6 +64,9 @@ export class MercadoPagoPixGateway implements PaymentGateway {
    */
   async createPixCharge(input: CreatePixChargeInput): Promise<PixChargeResult> {
     const expiresAt = new Date(Date.now() + DEFAULT_EXPIRATION_MINUTES * 60 * 1000);
+    const identification = input.payerDocument
+      ? resolveMercadoPagoPayerIdentification(input.payerDocument)
+      : undefined;
 
     const body: Record<string, unknown> = {
       transaction_amount: input.amountCents / 100,
@@ -68,14 +77,7 @@ export class MercadoPagoPixGateway implements PaymentGateway {
       payer: {
         email: resolveMercadoPagoPayerEmail(input.payerEmail),
         ...(input.payerFirstName ? { first_name: input.payerFirstName } : {}),
-        ...(input.payerDocument
-          ? {
-              identification: {
-                type: "CPF",
-                number: sanitizeDocument(input.payerDocument),
-              },
-            }
-          : {}),
+        ...(identification ? { identification } : {}),
       },
     };
 
@@ -104,6 +106,46 @@ export class MercadoPagoPixGateway implements PaymentGateway {
       transactionId: String(response.id),
       pixCopyPaste: qrCode,
       expiresAt: expiration,
+    };
+  }
+
+  /**
+   * Cria uma cobrança via cartão de crédito usando o token gerado no front-end.
+   *
+   * @inheritdoc
+   * @throws {PaymentGatewayError} Em erro HTTP da API do Mercado Pago.
+   */
+  async createCardCharge(input: CreateCardChargeInput): Promise<CardChargeResult> {
+    const identification = input.payerDocument
+      ? resolveMercadoPagoPayerIdentification(input.payerDocument)
+      : undefined;
+
+    const body: Record<string, unknown> = {
+      transaction_amount: input.amountCents / 100,
+      description: input.description,
+      token: input.token,
+      payment_method_id: input.paymentMethodId,
+      installments: input.installments,
+      external_reference: input.orderId,
+      payer: {
+        email: resolveMercadoPagoPayerEmail(input.payerEmail),
+        ...(identification ? { identification } : {}),
+      },
+    };
+
+    if (this.notificationUrl) {
+      body.notification_url = this.notificationUrl;
+    }
+
+    const response = await this.request<MercadoPagoPaymentResponse>("POST", "/v1/payments", {
+      body,
+      idempotencyKey: `card-${input.orderId}-${input.token}`,
+    });
+
+    return {
+      transactionId: String(response.id),
+      status: mapMercadoPagoStatus(response.status),
+      statusDetail: response.status_detail,
     };
   }
 
@@ -270,10 +312,6 @@ function formatMercadoPagoExpiration(date: Date): string {
   const millisecond = String(date.getMilliseconds()).padStart(3, "0");
 
   return `${year}-${month}-${day}T${hour}:${minute}:${second}.${millisecond}${sign}${hours}:${minutes}`;
-}
-
-function sanitizeDocument(document: string): string {
-  return document.replace(/\D/g, "");
 }
 
 /**

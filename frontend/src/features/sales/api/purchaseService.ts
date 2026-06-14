@@ -1,10 +1,14 @@
 /**
- * @file Cliente HTTP para reserva de ingressos, status e simulação de pagamento (dev).
+ * @file Cliente HTTP para reserva de ingressos, status e pagamentos.
  * @module features/sales/api/purchaseService
  */
 
 import { api } from "../../../shared/api/client";
-import type { ReservationStatusView, ReserveTicketsResponse } from "../../../types/api";
+import type {
+  PixPaymentDetails,
+  ReservationStatusView,
+  ReserveTicketsResponse,
+} from "../../../types/api";
 
 /**
  * Reserva ingressos de um lote, decrementando estoque temporariamente.
@@ -24,7 +28,7 @@ export async function reserveTickets(
 }
 
 /**
- * Consulta fase e detalhes (pedido, PIX) de uma reserva.
+ * Consulta fase e detalhes (pedido, pagamento) de uma reserva.
  *
  * @param reservationId - ID da reserva.
  */
@@ -46,23 +50,58 @@ export async function simulateDevPayment(orderId: string): Promise<void> {
   await api.post("/payments/dev/simulate", { orderId });
 }
 
-/** Fases em que o fluxo de compra terminou (sucesso ou falha definitiva). */
+/**
+ * Gera cobrança PIX sob demanda para um pedido pendente (quando o usuário escolhe PIX).
+ *
+ * @param orderId - ID do pedido associado.
+ */
+export async function createPixPayment(orderId: string): Promise<PixPaymentDetails> {
+  const { data } = await api.post<{ payment: PixPaymentDetails }>("/payments/pix", {
+    orderId,
+  });
+  return data.payment;
+}
+
+/** Payload de pagamento via cartão (token gerado pelo SDK do Mercado Pago). */
+export interface CardPaymentPayload {
+  orderId: string;
+  token: string;
+  paymentMethodId: string;
+  installments: number;
+  payerEmail?: string;
+  payerDocument?: string;
+}
+
+/** Resultado do processamento de pagamento via cartão no back-end. */
+export interface CardPaymentResult {
+  orderId: string;
+  transactionId: string;
+  status: "approved" | "pending" | "rejected";
+  statusDetail?: string;
+}
+
+/**
+ * Processa um pagamento via cartão de crédito para um pedido pendente.
+ *
+ * @param payload - Token do cartão, bandeira, parcelas e dados do pagador.
+ */
+export async function payWithCard(
+  payload: CardPaymentPayload,
+): Promise<CardPaymentResult> {
+  const { data } = await api.post<CardPaymentResult>("/payments/card", payload);
+  return data;
+}
+
+/**
+ * Fases em que o fluxo de compra terminou (sucesso ou falha definitiva).
+ */
 export const TERMINAL_PHASES = new Set<ReservationStatusView["phase"]>([
   "PAID",
   "EXPIRED",
   "FAILED",
 ]);
 
-/**
- * Fases em que o polling do checkout pode parar (PIX exibido ou fim do fluxo).
- * Evita requisições desnecessárias enquanto o usuário paga.
- */
-export const CHECKOUT_POLL_STOP_PHASES = new Set<ReservationStatusView["phase"]>([
-  "AWAITING_PAYMENT",
-  ...TERMINAL_PHASES,
-]);
-
-/** Fases consideradas como aguardando ou concluindo pagamento PIX. */
+/** Fases consideradas como aguardando ou concluindo pagamento. */
 export const AWAITING_PAYMENT_PHASES = new Set<ReservationStatusView["phase"]>([
   "AWAITING_PAYMENT",
   ...TERMINAL_PHASES,

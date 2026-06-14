@@ -64,6 +64,19 @@ export class PaymentAlreadyProcessedError extends PaymentError {
 }
 
 /**
+ * Pagamento via cartão não suportado pelo gateway atualmente configurado.
+ */
+export class CardPaymentUnsupportedError extends PaymentError {
+  constructor() {
+    super(
+      "Pagamento com cartão requer o gateway Mercado Pago configurado",
+      "CARD_PAYMENT_UNSUPPORTED",
+    );
+    this.name = "CardPaymentUnsupportedError";
+  }
+}
+
+/**
  * Falha na comunicação ou resposta do gateway de pagamento.
  */
 export class PaymentGatewayError extends PaymentError {

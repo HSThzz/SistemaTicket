@@ -46,12 +46,16 @@ export const env = {
       | "mercadopago",
     mercadoPago: {
       accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN ?? "",
+      /** Chave pública para tokenização de cartão no front-end (painel MP > Credenciais de teste). */
+      publicKey: process.env.MERCADOPAGO_PUBLIC_KEY ?? "",
       webhookSecret: process.env.MERCADOPAGO_WEBHOOK_SECRET ?? "",
       apiBaseUrl:
         process.env.MERCADOPAGO_API_BASE_URL ?? "https://api.mercadopago.com",
       notificationUrl: process.env.MERCADOPAGO_NOTIFICATION_URL ?? "",
       /** E-mail de comprador de teste do painel MP (fallback quando o usuário tem e-mail .test etc.). */
       testPayerEmail: process.env.MERCADOPAGO_TEST_PAYER_EMAIL ?? "",
+      /** CPF de comprador de teste (fallback quando o documento do usuário é inválido). */
+      testPayerDocument: process.env.MERCADOPAGO_TEST_PAYER_DOCUMENT ?? "",
     },
   },
   jwt: {

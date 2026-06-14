@@ -25,6 +25,36 @@ export interface PixChargeResult {
 }
 
 /**
+ * Dados necessários para criar uma cobrança via cartão de crédito.
+ *
+ * O `token` é gerado no front-end pelo SDK do Mercado Pago; os dados brutos
+ * do cartão nunca trafegam pelo nosso back-end.
+ */
+export interface CreateCardChargeInput {
+  orderId: string;
+  amountCents: number;
+  description: string;
+  /** Token do cartão gerado pelo MercadoPago.js no front-end. */
+  token: string;
+  /** Bandeira/meio de pagamento (ex.: `visa`, `master`). */
+  paymentMethodId: string;
+  /** Número de parcelas (default 1). */
+  installments: number;
+  payerEmail: string;
+  payerDocument?: string;
+}
+
+/**
+ * Resultado da criação de cobrança via cartão no gateway.
+ */
+export interface CardChargeResult {
+  transactionId: string;
+  status: GatewayPaymentStatus;
+  /** Detalhe do status retornado pelo provedor (ex.: `accredited`, `cc_rejected_bad_filled_security_code`). */
+  statusDetail?: string;
+}
+
+/**
  * Status normalizado de um pagamento no gateway.
  */
 export type GatewayPaymentStatus =
@@ -72,4 +102,17 @@ export interface PaymentGatewayWithLookup extends PaymentGateway {
    * @returns Snapshot com status mapeado para o domínio.
    */
   getPayment(transactionId: string): Promise<GatewayPaymentSnapshot>;
+}
+
+/**
+ * Gateway capaz de processar pagamentos via cartão de crédito (Mercado Pago).
+ */
+export interface PaymentGatewayWithCard extends PaymentGateway {
+  /**
+   * Cria uma cobrança via cartão usando o token gerado no front-end.
+   * @param input - Dados do pedido, token do cartão, parcelas e pagador.
+   * @returns Transação criada e status normalizado.
+   * @throws {PaymentGatewayError} Em falha de API do provedor.
+   */
+  createCardCharge(input: CreateCardChargeInput): Promise<CardChargeResult>;
 }

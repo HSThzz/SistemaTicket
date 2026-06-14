@@ -8,10 +8,12 @@ import { isProduction } from "../../../../shared/infrastructure/config/env";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { getRedis } from "../../../../shared/infrastructure/config/redis";
 import {
+  CardPaymentUnsupportedError,
   InvalidWebhookPayloadError,
   OrderNotFoundError,
   PaymentAlreadyProcessedError,
   PaymentError,
+  PaymentGatewayError,
   WebhookReplayError,
   WebhookUnauthorizedError,
 } from "../../../payment/domain/errors/PaymentError";
@@ -25,7 +27,11 @@ import {
 } from "../../infrastructure/gateways/mercadoPagoWebhook";
 import { handleMercadoPagoNotification } from "../../application/services/handleMercadoPagoNotification";
 import { handleWebhook } from "../../application/services/handleWebhook";
+import { createOrderPixPayment } from "../../application/services/createOrderPixPayment";
+import { getPaymentConfig } from "../../application/services/getPaymentConfig";
+import { processCardPayment } from "../../application/services/processCardPayment";
 import { simulateDevPayment } from "../../application/services/simulateDevPayment";
+import { ValidationError } from "../../../../shared/kernel/validateSchema";
 
 const CONTEXT = "PaymentController";
 const logger = Logger.getInstance();
@@ -37,6 +43,15 @@ const webhookAuthService = new WebhookAuthService(getRedis());
  * Recebe webhooks internos e Mercado Pago após autenticação.
  */
 export class PaymentController {
+  /**
+   * Expõe configuração pública do checkout (ex.: public key do Mercado Pago).
+   * @param _req - Requisição HTTP.
+   * @param res - `{ mercadoPagoPublicKey, cardPaymentEnabled, ... }`.
+   */
+  async getConfig(_req: Request, res: Response): Promise<void> {
+    res.status(200).json(getPaymentConfig());
+  }
+
   /**
    * Simula pagamento PIX aprovado (não disponível em produção).
    * @param req - Body `{ orderId }` e usuário autenticado.
@@ -72,6 +87,110 @@ export class PaymentController {
         error,
       );
     }
+  }
+
+  /**
+   * Processa pagamento via cartão de crédito usando o token gerado no front-end.
+   *
+   * O corpo traz `token`, `paymentMethodId`, `installments` e dados do pagador;
+   * os dados brutos do cartão nunca chegam ao back-end.
+   *
+   * @param req - Body validado e usuário autenticado.
+   * @param res - `{ status, transactionId }` (`approved`/`pending`/`rejected`) ou erro mapeado.
+   */
+  async createCardPayment(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    const body = req.body as {
+      orderId: string;
+      token: string;
+      paymentMethodId: string;
+      installments?: number;
+      payerEmail?: string;
+      payerDocument?: string;
+    };
+
+    try {
+      const result = await processCardPayment(redis, {
+        ...body,
+        requesterUserId: req.user.id,
+      });
+
+      res.status(200).json(result);
+    } catch (error) {
+      this.handleCardPaymentError(res, body.orderId, error);
+    }
+  }
+
+  /**
+   * Gera cobrança PIX sob demanda quando o usuário escolhe PIX no checkout.
+   *
+   * @param req - Body `{ orderId }` e usuário autenticado.
+   * @param res - Detalhes do PIX (`pixCopyPaste`, `expiresAt`, etc.) ou erro mapeado.
+   */
+  async createPixPayment(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    const { orderId } = req.body as { orderId: string };
+
+    try {
+      const payment = await createOrderPixPayment(redis, {
+        orderId,
+        requesterUserId: req.user.id,
+      });
+
+      res.status(200).json({ payment });
+    } catch (error) {
+      this.handleCardPaymentError(res, orderId, error);
+    }
+  }
+
+  private handleCardPaymentError(
+    res: Response,
+    orderId: string,
+    error: unknown,
+  ): void {
+    logger.error(CONTEXT, "Order payment failed", {
+      orderId,
+      error: error instanceof Error ? error.message : String(error),
+      code: error instanceof PaymentError ? error.code : "INTERNAL_ERROR",
+    });
+
+    if (error instanceof ValidationError) {
+      res.status(400).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof OrderNotFoundError) {
+      res.status(404).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof PaymentAlreadyProcessedError) {
+      res.status(409).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof CardPaymentUnsupportedError) {
+      res.status(400).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof PaymentGatewayError) {
+      res.status(502).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    res.status(500).json({
+      error: "Card payment processing failed",
+      code: "INTERNAL_ERROR",
+    });
   }
 
   /**

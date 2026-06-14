@@ -1,12 +1,11 @@
 ﻿/**
- * @file Worker que consome a fila Redis e persiste reservas no PostgreSQL, criando pedido e PIX.
+ * @file Worker que consome a fila Redis e persiste reservas no PostgreSQL, criando o pedido.
  * @module sales/infrastructure/workers/ReservationPersistenceWorker
  */
 
 import type Redis from "ioredis";
 import {
   ORDER_CACHE_KEY_PREFIX,
-  PAYMENT_CACHE_KEY_PREFIX,
   RESERVATION_KEY_PREFIX,
   RESERVATION_PERSIST_DLQ_KEY,
   RESERVATION_PERSIST_QUEUE_KEY,
@@ -17,10 +16,6 @@ import {
 } from "../../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { persistReservation } from "../../application/commands/persistReservation";
-import { abortPendingOrderAfterPixCreationFailure } from "../../../payment/application/services/abortPendingOrderAfterPixCreationFailure";
-import { processOrderPayment } from "../../../payment/application/services/processOrderPayment";
-import type { PaymentGateway } from "../../../payment/infrastructure/gateways/PaymentGateway";
-import { createPaymentGateway } from "../../../payment/infrastructure/gateways/createPaymentGateway";
 
 const CONTEXT = "ReservationPersistenceWorker";
 
@@ -50,12 +45,8 @@ export class ReservationPersistenceWorker {
 
   /**
    * @param redis - Cliente Redis da fila principal e caches.
-   * @param paymentGateway - Gateway opcional para cobrança PIX.
    */
-  constructor(
-    private readonly redis: Redis,
-    private readonly paymentGateway: PaymentGateway = createPaymentGateway(),
-  ) {}
+  constructor(private readonly redis: Redis) {}
 
   /**
    * Inicia o loop de consumo da fila em background.
@@ -206,7 +197,11 @@ export class ReservationPersistenceWorker {
         orderId,
       );
 
-      await this.createPaymentCache(payload.reservationId, orderId);
+      this.logger.info(CONTEXT, "Order ready for payment", {
+        reservationId: payload.reservationId,
+        orderId,
+      });
+
       this.processedCount += 1;
     } catch (error) {
       this.failedCount += 1;
@@ -223,54 +218,6 @@ export class ReservationPersistenceWorker {
         payload,
         error instanceof Error ? error.message : String(error),
       );
-    }
-  }
-
-  private async createPaymentCache(
-    reservationId: string,
-    orderId: string,
-  ): Promise<void> {
-    try {
-      const payment = await processOrderPayment(
-        this.redis,
-        orderId,
-        this.paymentGateway,
-      );
-
-      await this.redis.setex(
-        `${PAYMENT_CACHE_KEY_PREFIX}${reservationId}`,
-        RESERVATION_TTL_SECONDS,
-        JSON.stringify(payment),
-      );
-
-      this.logger.info(CONTEXT, "PIX payment cached for reservation", {
-        reservationId,
-        orderId,
-        transactionId: payment.transactionId,
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(CONTEXT, "Failed to create PIX after persistence", {
-        reservationId,
-        orderId,
-        error: message,
-      });
-
-      try {
-        await abortPendingOrderAfterPixCreationFailure(
-          this.redis,
-          orderId,
-          message,
-          this.paymentGateway,
-        );
-      } catch (abortError) {
-        this.logger.error(CONTEXT, "Failed to abort order after PIX error", {
-          reservationId,
-          orderId,
-          error:
-            abortError instanceof Error ? abortError.message : String(abortError),
-        });
-      }
     }
   }
 

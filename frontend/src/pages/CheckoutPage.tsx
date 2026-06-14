@@ -1,9 +1,9 @@
 /**
- * @file Fluxo de checkout: reserva, polling de fase, PIX e simulação em dev.
+ * @file Fluxo de checkout: reserva, polling de fase, pagamento e simulação em dev.
  * @module pages/CheckoutPage
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import {
   Alert,
@@ -16,6 +16,7 @@ import {
   Group,
   Loader,
   NumberInput,
+  SegmentedControl,
   Stack,
   Stepper,
   Text,
@@ -28,7 +29,9 @@ import {
   IconCalendar,
   IconCheck,
   IconClock,
+  IconCreditCard,
   IconMapPin,
+  IconQrcode,
   IconShieldCheck,
   IconShoppingCart,
   IconTicket,
@@ -41,15 +44,18 @@ import { PageLoader } from "../components/account/PageLoader";
 import { PremiumPaper } from "../components/account/PremiumPaper";
 import {
   DevSimulatePaymentPanel,
+  OrderProcessingPanel,
   PixPaymentPanel,
   PixPaymentSkeleton,
 } from "../components/PixPaymentPanel";
+import { CardPaymentPanel } from "../components/CardPaymentPanel";
 import { PhaseBadge } from "../components/PhaseBadge";
+import { useAuth } from "../context/AuthContext";
 import { useEventCoverPreload } from "../hooks/useEventCoverPreload";
 import { useReservationPoller } from "../hooks/useReservationPoller";
 import * as eventService from "../features/catalog/api/eventService";
 import * as purchaseService from "../features/sales/api/purchaseService";
-import type { Event, TicketLot } from "../types/api";
+import type { Event, ReservationStatusView, TicketLot } from "../types/api";
 import {
   getEventCoverImageUrl,
   getEventCoverStyle,
@@ -66,6 +72,20 @@ import {
 
 interface CheckoutLocationState {
   coverImageUrl?: string | null;
+}
+
+/** Descrição do passo de pagamento no stepper conforme a fase atual. */
+function getPaymentStepDescription(phase: string | undefined): string {
+  switch (phase) {
+    case "PENDING_PAYMENT":
+      return "Escolha";
+    case "AWAITING_PAYMENT":
+      return "Aguardando";
+    case "PAID":
+      return "Concluído";
+    default:
+      return "Aguardando";
+  }
 }
 
 /** Mapeia fase da reserva para índice do stepper Mantine (0–4). */
@@ -180,7 +200,7 @@ function CheckoutOrderSummary({
 }
 
 /**
- * Stepper de compra com seleção de lote/quantidade, reserva e pagamento PIX monitorado.
+ * Stepper de compra com seleção de lote/quantidade, reserva e pagamento monitorado.
  */
 export function CheckoutPage() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -204,13 +224,51 @@ export function CheckoutPage() {
   const [reserving, setReserving] = useState(false);
   const [simulating, setSimulating] = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"pix" | "card">("card");
+  const [cardSubmitting, setCardSubmitting] = useState(false);
+  const [pixGenerating, setPixGenerating] = useState(false);
+  const [pixGenerateError, setPixGenerateError] = useState<string | null>(null);
 
-  const { status, loading: polling, error: pollError } = useReservationPoller({
+  const { user } = useAuth();
+
+  const pollContextRef = useRef({
+    paymentMethod: "card" as "pix" | "card",
+    confirmingPayment: false,
+  });
+  pollContextRef.current = { paymentMethod, confirmingPayment };
+
+  const didAutoSelectPixRef = useRef(false);
+
+  const shouldContinuePolling = useCallback(
+    (phase: ReservationStatusView["phase"]) => {
+      if (purchaseService.TERMINAL_PHASES.has(phase)) {
+        return false;
+      }
+
+      const { paymentMethod: method, confirmingPayment: confirming } =
+        pollContextRef.current;
+
+      if (confirming) {
+        return true;
+      }
+
+      if (phase === "PENDING_PAYMENT") {
+        return false;
+      }
+
+      if (phase === "AWAITING_PAYMENT") {
+        return method === "pix";
+      }
+
+      return phase === "PENDING_PERSISTENCE";
+    },
+    [],
+  );
+
+  const { status, loading: polling, error: pollError, refresh } = useReservationPoller({
     reservationId,
     enabled: Boolean(reservationId),
-    stopOn: confirmingPayment
-      ? purchaseService.TERMINAL_PHASES
-      : purchaseService.CHECKOUT_POLL_STOP_PHASES,
+    shouldContinuePolling,
   });
 
   useEventCoverPreload(coverImageFromNavigation ?? getEventCoverImageUrl(event ?? {}));
@@ -262,6 +320,61 @@ export function CheckoutPage() {
       setReservationId(reservationFromQuery);
     }
   }, [reservationFromQuery]);
+
+  useEffect(() => {
+    if (
+      !didAutoSelectPixRef.current &&
+      status?.phase === "AWAITING_PAYMENT" &&
+      status.payment
+    ) {
+      didAutoSelectPixRef.current = true;
+      setPaymentMethod("pix");
+      pollContextRef.current = {
+        paymentMethod: "pix",
+        confirmingPayment: pollContextRef.current.confirmingPayment,
+      };
+    }
+  }, [status?.phase, status?.payment]);
+
+  const generatePix = async (orderId: string) => {
+    if (pixGenerating) {
+      return;
+    }
+
+    setPixGenerating(true);
+    setPixGenerateError(null);
+
+    try {
+      await purchaseService.createPixPayment(orderId);
+      await refresh();
+    } catch (error) {
+      setPixGenerateError(getApiErrorMessage(error, "Não foi possível gerar o PIX."));
+    } finally {
+      setPixGenerating(false);
+    }
+  };
+
+  const handlePaymentMethodChange = (value: string) => {
+    const method = value as "pix" | "card";
+    setPaymentMethod(method);
+    pollContextRef.current = { paymentMethod: method, confirmingPayment };
+    setPixGenerateError(null);
+
+    if (
+      method === "pix" &&
+      status?.order?.id &&
+      status.phase === "PENDING_PAYMENT" &&
+      !pixGenerating
+    ) {
+      void generatePix(status.order.id);
+    } else if (
+      method === "pix" &&
+      status?.phase === "AWAITING_PAYMENT" &&
+      status.payment
+    ) {
+      void refresh();
+    }
+  };
 
   const quantityValidation = useMemo(() => {
     if (!selectedLot) {
@@ -320,7 +433,7 @@ export function CheckoutPage() {
 
       notifications.show({
         title: "Reserva criada",
-        message: "Aguarde enquanto geramos seu PIX.",
+        message: "Aguarde enquanto preparamos seu pedido.",
         color: "green",
         icon: <IconCheck size={18} />,
       });
@@ -344,9 +457,11 @@ export function CheckoutPage() {
 
     setSimulating(true);
     setConfirmingPayment(true);
+    pollContextRef.current = { paymentMethod, confirmingPayment: true };
 
     try {
       await purchaseService.simulateDevPayment(orderId);
+      await refresh();
       notifications.show({
         title: "Pagamento simulado",
         message: "Aguardando confirmação...",
@@ -361,6 +476,59 @@ export function CheckoutPage() {
       });
     } finally {
       setSimulating(false);
+    }
+  };
+
+  const handleCardPayment = async (
+    payload: Omit<purchaseService.CardPaymentPayload, "orderId">,
+  ) => {
+    const orderId = status?.order?.id;
+    if (!orderId) {
+      return;
+    }
+
+    setCardSubmitting(true);
+
+    try {
+      const result = await purchaseService.payWithCard({ orderId, ...payload });
+
+      if (result.status === "approved") {
+        setConfirmingPayment(true);
+        pollContextRef.current = { paymentMethod, confirmingPayment: true };
+        await refresh();
+        notifications.show({
+          title: "Pagamento aprovado",
+          message: "Emitindo seus ingressos...",
+          color: "green",
+          icon: <IconCheck size={18} />,
+        });
+      } else if (result.status === "pending") {
+        setConfirmingPayment(true);
+        pollContextRef.current = { paymentMethod, confirmingPayment: true };
+        await refresh();
+        notifications.show({
+          title: "Pagamento em análise",
+          message: "Assim que for aprovado, seus ingressos serão emitidos.",
+          color: "blue",
+        });
+      } else {
+        notifications.show({
+          title: "Pagamento recusado",
+          message:
+            "Revise os dados do cartão ou tente outro meio de pagamento.",
+          color: "red",
+          icon: <IconX size={18} />,
+        });
+      }
+    } catch (error) {
+      notifications.show({
+        title: "Falha no pagamento",
+        message: getApiErrorMessage(error, "Tente novamente."),
+        color: "red",
+        icon: <IconX size={18} />,
+      });
+    } finally {
+      setCardSubmitting(false);
     }
   };
 
@@ -382,9 +550,11 @@ export function CheckoutPage() {
   const isCheckoutStarted = Boolean(reservationId) || reserving;
   const isPaid = phase === "PAID";
   const isFailed = phase === "EXPIRED" || phase === "FAILED";
+  const isPendingPersistence = phase === "PENDING_PERSISTENCE";
+  const isPaymentPending = phase === "PENDING_PAYMENT";
   const isPixReady = phase === "AWAITING_PAYMENT" && Boolean(status?.payment);
-  const showPixSkeleton =
-    isCheckoutStarted && !isPaid && !isFailed && !isPixReady;
+  const canChoosePayment = isPaymentPending || isPixReady;
+  const orderAmountCents = status?.order?.totalPrice ?? totalCents;
 
   return (
     <Stack gap={0}>
@@ -459,7 +629,7 @@ export function CheckoutPage() {
                               Reservar ingressos
                             </Title>
                             <Text size="sm" c="dimmed">
-                              Escolha a quantidade e confirme para gerar o PIX.
+                              Escolha a quantidade e confirme para reservar.
                             </Text>
                           </Stack>
                         </Group>
@@ -532,7 +702,8 @@ export function CheckoutPage() {
                         <Group gap={6} c="dimmed">
                           <IconClock size={16} />
                           <Text size="sm">
-                            Após reservar, você terá <strong>15 minutos</strong> para pagar via PIX.
+                            Após reservar, você terá <strong>15 minutos</strong> para concluir o
+                            pagamento.
                           </Text>
                         </Group>
                       </Stack>
@@ -565,7 +736,10 @@ export function CheckoutPage() {
                           >
                             <Stepper.Step label="Reserva" description="Confirmada" />
                             <Stepper.Step label="Processamento" description="Persistência" />
-                            <Stepper.Step label="PIX" description="Aguardando" />
+                            <Stepper.Step
+                              label="Pagamento"
+                              description={getPaymentStepDescription(phase)}
+                            />
                             <Stepper.Step label="Concluído" description="Ingressos" />
                           </Stepper>
 
@@ -590,18 +764,103 @@ export function CheckoutPage() {
                       </PremiumPaper>
 
                       <Box className="checkout-payment-slot">
-                        {isPixReady && status?.payment ? (
-                          <PixPaymentPanel
-                            pixCopyPaste={status.payment.pixCopyPaste}
-                            amountCents={status.payment.amountCents}
-                            expiresAt={status.payment.expiresAt}
-                          />
-                        ) : showPixSkeleton ? (
-                          <PixPaymentSkeleton />
+                        {isPendingPersistence ? <OrderProcessingPanel /> : null}
+
+                        {canChoosePayment ? (
+                          <Stack gap="lg">
+                            <PremiumPaper p="xl">
+                              <Stack gap="lg">
+                                <Group gap="sm" className="producer-form-section-title">
+                                  <ThemeIcon size={40} radius="md" variant="light" color="brand">
+                                    <IconCreditCard size={20} />
+                                  </ThemeIcon>
+                                  <Stack gap={2}>
+                                    <Title order={3} size="h4" className="producer-section-title">
+                                      Forma de pagamento
+                                    </Title>
+                                    <Text size="sm" c="dimmed">
+                                      Escolha como deseja pagar seu pedido.
+                                    </Text>
+                                  </Stack>
+                                </Group>
+
+                                <SegmentedControl
+                                  fullWidth
+                                  radius="xl"
+                                  value={paymentMethod}
+                                  onChange={handlePaymentMethodChange}
+                                  data={[
+                                    {
+                                      value: "pix",
+                                      label: (
+                                        <Group gap={8} justify="center" wrap="nowrap">
+                                          <IconQrcode size={18} />
+                                          <span>PIX</span>
+                                        </Group>
+                                      ),
+                                    },
+                                    {
+                                      value: "card",
+                                      label: (
+                                        <Group gap={8} justify="center" wrap="nowrap">
+                                          <IconCreditCard size={18} />
+                                          <span>Cartão de crédito</span>
+                                        </Group>
+                                      ),
+                                    },
+                                  ]}
+                                />
+                              </Stack>
+                            </PremiumPaper>
+
+                            {paymentMethod === "pix" && isPixReady && status?.payment ? (
+                              <PixPaymentPanel
+                                pixCopyPaste={status.payment.pixCopyPaste}
+                                amountCents={status.payment.amountCents}
+                                expiresAt={status.payment.expiresAt}
+                              />
+                            ) : null}
+
+                            {paymentMethod === "pix" && isPaymentPending ? (
+                              pixGenerating ? (
+                                <PixPaymentSkeleton />
+                              ) : pixGenerateError ? (
+                                <Alert
+                                  color="red"
+                                  variant="light"
+                                  radius="lg"
+                                  icon={<IconAlertCircle size={18} />}
+                                  title="Não foi possível gerar o PIX"
+                                >
+                                  <Stack gap="sm">
+                                    <Text size="sm">{pixGenerateError}</Text>
+                                    {status?.order?.id ? (
+                                      <Button
+                                        radius="xl"
+                                        variant="light"
+                                        onClick={() => void generatePix(status.order!.id)}
+                                      >
+                                        Tentar novamente
+                                      </Button>
+                                    ) : null}
+                                  </Stack>
+                                </Alert>
+                              ) : null
+                            ) : null}
+
+                            {paymentMethod === "card" && status?.order ? (
+                              <CardPaymentPanel
+                                amountCents={orderAmountCents}
+                                defaultEmail={user?.email}
+                                submitting={cardSubmitting}
+                                onSubmit={(payload) => void handleCardPayment(payload)}
+                              />
+                            ) : null}
+                          </Stack>
                         ) : null}
                       </Box>
 
-                      {isPixReady && import.meta.env.DEV ? (
+                      {isPixReady && paymentMethod === "pix" && import.meta.env.DEV ? (
                         <DevSimulatePaymentPanel
                           loading={simulating}
                           onSimulate={() => void handleSimulatePayment()}
@@ -651,6 +910,8 @@ export function CheckoutPage() {
                                 onClick={() => {
                                   setReservationId(null);
                                   setConfirmingPayment(false);
+                                  setPaymentMethod("card");
+                                  setPixGenerateError(null);
                                 }}
                               >
                                 Tentar novamente

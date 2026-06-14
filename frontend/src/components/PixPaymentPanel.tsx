@@ -134,6 +134,29 @@ export function PixPaymentPanel({
   );
 }
 
+/** Placeholder enquanto o pedido é persistido (evita layout shift). */
+export function OrderProcessingPanel() {
+  return (
+    <PremiumPaper
+      p="xl"
+      className="pix-payment-panel pix-payment-panel--skeleton"
+      aria-busy="true"
+      aria-label="Preparando pedido"
+    >
+      <Stack gap="lg" align="center" py="xl">
+        <Loader size="md" color="brand" />
+        <Stack gap={4} align="center" ta="center">
+          <Text fw={700}>Preparando seu pedido</Text>
+          <Text size="sm" c="dimmed" style={{ lineHeight: 1.55 }}>
+            Aguarde enquanto confirmamos sua reserva. Em seguida você poderá escolher a forma de
+            pagamento.
+          </Text>
+        </Stack>
+      </Stack>
+    </PremiumPaper>
+  );
+}
+
 /** Placeholder com dimensões fixas enquanto o PIX é gerado (evita layout shift). */
 export function PixPaymentSkeleton({ compact = false }: { compact?: boolean }) {
   return (
