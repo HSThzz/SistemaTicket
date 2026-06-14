@@ -133,7 +133,7 @@ export function MyOrdersPage() {
           icon={<IconReceipt2 size={28} color="var(--mantine-color-brand-6)" />}
           title="Meus"
           highlight="pedidos"
-          description="Histórico de compras, pagamentos PIX e status de cada reserva. Acompanhe tudo em um só lugar."
+          description="Histórico de compras, pagamentos e status de cada reserva. Acompanhe tudo em um só lugar."
           action={
             <Button
               component={Link}
@@ -234,7 +234,7 @@ export function MyOrdersPage() {
           <EmptyState
             icon={<IconReceipt2 size={32} />}
             title="Nenhum pedido ainda"
-            description="Quando você reservar ingressos e pagar com PIX, seus pedidos aparecerão aqui com o status do pagamento."
+            description="Quando você reservar ingressos e concluir o pagamento, seus pedidos aparecerão aqui com o status de cada compra."
             action={
               <Button
                 component={Link}

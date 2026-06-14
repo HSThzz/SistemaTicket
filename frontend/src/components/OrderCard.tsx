@@ -3,7 +3,6 @@
  * @module components/OrderCard
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { CSSProperties } from "react";
 import {
@@ -13,7 +12,6 @@ import {
   Box,
   Button,
   Group,
-  Loader,
   Paper,
   Stack,
   Text,
@@ -21,12 +19,10 @@ import {
   Title,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
-import { IconReceipt, IconTicket } from "@tabler/icons-react";
+import { IconClock, IconReceipt, IconTicket } from "@tabler/icons-react";
 import { PixPaymentPanel } from "./PixPaymentPanel";
-import * as orderService from "../features/sales/api/orderService";
-import type { OrderListItem, PixPaymentDetails } from "../types/api";
+import type { OrderListItem } from "../types/api";
 import { formatCurrencyFromCents } from "../utils/format";
-import { getApiErrorMessage } from "../utils/errors";
 import { getOrderStatusColor, getOrderStatusLabel } from "../utils/statusLabels";
 
 /** Propriedades do card de pedido na listagem do cliente. */
@@ -68,45 +64,16 @@ function getOrderStubLabel(status: string): string {
 }
 
 /**
- * Exibe resumo do pedido, carrega PIX automaticamente se pendente e link para ingressos se pago.
+ * Exibe resumo do pedido, PIX quando já gerado e link para ingressos se pago.
  */
 export function OrderCard({ order }: OrderCardProps) {
   const isPaid = order.status === "PAID";
   const isPending = order.status === "PENDING";
   const isMobile = useMediaQuery("(max-width: 48em)");
-  const [payment, setPayment] = useState<PixPaymentDetails | null>(order.payment);
-  const [loadingPayment, setLoadingPayment] = useState(false);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
-  const fetchAttemptedRef = useRef(false);
-
-  useEffect(() => {
-    setPayment(order.payment);
-    fetchAttemptedRef.current = false;
-    setPaymentError(null);
-  }, [order.payment, order.id]);
-
-  const loadPayment = useCallback(async () => {
-    setLoadingPayment(true);
-    setPaymentError(null);
-
-    try {
-      const details = await orderService.getOrderPayment(order.id);
-      setPayment(details);
-    } catch (error) {
-      setPaymentError(getApiErrorMessage(error, "Não foi possível carregar o PIX."));
-    } finally {
-      setLoadingPayment(false);
-    }
-  }, [order.id]);
-
-  useEffect(() => {
-    if (!isPending || payment || fetchAttemptedRef.current) {
-      return;
-    }
-
-    fetchAttemptedRef.current = true;
-    void loadPayment();
-  }, [isPending, payment, loadPayment]);
+  const payment = order.payment;
+  const checkoutUrl = order.eventId
+    ? `/eventos/${order.eventId}/comprar?reservation=${order.reservationId}`
+    : null;
 
   return (
     <Paper
@@ -155,48 +122,6 @@ export function OrderCard({ order }: OrderCardProps) {
 
           {isPending ? (
             <Stack gap="sm" className="order-card-pix-section">
-              {order.eventId ? (
-                <Button
-                  component={Link}
-                  to={`/eventos/${order.eventId}/comprar?reservation=${order.reservationId}`}
-                  variant="light"
-                  color="brand"
-                  radius="xl"
-                  fullWidth
-                >
-                  Continuar no checkout
-                </Button>
-              ) : null}
-
-              {loadingPayment ? (
-                <Group justify="center" py="md">
-                  <Loader size="sm" color="brand" />
-                  <Text size="sm" c="dimmed">
-                    Carregando PIX...
-                  </Text>
-                </Group>
-              ) : null}
-
-              {paymentError ? (
-                <Alert color="red" radius="lg">
-                  {paymentError}
-                  <Button
-                    variant="light"
-                    color="red"
-                    size="xs"
-                    mt="sm"
-                    fullWidth
-                    onClick={() => {
-                      fetchAttemptedRef.current = true;
-                      setPayment(null);
-                      void loadPayment();
-                    }}
-                  >
-                    Tentar novamente
-                  </Button>
-                </Alert>
-              ) : null}
-
               {payment ? (
                 <PixPaymentPanel
                   pixCopyPaste={payment.pixCopyPaste}
@@ -204,6 +129,31 @@ export function OrderCard({ order }: OrderCardProps) {
                   expiresAt={payment.expiresAt}
                   compact={isMobile ?? true}
                 />
+              ) : (
+                <Alert
+                  color="orange"
+                  variant="light"
+                  radius="lg"
+                  icon={<IconClock size={18} />}
+                  title="Aguardando pagamento"
+                >
+                  <Text size="sm" style={{ lineHeight: 1.55 }}>
+                    Escolha PIX ou cartão no checkout para concluir esta compra.
+                  </Text>
+                </Alert>
+              )}
+
+              {checkoutUrl ? (
+                <Button
+                  component={Link}
+                  to={checkoutUrl}
+                  variant={payment ? "light" : "filled"}
+                  color="brand"
+                  radius="xl"
+                  fullWidth
+                >
+                  {payment ? "Voltar ao checkout" : "Continuar no checkout"}
+                </Button>
               ) : null}
             </Stack>
           ) : null}
