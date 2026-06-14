@@ -158,7 +158,7 @@ export class PaymentController {
   ): void {
     logger.error(CONTEXT, "Order payment failed", {
       orderId,
-      error: error instanceof Error ? error.message : String(error),
+      gatewayMessage: error instanceof Error ? error.message : String(error),
       code: error instanceof PaymentError ? error.code : "INTERNAL_ERROR",
     });
 

@@ -5,6 +5,7 @@
 
 import { randomUUID } from "node:crypto";
 import { env } from "../../../../shared/infrastructure/config/env";
+import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { resolveMercadoPagoPayerEmail } from "../../application/helpers/resolveMercadoPagoPayerEmail";
 import {
   resolveMercadoPagoPayerIdentification,
@@ -21,6 +22,8 @@ import type {
 } from "./PaymentGateway";
 
 const DEFAULT_EXPIRATION_MINUTES = 15;
+const GATEWAY_LOG_CONTEXT = "MercadoPagoPixGateway";
+const gatewayLogger = Logger.getInstance();
 
 interface MercadoPagoPaymentResponse {
   id: number | string;
@@ -240,11 +243,16 @@ export class MercadoPagoPixGateway implements PaymentGateway, PaymentGatewayWith
     const payload = (await response.json()) as MercadoPagoPaymentResponse & T;
 
     if (!response.ok) {
-      const details =
-        payload.message ??
-        payload.error ??
-        payload.cause?.map((item) => item.description).filter(Boolean).join("; ") ??
-        `HTTP ${response.status}`;
+      const details = formatMercadoPagoApiError(payload, response.status);
+
+      gatewayLogger.error(GATEWAY_LOG_CONTEXT, "Mercado Pago API request failed", {
+        method,
+        path,
+        httpStatus: response.status,
+        apiMessage: payload.message ?? payload.error ?? null,
+        causes: payload.cause ?? null,
+        details,
+      });
 
       throw new PaymentGatewayError(
         `Mercado Pago API error: ${details}`,
@@ -272,6 +280,27 @@ export function createMercadoPagoPixGatewayFromEnv(): MercadoPagoPixGateway {
     env.payment.mercadoPago.apiBaseUrl,
     env.payment.mercadoPago.notificationUrl || undefined,
   );
+}
+
+function formatMercadoPagoApiError(
+  payload: MercadoPagoPaymentResponse,
+  httpStatus: number,
+): string {
+  const causeDetails =
+    payload.cause
+      ?.map((item) => {
+        if (item.code && item.description) {
+          return `${item.code}: ${item.description}`;
+        }
+        return item.description ?? item.code;
+      })
+      .filter(Boolean) ?? [];
+
+  if (causeDetails.length > 0) {
+    return causeDetails.join("; ");
+  }
+
+  return payload.message ?? payload.error ?? `HTTP ${httpStatus}`;
 }
 
 function mapMercadoPagoStatus(
