@@ -141,6 +141,22 @@ export class MercadoPagoPixGateway implements PaymentGateway, PaymentGatewayWith
       body.notification_url = this.notificationUrl;
     }
 
+    const payerEmail = (body.payer as { email: string }).email;
+    gatewayLogger.info(GATEWAY_LOG_CONTEXT, "Sending card charge to Mercado Pago", {
+      orderId: input.orderId,
+      paymentMethodId: input.paymentMethodId,
+      issuerId: input.issuerId,
+      installments: input.installments,
+      transactionAmount: input.amountCents / 100,
+      hasToken: Boolean(input.token),
+      tokenPreview: input.token ? `${input.token.slice(0, 6)}…` : null,
+      payerEmailDomain: payerEmail.includes("@")
+        ? payerEmail.split("@")[1]
+        : null,
+      hasIdentification: Boolean(identification),
+      accessTokenPrefix: this.accessToken.slice(0, 8),
+    });
+
     const response = await this.request<MercadoPagoPaymentResponse>("POST", "/v1/payments", {
       body,
       idempotencyKey: `card-${input.orderId}-${input.token}`,
