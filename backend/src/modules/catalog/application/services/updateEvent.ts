@@ -10,6 +10,7 @@ import {
   type UpdateEventData,
 } from "../commands/updateEvent";
 import { assertCanManageEvent } from "../helpers/assertCanManageEvent";
+import { assertValidEventStatusTransition } from "../helpers/assertValidEventStatusTransition";
 import { loadEventWithLots } from "../helpers/loadEventWithLots";
 import { normalizeImageUrl } from "../helpers/normalizeImageUrl";
 import { findOneEventById } from "../queries/findOneEventById";
@@ -47,6 +48,11 @@ export async function updateEvent(
   assertCanManageEvent(event, actor);
 
   const changes = buildUpdateEventData(data);
+
+  if (changes.status !== undefined) {
+    assertValidEventStatusTransition(event.status, changes.status);
+  }
+
   const saved = await updateEventCommand(event, changes);
 
   Logger.getInstance().info(CONTEXT, "Event updated", {

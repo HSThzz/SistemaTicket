@@ -34,6 +34,7 @@ export interface ProducerDashboardStats {
   summary: {
     totalEvents: number;
     publishedEvents: number;
+    draftEvents: number;
     ticketsSold: number;
     ticketsCheckedIn: number;
     grossRevenueCents: number;

@@ -111,7 +111,7 @@ export function ProducerDashboardPage() {
         : 0;
 
     const pendingCheckIns = stats.summary.ticketsSold - stats.summary.ticketsCheckedIn;
-    const draftEvents = stats.summary.totalEvents - stats.summary.publishedEvents;
+    const draftEvents = stats.summary.draftEvents;
     const avgRevenuePerPublished =
       stats.summary.publishedEvents > 0
         ? Math.round(stats.summary.grossRevenueCents / stats.summary.publishedEvents)

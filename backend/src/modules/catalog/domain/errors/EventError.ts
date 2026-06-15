@@ -36,3 +36,14 @@ export class EventAccessDeniedError extends EventError {
     this.name = "EventAccessDeniedError";
   }
 }
+
+/** Transição de status do evento não permitida (ex.: cancelado não pode voltar a publicado). */
+export class EventInvalidStatusTransitionError extends EventError {
+  constructor(from: string, to: string) {
+    super(
+      `Cannot change event status from ${from} to ${to}`,
+      "EVENT_INVALID_STATUS_TRANSITION",
+    );
+    this.name = "EventInvalidStatusTransitionError";
+  }
+}

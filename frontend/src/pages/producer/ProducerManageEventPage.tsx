@@ -13,6 +13,7 @@ import {
   Container,
   Grid,
   Group,
+  Modal,
   NumberInput,
   Select,
   SimpleGrid,
@@ -51,6 +52,13 @@ import { eventDateToIso, isoToEventDate, validateEventDate } from "../../utils/e
 import { getEventCoverStyle } from "../../utils/eventVisuals";
 import { formatEventDate } from "../../utils/format";
 import { getApiErrorMessage } from "../../utils/errors";
+import {
+  getAllowedEventStatusOptions,
+  getEventStatusConfirmationCopy,
+  getEventStatusTransitionHint,
+  isTerminalEventStatus,
+  requiresEventStatusConfirmation,
+} from "../../utils/eventStatus";
 import { getEventStatusColor, getEventStatusLabel } from "../../utils/statusLabels";
 
 interface EventFormValues {
@@ -83,6 +91,7 @@ export function ProducerManageEventPage() {
   const [error, setError] = useState<string | null>(null);
   const [savingEvent, setSavingEvent] = useState(false);
   const [creatingLot, setCreatingLot] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<EventStatus | null>(null);
 
   const eventForm = useForm<EventFormValues>({
     initialValues: {
@@ -174,6 +183,47 @@ export function ProducerManageEventPage() {
       available,
     };
   }, [event]);
+
+  const statusOptions = useMemo(
+    () => getAllowedEventStatusOptions((event?.status ?? "DRAFT") as EventStatus),
+    [event?.status],
+  );
+
+  const statusHint = useMemo(
+    () => getEventStatusTransitionHint((event?.status ?? "DRAFT") as EventStatus),
+    [event?.status],
+  );
+
+  const statusConfirmation = pendingStatus
+    ? getEventStatusConfirmationCopy(pendingStatus)
+    : null;
+
+  const handleStatusChange = (nextValue: string | null) => {
+    if (!nextValue || !event) {
+      return;
+    }
+
+    const nextStatus = nextValue as EventStatus;
+    const currentStatus = eventForm.values.status as EventStatus;
+
+    if (requiresEventStatusConfirmation(currentStatus, nextStatus)) {
+      setPendingStatus(nextStatus);
+      return;
+    }
+
+    eventForm.setFieldValue("status", nextStatus);
+  };
+
+  const confirmPendingStatus = () => {
+    if (pendingStatus) {
+      eventForm.setFieldValue("status", pendingStatus);
+    }
+    setPendingStatus(null);
+  };
+
+  const cancelPendingStatus = () => {
+    setPendingStatus(null);
+  };
 
   const reloadEvent = async () => {
     if (!eventId) {
@@ -304,6 +354,32 @@ export function ProducerManageEventPage() {
 
   return (
     <Stack gap={0}>
+      <Modal
+        opened={pendingStatus !== null}
+        onClose={cancelPendingStatus}
+        title={statusConfirmation?.title ?? "Confirmar alteração"}
+        centered
+        radius="lg"
+      >
+        <Stack gap="lg">
+          <Text size="sm" style={{ lineHeight: 1.55 }}>
+            {statusConfirmation?.message}
+          </Text>
+          <Group justify="flex-end" gap="sm">
+            <Button variant="default" onClick={cancelPendingStatus} radius="xl">
+              Voltar
+            </Button>
+            <Button
+              color={statusConfirmation?.color ?? "red"}
+              onClick={confirmPendingStatus}
+              radius="xl"
+            >
+              {statusConfirmation?.confirmLabel ?? "Confirmar"}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
       <Box className="producer-manage-hero full-bleed" style={getEventCoverStyle(event)}>
         <Box className="producer-manage-hero-overlay" />
         <Container size="lg" px="md" className="producer-manage-hero-content">
@@ -439,14 +515,25 @@ export function ProducerManageEventPage() {
                         radius="md"
                         allowDeselect={false}
                         comboboxProps={{ withinPortal: true }}
-                        data={[
-                          { value: "DRAFT", label: "Rascunho" },
-                          { value: "PUBLISHED", label: "Publicado" },
-                          { value: "CANCELLED", label: "Cancelado" },
-                          { value: "FINISHED", label: "Encerrado" },
-                        ]}
-                        {...eventForm.getInputProps("status")}
+                        data={statusOptions}
+                        disabled={isTerminalEventStatus(event.status as EventStatus)}
+                        description={statusHint ?? undefined}
+                        value={eventForm.values.status}
+                        onChange={handleStatusChange}
+                        error={eventForm.errors.status}
                       />
+                      {event.status === "CANCELLED" ? (
+                        <Alert
+                          color="red"
+                          variant="light"
+                          radius="lg"
+                          icon={<IconAlertCircle size={18} />}
+                          title="Evento cancelado"
+                        >
+                          Este evento não pode ser republicado. Para uma nova data ou edição
+                          comercial, crie outro evento.
+                        </Alert>
+                      ) : null}
                       <Group justify="flex-end" pt="xs">
                         <Button type="submit" loading={savingEvent} radius="xl">
                           Salvar alterações

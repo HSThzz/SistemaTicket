@@ -1,4 +1,4 @@
-import { OrderStatus, TicketStatus } from "../../../../shared/kernel/enums";
+import { OrderStatus, TicketStatus, EventStatus } from "../../../../shared/kernel/enums";
 import { countTicketsByEventIds } from "../queries/countTicketsByEventIds";
 import { findManagedEventsByActor } from "../queries/findManagedEventsByActor";
 import { sumRevenueByEventIds } from "../queries/sumRevenueByEventIds";
@@ -15,6 +15,7 @@ export async function getProducerDashboard(
       summary: {
         totalEvents: 0,
         publishedEvents: 0,
+        draftEvents: 0,
         ticketsSold: 0,
         ticketsCheckedIn: 0,
         grossRevenueCents: 0,
@@ -60,7 +61,8 @@ export async function getProducerDashboard(
     (acc, event) => ({
       totalEvents: acc.totalEvents + 1,
       publishedEvents:
-        acc.publishedEvents + (event.status === "PUBLISHED" ? 1 : 0),
+        acc.publishedEvents + (event.status === EventStatus.PUBLISHED ? 1 : 0),
+      draftEvents: acc.draftEvents + (event.status === EventStatus.DRAFT ? 1 : 0),
       ticketsSold: acc.ticketsSold + event.ticketsSold,
       ticketsCheckedIn: acc.ticketsCheckedIn + event.ticketsCheckedIn,
       grossRevenueCents: acc.grossRevenueCents + event.grossRevenueCents,
@@ -68,6 +70,7 @@ export async function getProducerDashboard(
     {
       totalEvents: 0,
       publishedEvents: 0,
+      draftEvents: 0,
       ticketsSold: 0,
       ticketsCheckedIn: 0,
       grossRevenueCents: 0,
