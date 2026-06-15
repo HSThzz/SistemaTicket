@@ -18,6 +18,7 @@ import "./styles/home.css";
 import "./styles/landing.css";
 import "./styles/events.css";
 import "./styles/account.css";
+import "./styles/layout.css";
 import "./styles/producer-landing.css";
 
 createRoot(document.getElementById("root")!).render(

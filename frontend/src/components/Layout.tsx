@@ -7,14 +7,11 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Anchor,
   AppShell,
-  Box,
   Burger,
   Button,
   Container,
   Group,
   Menu,
-  Stack,
-  Text,
   UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -24,63 +21,45 @@ import {
   IconChevronDown,
   IconLayoutDashboard,
   IconLogout,
-  IconScan,
-  IconShield,
-  IconTicket,
   IconUser,
 } from "@tabler/icons-react";
 import { VibraLogo } from "./brand/VibraLogo";
 import { ColorSchemeToggle } from "./ColorSchemeToggle";
+import { MobileNavDrawer } from "./layout/MobileNavDrawer";
 import { useAuth } from "../context/AuthContext";
 
 const PUBLIC_NAV_LINKS = [
-  { to: "/", label: "Início", icon: null, exact: true },
-  { to: "/eventos", label: "Eventos", icon: null, exact: true },
-  { to: "/para-produtores", label: "Para produtores", icon: null, exact: true },
-] as const;
-
-const PRIVATE_NAV_LINKS = [
-  { to: "/perfil", label: "Minha conta", icon: IconUser, exact: false },
-  { to: "/ingressos", label: "Meus ingressos", icon: IconTicket, exact: false },
-  { to: "/pedidos", label: "Meus pedidos", icon: null, exact: false },
+  { to: "/", label: "Início", exact: true },
+  { to: "/eventos", label: "Eventos", exact: true },
+  { to: "/para-produtores", label: "Para produtores", exact: true },
 ] as const;
 
 /**
- * Links de navegação principal (desktop e drawer mobile).
- *
- * @param props.onNavigate - Callback ao clicar (fecha menu mobile).
- * @param props.currentPath - Pathname atual para destaque ativo.
- * @param props.isProducer - Exibe link do painel produtor quando aplicável.
+ * Links de navegação principal no header desktop.
  */
-function NavLinks({
+function DesktopNavLinks({
   onNavigate,
   currentPath,
-  isAuthenticated,
   isProducer,
   isAdmin,
 }: {
   onNavigate?: () => void;
   currentPath: string;
-  isAuthenticated: boolean;
   isProducer: boolean;
   isAdmin: boolean;
 }) {
   const links = [
     ...PUBLIC_NAV_LINKS,
-    ...(isAuthenticated ? [...PRIVATE_NAV_LINKS] : []),
-    ...(isProducer
-      ? [{ to: "/produtor", label: "Produtor", icon: IconLayoutDashboard } as const]
-      : []),
-    ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: IconShield } as const] : []),
+    ...(isProducer ? [{ to: "/produtor", label: "Produtor", exact: false } as const] : []),
+    ...(isAdmin ? [{ to: "/admin", label: "Admin", exact: false } as const] : []),
   ];
 
   return (
     <Group gap="lg">
       {links.map((link) => {
-        const isActive =
-          "exact" in link && link.exact
-            ? currentPath === link.to
-            : currentPath.startsWith(link.to);
+        const isActive = link.exact
+          ? currentPath === link.to
+          : currentPath === link.to || currentPath.startsWith(`${link.to}/`);
 
         return (
           <Anchor
@@ -106,7 +85,6 @@ function NavLinks({
 
 /**
  * Layout global com cabeçalho VIBRA, navegação responsiva e área de conteúdo.
- * Ajusta padding e classes para home, páginas hero e demais rotas.
  */
 export function Layout() {
   const [opened, { toggle, close }] = useDisclosure();
@@ -143,7 +121,7 @@ export function Layout() {
     <AppShell
       header={{ height: 72 }}
       navbar={{
-        width: 280,
+        width: 300,
         breakpoint: "sm",
         collapsed: { mobile: !opened, desktop: true },
       }}
@@ -152,6 +130,7 @@ export function Layout() {
       classNames={{
         header: layoutVariant ? `layout-${layoutVariant}-header` : undefined,
         main: layoutVariant ? `layout-${layoutVariant}-main` : undefined,
+        navbar: "layout-mobile-navbar",
       }}
     >
       <AppShell.Header>
@@ -171,7 +150,12 @@ export function Layout() {
             </Group>
 
             <Group gap="lg" visibleFrom="sm">
-              <NavLinks onNavigate={close} currentPath={currentPath} isAuthenticated={isAuthenticated} isProducer={isProducer} isAdmin={isAdmin} />
+              <DesktopNavLinks
+                onNavigate={close}
+                currentPath={currentPath}
+                isProducer={isProducer}
+                isAdmin={isAdmin}
+              />
             </Group>
 
             <Group gap="sm" wrap="nowrap">
@@ -196,7 +180,7 @@ export function Layout() {
                   ...
                 </Button>
               ) : isAuthenticated && user ? (
-                <Menu shadow="md" width={220} position="bottom-end">
+                <Menu shadow="md" width={240} position="bottom-end">
                   <Menu.Target>
                     <Button
                       variant="light"
@@ -217,6 +201,21 @@ export function Layout() {
                     >
                       Minha conta
                     </Menu.Item>
+                    <Menu.Label>Ingressos e pedidos</Menu.Label>
+                    <Menu.Item
+                      component={Link}
+                      to="/ingressos"
+                      onClick={close}
+                    >
+                      Meus ingressos
+                    </Menu.Item>
+                    <Menu.Item
+                      component={Link}
+                      to="/pedidos"
+                      onClick={close}
+                    >
+                      Meus pedidos
+                    </Menu.Item>
                     {isProducer ? (
                       <Menu.Item
                         component={Link}
@@ -227,6 +226,7 @@ export function Layout() {
                         Painel produtor
                       </Menu.Item>
                     ) : null}
+                    <Menu.Divider />
                     <Menu.Item leftSection={<IconLogout size={16} />} onClick={handleLogout}>
                       Sair
                     </Menu.Item>
@@ -254,80 +254,16 @@ export function Layout() {
       </AppShell.Header>
 
       <AppShell.Navbar p="md" hiddenFrom="sm">
-        <Stack gap="md">
-          <NavLinks onNavigate={close} currentPath={currentPath} isAuthenticated={isAuthenticated} isProducer={isProducer} isAdmin={isAdmin} />
-          {isProducer ? (
-            <>
-              <Button
-                component={Link}
-                to="/produtor/eventos/novo"
-                leftSection={<IconCalendarPlus size={16} />}
-                onClick={close}
-              >
-                Criar evento
-              </Button>
-              <Button
-                component={Link}
-                to="/produtor/check-in"
-                variant="light"
-                color="teal"
-                leftSection={<IconScan size={16} />}
-                onClick={close}
-              >
-                Check-in
-              </Button>
-            </>
-          ) : null}
-          <Box pt="sm">
-            {isAuthenticated && user ? (
-              <Stack gap="xs">
-                <Text size="sm" c="dimmed">
-                  {user.name}
-                </Text>
-                <Button
-                  fullWidth
-                  variant="light"
-                  component={Link}
-                  to="/perfil"
-                  onClick={close}
-                  leftSection={<IconUser size={16} />}
-                >
-                  Minha conta
-                </Button>
-                {isProducer ? (
-                  <Button
-                    fullWidth
-                    variant="light"
-                    component={Link}
-                    to="/produtor"
-                    onClick={close}
-                    leftSection={<IconLayoutDashboard size={16} />}
-                  >
-                    Painel produtor
-                  </Button>
-                ) : null}
-                <Button
-                  fullWidth
-                  variant="light"
-                  color="red"
-                  leftSection={<IconLogout size={16} />}
-                  onClick={handleLogout}
-                >
-                  Sair
-                </Button>
-              </Stack>
-            ) : (
-              <Stack gap="xs">
-                <Button fullWidth variant="light" component={Link} to="/login" onClick={close}>
-                  Entrar
-                </Button>
-                <Button fullWidth component={Link} to="/cadastro" onClick={close}>
-                  Cadastrar
-                </Button>
-              </Stack>
-            )}
-          </Box>
-        </Stack>
+        <MobileNavDrawer
+          currentPath={currentPath}
+          isAuthenticated={isAuthenticated}
+          isProducer={isProducer}
+          isAdmin={isAdmin}
+          userName={user?.name}
+          userEmail={user?.email}
+          onNavigate={close}
+          onLogout={handleLogout}
+        />
       </AppShell.Navbar>
 
       <AppShell.Main>

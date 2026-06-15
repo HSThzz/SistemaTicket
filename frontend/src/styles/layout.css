@@ -1,0 +1,80 @@
+/* Mobile drawer — navegação por seções */
+
+.layout-mobile-navbar {
+  border-right: 1px solid var(--mantine-color-default-border);
+  background: light-dark(
+    rgba(250, 250, 250, 0.96),
+    rgba(12, 12, 12, 0.96)
+  ) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.mobile-nav-drawer {
+  padding-top: 4px;
+}
+
+.mobile-nav-user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--mantine-radius-lg);
+  border: 1px solid var(--mantine-color-default-border);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+}
+
+.mobile-nav-section-title {
+  letter-spacing: 0.08em;
+  padding-inline: 4px;
+}
+
+.mobile-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--mantine-radius-md);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.mobile-nav-item:hover {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
+}
+
+.mobile-nav-item.is-active {
+  background: light-dark(
+    rgba(var(--mantine-color-brand-6-rgb), 0.08),
+    rgba(var(--mantine-color-brand-6-rgb), 0.14)
+  );
+}
+
+.mobile-nav-divider {
+  opacity: 0.65;
+}
+
+/* Perfil — atalhos de compras */
+
+.account-quick-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.account-quick-link-card {
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.account-quick-link:hover .account-quick-link-card {
+  transform: translateY(-2px);
+  border-color: var(--vibra-border-accent-hover);
+  box-shadow: 0 10px 28px var(--vibra-shadow-soft);
+}

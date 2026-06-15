@@ -28,6 +28,7 @@ import {
   IconUser,
   IconUserCircle,
 } from "@tabler/icons-react";
+import { AccountQuickLinks } from "../components/account/AccountQuickLinks";
 import { EmptyState } from "../components/account/EmptyState";
 import { PageHeader } from "../components/account/PageHeader";
 import { PremiumPaper } from "../components/account/PremiumPaper";
@@ -278,7 +279,7 @@ export function ProfilePage() {
         icon={<IconUserCircle size={32} stroke={1.5} className="page-title-icon" />}
         title="Minha"
         highlight="conta"
-        description="Gerencie seus dados, favoritos e segurança em um só lugar."
+        description="Gerencie seus dados, compras, favoritos e segurança em um só lugar."
       />
 
       {profileError ? (
@@ -286,6 +287,8 @@ export function ProfilePage() {
           {profileError}
         </Alert>
       ) : null}
+
+      <AccountQuickLinks />
 
       <Tabs defaultValue="account" variant="pills" radius="xl" className="profile-tabs">
         <Tabs.List grow className="profile-tabs__list">
