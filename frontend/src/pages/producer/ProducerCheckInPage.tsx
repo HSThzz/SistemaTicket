@@ -29,6 +29,7 @@ import {
 import { PageBackNav } from "../../components/account/PageBackNav";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { CheckInSuccessCard } from "../../components/producer/CheckInSuccessCard";
+import { ProducerNav } from "../../components/producer/ProducerNav";
 import { QrScanner } from "../../components/QrScanner";
 import * as checkInService from "../../features/ticketing/api/checkInService";
 import { getApiErrorMessage } from "../../utils/errors";
@@ -138,7 +139,10 @@ export function ProducerCheckInPage() {
 
       <Box className="page-body">
         <Container size="lg" py="xl" px="md">
-          <PageBackNav to="/produtor" label="Voltar ao painel" />
+          <Stack gap="md">
+            <PageBackNav to="/produtor" label="Voltar ao painel" />
+            <ProducerNav showCreateEvent={false} />
+          </Stack>
           <Grid mt="lg">
           <Grid.Col span={{ base: 12, md: 7 }}>
             <Stack gap="md">

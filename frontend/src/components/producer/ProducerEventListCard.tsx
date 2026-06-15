@@ -1,11 +1,10 @@
-import type { ReactNode } from "react";
+import { Badge, Box, Button, Group, Stack, Text, Title } from "@mantine/core";
 import { Link } from "react-router-dom";
-import { Badge, Box, Group, SimpleGrid, Stack, Text, ThemeIcon, Title } from "@mantine/core";
 import {
-  IconArrowRight,
   IconCalendar,
   IconClock,
   IconMapPin,
+  IconPencil,
   IconTicket,
 } from "@tabler/icons-react";
 import type { Event } from "../../types/api";
@@ -17,115 +16,92 @@ interface ProducerEventListCardProps {
   event: Event;
 }
 
-function InfoBlock({
-  label,
-  value,
-  icon,
-  accent,
-}: {
-  label: string;
-  value: string;
-  icon: ReactNode;
-  accent?: string;
-}) {
-  return (
-    <Box className="producer-metric-block">
-      <Group gap={8} wrap="nowrap" mb={6}>
-        <ThemeIcon size={28} radius="md" variant="light" color={accent ?? "brand"}>
-          {icon}
-        </ThemeIcon>
-        <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-          {label}
-        </Text>
-      </Group>
-      <Text fw={800} size="md" className="producer-metric-value" c={accent} lineClamp={1}>
-        {value}
-      </Text>
-    </Box>
-  );
-}
-
+/**
+ * Linha compacta de evento — foco em gestão (status, data, lotes, ação).
+ */
 export function ProducerEventListCard({ event }: ProducerEventListCardProps) {
   const totalAvailable = getTotalAvailable(event);
   const soldOut = totalAvailable === 0 && event.ticketLots.length > 0;
+  const hasLots = event.ticketLots.length > 0;
 
   return (
-    <Box component={Link} to={`/produtor/eventos/${event.id}`} className="producer-event-card">
+    <Box className="producer-event-list-row">
       <Group wrap="nowrap" align="stretch" gap={0}>
-        <Box className="producer-event-card-stub" style={getEventCoverStyle(event)} />
+        <Box className="producer-event-list-cover" style={getEventCoverStyle(event)} />
 
-        <Stack gap="lg" className="producer-event-card-body">
-          <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
-            <Stack gap="sm" flex={1} miw={0}>
-              <Group gap="sm" wrap="wrap">
-                <Badge
-                  color={getEventStatusColor(event.status)}
-                  variant="light"
-                  radius="sm"
-                  size="sm"
-                >
-                  {getEventStatusLabel(event.status)}
+        <Group
+          justify="space-between"
+          align="center"
+          wrap="wrap"
+          gap="md"
+          className="producer-event-list-body"
+          flex={1}
+        >
+          <Stack gap={6} flex={1} miw={200}>
+            <Group gap="xs" wrap="wrap">
+              <Badge
+                color={getEventStatusColor(event.status)}
+                variant="light"
+                radius="sm"
+                size="sm"
+              >
+                {getEventStatusLabel(event.status)}
+              </Badge>
+              {hasLots ? (
+                <Badge variant="light" color="gray" radius="sm" size="sm">
+                  {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}
                 </Badge>
-                {event.ticketLots.length > 0 ? (
-                  <Badge variant="light" color="gray" radius="sm" size="sm">
-                    {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}
-                  </Badge>
-                ) : null}
+              ) : (
+                <Badge variant="light" color="orange" radius="sm" size="sm">
+                  Sem lotes
+                </Badge>
+              )}
+            </Group>
+
+            <Title order={5} lineClamp={1}>
+              {event.title}
+            </Title>
+
+            <Group gap="md" c="dimmed" wrap="wrap">
+              <Group gap={6} wrap="nowrap">
+                <IconCalendar size={14} />
+                <Text size="xs">{formatEventDateOnly(event.date)}</Text>
               </Group>
-
-              <Title order={4} lineClamp={2} style={{ letterSpacing: "-0.01em" }}>
-                {event.title}
-              </Title>
-
-              <Group gap={8} c="dimmed" wrap="wrap">
-                <IconMapPin size={16} style={{ flexShrink: 0 }} />
-                <Text size="sm" lineClamp={2}>
-                  {event.location}
+              <Group gap={6} wrap="nowrap">
+                <IconClock size={14} />
+                <Text size="xs">{formatEventTimeOnly(event.date)}</Text>
+              </Group>
+              <Group gap={6} wrap="nowrap" maw={220}>
+                <IconMapPin size={14} style={{ flexShrink: 0 }} />
+                <Text size="xs" lineClamp={1}>
+                  {extractCity(event.location)}
                 </Text>
               </Group>
-            </Stack>
-
-            <Group gap={4} c="brand" className="producer-event-card-cta" wrap="nowrap">
-              <Text size="sm" fw={600}>
-                Gerenciar
-              </Text>
-              <IconArrowRight size={16} />
+              <Group gap={6} wrap="nowrap">
+                <IconTicket size={14} />
+                <Text size="xs">
+                  {!hasLots
+                    ? "Configure lotes"
+                    : soldOut
+                      ? "Esgotado"
+                      : `${totalAvailable} disponíveis`}
+                </Text>
+              </Group>
             </Group>
-          </Group>
+          </Stack>
 
-          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
-            <InfoBlock
-              label="Data"
-              value={formatEventDateOnly(event.date)}
-              icon={<IconCalendar size={16} />}
-              accent="blue"
-            />
-            <InfoBlock
-              label="Horário"
-              value={formatEventTimeOnly(event.date)}
-              icon={<IconClock size={16} />}
-              accent="cyan"
-            />
-            <InfoBlock
-              label="Cidade"
-              value={extractCity(event.location)}
-              icon={<IconMapPin size={16} />}
-              accent="grape"
-            />
-            <InfoBlock
-              label="Disponíveis"
-              value={
-                event.ticketLots.length === 0
-                  ? "Sem lotes"
-                  : soldOut
-                    ? "Esgotado"
-                    : String(totalAvailable)
-              }
-              icon={<IconTicket size={16} />}
-              accent={soldOut ? "red" : "teal"}
-            />
-          </SimpleGrid>
-        </Stack>
+          <Button
+            component={Link}
+            to={`/produtor/eventos/${event.id}`}
+            variant="light"
+            radius="xl"
+            size="sm"
+            leftSection={<IconPencil size={16} />}
+            className="producer-event-list-action"
+          >
+            Gerenciar
+          </Button>
+        </Group>
       </Group>
     </Box>
   );

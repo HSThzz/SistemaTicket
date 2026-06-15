@@ -10,6 +10,7 @@ import {
   Badge,
   Button,
   Group,
+  SegmentedControl,
   SimpleGrid,
   Stack,
   Text,
@@ -18,9 +19,7 @@ import {
 import {
   IconAlertCircle,
   IconCalendarEvent,
-  IconChartBar,
   IconPlus,
-  IconScan,
   IconTicket,
 } from "@tabler/icons-react";
 import { EmptyState } from "../../components/account/EmptyState";
@@ -28,58 +27,31 @@ import { PageHeader } from "../../components/account/PageHeader";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { StatCard } from "../../components/account/StatCard";
 import { ProducerEventListCard } from "../../components/producer/ProducerEventListCard";
-import { ProducerMobileActions } from "../../components/producer/ProducerMobileActions";
+import { ProducerNav } from "../../components/producer/ProducerNav";
 import { ProducerPanelSkeleton } from "../../components/producer/ProducerPanelSkeleton";
 import * as eventService from "../../features/catalog/api/eventService";
 import type { Event } from "../../types/api";
 import { getApiErrorMessage } from "../../utils/errors";
+
+type EventFilter = "all" | "published" | "draft";
 
 const EVENTS_HEADER = (
   <PageHeader
     icon={<IconCalendarEvent size={28} color="var(--mantine-color-brand-6)" />}
     title="Meus"
     highlight="eventos"
-    description="Crie, publique e gerencie lotes de ingressos para cada experiência."
-    action={
-      <Group gap="sm" visibleFrom="sm">
-        <Button
-          component={Link}
-          to="/produtor"
-          variant="subtle"
-          radius="xl"
-          leftSection={<IconChartBar size={18} />}
-        >
-          Dashboard
-        </Button>
-        <Button
-          component={Link}
-          to="/produtor/check-in"
-          variant="light"
-          radius="xl"
-          leftSection={<IconScan size={18} />}
-        >
-          Check-in
-        </Button>
-        <Button
-          component={Link}
-          to="/produtor/eventos/novo"
-          radius="xl"
-          leftSection={<IconPlus size={18} />}
-        >
-          Novo evento
-        </Button>
-      </Group>
-    }
+    description="Lista completa dos seus eventos — edite informações, publique e configure lotes."
   />
 );
 
 /**
- * Lista todos os eventos do produtor com atalhos para criar, gerenciar e check-in.
+ * Catálogo de eventos do produtor com foco em gestão operacional.
  */
 export function ProducerEventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<EventFilter>("all");
 
   useEffect(() => {
     let cancelled = false;
@@ -120,12 +92,28 @@ export function ProducerEventsPage() {
     };
   }, [events]);
 
+  const filteredEvents = useMemo(() => {
+    const sorted = [...events].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
+
+    if (filter === "published") {
+      return sorted.filter((event) => event.status === "PUBLISHED");
+    }
+
+    if (filter === "draft") {
+      return sorted.filter((event) => event.status === "DRAFT");
+    }
+
+    return sorted;
+  }, [events, filter]);
+
   if (loading) {
     return (
       <Stack gap="lg">
         {EVENTS_HEADER}
-        <ProducerMobileActions variant="events" />
-        <ProducerPanelSkeleton />
+        <ProducerNav />
+        <ProducerPanelSkeleton variant="events" />
       </Stack>
     );
   }
@@ -134,7 +122,7 @@ export function ProducerEventsPage() {
     <Stack gap="lg">
       {EVENTS_HEADER}
 
-      <ProducerMobileActions variant="events" />
+      <ProducerNav />
 
       {error ? (
         <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro" radius="lg">
@@ -194,25 +182,52 @@ export function ProducerEventsPage() {
 
       {events.length > 0 ? (
         <Stack gap="md">
-          <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+          <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm">
             <Stack gap={4}>
               <Title order={3} size="h4">
-                Todos os eventos
+                Catálogo de eventos
               </Title>
               <Text c="dimmed" size="sm">
-                Clique em um evento para editar, publicar ou gerenciar lotes.
+                Selecione um evento para editar detalhes, publicar ou gerenciar lotes.
               </Text>
             </Stack>
-            <Badge size="lg" variant="light" color="brand" radius="sm">
-              {events.length} evento{events.length === 1 ? "" : "s"}
-            </Badge>
+
+            <SegmentedControl
+              value={filter}
+              onChange={(value) => setFilter(value as EventFilter)}
+              data={[
+                { label: `Todos (${summary.total})`, value: "all" },
+                { label: `Publicados (${summary.published})`, value: "published" },
+                { label: `Rascunhos (${summary.drafts})`, value: "draft" },
+              ]}
+              radius="xl"
+              className="producer-events-filter"
+            />
           </Group>
 
-          <Stack gap="md">
-            {events.map((event) => (
-              <ProducerEventListCard key={event.id} event={event} />
-            ))}
-          </Stack>
+          {filteredEvents.length === 0 ? (
+            <PremiumPaper p="lg">
+              <Text ta="center" c="dimmed" size="sm">
+                Nenhum evento neste filtro.
+              </Text>
+            </PremiumPaper>
+          ) : (
+            <Stack gap="sm" className="producer-event-list">
+              {filteredEvents.map((event) => (
+                <ProducerEventListCard key={event.id} event={event} />
+              ))}
+            </Stack>
+          )}
+
+          <Group justify="space-between" align="center">
+            <Text size="sm" c="dimmed">
+              {filteredEvents.length} de {events.length} evento
+              {events.length === 1 ? "" : "s"}
+            </Text>
+            <Badge size="lg" variant="light" color="brand" radius="sm">
+              {summary.lots} lote{summary.lots === 1 ? "" : "s"} no total
+            </Badge>
+          </Group>
         </Stack>
       ) : null}
     </Stack>

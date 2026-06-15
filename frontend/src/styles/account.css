@@ -438,7 +438,150 @@
   color: var(--mantine-color-dimmed);
 }
 
-/* Dashboard produtor — desempenho por evento */
+/* Painel produtor — navegação por abas */
+.producer-nav {
+  padding-bottom: 4px;
+}
+
+.producer-nav-tabs {
+  flex: 1;
+  min-width: 0;
+}
+
+.producer-nav-tabs .mantine-Tabs-list {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.producer-nav-tabs {
+  flex-wrap: wrap;
+}
+
+.producer-nav-tab {
+  height: auto !important;
+  padding: 10px 16px !important;
+  line-height: 1.2;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.producer-nav-tab-label {
+  display: block;
+  font-weight: 600;
+}
+
+.producer-nav-tab-description {
+  display: block;
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 500;
+  opacity: 0.72;
+  margin-top: 2px;
+}
+
+.producer-nav-create {
+  flex-shrink: 0;
+}
+
+.producer-dashboard-insight {
+  height: 100%;
+}
+
+.producer-dashboard-insight-item {
+  padding: 12px;
+  border-radius: var(--mantine-radius-md);
+  background: light-dark(
+    var(--mantine-color-gray-0),
+    var(--mantine-color-dark-5)
+  );
+}
+
+.producer-top-performer {
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.producer-top-performer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px var(--vibra-shadow-soft);
+}
+
+.producer-performance-table .producer-performance-row {
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.producer-performance-table .producer-performance-row:hover {
+  background: light-dark(
+    var(--mantine-color-gray-0),
+    var(--mantine-color-dark-5)
+  );
+}
+
+/* Meus eventos — lista compacta de gestão */
+.producer-event-list-row {
+  overflow: hidden;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-lg);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.producer-event-list-row:hover {
+  border-color: var(--vibra-border-accent-hover);
+  box-shadow: 0 8px 24px var(--vibra-shadow-soft);
+}
+
+.producer-event-list-cover {
+  width: 72px;
+  flex-shrink: 0;
+  align-self: stretch;
+  min-height: 88px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.producer-event-list-body {
+  padding: 14px 16px;
+  min-width: 0;
+}
+
+.producer-event-list-action {
+  flex-shrink: 0;
+}
+
+.producer-events-filter {
+  max-width: 100%;
+}
+
+@media (max-width: 47.99em) {
+  .producer-nav-tab-description {
+    display: none;
+  }
+
+  .producer-nav-create {
+    width: 100%;
+  }
+
+  .producer-event-list-cover {
+    width: 56px;
+    min-height: 76px;
+  }
+
+  .producer-event-list-body {
+    padding: 12px;
+  }
+
+  .producer-event-list-action {
+    width: 100%;
+  }
+}
+
+/* Dashboard produtor — cards de desempenho (legado) */
 .producer-event-card {
   display: block;
   overflow: hidden;
