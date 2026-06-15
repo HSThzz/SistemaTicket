@@ -3,14 +3,14 @@
  * @module components/QrScanner
  */
 
-import { useEffect, useId, useRef, useState } from "react";
-import { Alert, Center, Stack, Text } from "@mantine/core";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { Alert, Button, Center, Stack, Text } from "@mantine/core";
 import {
   Html5Qrcode,
   Html5QrcodeScannerState,
   Html5QrcodeSupportedFormats,
 } from "html5-qrcode";
-import { IconCameraOff } from "@tabler/icons-react";
+import { IconCameraOff, IconScan } from "@tabler/icons-react";
 
 /** Propriedades do scanner de QR para check-in. */
 interface QrScannerProps {
@@ -18,26 +18,25 @@ interface QrScannerProps {
   onScan: (decodedText: string) => void;
   /** Bloqueia novas leituras sem desligar a câmera (ex.: durante API). */
   locked?: boolean;
-  /** Inicia a câmera automaticamente ao montar. */
-  autoStart?: boolean;
 }
 
+type CameraConfig = string | MediaTrackConstraints;
+
 const SCANNER_CONFIG = {
-  fps: 20,
+  fps: 15,
   disableFlip: true,
   formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
   qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
     const edge = Math.min(viewfinderWidth, viewfinderHeight);
-    const size = Math.max(200, Math.floor(edge * 0.72));
+    const size = Math.max(180, Math.floor(edge * 0.72));
     return { width: size, height: size };
   },
 } as const;
 
-const CAMERA_CONSTRAINTS = {
-  facingMode: "environment",
-  width: { ideal: 1280, min: 640 },
-  height: { ideal: 720, min: 480 },
-} as const;
+const CAMERA_CONSTRAINT_FALLBACKS: MediaTrackConstraints[] = [
+  { facingMode: "environment" },
+  { facingMode: "user" },
+];
 
 async function stopScannerSafely(scanner: Html5Qrcode): Promise<void> {
   try {
@@ -59,13 +58,127 @@ async function stopScannerSafely(scanner: Html5Qrcode): Promise<void> {
   }
 }
 
+function rankCameraIds(cameras: Array<{ id: string; label: string }>): string[] {
+  const ranked: string[] = [];
+  const back = cameras.find((camera) =>
+    /back|rear|environment|trás|tras|traseira/i.test(camera.label),
+  );
+  const front = cameras.find((camera) =>
+    /front|user|face|frontal|selfie/i.test(camera.label),
+  );
+
+  if (back) {
+    ranked.push(back.id);
+  }
+  if (front) {
+    ranked.push(front.id);
+  }
+
+  for (const camera of cameras) {
+    if (!ranked.includes(camera.id)) {
+      ranked.push(camera.id);
+    }
+  }
+
+  return ranked;
+}
+
+async function requestCameraPermission(): Promise<void> {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error("Este navegador não suporta acesso à câmera.");
+  }
+
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  stream.getTracks().forEach((track) => track.stop());
+}
+
+async function buildCameraAttempts(): Promise<CameraConfig[]> {
+  const attempts: CameraConfig[] = [];
+
+  await requestCameraPermission();
+
+  try {
+    const cameras = await Html5Qrcode.getCameras();
+    attempts.push(...rankCameraIds(cameras));
+  } catch {
+    // segue para constraints genéricas
+  }
+
+  attempts.push(...CAMERA_CONSTRAINT_FALLBACKS);
+  return attempts;
+}
+
+function formatCameraError(error: unknown): string {
+  if (!window.isSecureContext) {
+    return "A câmera só funciona em HTTPS ou localhost. Abra o site por uma conexão segura.";
+  }
+
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "";
+
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized.includes("notallowed") ||
+    normalized.includes("permission denied") ||
+    normalized.includes("permission dismissed")
+  ) {
+    return "Permissão da câmera negada. No Chrome, toque no cadeado da barra de endereço e permita a câmera.";
+  }
+
+  if (normalized.includes("notfound") || normalized.includes("requested device not found")) {
+    return "Nenhuma câmera foi encontrada neste dispositivo.";
+  }
+
+  if (normalized.includes("notreadable") || normalized.includes("could not start video source")) {
+    return "A câmera está em uso por outro aplicativo. Feche outros apps e tente novamente.";
+  }
+
+  if (normalized.includes("overconstrained")) {
+    return "Não foi possível usar a câmera disponível. Tente novamente ou use o código manual.";
+  }
+
+  if (message) {
+    return message;
+  }
+
+  return "Não foi possível acessar a câmera. Verifique as permissões do navegador.";
+}
+
+async function startScannerWithFallback(
+  scanner: Html5Qrcode,
+  onSuccess: (decodedText: string) => void,
+  onEmpty: () => void,
+): Promise<void> {
+  const attempts = await buildCameraAttempts();
+  let lastError: unknown = new Error("Nenhuma câmera disponível.");
+
+  for (const cameraConfig of attempts) {
+    try {
+      await scanner.start(cameraConfig, SCANNER_CONFIG, onSuccess, onEmpty);
+      return;
+    } catch (error) {
+      lastError = error;
+      await stopScannerSafely(scanner);
+    }
+  }
+
+  throw lastError;
+}
+
 /**
- * Scanner com câmera traseira otimizada para leitura rápida em portaria.
+ * Scanner com ativação manual da câmera (gesto do usuário) e leitura otimizada em portaria.
  */
-export function QrScanner({ onScan, locked = false, autoStart = true }: QrScannerProps) {
+export function QrScanner({ onScan, locked = false }: QrScannerProps) {
   const containerId = useId().replace(/:/g, "");
   const [error, setError] = useState<string | null>(null);
-  const [starting, setStarting] = useState(autoStart);
+  const [active, setActive] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [session, setSession] = useState(0);
   const lastScanRef = useRef<string>("");
   const lockedRef = useRef(locked);
   const onScanRef = useRef(onScan);
@@ -79,7 +192,7 @@ export function QrScanner({ onScan, locked = false, autoStart = true }: QrScanne
   }, [locked]);
 
   useEffect(() => {
-    if (!autoStart) {
+    if (!active) {
       return;
     }
 
@@ -90,30 +203,25 @@ export function QrScanner({ onScan, locked = false, autoStart = true }: QrScanne
     });
 
     setStarting(true);
+    setError(null);
 
-    const startPromise = scanner
-      .start(
-        CAMERA_CONSTRAINTS,
-        SCANNER_CONFIG,
-        (decodedText) => {
-          if (cancelled || lockedRef.current || decodedText === lastScanRef.current) {
-            return;
-          }
+    const startPromise = startScannerWithFallback(
+      scanner,
+      (decodedText) => {
+        if (cancelled || lockedRef.current || decodedText === lastScanRef.current) {
+          return;
+        }
 
-          lastScanRef.current = decodedText;
-          onScanRef.current(decodedText);
-        },
-        () => {
-          // ignora frames sem QR enquanto busca
-        },
-      )
+        lastScanRef.current = decodedText;
+        onScanRef.current(decodedText);
+      },
+      () => {
+        // ignora frames sem QR enquanto busca
+      },
+    )
       .catch((err: unknown) => {
         if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Não foi possível acessar a câmera. Verifique as permissões do navegador.",
-          );
+          setError(formatCameraError(err));
         }
       })
       .finally(() => {
@@ -126,7 +234,41 @@ export function QrScanner({ onScan, locked = false, autoStart = true }: QrScanne
       cancelled = true;
       void startPromise.finally(() => stopScannerSafely(scanner));
     };
-  }, [autoStart, containerId]);
+  }, [active, containerId, session]);
+
+  const handleActivate = useCallback(() => {
+    setError(null);
+    if (active) {
+      setSession((current) => current + 1);
+      return;
+    }
+    setActive(true);
+  }, [active]);
+
+  const handleDeactivate = useCallback(() => {
+    setError(null);
+    setActive(false);
+  }, []);
+
+  if (!active) {
+    return (
+      <Stack gap="sm">
+        <Center py="md">
+          <Button
+            leftSection={<IconScan size={18} />}
+            onClick={handleActivate}
+            size="md"
+            radius="xl"
+          >
+            Ativar câmera
+          </Button>
+        </Center>
+        <Text size="sm" c="dimmed" ta="center">
+          Toque para permitir o acesso à câmera do dispositivo.
+        </Text>
+      </Stack>
+    );
+  }
 
   return (
     <Stack gap="sm">
@@ -139,7 +281,17 @@ export function QrScanner({ onScan, locked = false, autoStart = true }: QrScanne
 
       {error ? (
         <Alert color="red" icon={<IconCameraOff size={18} />} title="Câmera indisponível">
-          {error}
+          <Stack gap="sm">
+            <Text size="sm">{error}</Text>
+            <Button
+              variant="light"
+              color="red"
+              leftSection={<IconScan size={16} />}
+              onClick={handleActivate}
+            >
+              Tentar novamente
+            </Button>
+          </Stack>
         </Alert>
       ) : (
         <>
@@ -159,6 +311,12 @@ export function QrScanner({ onScan, locked = false, autoStart = true }: QrScanne
           ) : null}
         </>
       )}
+
+      <Center>
+        <Button variant="light" color="gray" onClick={handleDeactivate}>
+          Desativar câmera
+        </Button>
+      </Center>
     </Stack>
   );
 }
