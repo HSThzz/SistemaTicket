@@ -12,7 +12,7 @@ import {
   ReservationStatus,
   UserRole,
 } from "../../src/shared/kernel/enums";
-import { PaymentService } from "../../src/modules/payment/application/PaymentService";
+import { expireUnpaidOrderByReservationId } from "../../src/modules/payment/application/services/expireUnpaidOrderByReservationId";
 import { ReservationExpiryWorker } from "../../src/modules/sales/infrastructure/workers/ReservationExpiryWorker";
 import {
   createPublishedEventWithLot,
@@ -29,11 +29,9 @@ import {
 
 describe("Order expiry integration", () => {
   let ctx: TestContext;
-  let paymentService: PaymentService;
 
   before(async () => {
     ctx = await setupTestContext();
-    paymentService = new PaymentService(ctx.dataSource, ctx.redis);
   });
 
   after(async () => {
@@ -78,21 +76,22 @@ describe("Order expiry integration", () => {
 
     const reservationId = reserveResponse.body.reservation.id as string;
 
-    const awaitingPayment = await pollReservationPhase(
+    const pendingPayment = await pollReservationPhase(
       ctx.agent,
       clientToken,
       reservationId,
-      "AWAITING_PAYMENT",
+      "PENDING_PAYMENT",
     );
 
-    const orderId = (awaitingPayment.order as { id: string }).id;
+    const orderId = (pendingPayment.order as { id: string }).id;
 
     const lotBeforeExpiry = await ctx.dataSource
       .getRepository(TicketLot)
       .findOneByOrFail({ id: lot.id });
     assert.equal(lotBeforeExpiry.availableQuantity, initialStock - quantity);
 
-    const expired = await paymentService.expireUnpaidOrderByReservationId(
+    const expired = await expireUnpaidOrderByReservationId(
+      ctx.redis,
       reservationId,
     );
     assert.equal(expired, true);
@@ -126,11 +125,7 @@ describe("Order expiry integration", () => {
   });
 
   it("expires via ReservationExpiryWorker when Redis reservation TTL fires", async () => {
-    const expiryWorker = new ReservationExpiryWorker(
-      ctx.dataSource,
-      ctx.redis,
-      paymentService,
-    );
+    const expiryWorker = new ReservationExpiryWorker(ctx.redis);
     await expiryWorker.start();
 
     try {
@@ -171,7 +166,7 @@ describe("Order expiry integration", () => {
         ctx.agent,
         clientToken,
         reservationId,
-        "AWAITING_PAYMENT",
+        "PENDING_PAYMENT",
       );
 
       const reservationKey = `${RESERVATION_KEY_PREFIX}${reservationId}`;

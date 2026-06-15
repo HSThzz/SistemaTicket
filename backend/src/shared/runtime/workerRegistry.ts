@@ -6,10 +6,12 @@
 import type { ReservationExpiryWorker } from "../../modules/sales/infrastructure/workers/ReservationExpiryWorker";
 import type { ReservationPersistenceWorker } from "../../modules/sales/infrastructure/workers/ReservationPersistenceWorker";
 import type { StockReconciliationWorker } from "../../modules/sales/infrastructure/workers/StockReconciliationWorker";
+import type { PaymentProcessingWorker } from "../../modules/payment/infrastructure/workers/PaymentProcessingWorker";
 
 let persistenceWorker: ReservationPersistenceWorker | null = null;
 let expiryWorker: ReservationExpiryWorker | null = null;
 let stockReconciliationWorker: StockReconciliationWorker | null = null;
+let paymentProcessingWorker: PaymentProcessingWorker | null = null;
 
 /**
  * Registra ou remove a instância do worker de persistência (usado no health check).
@@ -65,4 +67,20 @@ export function setStockReconciliationWorker(
  */
 export function getStockReconciliationWorker(): StockReconciliationWorker | null {
   return stockReconciliationWorker;
+}
+
+/**
+ * Registra ou remove a instância do worker de processamento de pagamentos.
+ */
+export function setPaymentProcessingWorker(
+  worker: PaymentProcessingWorker | null,
+): void {
+  paymentProcessingWorker = worker;
+}
+
+/**
+ * Retorna o worker de processamento de pagamentos registrado, se existir.
+ */
+export function getPaymentProcessingWorker(): PaymentProcessingWorker | null {
+  return paymentProcessingWorker;
 }

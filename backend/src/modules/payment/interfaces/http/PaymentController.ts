@@ -25,8 +25,7 @@ import {
   isMercadoPagoPanelTestRequest,
   isMercadoPagoWebhookRequest,
 } from "../../infrastructure/gateways/mercadoPagoWebhook";
-import { handleMercadoPagoNotification } from "../../application/services/handleMercadoPagoNotification";
-import { handleWebhook } from "../../application/services/handleWebhook";
+import { enqueuePaymentJob } from "../../application/commands/enqueuePaymentJob";
 import { createOrderPixPayment } from "../../application/services/createOrderPixPayment";
 import { getPaymentConfig } from "../../application/services/getPaymentConfig";
 import { processCardPayment } from "../../application/services/processCardPayment";
@@ -223,14 +222,17 @@ export class PaymentController {
     });
 
     try {
-      await handleWebhook(redis, payload, paymentGateway);
+      await enqueuePaymentJob(redis, {
+        kind: "webhook",
+        payload,
+      });
 
-      logger.info(CONTEXT, "Webhook processed successfully", {
+      logger.info(CONTEXT, "Webhook queued for async processing", {
         event: payload.event,
         orderId: payload.data.orderId,
       });
 
-      res.status(200).json({ received: true });
+      res.status(202).json({ received: true, queued: true });
     } catch (error) {
       this.handleWebhookError(res, payload, error);
     }
@@ -263,16 +265,16 @@ export class PaymentController {
     });
 
     try {
-      const result = await handleMercadoPagoNotification(redis,
+      await enqueuePaymentJob(redis, {
+        kind: "mercadopago",
         paymentId,
-        paymentGateway,
-      );
+      });
 
-      res.status(200).json({
+      res.status(202).json({
         received: true,
+        queued: true,
         provider: "mercadopago",
         paymentId,
-        result,
       });
     } catch (error) {
       this.handleWebhookError(

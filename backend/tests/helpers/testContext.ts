@@ -8,10 +8,11 @@ import { createApp } from "../../src/app";
 import { AppDataSource } from "../../src/shared/infrastructure/config/data-source";
 import { getRedis, getRedisWorker, closeRedisConnections } from "../../src/shared/infrastructure/config/redis";
 import {
+  setPaymentProcessingWorker,
   setReservationExpiryWorker,
   setReservationPersistenceWorker,
 } from "../../src/shared/runtime/workerRegistry";
-import { PaymentService } from "../../src/modules/payment/application/PaymentService";
+import { PaymentProcessingWorker } from "../../src/modules/payment/infrastructure/workers/PaymentProcessingWorker";
 import { ReservationExpiryWorker } from "../../src/modules/sales/infrastructure/workers/ReservationExpiryWorker";
 import { ReservationPersistenceWorker } from "../../src/modules/sales/infrastructure/workers/ReservationPersistenceWorker";
 
@@ -21,11 +22,13 @@ export interface TestContext {
   dataSource: DataSource;
   redis: Redis;
   persistenceWorker: ReservationPersistenceWorker | null;
+  paymentProcessingWorker: PaymentProcessingWorker | null;
   expiryWorker: ReservationExpiryWorker | null;
 }
 
 export interface SetupTestContextOptions {
   startWorker?: boolean;
+  startPaymentWorker?: boolean;
   startExpiryWorker?: boolean;
 }
 
@@ -33,6 +36,7 @@ export async function setupTestContext(
   options: SetupTestContextOptions = {},
 ): Promise<TestContext> {
   const startWorker = options.startWorker ?? true;
+  const startPaymentWorker = options.startPaymentWorker ?? true;
   const startExpiryWorker = options.startExpiryWorker ?? false;
 
   if (!AppDataSource.isInitialized) {
@@ -44,25 +48,23 @@ export async function setupTestContext(
   await redis.ping();
 
   let persistenceWorker: ReservationPersistenceWorker | null = null;
+  let paymentProcessingWorker: PaymentProcessingWorker | null = null;
   let expiryWorker: ReservationExpiryWorker | null = null;
-  const paymentService = new PaymentService(AppDataSource, redis);
 
   if (startWorker) {
-    persistenceWorker = new ReservationPersistenceWorker(
-      AppDataSource,
-      getRedisWorker(),
-      paymentService,
-    );
+    persistenceWorker = new ReservationPersistenceWorker(getRedisWorker());
     await persistenceWorker.start();
     setReservationPersistenceWorker(persistenceWorker);
   }
 
+  if (startPaymentWorker) {
+    paymentProcessingWorker = new PaymentProcessingWorker(getRedisWorker());
+    await paymentProcessingWorker.start();
+    setPaymentProcessingWorker(paymentProcessingWorker);
+  }
+
   if (startExpiryWorker) {
-    expiryWorker = new ReservationExpiryWorker(
-      AppDataSource,
-      redis,
-      paymentService,
-    );
+    expiryWorker = new ReservationExpiryWorker(redis);
     await expiryWorker.start();
     setReservationExpiryWorker(expiryWorker);
   }
@@ -75,6 +77,7 @@ export async function setupTestContext(
     dataSource: AppDataSource,
     redis,
     persistenceWorker,
+    paymentProcessingWorker,
     expiryWorker,
   };
 }
@@ -82,6 +85,8 @@ export async function setupTestContext(
 export async function teardownTestContext(ctx: TestContext): Promise<void> {
   await ctx.expiryWorker?.stop();
   setReservationExpiryWorker(null);
+  await ctx.paymentProcessingWorker?.stop();
+  setPaymentProcessingWorker(null);
   await ctx.persistenceWorker?.stop();
   setReservationPersistenceWorker(null);
 

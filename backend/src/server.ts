@@ -11,6 +11,7 @@ import { getPaymentGatewayProvider } from "./modules/payment/infrastructure/gate
 import { Logger } from "./shared/infrastructure/config/logger";
 import { closeRedisConnections, getRedis, getRedisWorker } from "./shared/infrastructure/config/redis";
 import {
+  setPaymentProcessingWorker,
   setReservationExpiryWorker,
   setReservationPersistenceWorker,
   setStockReconciliationWorker,
@@ -18,6 +19,7 @@ import {
 import { ReservationExpiryWorker } from "./modules/sales/infrastructure/workers/ReservationExpiryWorker";
 import { ReservationPersistenceWorker } from "./modules/sales/infrastructure/workers/ReservationPersistenceWorker";
 import { StockReconciliationWorker } from "./modules/sales/infrastructure/workers/StockReconciliationWorker";
+import { PaymentProcessingWorker } from "./modules/payment/infrastructure/workers/PaymentProcessingWorker";
 
 const logger = Logger.getInstance();
 const CONTEXT = "Server";
@@ -25,6 +27,7 @@ const CONTEXT = "Server";
 let expiryWorker: ReservationExpiryWorker | null = null;
 let persistenceWorker: ReservationPersistenceWorker | null = null;
 let stockReconciliationWorker: StockReconciliationWorker | null = null;
+let paymentProcessingWorker: PaymentProcessingWorker | null = null;
 
 /**
  * Inicializa dependências (PostgreSQL, Redis), workers de reserva e sobe o HTTP server.
@@ -107,6 +110,18 @@ async function bootstrap(): Promise<void> {
     logger.info(CONTEXT, "Stock reconciliation worker disabled (interval <= 0)");
   }
 
+  paymentProcessingWorker = new PaymentProcessingWorker(getRedisWorker());
+
+  try {
+    await paymentProcessingWorker.start();
+    setPaymentProcessingWorker(paymentProcessingWorker);
+  } catch (error) {
+    logger.error(CONTEXT, "Failed to start payment processing worker", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    process.exit(1);
+  }
+
   const app = createApp();
 
   app.listen(env.port, () => {
@@ -135,6 +150,10 @@ async function shutdown(): Promise<void> {
   await stockReconciliationWorker?.stop();
 
   setStockReconciliationWorker(null);
+
+  await paymentProcessingWorker?.stop();
+
+  setPaymentProcessingWorker(null);
 
   await AppDataSource.destroy();
 

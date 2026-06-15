@@ -16,10 +16,12 @@ import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
   InsufficientStockError,
+  ReserveUserNotFoundError,
   TicketLotNotFoundError,
 } from "../../domain/errors/PurchaseError";
 import { reserveTicketsSchema } from "../../validators/schema/reserveTicketsSchema";
 import { findOneTicketLotById } from "../queries/findOneTicketLotById";
+import { findOneUserById } from "../../../identity/application/queries/findOneUserById";
 import type { ReservationCachePayload } from "./types";
 
 const CONTEXT = "reserveTickets";
@@ -58,6 +60,11 @@ export async function reserveTickets(
 ) {
   const logger = Logger.getInstance();
   const data = validateSchema(reserveTicketsSchema, { userId, ticketLotId, quantity });
+
+  const user = await findOneUserById(data.userId);
+  if (!user) {
+    throw new ReserveUserNotFoundError(data.userId);
+  }
 
   await ensureRedisStockInitialized(redis, data.ticketLotId, logger);
 

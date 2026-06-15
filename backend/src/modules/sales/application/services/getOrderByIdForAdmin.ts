@@ -3,12 +3,12 @@ import { OrderStatus } from "../../../../shared/kernel/enums";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { orderIdSchema } from "../../validators/schema/orderIdSchema";
 import { OrderNotFoundError } from "../../../payment/domain/errors/PaymentError";
-import { resolvePixPaymentDetails } from "../../../payment/application/services/resolvePixPaymentDetails";
+import { resolvePixPaymentDetailsReadOnly } from "../../../payment/application/helpers/resolvePixPaymentDetailsReadOnly";
 import { findOneOrderByIdForAdmin } from "../queries/findOneOrderByIdForAdmin";
 
 export async function getOrderByIdForAdmin(
   orderId: string,
-  redis?: Redis,
+  _redis?: Redis,
 ) {
   const id = validateSchema(orderIdSchema, orderId);
   const order = await findOneOrderByIdForAdmin(id);
@@ -20,7 +20,7 @@ export async function getOrderByIdForAdmin(
   const event = order.reservation?.ticketLot?.event;
   const payment =
     order.status === OrderStatus.PENDING
-      ? await resolvePixPaymentDetails(redis, order)
+      ? resolvePixPaymentDetailsReadOnly(order)
       : null;
 
   return {

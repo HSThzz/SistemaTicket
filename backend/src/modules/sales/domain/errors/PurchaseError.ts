@@ -101,3 +101,13 @@ export class ReservationAccessDeniedError extends PurchaseError {
     this.name = "ReservationAccessDeniedError";
   }
 }
+
+/**
+ * Usuário da reserva não existe mais no banco (ex.: token após reset do DB).
+ */
+export class ReserveUserNotFoundError extends PurchaseError {
+  constructor(userId: string) {
+    super(`User ${userId} not found`, "USER_NOT_FOUND");
+    this.name = "ReserveUserNotFoundError";
+  }
+}

@@ -7,6 +7,7 @@ import {
   createUser,
   login,
   pollReservationPhase,
+  pollUntilAwaitingPayment,
 } from "../helpers/fixtures";
 import {
   resetTestState,
@@ -63,11 +64,10 @@ describe("Purchase flow integration", () => {
     const reservationId = reserveResponse.body.reservation.id as string;
     assert.ok(reservationId);
 
-    const awaitingPayment = await pollReservationPhase(
+    const awaitingPayment = await pollUntilAwaitingPayment(
       ctx.agent,
       clientToken,
       reservationId,
-      "AWAITING_PAYMENT",
     );
 
     const order = awaitingPayment.order as { id: string; status: string };
@@ -136,11 +136,10 @@ describe("Purchase flow integration", () => {
       .expect(201);
 
     const reservationId = reserveResponse.body.reservation.id as string;
-    const status = await pollReservationPhase(
+    const status = await pollUntilAwaitingPayment(
       ctx.agent,
       clientToken,
       reservationId,
-      "AWAITING_PAYMENT",
     );
 
     const orderId = (status.order as { id: string }).id;

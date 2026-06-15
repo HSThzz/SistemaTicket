@@ -120,3 +120,41 @@ export async function pollReservationPhase(
 
   throw new Error(`Timeout waiting for reservation phase ${expectedPhase}`);
 }
+
+/**
+ * Aguarda persistência do pedido, gera PIX sob demanda e poll até AWAITING_PAYMENT.
+ * Espelha o fluxo do checkout (PENDING_PAYMENT → POST /payments/pix → AWAITING_PAYMENT).
+ */
+export async function pollUntilAwaitingPayment(
+  agent: ReturnType<typeof import("supertest")>,
+  token: string,
+  reservationId: string,
+  timeoutMs = 15_000,
+): Promise<Record<string, unknown>> {
+  const pendingPayment = await pollReservationPhase(
+    agent,
+    token,
+    reservationId,
+    "PENDING_PAYMENT",
+    timeoutMs,
+  );
+
+  const order = pendingPayment.order as { id: string } | null;
+  if (!order?.id) {
+    throw new Error("Order not available after PENDING_PAYMENT phase");
+  }
+
+  await agent
+    .post("/payments/pix")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ orderId: order.id })
+    .expect(200);
+
+  return pollReservationPhase(
+    agent,
+    token,
+    reservationId,
+    "AWAITING_PAYMENT",
+    timeoutMs,
+  );
+}

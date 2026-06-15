@@ -3,7 +3,7 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../src/shared/infrastructure/config/constants";
 import { UserRole } from "../../src/shared/kernel/enums";
 import { InsufficientStockError } from "../../src/modules/sales/domain/errors/PurchaseError";
-import { PurchaseService } from "../../src/modules/sales/application/PurchaseService";
+import { reserveTickets } from "../../src/modules/sales/application/services/reserveTickets";
 import { createPublishedEventWithLot, createUser } from "../helpers/fixtures";
 import {
   resetTestState,
@@ -14,11 +14,9 @@ import {
 
 describe("Stock concurrency", () => {
   let ctx: TestContext;
-  let purchaseService: PurchaseService;
 
   before(async () => {
     ctx = await setupTestContext({ startWorker: false });
-    purchaseService = new PurchaseService(ctx.dataSource, ctx.redis);
   });
 
   after(async () => {
@@ -58,7 +56,7 @@ describe("Stock concurrency", () => {
 
     const results = await Promise.allSettled(
       Array.from({ length: attempts }, () =>
-        purchaseService.reserveTickets(user.id, lot.id, 1),
+        reserveTickets(ctx.redis, user.id, lot.id, 1),
       ),
     );
 
@@ -108,14 +106,14 @@ describe("Stock concurrency", () => {
     let totalReserved = 0;
 
     for (let index = 0; index < stock; index += 1) {
-      const result = await purchaseService.reserveTickets(user.id, lot.id, 1);
+      const result = await reserveTickets(ctx.redis, user.id, lot.id, 1);
       totalReserved += result.quantity;
     }
 
     assert.equal(totalReserved, stock);
 
     await assert.rejects(
-      () => purchaseService.reserveTickets(user.id, lot.id, 1),
+      () => reserveTickets(ctx.redis, user.id, lot.id, 1),
       InsufficientStockError,
     );
 

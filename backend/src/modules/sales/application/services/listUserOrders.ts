@@ -2,7 +2,11 @@ import type Redis from "ioredis";
 import { OrderStatus } from "../../../../shared/kernel/enums";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { userIdSchema } from "../../../identity/validators/schema/userIdSchema";
-import { resolvePixPaymentDetails } from "../../../payment/application/services/resolvePixPaymentDetails";
+import {
+  batchLoadPixPaymentsFromCache,
+  resolvePixPaymentDetailsReadOnly,
+} from "../../../payment/application/helpers/resolvePixPaymentDetailsReadOnly";
+import type { PixPaymentDetails } from "../../../payment/application/types";
 import { listUserOrdersQuerySchema } from "../../validators/schema/listUserOrdersQuerySchema";
 import { findManyOrdersByUserId } from "../queries/findManyOrdersByUserId";
 
@@ -14,7 +18,7 @@ export interface OrderListItem {
   reservationId: string;
   eventId: string | null;
   eventTitle: string | null;
-  payment: Awaited<ReturnType<typeof resolvePixPaymentDetails>>;
+  payment: PixPaymentDetails | null;
 }
 
 export interface ListUserOrdersResult {
@@ -23,14 +27,17 @@ export interface ListUserOrdersResult {
   hasNextPage: boolean;
 }
 
-async function mapOrderToListItem(
+function mapOrderToListItem(
   order: Awaited<ReturnType<typeof findManyOrdersByUserId>>["orders"][number],
-  redis?: Redis,
-): Promise<OrderListItem> {
+  paymentCache: Map<string, PixPaymentDetails>,
+): OrderListItem {
   const event = order.reservation?.ticketLot?.event;
   const payment =
     order.status === OrderStatus.PENDING
-      ? await resolvePixPaymentDetails(redis, order)
+      ? resolvePixPaymentDetailsReadOnly(
+          order,
+          paymentCache.get(order.reservationId),
+        )
       : null;
 
   return {
@@ -61,12 +68,17 @@ export async function listUserOrders(
     filters,
   });
 
-  const mappedOrders = await Promise.all(
-    orders.map((order) => mapOrderToListItem(order, redis)),
-  );
+  const pendingReservationIds = orders
+    .filter((order) => order.status === OrderStatus.PENDING)
+    .map((order) => order.reservationId);
+
+  const paymentCache =
+    redis && pendingReservationIds.length > 0
+      ? await batchLoadPixPaymentsFromCache(redis, pendingReservationIds)
+      : new Map<string, PixPaymentDetails>();
 
   return {
-    orders: mappedOrders,
+    orders: orders.map((order) => mapOrderToListItem(order, paymentCache)),
     nextCursor,
     hasNextPage,
   };

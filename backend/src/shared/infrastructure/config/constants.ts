@@ -40,3 +40,6 @@ export const LOCK_STOCK_INIT_KEY_PREFIX = "lock:stock:init:";
 
 /** Prefixo de lock distribuído para cobrança de pedido (cartão/PIX). */
 export const LOCK_ORDER_PAYMENT_KEY_PREFIX = "lock:order:payment:";
+
+/** Chave da fila LIST de processamento assíncrono de webhooks de pagamento. */
+export const PAYMENT_PROCESS_QUEUE_KEY = "queue:payment:process";

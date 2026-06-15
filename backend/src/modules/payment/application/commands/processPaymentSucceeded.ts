@@ -90,28 +90,29 @@ export async function processPaymentSucceeded(
     reservation.status = ReservationStatus.COMPLETED;
     await manager.save(reservation);
 
-    const tickets: Ticket[] = [];
-
-    for (let index = 0; index < reservation.quantity; index += 1) {
-      const ticketData: CreateTicketData = {
+    const ticketsData: CreateTicketData[] = Array.from(
+      { length: reservation.quantity },
+      () => ({
         orderId: order.id,
         ticketLotId: reservation.ticketLotId,
         ownerName: user.name,
         ownerDocument: user.document,
         uniqueCode: randomBytes(32).toString("hex"),
         status: TicketStatus.ACTIVE,
-      };
-      const ticket = manager.create(Ticket, ticketData);
+      }),
+    );
 
-      tickets.push(await manager.save(ticket));
-    }
+    const insertResult = await manager.insert(Ticket, ticketsData);
+    const ticketIds = insertResult.identifiers.map(
+      (identifier) => identifier.id as string,
+    );
 
     return {
       id: order.id,
       reservationId: reservation.id,
       paymentGatewayId: data.paymentGatewayId,
-      ticketsCreated: tickets.length,
-      ticketIds: tickets.map((ticket) => ticket.id),
+      ticketsCreated: ticketsData.length,
+      ticketIds,
     };
   });
 }

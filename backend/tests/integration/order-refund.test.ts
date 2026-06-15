@@ -11,6 +11,7 @@ import {
   createUser,
   login,
   pollReservationPhase,
+  pollUntilAwaitingPayment,
 } from "../helpers/fixtures";
 import {
   resetTestState,
@@ -78,11 +79,10 @@ describe("Order refund integration", () => {
 
     const reservationId = reserveResponse.body.reservation.id as string;
 
-    const awaitingPayment = await pollReservationPhase(
+    const awaitingPayment = await pollUntilAwaitingPayment(
       ctx.agent,
       clientToken,
       reservationId,
-      "AWAITING_PAYMENT",
     );
 
     const order = awaitingPayment.order as { id: string; status: string };
@@ -108,7 +108,7 @@ describe("Order refund integration", () => {
       .set("x-webhook-timestamp", signed.timestamp)
       .set("x-webhook-signature", signed.signature)
       .send(JSON.parse(signed.body))
-      .expect(200);
+      .expect(202);
 
     await pollReservationPhase(ctx.agent, clientToken, reservationId, "PAID");
 
@@ -176,11 +176,10 @@ describe("Order refund integration", () => {
       .expect(201);
 
     const reservationId = reserveResponse.body.reservation.id as string;
-    const awaitingPayment = await pollReservationPhase(
+    const awaitingPayment = await pollUntilAwaitingPayment(
       ctx.agent,
       clientToken,
       reservationId,
-      "AWAITING_PAYMENT",
     );
 
     const orderId = (awaitingPayment.order as { id: string }).id;

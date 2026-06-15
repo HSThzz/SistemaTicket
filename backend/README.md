@@ -8,7 +8,7 @@ API backend para venda de ingressos com **reserva atômica no Redis**, persistê
 - **PostgreSQL** + **TypeORM** (migrations)
 - **Redis** (estoque, cache, filas, rate limit, TTL de reservas)
 - **JWT** para autenticação
-- Workers em processo: persistência de reservas + expiração
+- Workers em processo: persistência de reservas, processamento de webhooks e expiração
 
 ## Arquitetura (fluxo de compra)
 
@@ -27,14 +27,22 @@ sequenceDiagram
 
   W->>R: BRPOP fila persist
   W->>PG: reservation + order
-  W->>GW: createPixCharge
-  W->>R: cache payment
+  W->>R: cache orderId
 
   C->>API: GET /purchases/reservations/:id (poll)
-  API-->>C: AWAITING_PAYMENT + pixCopyPaste
+  API-->>C: PENDING_PAYMENT
+
+  C->>API: POST /payments/pix
+  API->>GW: createPixCharge
+  API->>R: cache payment
+  API-->>C: pixCopyPaste
+
+  C->>API: GET /purchases/reservations/:id (poll)
+  API-->>C: AWAITING_PAYMENT
 
   GW->>API: POST /payments/webhook
-  API->>PG: order PAID + tickets
+  API->>R: enfileira processamento
+  API-->>GW: 202 queued
 ```
 
 ## Início rápido
@@ -269,6 +277,8 @@ Authorization: Bearer <token>
 **Fases do poll (`phase`):**
 `PENDING_PERSISTENCE` → `PENDING_PAYMENT` → `AWAITING_PAYMENT` → `PAID` | `EXPIRED` | `FAILED`
 
+Após `PENDING_PAYMENT`, o cliente deve chamar `POST /payments/pix` (ou pagar com cartão) para gerar a cobrança e avançar para `AWAITING_PAYMENT`.
+
 TTL da reserva e do PIX: **15 minutos**. Se o pagamento não for confirmado nesse prazo, o `ReservationExpiryWorker` marca o pedido como `FAILED`, expira a reserva e devolve o estoque (Redis + Postgres).
 
 ---
@@ -277,7 +287,8 @@ TTL da reserva e do PIX: **15 minutos**. Se o pagamento não for confirmado ness
 
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
-| POST | `/payments/webhook` | secret | Webhook do gateway |
+| POST | `/payments/pix` | JWT | Gera cobrança PIX sob demanda (checkout) |
+| POST | `/payments/webhook` | secret | Webhook do gateway (enfileira processamento, responde `202`) |
 | POST | `/payments/dev/simulate` | JWT | Simula pagamento (só `development` + gateway `simulated`) |
 
 ### Gateway
@@ -525,8 +536,10 @@ src/
 5. Cliente registra/login → `POST /auth/register` / `POST /auth/login`
 6. Cliente lista eventos: `GET /events`
 7. Cliente reserva: `POST /purchases/reserve`
-8. Cliente faz poll: `GET /purchases/reservations/:id` até `AWAITING_PAYMENT`
-9. Gateway confirma pagamento: `POST /payments/webhook`
-10. Cliente vê ingressos: `GET /tickets/me`
-11. Cliente adiciona à wallet: `GET /wallet/apple/:ticketId`
-12. No dia do evento: `POST /tickets/check-in`
+8. Cliente faz poll: `GET /purchases/reservations/:id` até `PENDING_PAYMENT`
+9. Cliente gera PIX: `POST /payments/pix` com `{ "orderId": "<uuid>" }`
+10. Cliente faz poll até `AWAITING_PAYMENT` (exibe QR/copia-e-cola)
+11. Gateway confirma pagamento: `POST /payments/webhook` (processamento assíncrono)
+12. Cliente vê ingressos: `GET /tickets/me`
+13. Cliente adiciona à wallet: `GET /wallet/apple/:ticketId`
+14. No dia do evento: `POST /tickets/check-in`

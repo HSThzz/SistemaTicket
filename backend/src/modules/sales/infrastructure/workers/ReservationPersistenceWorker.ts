@@ -174,6 +174,12 @@ export class ReservationPersistenceWorker {
           ticketLotId: payload.ticketLotId,
         });
         await this.compensateRedis(stockKey, reservationKey, payload.quantity);
+      } else if (result.status === "user_not_found") {
+        this.logger.error(CONTEXT, "User not found during persistence — compensating Redis", {
+          reservationId: payload.reservationId,
+          userId: payload.userId,
+        });
+        await this.compensateRedis(stockKey, reservationKey, payload.quantity);
       } else {
         orderId = result.orderId;
         this.logger.info(CONTEXT, "Reservation persisted successfully", {

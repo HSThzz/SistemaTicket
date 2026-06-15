@@ -5,7 +5,7 @@ import {
   TICKET_LOT_STOCK_KEY_PREFIX,
 } from "../../src/shared/infrastructure/config/constants";
 import { UserRole } from "../../src/shared/kernel/enums";
-import { StockReconciliationService } from "../../src/modules/sales/application/StockReconciliationService";
+import { reconcileAllStock } from "../../src/modules/sales/application/services/reconcileAllStock";
 import { createPublishedEventWithLot, createUser } from "../helpers/fixtures";
 import {
   resetTestState,
@@ -16,11 +16,9 @@ import {
 
 describe("Stock reconciliation", () => {
   let ctx: TestContext;
-  let service: StockReconciliationService;
 
   before(async () => {
     ctx = await setupTestContext({ startWorker: false });
-    service = new StockReconciliationService(ctx.dataSource, ctx.redis);
   });
 
   after(async () => {
@@ -44,7 +42,7 @@ describe("Stock reconciliation", () => {
 
     await ctx.redis.set(`${TICKET_LOT_STOCK_KEY_PREFIX}${lot.id}`, "999");
 
-    const report = await service.reconcileAll();
+    const report = await reconcileAllStock(ctx.redis);
 
     assert.equal(report.correctedCount, 1);
     assert.equal(report.lots[0]?.expectedRedis, lot.availableQuantity);
@@ -79,7 +77,7 @@ describe("Stock reconciliation", () => {
       }),
     );
 
-    const report = await service.reconcileAll();
+    const report = await reconcileAllStock(ctx.redis);
 
     assert.equal(report.correctedCount, 0);
     assert.equal(report.lots[0]?.expectedRedis, expectedRedis);
@@ -97,7 +95,7 @@ describe("Stock reconciliation", () => {
 
     const { lot } = await createPublishedEventWithLot(ctx.dataSource, producer.id, 15);
 
-    const report = await service.reconcileAll();
+    const report = await reconcileAllStock(ctx.redis);
 
     assert.equal(report.correctedCount, 1);
 

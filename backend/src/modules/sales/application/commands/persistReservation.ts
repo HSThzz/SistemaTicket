@@ -6,6 +6,7 @@
 import { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
 import { Reservation } from "../../../../shared/infrastructure/persistence/entities/Reservation";
 import { TicketLot } from "../../../../shared/infrastructure/persistence/entities/TicketLot";
+import { User } from "../../../../shared/infrastructure/persistence/entities/User";
 import { OrderStatus, ReservationStatus } from "../../../../shared/kernel/enums";
 import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
@@ -32,6 +33,7 @@ export type PersistReservationResult =
   | Prettify<{ status: "created"; orderId: Order["id"] }>
   | Prettify<{ status: "duplicate"; orderId: Order["id"] | null }>
   | { status: "lot_not_found" }
+  | { status: "user_not_found" }
   | { status: "negative_stock" };
 
 export async function persistReservation(payload: PersistReservationPayload,
@@ -55,6 +57,14 @@ export async function persistReservation(payload: PersistReservationPayload,
 
     if (!lot) {
       return { status: "lot_not_found" };
+    }
+
+    const user = await manager.findOne(User, {
+      where: { id: payload.userId },
+    });
+
+    if (!user) {
+      return { status: "user_not_found" };
     }
 
     lot.availableQuantity -= payload.quantity;
