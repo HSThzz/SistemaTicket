@@ -73,3 +73,41 @@ export async function releaseLock(
 ): Promise<void> {
   await redis.eval(RELEASE_LOCK_SCRIPT, 1, handle.key, handle.token);
 }
+
+/**
+ * Executa `fn` sob um lock distribuído, liberando-o ao final (sucesso ou erro).
+ * @param redis - Cliente Redis.
+ * @param key - Chave do lock.
+ * @param ttlMs - Tempo de vida do lock em milissegundos.
+ * @param fn - Operação crítica a serializar.
+ * @param maxAttempts - Tentativas de aquisição do lock.
+ * @returns Resultado de `fn`.
+ * @throws {LockNotAcquiredError} Se o lock não puder ser adquirido.
+ */
+export async function withLock<T>(
+  redis: Redis,
+  key: string,
+  ttlMs: number,
+  fn: () => Promise<T>,
+  maxAttempts = 8,
+): Promise<T> {
+  const handle = await acquireLock(redis, key, ttlMs, maxAttempts);
+
+  if (!handle) {
+    throw new LockNotAcquiredError(key);
+  }
+
+  try {
+    return await fn();
+  } finally {
+    await releaseLock(redis, handle);
+  }
+}
+
+/** Falha ao adquirir lock distribuído após todas as tentativas. */
+export class LockNotAcquiredError extends Error {
+  constructor(public readonly lockKey: string) {
+    super(`Failed to acquire distributed lock: ${lockKey}`);
+    this.name = "LockNotAcquiredError";
+  }
+}

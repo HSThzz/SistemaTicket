@@ -4,6 +4,8 @@
  */
 
 import type Redis from "ioredis";
+import { withLock } from "../../../../shared/application/DistributedLock";
+import { LOCK_ORDER_PAYMENT_KEY_PREFIX } from "../../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { OrderStatus } from "../../../../shared/kernel/enums";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
@@ -72,79 +74,92 @@ export async function processCardPayment(
     throw new CardPaymentUnsupportedError();
   }
 
-  const order = await findOneOrderByIdWithPaymentRelations(data.orderId);
+  const executeCharge = async (): Promise<CardPaymentResult> => {
+    const order = await findOneOrderByIdWithPaymentRelations(data.orderId);
 
-  if (!order?.user || order.userId !== data.requesterUserId) {
-    throw new OrderNotFoundError(data.orderId);
-  }
+    if (!order?.user || order.userId !== data.requesterUserId) {
+      throw new OrderNotFoundError(data.orderId);
+    }
 
-  if (order.status !== OrderStatus.PENDING) {
-    throw new PaymentAlreadyProcessedError(data.orderId, order.status);
-  }
+    if (order.status !== OrderStatus.PENDING) {
+      throw new PaymentAlreadyProcessedError(data.orderId, order.status);
+    }
 
-  logger.info(CONTEXT, "Starting credit card charge", {
-    orderId: order.id,
-    paymentMethodId: data.paymentMethodId,
-    issuerId: data.issuerId,
-    installments: data.installments,
-  });
+    logger.info(CONTEXT, "Starting credit card charge", {
+      orderId: order.id,
+      paymentMethodId: data.paymentMethodId,
+      issuerId: data.issuerId,
+      installments: data.installments,
+    });
 
-  const charge = await gateway.createCardCharge({
-    orderId: order.id,
-    amountCents: order.totalPrice,
-    description: `Ingressos pedido ${order.id.slice(0, 8)}`,
-    token: data.token,
-    paymentMethodId: data.paymentMethodId,
-    issuerId: data.issuerId,
-    installments: data.installments,
-    payerEmail: normalizePayerEmail(data.payerEmail ?? order.user.email),
-    payerDocument: data.payerDocument ?? order.user.document,
-  });
+    const charge = await gateway.createCardCharge({
+      orderId: order.id,
+      amountCents: order.totalPrice,
+      description: `Ingressos pedido ${order.id.slice(0, 8)}`,
+      token: data.token,
+      paymentMethodId: data.paymentMethodId,
+      issuerId: data.issuerId,
+      installments: data.installments,
+      payerEmail: normalizePayerEmail(data.payerEmail ?? order.user.email),
+      payerDocument: data.payerDocument ?? order.user.document,
+    });
 
-  logger.info(CONTEXT, "Credit card charge created", {
-    orderId: order.id,
-    transactionId: charge.transactionId,
-    status: charge.status,
-    statusDetail: charge.statusDetail,
-  });
+    logger.info(CONTEXT, "Credit card charge created", {
+      orderId: order.id,
+      transactionId: charge.transactionId,
+      status: charge.status,
+      statusDetail: charge.statusDetail,
+    });
 
-  await updateOrder(order, { paymentGatewayId: charge.transactionId });
+    await updateOrder(order, { paymentGatewayId: charge.transactionId });
 
-  if (charge.status === "approved") {
-    await handleWebhook(
-      redis,
-      {
-        event: "payment.succeeded",
-        data: {
-          orderId: order.id,
-          transactionId: charge.transactionId,
-          paidAt: new Date().toISOString(),
+    if (charge.status === "approved") {
+      await handleWebhook(
+        redis,
+        {
+          event: "payment.succeeded",
+          data: {
+            orderId: order.id,
+            transactionId: charge.transactionId,
+            paidAt: new Date().toISOString(),
+          },
         },
-      },
-      gateway,
-    );
+        gateway,
+      );
+
+      return {
+        orderId: order.id,
+        transactionId: charge.transactionId,
+        status: "approved",
+        statusDetail: charge.statusDetail,
+      };
+    }
+
+    if (charge.status === "pending") {
+      return {
+        orderId: order.id,
+        transactionId: charge.transactionId,
+        status: "pending",
+        statusDetail: charge.statusDetail,
+      };
+    }
 
     return {
       orderId: order.id,
       transactionId: charge.transactionId,
-      status: "approved",
+      status: "rejected",
       statusDetail: charge.statusDetail,
     };
-  }
-
-  if (charge.status === "pending") {
-    return {
-      orderId: order.id,
-      transactionId: charge.transactionId,
-      status: "pending",
-      statusDetail: charge.statusDetail,
-    };
-  }
-
-  return {
-    orderId: order.id,
-    transactionId: charge.transactionId,
-    status: "rejected",
-    statusDetail: charge.statusDetail,
   };
+
+  if (!redis) {
+    return executeCharge();
+  }
+
+  return withLock(
+    redis,
+    `${LOCK_ORDER_PAYMENT_KEY_PREFIX}${data.orderId}`,
+    30_000,
+    executeCharge,
+  );
 }

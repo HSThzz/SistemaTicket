@@ -1,5 +1,7 @@
 import type Redis from "ioredis";
+import { withLock } from "../../../../shared/application/DistributedLock";
 import {
+  LOCK_ORDER_PAYMENT_KEY_PREFIX,
   PAYMENT_CACHE_KEY_PREFIX,
   RESERVATION_TTL_SECONDS,
 } from "../../../../shared/infrastructure/config/constants";
@@ -20,45 +22,58 @@ export async function processOrderPayment(
   orderId: string,
   gateway: PaymentGateway = createPaymentGateway(),
 ) {
-  logger.info(CONTEXT, "Starting PIX charge creation", { orderId });
+  const executePixCharge = async () => {
+    logger.info(CONTEXT, "Starting PIX charge creation", { orderId });
 
-  const order = await findOneOrderByIdWithPaymentRelations(orderId);
+    const order = await findOneOrderByIdWithPaymentRelations(orderId);
 
-  if (!order?.user) {
-    throw new OrderNotFoundError(orderId);
+    if (!order?.user) {
+      throw new OrderNotFoundError(orderId);
+    }
+
+    const charge = await gateway.createPixCharge({
+      orderId: order.id,
+      amountCents: order.totalPrice,
+      description: `Ingressos pedido ${order.id.slice(0, 8)}`,
+      payerEmail: normalizePayerEmail(order.user.email),
+      payerFirstName: order.user.name.split(" ")[0] ?? order.user.name,
+      payerDocument: order.user.document,
+    });
+
+    await updateOrder(order, {
+      paymentGatewayId: charge.transactionId,
+      pixCopyPaste: charge.pixCopyPaste,
+      pixExpiresAt: charge.expiresAt,
+    });
+
+    logger.info(CONTEXT, "PIX charge created", {
+      orderId: order.id,
+      transactionId: charge.transactionId,
+      amountCents: order.totalPrice,
+      expiresAt: charge.expiresAt.toISOString(),
+    });
+
+    const details = buildPixPaymentDetails(order, charge);
+
+    if (redis) {
+      await redis.setex(
+        `${PAYMENT_CACHE_KEY_PREFIX}${order.reservationId}`,
+        RESERVATION_TTL_SECONDS,
+        JSON.stringify(details),
+      );
+    }
+
+    return details;
+  };
+
+  if (!redis) {
+    return executePixCharge();
   }
 
-  const charge = await gateway.createPixCharge({
-    orderId: order.id,
-    amountCents: order.totalPrice,
-    description: `Ingressos pedido ${order.id.slice(0, 8)}`,
-    payerEmail: normalizePayerEmail(order.user.email),
-    payerFirstName: order.user.name.split(" ")[0] ?? order.user.name,
-    payerDocument: order.user.document,
-  });
-
-  await updateOrder(order, {
-    paymentGatewayId: charge.transactionId,
-    pixCopyPaste: charge.pixCopyPaste,
-    pixExpiresAt: charge.expiresAt,
-  });
-
-  logger.info(CONTEXT, "PIX charge created", {
-    orderId: order.id,
-    transactionId: charge.transactionId,
-    amountCents: order.totalPrice,
-    expiresAt: charge.expiresAt.toISOString(),
-  });
-
-  const details = buildPixPaymentDetails(order, charge);
-
-  if (redis) {
-    await redis.setex(
-      `${PAYMENT_CACHE_KEY_PREFIX}${order.reservationId}`,
-      RESERVATION_TTL_SECONDS,
-      JSON.stringify(details),
-    );
-  }
-
-  return details;
+  return withLock(
+    redis,
+    `${LOCK_ORDER_PAYMENT_KEY_PREFIX}${orderId}`,
+    30_000,
+    executePixCharge,
+  );
 }

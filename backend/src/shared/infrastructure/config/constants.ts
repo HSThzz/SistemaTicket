@@ -34,3 +34,9 @@ export const PAYMENT_CACHE_KEY_PREFIX = "payment:reservation:";
 
 /** Prefixo do cache de pedido por reserva. */
 export const ORDER_CACHE_KEY_PREFIX = "order:reservation:";
+
+/** Prefixo de lock distribuído para inicialização de estoque de lote. */
+export const LOCK_STOCK_INIT_KEY_PREFIX = "lock:stock:init:";
+
+/** Prefixo de lock distribuído para cobrança de pedido (cartão/PIX). */
+export const LOCK_ORDER_PAYMENT_KEY_PREFIX = "lock:order:payment:";

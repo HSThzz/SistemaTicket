@@ -1,12 +1,17 @@
 import type Redis from "ioredis";
 import { randomUUID } from "node:crypto";
 import {
+  LOCK_STOCK_INIT_KEY_PREFIX,
   RESERVATION_KEY_PREFIX,
   RESERVATION_PERSIST_QUEUE_KEY,
   RESERVATION_TTL_MS,
   RESERVATION_TTL_SECONDS,
   TICKET_LOT_STOCK_KEY_PREFIX,
 } from "../../../../shared/infrastructure/config/constants";
+import {
+  acquireLock,
+  releaseLock,
+} from "../../../../shared/application/DistributedLock";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
@@ -114,22 +119,34 @@ async function ensureRedisStockInitialized(
   logger: Logger,
 ) {
   const stockKey = `${TICKET_LOT_STOCK_KEY_PREFIX}${ticketLotId}`;
+  const lockKey = `${LOCK_STOCK_INIT_KEY_PREFIX}${ticketLotId}`;
 
-  const existing = await redis.get(stockKey);
-  if (existing !== null) {
+  if ((await redis.get(stockKey)) !== null) {
     return;
   }
 
-  const lot = await findOneTicketLotById(ticketLotId);
-  if (!lot) {
-    throw new TicketLotNotFoundError(ticketLotId);
+  const lock = await acquireLock(redis, lockKey, 5_000, 12);
+
+  try {
+    if ((await redis.get(stockKey)) !== null) {
+      return;
+    }
+
+    const lot = await findOneTicketLotById(ticketLotId);
+    if (!lot) {
+      throw new TicketLotNotFoundError(ticketLotId);
+    }
+
+    await redis.setnx(stockKey, String(lot.availableQuantity));
+
+    logger.debug(CONTEXT, "Redis stock initialized (or already set)", {
+      ticketLotId,
+      stockKey,
+      availableQuantity: lot.availableQuantity,
+    });
+  } finally {
+    if (lock) {
+      await releaseLock(redis, lock);
+    }
   }
-
-  await redis.setnx(stockKey, String(lot.availableQuantity));
-
-  logger.debug(CONTEXT, "Redis stock initialized (or already set)", {
-    ticketLotId,
-    stockKey,
-    availableQuantity: lot.availableQuantity,
-  });
 }

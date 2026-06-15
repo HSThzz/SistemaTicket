@@ -8,6 +8,7 @@ import { Ticket } from "../../../../shared/infrastructure/persistence/entities/T
 import { TicketStatus } from "../../../../shared/kernel/enums";
 import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
+import { InvalidTicketStatusError } from "../../domain/errors/CheckInError";
 
 export type CheckInTicketResult = Prettify<
   Pick<Ticket, "ownerName" | "ownerDocument"> & {
@@ -42,6 +43,10 @@ export async function checkInTicket(uniqueCode: string,
 
     if (!ticket?.ticketLot?.event) {
       return null;
+    }
+
+    if (ticket.status !== TicketStatus.ACTIVE) {
+      throw new InvalidTicketStatusError(ticket.status);
     }
 
     const checkedInAt = new Date();
