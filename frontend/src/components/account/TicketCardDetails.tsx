@@ -34,9 +34,9 @@ export function TicketCardDetails({ ticket }: TicketCardDetailsProps) {
         <Group justify="center" py="xs">
           <Stack gap="sm" align="center">
             <Box className="ticket-qr-frame">
-              <QRCodeSVG value={ticket.uniqueCode} size={148} level="M" includeMargin={false} />
+              <QRCodeSVG value={ticket.uniqueCode} size={200} level="Q" includeMargin={false} />
             </Box>
-            <Text size="xs" c="dimmed" ta="center" maw={220}>
+            <Text size="xs" c="dimmed" ta="center" maw={260}>
               Apresente este QR na entrada do evento
             </Text>
           </Stack>

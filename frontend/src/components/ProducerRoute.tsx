@@ -4,7 +4,8 @@
  */
 
 import { Navigate, Outlet } from "react-router-dom";
-import { Center, Loader } from "@mantine/core";
+import { Box, Center, Loader } from "@mantine/core";
+import { ProducerCheckInFab } from "./producer/ProducerCheckInFab";
 import { useAuth } from "../context/AuthContext";
 
 const PRODUCER_ROLES = new Set(["PRODUCER", "ADMIN"]);
@@ -31,5 +32,12 @@ export function ProducerRoute() {
     return <Navigate to="/" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <Box className="producer-shell">
+        <Outlet />
+      </Box>
+      <ProducerCheckInFab />
+    </>
+  );
 }

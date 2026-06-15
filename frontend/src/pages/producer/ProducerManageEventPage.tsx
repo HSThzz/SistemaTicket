@@ -38,7 +38,6 @@ import {
   IconTicket,
   IconX,
 } from "@tabler/icons-react";
-import { AnimatedSection } from "../../components/home/AnimatedSection";
 import { BackButton } from "../../components/account/BackButton";
 import { EmptyState } from "../../components/account/EmptyState";
 import { PageLoader } from "../../components/account/PageLoader";
@@ -387,8 +386,7 @@ export function ProducerManageEventPage() {
 
       <Container size="lg" py="xl" px="md">
         <Stack gap="xl">
-          <AnimatedSection>
-            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
+          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
               <StatCard label="Lotes" value={String(lotSummary.lots)} icon={<IconTicket size={20} />} />
               <StatCard
                 label="Capacidade"
@@ -412,12 +410,10 @@ export function ProducerManageEventPage() {
                 valueColor="blue"
               />
             </SimpleGrid>
-          </AnimatedSection>
 
           <Grid>
             <Grid.Col span={{ base: 12, md: 7 }}>
-              <AnimatedSection delayMs={60}>
-                <PremiumPaper p="xl">
+              <PremiumPaper p="xl">
                   <form onSubmit={handleSaveEvent}>
                     <Stack gap="lg">
                       <Group gap="sm" className="producer-form-section-title">
@@ -469,12 +465,10 @@ export function ProducerManageEventPage() {
                     </Stack>
                   </form>
                 </PremiumPaper>
-              </AnimatedSection>
             </Grid.Col>
 
             <Grid.Col span={{ base: 12, md: 5 }}>
-              <AnimatedSection delayMs={100}>
-                <PremiumPaper p="xl">
+              <PremiumPaper p="xl">
                   <form onSubmit={handleCreateLot}>
                     <Stack gap="lg">
                       <Group gap="sm" className="producer-form-section-title">
@@ -517,12 +511,10 @@ export function ProducerManageEventPage() {
                     </Stack>
                   </form>
                 </PremiumPaper>
-              </AnimatedSection>
             </Grid.Col>
           </Grid>
 
-          <AnimatedSection delayMs={140}>
-            <Stack gap="md">
+          <Stack gap="md">
               <Group justify="space-between" align="center" wrap="wrap" gap="sm">
                 <Stack gap={4}>
                   <Title order={3} size="h4" className="producer-section-title">
@@ -549,15 +541,12 @@ export function ProducerManageEventPage() {
                 </PremiumPaper>
               ) : (
                 <Stack gap="md">
-                  {event.ticketLots.map((lot, index) => (
-                    <AnimatedSection key={lot.id} delayMs={160 + index * 40}>
-                      <ProducerLotCard lot={lot} />
-                    </AnimatedSection>
+                  {event.ticketLots.map((lot) => (
+                    <ProducerLotCard key={lot.id} lot={lot} />
                   ))}
                 </Stack>
               )}
             </Stack>
-          </AnimatedSection>
         </Stack>
       </Container>
     </Stack>

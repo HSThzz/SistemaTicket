@@ -32,7 +32,7 @@ export function TicketsPageSkeleton() {
 
         <Box className="tickets-wallet-detail" mt="md">
           <Stack gap="sm">
-            <Skeleton h={148} w={148} radius="md" mx="auto" className="skeleton-shimmer" />
+            <Skeleton h={200} w={200} radius="md" mx="auto" className="skeleton-shimmer" />
             <Skeleton h={72} radius="md" className="skeleton-shimmer" />
             <Skeleton h={36} radius="xl" className="skeleton-shimmer" />
           </Stack>

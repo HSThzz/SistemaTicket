@@ -327,11 +327,18 @@
 }
 
 .ticket-qr-frame {
-  padding: 18px;
+  padding: 20px;
   border-radius: var(--mantine-radius-md);
   background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-5));
   border: 1px solid var(--mantine-color-default-border);
   box-shadow: 0 4px 20px var(--vibra-shadow-soft);
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.ticket-qr-frame svg {
+  width: min(200px, 72vw);
+  height: auto;
 }
 
 .ticket-code-block {
@@ -623,12 +630,48 @@
 .producer-manage-hero-content {
   position: relative;
   z-index: 1;
-  min-height: 380px;
+  min-height: clamp(200px, 34vh, 380px);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: var(--mantine-spacing-xl) 0;
+  padding:
+    calc(var(--app-shell-header-height, 4.5rem) + var(--mantine-spacing-xs))
+    0
+    var(--mantine-spacing-xl);
   color: white;
+}
+
+@media (max-width: 47.99em) {
+  .producer-manage-hero-content {
+    min-height: clamp(168px, 28vh, 260px);
+    padding-bottom: var(--mantine-spacing-lg);
+  }
+
+  .producer-event-card-skeleton {
+    flex-direction: column;
+  }
+
+  .producer-event-card-skeleton-cover {
+    width: 100% !important;
+    min-height: 120px;
+  }
+
+  .producer-checkin-fab {
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  }
+}
+
+@media (max-width: 61.99em) {
+  .producer-shell {
+    padding-bottom: 72px;
+  }
+}
+
+.producer-event-card-skeleton-cover {
+  width: 132px;
+  min-height: 100%;
+  flex-shrink: 0;
+  align-self: stretch;
 }
 
 .event-detail-hero-content {

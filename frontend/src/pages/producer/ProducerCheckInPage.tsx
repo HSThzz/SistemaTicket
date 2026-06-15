@@ -26,7 +26,6 @@ import {
   IconScan,
   IconX,
 } from "@tabler/icons-react";
-import { AnimatedSection } from "../../components/home/AnimatedSection";
 import { BackButton } from "../../components/account/BackButton";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { CheckInSuccessCard } from "../../components/producer/CheckInSuccessCard";
@@ -144,8 +143,7 @@ export function ProducerCheckInPage() {
         <Grid>
           <Grid.Col span={{ base: 12, md: 7 }}>
             <Stack gap="md">
-              <AnimatedSection animate={false}>
-                <PremiumPaper p="xl">
+              <PremiumPaper p="xl">
                   <Stack gap="lg">
                     <Group gap="sm" className="producer-form-section-title">
                       <ThemeIcon size={36} radius="md" variant="light" color="blue">
@@ -165,21 +163,17 @@ export function ProducerCheckInPage() {
                     </Box>
                   </Stack>
                 </PremiumPaper>
-              </AnimatedSection>
 
               {lastResult ? (
-                <AnimatedSection delayMs={100}>
-                  <CheckInSuccessCard result={lastResult} />
-                </AnimatedSection>
+                <CheckInSuccessCard result={lastResult} />
               ) : null}
             </Stack>
           </Grid.Col>
 
           <Grid.Col span={{ base: 12, md: 5 }}>
             <Stack gap="md">
-              <AnimatedSection delayMs={80}>
-                <PremiumPaper p="xl">
-                  <form onSubmit={handleSubmit}>
+              <PremiumPaper p="xl">
+                <form onSubmit={handleSubmit}>
                     <Stack gap="lg">
                       <Group gap="sm" className="producer-form-section-title">
                         <ThemeIcon size={36} radius="md" variant="light" color="brand">
@@ -212,10 +206,8 @@ export function ProducerCheckInPage() {
                     </Stack>
                   </form>
                 </PremiumPaper>
-              </AnimatedSection>
 
-              <AnimatedSection delayMs={120}>
-                <PremiumPaper p="lg">
+              <PremiumPaper p="lg">
                   <Stack gap="md">
                     <Text fw={600} size="sm">
                       Dicas rápidas
@@ -234,7 +226,6 @@ export function ProducerCheckInPage() {
                     </Stack>
                   </Stack>
                 </PremiumPaper>
-              </AnimatedSection>
             </Stack>
           </Grid.Col>
         </Grid>

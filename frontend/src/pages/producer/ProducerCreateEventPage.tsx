@@ -31,7 +31,6 @@ import {
   IconTicket,
   IconX,
 } from "@tabler/icons-react";
-import { AnimatedSection } from "../../components/home/AnimatedSection";
 import { BackButton } from "../../components/account/BackButton";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import * as eventService from "../../features/catalog/api/eventService";
@@ -174,8 +173,7 @@ export function ProducerCreateEventPage() {
       <Container size="lg" py="xl" px="md">
         <Grid>
           <Grid.Col span={{ base: 12, md: 7 }}>
-            <AnimatedSection delayMs={60}>
-              <PremiumPaper p="xl">
+            <PremiumPaper p="xl">
                 <form onSubmit={handleSubmit}>
                   <Stack gap="lg">
                     <Group gap="sm" className="producer-form-section-title">
@@ -245,12 +243,10 @@ export function ProducerCreateEventPage() {
                   </Stack>
                 </form>
               </PremiumPaper>
-            </AnimatedSection>
           </Grid.Col>
 
           <Grid.Col span={{ base: 12, md: 5 }}>
-            <AnimatedSection delayMs={100}>
-              <Stack gap="md">
+            <Stack gap="md">
                 <PremiumPaper p="xl">
                   <Stack gap="lg">
                     <Group gap="sm">
@@ -284,7 +280,6 @@ export function ProducerCreateEventPage() {
                   </Text>
                 </PremiumPaper>
               </Stack>
-            </AnimatedSection>
           </Grid.Col>
         </Grid>
       </Container>

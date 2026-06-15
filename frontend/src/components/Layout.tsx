@@ -119,7 +119,8 @@ export function Layout() {
     /^\/eventos\/[^/]+$/.test(currentPath) ||
     /^\/eventos\/[^/]+\/comprar$/.test(currentPath) ||
     /^\/produtor\/eventos\/[^/]+$/.test(currentPath) ||
-    currentPath === "/produtor/check-in";
+    currentPath === "/produtor/check-in" ||
+    currentPath === "/produtor/eventos/novo";
   const isFullWidthPage = isHome || isEventsPage || isHeroPage;
   const layoutVariant = isHome ? "home" : isEventsPage ? "events" : isHeroPage ? "hero" : undefined;
 
