@@ -5,30 +5,20 @@
 
 .producer-manage-hero,
 .producer-create-hero,
+.producer-checkin-hero,
 .event-detail-hero,
 .checkout-hero {
   position: relative;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   box-sizing: border-box;
+  min-height: auto;
   padding-top: calc(var(--app-shell-header-height, 4.5rem) + var(--mantine-spacing-sm));
   overflow: hidden;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-}
-
-.producer-manage-hero {
-  min-height: auto;
-}
-
-.producer-create-hero,
-.event-detail-hero {
-  min-height: calc(clamp(220px, 32vh, 300px) + var(--app-shell-header-height, 4.5rem));
-}
-
-.checkout-hero {
-  min-height: calc(280px + var(--app-shell-header-height, 4.5rem));
 }
 
 .event-detail-body {
@@ -849,47 +839,28 @@
 }
 
 .producer-manage-hero-content,
-.event-detail-hero-content {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  flex: 1;
-  padding: var(--mantine-spacing-md) 0 var(--mantine-spacing-xl);
-  color: white;
-}
-
-/* Hero compacta (checkout, criar evento, check-in) */
-.producer-create-hero-content,
+.event-detail-hero-content,
 .checkout-hero-content {
   position: relative;
   z-index: 1;
   width: 100%;
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  min-height: clamp(200px, 28vh, 280px);
-  padding: var(--mantine-spacing-md) 0 var(--mantine-spacing-xl);
+  justify-content: flex-start;
+  padding: var(--mantine-spacing-md) 0 var(--mantine-spacing-lg);
   color: white;
 }
 
+.event-detail-hero-content,
+.checkout-hero-content {
+  padding-bottom: var(--mantine-spacing-xl);
+}
+
 @media (max-width: 47.99em) {
-  .producer-create-hero,
-  .event-detail-hero {
-    min-height: auto;
-  }
-
-  .producer-create-hero-content,
-  .checkout-hero-content {
-    min-height: clamp(180px, 26vh, 240px);
-    padding-bottom: var(--mantine-spacing-lg);
-  }
-
   .producer-manage-hero-content,
-  .event-detail-hero-content {
+  .event-detail-hero-content,
+  .checkout-hero-content {
     padding-bottom: var(--mantine-spacing-lg);
   }
 
@@ -1040,18 +1011,10 @@
   z-index: 0;
 }
 
-/* Checkout — regras específicas além das compartilhadas com .checkout-hero acima */
+/* Checkout — capa e overlay compartilham o shell padrão de hero */
 .checkout-hero {
   position: relative;
   overflow: hidden;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.checkout-hero-content {
-  position: relative;
-  z-index: 1;
 }
 
 .checkout-secure-badge {

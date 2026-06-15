@@ -44,8 +44,10 @@ import { PageLoader } from "../../components/account/PageLoader";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { StatCard } from "../../components/account/StatCard";
 import { ProducerLotCard } from "../../components/producer/ProducerLotCard";
+import { EventDateTimeField } from "../../components/producer/EventDateTimeField";
 import * as eventService from "../../features/catalog/api/eventService";
 import type { Event, EventStatus } from "../../types/api";
+import { eventDateToIso, isoToEventDate, validateEventDate } from "../../utils/eventDateTime";
 import { getEventCoverStyle } from "../../utils/eventVisuals";
 import { formatEventDate } from "../../utils/format";
 import { getApiErrorMessage } from "../../utils/errors";
@@ -54,7 +56,7 @@ import { getEventStatusColor, getEventStatusLabel } from "../../utils/statusLabe
 interface EventFormValues {
   title: string;
   description: string;
-  date: string;
+  date: Date | null;
   location: string;
   imageUrl: string;
   status: string;
@@ -64,17 +66,6 @@ interface LotFormValues {
   name: string;
   priceReais: number | string;
   totalQuantity: number | string;
-}
-
-function toLocalDatetimeInput(isoDate: string): string {
-  const date = new Date(isoDate);
-  const offset = date.getTimezoneOffset();
-  const local = new Date(date.getTime() - offset * 60_000);
-  return local.toISOString().slice(0, 16);
-}
-
-function toIsoDate(localDateTime: string): string {
-  return new Date(localDateTime).toISOString();
 }
 
 function parsePriceToCents(value: number | string): number {
@@ -97,10 +88,13 @@ export function ProducerManageEventPage() {
     initialValues: {
       title: "",
       description: "",
-      date: "",
+      date: null,
       location: "",
       imageUrl: "",
       status: "DRAFT",
+    },
+    validate: {
+      date: (value) => validateEventDate(value, { allowPast: true }),
     },
   });
 
@@ -142,7 +136,7 @@ export function ProducerManageEventPage() {
         eventForm.setValues({
           title: data.title,
           description: data.description,
-          date: toLocalDatetimeInput(data.date),
+          date: isoToEventDate(data.date),
           location: data.location,
           imageUrl: data.imageUrl ?? "",
           status: data.status,
@@ -203,7 +197,7 @@ export function ProducerManageEventPage() {
       const updated = await eventService.updateEvent(eventId, {
         title: values.title.trim(),
         description: values.description.trim(),
-        date: toIsoDate(values.date),
+        date: eventDateToIso(values.date!),
         location: values.location.trim(),
         imageUrl: values.imageUrl.trim() || null,
         status: values.status as EventStatus,
@@ -425,11 +419,11 @@ export function ProducerManageEventPage() {
                         radius="md"
                         {...eventForm.getInputProps("description")}
                       />
-                      <TextInput
-                        label="Data e hora"
-                        type="datetime-local"
-                        radius="md"
-                        {...eventForm.getInputProps("date")}
+                      <EventDateTimeField
+                        value={eventForm.values.date}
+                        onChange={(value) => eventForm.setFieldValue("date", value)}
+                        error={eventForm.errors.date}
+                        description="Horário local do evento."
                       />
                       <TextInput label="Local" radius="md" {...eventForm.getInputProps("location")} />
                       <TextInput

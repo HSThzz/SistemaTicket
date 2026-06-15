@@ -22,7 +22,6 @@ import {
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import {
-  IconCalendar,
   IconCalendarPlus,
   IconCheck,
   IconMapPin,
@@ -33,13 +32,19 @@ import {
 } from "@tabler/icons-react";
 import { PageBackNav } from "../../components/account/PageBackNav";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
+import { EventDateTimeField } from "../../components/producer/EventDateTimeField";
 import * as eventService from "../../features/catalog/api/eventService";
+import {
+  eventDateToIso,
+  startOfToday,
+  validateEventDate,
+} from "../../utils/eventDateTime";
 import { getApiErrorMessage } from "../../utils/errors";
 
 interface CreateEventFormValues {
   title: string;
   description: string;
-  date: string;
+  date: Date | null;
   location: string;
   imageUrl: string;
 }
@@ -58,10 +63,6 @@ const CREATE_STEPS = [
     description: "Enquanto for rascunho, só você vê. Publique quando estiver pronto.",
   },
 ] as const;
-
-function toIsoDate(localDateTime: string): string {
-  return new Date(localDateTime).toISOString();
-}
 
 function CreateStep({ index, title, description }: { index: number; title: string; description: string }) {
   return (
@@ -90,14 +91,14 @@ export function ProducerCreateEventPage() {
     initialValues: {
       title: "",
       description: "",
-      date: "",
+      date: null,
       location: "",
       imageUrl: "",
     },
     validate: {
       title: (value) => (value.trim().length >= 3 ? null : "Informe o título"),
       description: (value) => (value.trim().length >= 10 ? null : "Descrição muito curta"),
-      date: (value) => (value ? null : "Informe a data do evento"),
+      date: (value) => validateEventDate(value),
       location: (value) => (value.trim().length >= 3 ? null : "Informe o local"),
     },
   });
@@ -109,7 +110,7 @@ export function ProducerCreateEventPage() {
       const event = await eventService.createEvent({
         title: values.title.trim(),
         description: values.description.trim(),
-        date: toIsoDate(values.date),
+        date: eventDateToIso(values.date!),
         location: values.location.trim(),
         imageUrl: values.imageUrl.trim() || null,
         status: "DRAFT",
@@ -197,12 +198,12 @@ export function ProducerCreateEventPage() {
                       radius="md"
                       {...form.getInputProps("description")}
                     />
-                    <TextInput
-                      label="Data e hora"
-                      type="datetime-local"
-                      radius="md"
-                      leftSection={<IconCalendar size={16} />}
-                      {...form.getInputProps("date")}
+                    <EventDateTimeField
+                      value={form.values.date}
+                      onChange={(value) => form.setFieldValue("date", value)}
+                      error={form.errors.date}
+                      minDate={startOfToday()}
+                      description="Horário local do evento."
                     />
                     <TextInput
                       label="Local"
