@@ -5,13 +5,30 @@
 
 .producer-manage-hero,
 .producer-create-hero,
-.event-detail-hero {
+.event-detail-hero,
+.checkout-hero {
   position: relative;
-  min-height: clamp(220px, 38vh, 380px);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding-top: var(--app-shell-header-height, 4.5rem);
   overflow: hidden;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+.producer-manage-hero {
+  min-height: auto;
+}
+
+.producer-create-hero,
+.event-detail-hero {
+  min-height: calc(clamp(220px, 32vh, 300px) + var(--app-shell-header-height, 4.5rem));
+}
+
+.checkout-hero {
+  min-height: calc(280px + var(--app-shell-header-height, 4.5rem));
 }
 
 .event-detail-body {
@@ -26,7 +43,7 @@
 }
 
 .event-detail-stats {
-  padding-top: var(--mantine-spacing-xl);
+  padding-top: var(--mantine-spacing-md);
   padding-bottom: var(--mantine-spacing-xs);
 }
 
@@ -627,23 +644,48 @@
   );
 }
 
-.producer-manage-hero-content {
+.producer-manage-hero-content,
+.event-detail-hero-content {
   position: relative;
   z-index: 1;
-  min-height: clamp(200px, 34vh, 380px);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  flex: 1;
+  padding: var(--mantine-spacing-md) 0 var(--mantine-spacing-xl);
+  color: white;
+}
+
+/* Hero compacta (checkout, criar evento, check-in) */
+.producer-create-hero-content,
+.checkout-hero-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding:
-    calc(var(--app-shell-header-height, 4.5rem) + var(--mantine-spacing-xs))
-    0
-    var(--mantine-spacing-xl);
+  min-height: clamp(200px, 28vh, 280px);
+  padding: var(--mantine-spacing-md) 0 var(--mantine-spacing-xl);
   color: white;
 }
 
 @media (max-width: 47.99em) {
-  .producer-manage-hero-content {
-    min-height: clamp(168px, 28vh, 260px);
+  .producer-create-hero,
+  .event-detail-hero {
+    min-height: auto;
+  }
+
+  .producer-create-hero-content,
+  .checkout-hero-content {
+    min-height: clamp(180px, 26vh, 240px);
+    padding-bottom: var(--mantine-spacing-lg);
+  }
+
+  .producer-manage-hero-content,
+  .event-detail-hero-content {
     padding-bottom: var(--mantine-spacing-lg);
   }
 
@@ -672,20 +714,6 @@
   min-height: 100%;
   flex-shrink: 0;
   align-self: stretch;
-}
-
-.event-detail-hero-content {
-  position: relative;
-  z-index: 1;
-  min-height: 380px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding:
-    calc(var(--app-shell-header-height, 4.5rem) + var(--mantine-spacing-sm))
-    0
-    var(--mantine-spacing-xl);
-  color: white;
 }
 
 .event-detail-hero-info {
@@ -808,10 +836,9 @@
   z-index: 0;
 }
 
-/* Checkout */
+/* Checkout — regras específicas além das compartilhadas com .checkout-hero acima */
 .checkout-hero {
   position: relative;
-  min-height: 280px;
   overflow: hidden;
   background-size: cover;
   background-position: center;
@@ -821,12 +848,6 @@
 .checkout-hero-content {
   position: relative;
   z-index: 1;
-  min-height: 280px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: var(--mantine-spacing-xl) 0;
-  color: white;
 }
 
 .checkout-secure-badge {
@@ -838,7 +859,8 @@
   border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
-.checkout-body {
+.checkout-body,
+.page-body {
   border-top: 1px solid var(--mantine-color-default-border);
   background-color: var(--mantine-color-body);
   background-image: radial-gradient(
@@ -846,6 +868,10 @@
     var(--vibra-radial-glow) 0%,
     transparent 60%
   );
+}
+
+.page-back-nav {
+  margin-bottom: var(--mantine-spacing-xs);
 }
 
 .checkout-summary-sticky {

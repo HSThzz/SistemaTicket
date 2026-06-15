@@ -39,7 +39,7 @@ import {
 } from "@tabler/icons-react";
 import { AnimatedSection } from "../components/home/AnimatedSection";
 import { EventCoverHero } from "../components/EventCoverHero";
-import { BackButton } from "../components/account/BackButton";
+import { PageBackNav } from "../components/account/PageBackNav";
 import { PageLoader } from "../components/account/PageLoader";
 import { PremiumPaper } from "../components/account/PremiumPaper";
 import {
@@ -610,9 +610,9 @@ export function CheckoutPage() {
         </Container>
       </EventCoverHero>
 
-      <Box className="checkout-body">
+      <Box className="checkout-body page-body">
         <Container size="lg" py="xl" px="md">
-          <BackButton to={`/eventos/${event.id}`} label="Voltar ao evento" />
+          <PageBackNav to={`/eventos/${event.id}`} label="Voltar ao evento" />
           <Grid gap="xl" mt="lg">
             <Grid.Col span={{ base: 12, md: 7 }}>
               <Stack gap="lg">

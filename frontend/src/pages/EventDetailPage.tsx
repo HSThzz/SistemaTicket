@@ -32,7 +32,7 @@ import {
 } from "@tabler/icons-react";
 import { AnimatedSection } from "../components/home/AnimatedSection";
 import { SiteFooter } from "../components/home/SiteFooter";
-import { BackButton } from "../components/account/BackButton";
+import { PageBackNav } from "../components/account/PageBackNav";
 import { PremiumPaper } from "../components/account/PremiumPaper";
 import { PageLoader } from "../components/account/PageLoader";
 import { StatCard } from "../components/account/StatCard";
@@ -180,7 +180,7 @@ export function EventDetailPage() {
     return (
       <Container size="lg" py="md">
         <Stack gap="md">
-          <BackButton to="/eventos" label="Voltar aos eventos" />
+          <PageBackNav to="/eventos" label="Voltar aos eventos" />
           <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro" radius="lg">
             {error ?? "Evento não encontrado."}
           </Alert>
@@ -233,8 +233,6 @@ export function EventDetailPage() {
         <Box className="producer-manage-hero-overlay" />
         <Container size="lg" px="md" className="event-detail-hero-content">
           <Stack gap="md" className="event-detail-hero-info">
-            <BackButton to="/eventos" label="Voltar aos eventos" inverted />
-
             <Group gap="xs" wrap="wrap">
                 <Badge color="white" c="dark" variant="filled" radius="sm">
                   {CATEGORY_LABELS[category]}
@@ -287,6 +285,9 @@ export function EventDetailPage() {
       </Box>
 
       <Box className="event-detail-body">
+        <Container size="lg" px="md" pt="lg" pb={0}>
+          <PageBackNav to="/eventos" label="Voltar aos eventos" />
+        </Container>
         <Container size="lg" px="md" className="event-detail-stats">
           <AnimatedSection>
             <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">

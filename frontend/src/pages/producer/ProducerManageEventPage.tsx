@@ -38,7 +38,7 @@ import {
   IconTicket,
   IconX,
 } from "@tabler/icons-react";
-import { BackButton } from "../../components/account/BackButton";
+import { PageBackNav } from "../../components/account/PageBackNav";
 import { EmptyState } from "../../components/account/EmptyState";
 import { PageLoader } from "../../components/account/PageLoader";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
@@ -300,7 +300,7 @@ export function ProducerManageEventPage() {
   if (error || !event) {
     return (
       <Stack gap="md">
-        <BackButton to="/produtor/eventos" label="Voltar aos eventos" />
+        <PageBackNav to="/produtor/eventos" label="Voltar aos eventos" />
         <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro" radius="lg">
           {error ?? "Evento não encontrado."}
         </Alert>
@@ -313,79 +313,73 @@ export function ProducerManageEventPage() {
       <Box className="producer-manage-hero full-bleed" style={getEventCoverStyle(event)}>
         <Box className="producer-manage-hero-overlay" />
         <Container size="lg" px="md" className="producer-manage-hero-content">
-          <Stack gap="md">
-            <BackButton
-              to="/produtor/eventos"
-              label="Voltar aos eventos"
-              inverted
-              style={{ alignSelf: "flex-start" }}
-            />
-            <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
-              <Stack gap="sm" maw={640}>
-                <Group gap="sm" wrap="wrap">
-                  <Badge color={getEventStatusColor(event.status)} variant="filled" radius="sm">
-                    {getEventStatusLabel(event.status)}
-                  </Badge>
-                  <Badge color="white" c="dark" variant="filled" radius="sm">
-                    {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}
-                  </Badge>
-                </Group>
-                <Title
-                  order={1}
-                  style={{
-                    fontSize: "clamp(1.5rem, 4vw, 2.25rem)",
-                    lineHeight: 1.15,
-                    letterSpacing: "-0.02em",
-                  }}
-                >
-                  {event.title}
-                </Title>
-                <Group gap="lg" wrap="wrap" c="white" opacity={0.92}>
-                  <Group gap={6}>
-                    <IconCalendar size={18} />
-                    <Text size="sm" fw={500}>
-                      {formatEventDate(event.date)}
-                    </Text>
-                  </Group>
-                  <Group gap={6} maw={400}>
-                    <IconMapPin size={18} style={{ flexShrink: 0 }} />
-                    <Text size="sm" fw={500} lineClamp={1}>
-                      {event.location}
-                    </Text>
-                  </Group>
-                </Group>
-              </Stack>
+          <Stack gap="md" maw={720}>
+            <Stack gap="sm" maw={640}>
               <Group gap="sm" wrap="wrap">
-                {event.status === "DRAFT" ? (
-                  <Button
-                    leftSection={<IconRocket size={18} />}
-                    loading={savingEvent}
-                    radius="xl"
-                    onClick={() => void handlePublish()}
-                  >
-                    Publicar evento
-                  </Button>
-                ) : null}
-                {event.status === "PUBLISHED" ? (
-                  <Button
-                    component={Link}
-                    to={`/eventos/${event.id}`}
-                    variant="white"
-                    color="dark"
-                    radius="xl"
-                    leftSection={<IconExternalLink size={18} />}
-                  >
-                    Ver na vitrine
-                  </Button>
-                ) : null}
+                <Badge color={getEventStatusColor(event.status)} variant="filled" radius="sm">
+                  {getEventStatusLabel(event.status)}
+                </Badge>
+                <Badge color="white" c="dark" variant="filled" radius="sm">
+                  {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}
+                </Badge>
               </Group>
+              <Title
+                order={1}
+                style={{
+                  fontSize: "clamp(1.5rem, 4vw, 2.25rem)",
+                  lineHeight: 1.15,
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                {event.title}
+              </Title>
+              <Group gap="lg" wrap="wrap" c="white" opacity={0.92}>
+                <Group gap={6}>
+                  <IconCalendar size={18} />
+                  <Text size="sm" fw={500}>
+                    {formatEventDate(event.date)}
+                  </Text>
+                </Group>
+                <Group gap={6} maw={400}>
+                  <IconMapPin size={18} style={{ flexShrink: 0 }} />
+                  <Text size="sm" fw={500} lineClamp={1}>
+                    {event.location}
+                  </Text>
+                </Group>
+              </Group>
+            </Stack>
+            <Group gap="sm" wrap="wrap">
+              {event.status === "DRAFT" ? (
+                <Button
+                  leftSection={<IconRocket size={18} />}
+                  loading={savingEvent}
+                  radius="xl"
+                  onClick={() => void handlePublish()}
+                >
+                  Publicar evento
+                </Button>
+              ) : null}
+              {event.status === "PUBLISHED" ? (
+                <Button
+                  component={Link}
+                  to={`/eventos/${event.id}`}
+                  variant="white"
+                  color="dark"
+                  radius="xl"
+                  leftSection={<IconExternalLink size={18} />}
+                >
+                  Ver na vitrine
+                </Button>
+              ) : null}
             </Group>
           </Stack>
         </Container>
       </Box>
 
-      <Container size="lg" py="xl" px="md">
-        <Stack gap="xl">
+      <Box className="page-body">
+        <Container size="lg" py="xl" px="md">
+          <PageBackNav to="/produtor/eventos" label="Voltar aos eventos" />
+          <Stack gap="xl" mt="lg">
           <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
               <StatCard label="Lotes" value={String(lotSummary.lots)} icon={<IconTicket size={20} />} />
               <StatCard
@@ -547,8 +541,9 @@ export function ProducerManageEventPage() {
                 </Stack>
               )}
             </Stack>
-        </Stack>
-      </Container>
+          </Stack>
+        </Container>
+      </Box>
     </Stack>
   );
 }

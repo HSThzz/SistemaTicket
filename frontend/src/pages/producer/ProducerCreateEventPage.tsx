@@ -31,7 +31,7 @@ import {
   IconTicket,
   IconX,
 } from "@tabler/icons-react";
-import { BackButton } from "../../components/account/BackButton";
+import { PageBackNav } from "../../components/account/PageBackNav";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import * as eventService from "../../features/catalog/api/eventService";
 import { getApiErrorMessage } from "../../utils/errors";
@@ -140,9 +140,7 @@ export function ProducerCreateEventPage() {
       <Box className="producer-create-hero producer-manage-hero full-bleed">
         <Box className="producer-manage-hero-overlay" />
         <Container size="lg" px="md" className="producer-manage-hero-content">
-          <Stack gap="md">
-            <BackButton to="/produtor/eventos" label="Voltar aos eventos" inverted style={{ alignSelf: "flex-start" }} />
-            <Stack gap="sm" maw={640}>
+          <Stack gap="sm" maw={640}>
               <Group gap="sm" wrap="wrap">
                 <Badge color="gray" variant="filled" radius="sm">
                   Rascunho
@@ -166,12 +164,13 @@ export function ProducerCreateEventPage() {
                 vitrine.
               </Text>
             </Stack>
-          </Stack>
         </Container>
       </Box>
 
-      <Container size="lg" py="xl" px="md">
-        <Grid>
+      <Box className="page-body">
+        <Container size="lg" py="xl" px="md">
+          <PageBackNav to="/produtor/eventos" label="Voltar aos eventos" />
+          <Grid mt="lg">
           <Grid.Col span={{ base: 12, md: 7 }}>
             <PremiumPaper p="xl">
                 <form onSubmit={handleSubmit}>
@@ -282,7 +281,8 @@ export function ProducerCreateEventPage() {
               </Stack>
           </Grid.Col>
         </Grid>
-      </Container>
+        </Container>
+      </Box>
     </Stack>
   );
 }

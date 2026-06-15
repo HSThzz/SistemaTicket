@@ -26,7 +26,7 @@ import {
   IconScan,
   IconX,
 } from "@tabler/icons-react";
-import { BackButton } from "../../components/account/BackButton";
+import { PageBackNav } from "../../components/account/PageBackNav";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { CheckInSuccessCard } from "../../components/producer/CheckInSuccessCard";
 import { QrScanner } from "../../components/QrScanner";
@@ -110,9 +110,7 @@ export function ProducerCheckInPage() {
       <Box className="producer-checkin-hero producer-manage-hero full-bleed">
         <Box className="producer-manage-hero-overlay" />
         <Container size="lg" px="md" className="producer-manage-hero-content">
-          <Stack gap="md">
-            <BackButton to="/produtor" label="Voltar ao painel" inverted style={{ alignSelf: "flex-start" }} />
-            <Stack gap="sm" maw={640}>
+          <Stack gap="sm" maw={640}>
               <Group gap="sm" wrap="wrap">
                 <Badge color="green" variant="filled" radius="sm">
                   Portaria
@@ -135,12 +133,13 @@ export function ProducerCheckInPage() {
                 Escaneie o ingresso ou digite o código para validar a entrada em segundos.
               </Text>
             </Stack>
-          </Stack>
         </Container>
       </Box>
 
-      <Container size="lg" py="xl" px="md">
-        <Grid>
+      <Box className="page-body">
+        <Container size="lg" py="xl" px="md">
+          <PageBackNav to="/produtor" label="Voltar ao painel" />
+          <Grid mt="lg">
           <Grid.Col span={{ base: 12, md: 7 }}>
             <Stack gap="md">
               <PremiumPaper p="xl">
@@ -229,7 +228,8 @@ export function ProducerCheckInPage() {
             </Stack>
           </Grid.Col>
         </Grid>
-      </Container>
+        </Container>
+      </Box>
     </Stack>
   );
 }
