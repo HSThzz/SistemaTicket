@@ -3,7 +3,7 @@
  * @module pages/ProfilePage
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Alert,
@@ -73,6 +73,7 @@ export function ProfilePage() {
   const [favoriteEvents, setFavoriteEvents] = useState<Event[]>([]);
   const [loadingFavorites, setLoadingFavorites] = useState(false);
   const [favoritesError, setFavoritesError] = useState<string | null>(null);
+  const knownFavoriteIdsRef = useRef<Set<string>>(new Set());
 
   const profileForm = useForm<ProfileFormValues>({
     initialValues: {
@@ -147,8 +148,20 @@ export function ProfilePage() {
     }
 
     if (favoriteIds.length === 0) {
-      setFavoriteEvents([]);
+      knownFavoriteIdsRef.current = new Set();
+      setFavoriteEvents((current) => (current.length === 0 ? current : []));
       setFavoritesError(null);
+      return;
+    }
+
+    const favoriteIdSet = new Set(favoriteIds);
+    const hasNewFavorite = favoriteIds.some((id) => !knownFavoriteIdsRef.current.has(id));
+
+    knownFavoriteIdsRef.current = new Set(
+      [...knownFavoriteIdsRef.current].filter((id) => favoriteIdSet.has(id)),
+    );
+
+    if (!hasNewFavorite) {
       return;
     }
 
@@ -161,11 +174,13 @@ export function ProfilePage() {
       .listFavoriteEvents()
       .then((events) => {
         if (!cancelled) {
+          favoriteIds.forEach((id) => knownFavoriteIdsRef.current.add(id));
           setFavoriteEvents(events);
         }
       })
       .catch((err) => {
         if (!cancelled) {
+          favoriteIds.forEach((id) => knownFavoriteIdsRef.current.add(id));
           setFavoritesError(
             getApiErrorMessage(err, "Não foi possível carregar seus favoritos."),
           );
@@ -181,6 +196,11 @@ export function ProfilePage() {
       cancelled = true;
     };
   }, [favoriteIds, favoritesReady]);
+
+  const displayedFavorites = useMemo(
+    () => favoriteEvents.filter((event) => favoriteIds.includes(event.id)),
+    [favoriteEvents, favoriteIds],
+  );
 
   const displayRole = useMemo(() => {
     const role = profile?.role ?? user?.role;
@@ -351,9 +371,9 @@ export function ProfilePage() {
                 <Skeleton key={id} h={220} radius="md" className="skeleton-shimmer" />
               ))}
             </SimpleGrid>
-          ) : favoriteEvents.length > 0 ? (
+          ) : displayedFavorites.length > 0 ? (
             <SimpleGrid cols={{ base: 2, sm: 3, lg: 4 }} spacing="md">
-              {favoriteEvents.map((event) => (
+              {displayedFavorites.map((event) => (
                 <DiceEventCard key={event.id} event={event} />
               ))}
             </SimpleGrid>
