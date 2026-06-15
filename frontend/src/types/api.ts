@@ -43,6 +43,7 @@ export interface Event {
   date: string;
   location: string;
   imageUrl: string | null;
+  artists?: string[];
   status: EventStatus | string;
   ticketLots: TicketLot[];
 }

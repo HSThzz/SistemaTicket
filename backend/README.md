@@ -139,9 +139,39 @@ Copie `.env.example` para `.env`. Principais variáveis:
 | `MERCADOPAGO_NOTIFICATION_URL` | URL pública do webhook (IPN) |
 | `DB_*` | Conexão PostgreSQL |
 | `REDIS_*` | Conexão Redis |
+| `SPOTIFY_*` | OAuth Spotify (recomendações de eventos) — ver seção abaixo |
 | `APPLE_*` / `GOOGLE_WALLET_*` | Credenciais Wallet (opcional) |
 
 > Em produção, **`PAYMENT_WEBHOOK_SECRET` é obrigatório** — sem ele o webhook retorna 401.
+
+### Spotify (desenvolvimento local)
+
+Desde **abril/2025**, o painel Spotify **não aceita** `http://localhost:...` como Redirect URI. Opções válidas:
+
+| Ambiente | Redirect URI no painel Spotify |
+|----------|--------------------------------|
+| Local (recomendado) | `http://127.0.0.1:3000/auth/spotify/callback` |
+| Túnel / produção | `https://seu-dominio.com/auth/spotify/callback` |
+
+**Passos:**
+
+1. [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) → seu app → **Settings** → **Redirect URIs** → adicione exatamente:
+   ```
+   http://127.0.0.1:3000/auth/spotify/callback
+   ```
+2. No `backend/.env`:
+   ```env
+   SPOTIFY_CLIENT_ID=...
+   SPOTIFY_CLIENT_SECRET=...
+   SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/auth/spotify/callback
+   SPOTIFY_FRONTEND_RETURN_URL=http://127.0.0.1:5173/eventos
+   ```
+3. Abra o app em **`http://127.0.0.1:5173`** (não `localhost`) e reinicie o backend.
+
+**Alternativa com HTTPS (ngrok, Cloudflare Tunnel, deploy):** use a URL pública `https://...` em `SPOTIFY_REDIRECT_URI` e no painel Spotify. O host deve ser **idêntico** em todos os lugares.
+
+Rotas: `GET /auth/spotify/connect`, `GET /auth/spotify/callback`, `GET /auth/spotify/status`, `GET /auth/spotify/recommendations`, `DELETE /auth/spotify`.
+
 
 ## Roles
 

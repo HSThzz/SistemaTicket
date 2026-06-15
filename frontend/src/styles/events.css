@@ -7,8 +7,170 @@
   padding-top: calc(var(--app-shell-header-height, 4.5rem) + var(--mantine-spacing-md));
 }
 
+.events-page-container {
+  padding-inline: clamp(12px, 3vw, var(--mantine-spacing-md));
+}
+
 .events-toolbar {
   gap: var(--mantine-spacing-md);
+}
+
+.events-mobile-toolbar {
+  width: 100%;
+}
+
+.events-mobile-filters-btn,
+.events-mobile-sort-btn {
+  min-height: 44px;
+  flex: 1;
+}
+
+.events-mobile-sort-btn {
+  max-width: 48%;
+}
+
+.events-filter-bar--desktop {
+  overflow: hidden;
+}
+
+.events-filter-scroll .mantine-ScrollArea-viewport > div {
+  display: flex !important;
+}
+
+.events-filter-track {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--mantine-spacing-sm);
+  padding-bottom: 4px;
+}
+
+.events-category-scroll .mantine-ScrollArea-viewport > div {
+  display: block !important;
+}
+
+.events-category-track {
+  display: flex;
+  gap: var(--mantine-spacing-sm);
+  padding-bottom: 4px;
+}
+
+.events-category-track-item {
+  flex: 0 0 108px;
+}
+
+.events-category-track .events-category-tile {
+  min-height: 84px;
+  width: 108px;
+}
+
+.events-drawer-option {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 100px;
+  border: 1px solid light-dark(#e0e0dc, rgba(255, 255, 255, 0.1));
+  background: light-dark(#fff, #111);
+  color: var(--mantine-color-text);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+}
+
+.events-drawer-option--active {
+  border-color: var(--vibra-border-accent-hover);
+  background: light-dark(rgba(22, 163, 74, 0.08), rgba(74, 222, 128, 0.1));
+}
+
+.events-filters-drawer .mantine-Drawer-body {
+  padding-bottom: calc(var(--mantine-spacing-xl) + env(safe-area-inset-bottom));
+}
+
+.events-promo-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.events-promo-btn-spotify {
+  background: #1db954 !important;
+  font-weight: 700;
+}
+
+.events-promo-btn-spotify:hover {
+  background: #1ed760 !important;
+}
+
+.events-promo-btn-disabled {
+  cursor: default;
+}
+
+.events-spotify-section {
+  margin-top: var(--mantine-spacing-xs);
+}
+
+.events-spotify-icon {
+  color: #1db954;
+}
+
+.events-spotify-scroll .mantine-ScrollArea-viewport > div {
+  display: block !important;
+}
+
+.events-spotify-track {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--mantine-spacing-md);
+  padding-bottom: 8px;
+}
+
+.events-spotify-card-slot {
+  flex: 0 0 min(72vw, 220px);
+}
+
+.events-spotify-matches {
+  padding-inline: 2px;
+}
+
+@media (max-width: 47.99em) {
+  .events-page-section {
+    padding-top: calc(var(--app-shell-header-height, 4.5rem) + var(--mantine-spacing-sm));
+  }
+
+  .events-toolbar {
+    gap: var(--mantine-spacing-sm);
+  }
+
+  .events-promo-banner {
+    padding: var(--mantine-spacing-lg);
+  }
+
+  .events-promo-title {
+    font-size: 1.15rem;
+  }
+
+  .events-filter-pill {
+    padding: 12px 14px;
+    min-height: 44px;
+  }
+
+  .events-page-heading {
+    font-size: 1.2rem;
+  }
+
+  .dice-event-card__heart {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .dice-event-card__title {
+    font-size: 0.9rem;
+  }
+}
+
+@media (min-width: 48em) {
+  .events-filter-bar {
+    overflow: visible;
+  }
 }
 
 /* Busca estilo DICE */
@@ -139,10 +301,6 @@
   font-weight: 700;
   text-transform: none;
   letter-spacing: normal;
-}
-
-.events-promo-mascot {
-  flex-shrink: 0;
 }
 
 .events-promo-mascot {

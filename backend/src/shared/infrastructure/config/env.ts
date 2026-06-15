@@ -80,6 +80,14 @@ export const env = {
   stockReconciliationIntervalMs: Number(
     process.env.STOCK_RECONCILIATION_INTERVAL_MS ?? "300000",
   ),
+  spotify: {
+    clientId: process.env.SPOTIFY_CLIENT_ID ?? "",
+    clientSecret: process.env.SPOTIFY_CLIENT_SECRET ?? "",
+    redirectUri:
+      process.env.SPOTIFY_REDIRECT_URI ?? "http://127.0.0.1:3000/auth/spotify/callback",
+    frontendReturnUrl:
+      process.env.SPOTIFY_FRONTEND_RETURN_URL ?? "http://127.0.0.1:5173/eventos",
+  },
   wallet: {
     apple: {
       wwdrCertPath: process.env.APPLE_WWDR_CERT_PATH ?? "",
@@ -103,6 +111,11 @@ export const env = {
     },
   },
 } as const;
+
+/** Indica se credenciais Spotify estão configuradas. */
+export function isSpotifyConfigured(): boolean {
+  return Boolean(env.spotify.clientId.trim() && env.spotify.clientSecret.trim());
+}
 
 /** Indica se a aplicação está em modo produção. */
 export const isProduction = env.nodeEnv === "production";

@@ -1,4 +1,4 @@
-import { SimpleGrid, Text, UnstyledButton } from "@mantine/core";
+import { Box, ScrollArea, SimpleGrid, Text, UnstyledButton } from "@mantine/core";
 import {
   IconBalloon,
   IconBuilding,
@@ -22,28 +22,92 @@ const CATEGORIES: {
 interface EventsCategoryGridProps {
   value: EventCategory;
   onChange: (value: EventCategory) => void;
+  variant?: "grid" | "drawer";
 }
 
-export function EventsCategoryGrid({ value, onChange }: EventsCategoryGridProps) {
+function CategoryTile({
+  value,
+  icon: Icon,
+  isActive,
+  onChange,
+}: {
+  value: EventCategory;
+  icon: typeof IconSparkles;
+  isActive: boolean;
+  onChange: (value: EventCategory) => void;
+}) {
   return (
-    <SimpleGrid cols={{ base: 4, sm: 6, md: 8 }} spacing="sm" className="events-category-grid">
-      {CATEGORIES.map((item) => {
-        const Icon = item.icon;
-        const isActive = value === item.value;
+    <UnstyledButton
+      className={`events-category-tile${isActive ? " events-category-tile--active" : ""}`}
+      onClick={() => onChange(value)}
+    >
+      <Icon size={22} stroke={1.6} />
+      <Text size="xs" fw={600} lineClamp={2} ta="center">
+        {CATEGORY_LABELS[value]}
+      </Text>
+    </UnstyledButton>
+  );
+}
 
-        return (
-          <UnstyledButton
+export function EventsCategoryGrid({
+  value,
+  onChange,
+  variant = "grid",
+}: EventsCategoryGridProps) {
+  if (variant === "drawer") {
+    return (
+      <SimpleGrid cols={{ base: 2 }} spacing="sm">
+        {CATEGORIES.map((item) => (
+          <CategoryTile
             key={item.value}
-            className={`events-category-tile${isActive ? " events-category-tile--active" : ""}`}
-            onClick={() => onChange(item.value)}
-          >
-            <Icon size={22} stroke={1.6} />
-            <Text size="xs" fw={600} lineClamp={1}>
-              {CATEGORY_LABELS[item.value]}
-            </Text>
-          </UnstyledButton>
-        );
-      })}
-    </SimpleGrid>
+            value={item.value}
+            icon={item.icon}
+            isActive={value === item.value}
+            onChange={onChange}
+          />
+        ))}
+      </SimpleGrid>
+    );
+  }
+
+  return (
+    <>
+      <ScrollArea
+        type="scroll"
+        offsetScrollbars
+        className="events-category-scroll"
+        hiddenFrom="sm"
+      >
+        <Box className="events-category-track">
+          {CATEGORIES.map((item) => (
+            <Box key={item.value} className="events-category-track-item">
+              <CategoryTile
+                value={item.value}
+                icon={item.icon}
+                isActive={value === item.value}
+                onChange={onChange}
+              />
+            </Box>
+          ))}
+        </Box>
+      </ScrollArea>
+
+      <SimpleGrid
+        cols={{ base: 4, sm: 6, md: 8 }}
+        spacing="sm"
+        className="events-category-grid"
+        visibleFrom="sm"
+      >
+        {CATEGORIES.map((item) => (
+          <CategoryTile
+            key={item.value}
+            value={item.value}
+            icon={item.icon}
+            isActive={value === item.value}
+            onChange={onChange}
+          />
+        ))}
+      </SimpleGrid>
+    </>
   );
 }

@@ -14,6 +14,7 @@ export function serializeEvent(event: Event) {
     date: event.date.toISOString(),
     location: event.location,
     imageUrl: event.imageUrl,
+    artists: Array.isArray(event.artists) ? event.artists : [],
     status: event.status,
     ticketLots: (event.ticketLots ?? []).map((lot) => ({
       id: lot.id,

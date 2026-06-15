@@ -15,6 +15,7 @@ import {
   TicketLot,
   User,
   UserFavorite,
+  UserSpotifyConnection,
 } from "../persistence/entities";
 
 dotenv.config();
@@ -55,6 +56,6 @@ export const AppDataSource = new DataSource({
   ...postgresConfig,
   synchronize: false,
   logging: !isProduction && !isTest,
-  entities: [User, Event, TicketLot, Reservation, Order, Ticket, UserFavorite, AdminAuditLog],
+  entities: [User, Event, TicketLot, Reservation, Order, Ticket, UserFavorite, AdminAuditLog, UserSpotifyConnection],
   migrations: [`${__dirname}/../persistence/migrations/*.{ts,js}`],
 });

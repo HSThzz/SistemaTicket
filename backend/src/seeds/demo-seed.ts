@@ -65,6 +65,7 @@ interface SeedEventDef {
   location: string;
   status: EventStatus;
   imageUrl: string;
+  artists?: string[];
   lots: SeedLotDef[];
 }
 
@@ -77,6 +78,7 @@ const SEED_EVENTS: SeedEventDef[] = [
     location: "Parque Ibirapuera — São Paulo, SP",
     status: EventStatus.PUBLISHED,
     imageUrl: SEED_EVENT_IMAGES.festival,
+    artists: ["Anitta", "Matuê", "Jão"],
     lots: [
       { name: "Pista", price: 8_000, totalQuantity: 500, availableQuantity: 498 },
       { name: "VIP", price: 25_000, totalQuantity: 100 },
@@ -89,6 +91,7 @@ const SEED_EVENTS: SeedEventDef[] = [
     location: "Teatro Municipal — Rio de Janeiro, RJ",
     status: EventStatus.PUBLISHED,
     imageUrl: SEED_EVENT_IMAGES.comedy,
+    artists: ["Afonso Padilha", "Fábio Porchat"],
     lots: [{ name: "Geral", price: 4_500, totalQuantity: 150, availableQuantity: 149 }],
   },
   {
@@ -98,6 +101,7 @@ const SEED_EVENTS: SeedEventDef[] = [
     location: "Mineirão Arena — Belo Horizonte, MG",
     status: EventStatus.PUBLISHED,
     imageUrl: SEED_EVENT_IMAGES.rock,
+    artists: ["Titãs", "Capital Inicial", "Legião Urbana"],
     lots: [
       { name: "Pista", price: 12_000, totalQuantity: 800, availableQuantity: 650 },
       { name: "Front Stage", price: 28_000, totalQuantity: 200, availableQuantity: 120 },
@@ -110,6 +114,7 @@ const SEED_EVENTS: SeedEventDef[] = [
     location: "Espaço Cultural — São Paulo, SP",
     status: EventStatus.PUBLISHED,
     imageUrl: SEED_EVENT_IMAGES.jazz,
+    artists: ["Eliane Elias", "João Donato"],
     lots: [{ name: "Mesa", price: 18_000, totalQuantity: 80, availableQuantity: 45 }],
   },
   {
@@ -164,6 +169,7 @@ const SEED_EVENTS: SeedEventDef[] = [
     location: "Praia de Copacabana — Rio de Janeiro, RJ",
     status: EventStatus.PUBLISHED,
     imageUrl: SEED_EVENT_IMAGES.electronic,
+    artists: ["Alok", "Vintage Culture", "Cat Dealers"],
     lots: [
       { name: "Open Air", price: 14_000, totalQuantity: 600, availableQuantity: 420 },
       { name: "VIP Lounge", price: 32_000, totalQuantity: 150, availableQuantity: 80 },
@@ -286,6 +292,7 @@ export async function runDemoSeed(
         date: daysFromNow(def.daysFromNow),
         location: def.location,
         imageUrl: def.imageUrl,
+        artists: def.artists ?? [],
         status: def.status,
       }),
     );

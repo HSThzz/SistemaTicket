@@ -12,12 +12,14 @@ import paymentRoutes from "../../../../modules/payment/interfaces/http/payment.r
 import purchaseRoutes from "../../../../modules/sales/interfaces/http/purchase.routes";
 import ticketRoutes from "../../../../modules/ticketing/interfaces/http/ticket.routes";
 import walletRoutes from "../../../../modules/ticketing/interfaces/http/wallet.routes";
+import spotifyRoutes from "../../../../modules/integrations/spotify/interfaces/http/spotify.routes";
 
 const router = Router();
 
 router.get("/health", (req, res) => void healthController.check(req, res));
 
 router.use("/auth", authRoutes);
+router.use("/auth/spotify", spotifyRoutes);
 router.use("/events", eventRoutes);
 router.use("/orders", orderRoutes);
 router.use("/purchases", purchaseRoutes);

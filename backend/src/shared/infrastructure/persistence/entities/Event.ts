@@ -39,6 +39,9 @@ export class Event {
   @Column({ name: "image_url", type: "varchar", length: 2048, nullable: true })
   imageUrl!: string | null;
 
+  @Column({ type: "jsonb", default: () => "'[]'" })
+  artists!: string[];
+
   @Column({
     type: "enum",
     enum: EventStatus,
