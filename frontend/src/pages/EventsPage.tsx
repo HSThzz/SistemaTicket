@@ -3,10 +3,11 @@
  * @module pages/EventsPage
  */
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Alert,
   Box,
+  Button,
   Container,
   SimpleGrid,
   Skeleton,
@@ -14,23 +15,21 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { IconAlertCircle } from "@tabler/icons-react";
+import { IconAlertCircle, IconX } from "@tabler/icons-react";
 import { DiceEventCard } from "../components/events/DiceEventCard";
-import {
-  EventsFilterBar,
-  type EventsDateFilter,
-  type EventsPriceFilter,
-} from "../components/events/EventsFilterBar";
+import { EventsFilterBar } from "../components/events/EventsFilterBar";
 import { EventsCategoryGrid } from "../components/events/EventsCategoryGrid";
 import { EventsPromoBanner } from "../components/events/EventsPromoBanner";
 import { EventsSearchBar } from "../components/events/EventsSearchBar";
+import { useEventsFilters } from "../hooks/useEventsFilters";
 import { usePublishedEvents } from "../hooks/usePublishedEvents";
 import {
   extractCity,
   filterEvents,
   getLowestPrice,
   isEventSoon,
-  type EventCategory,
+  isEventSoldOut,
+  sortEvents,
 } from "../utils/eventVisuals";
 
 function EventsPageSkeleton() {
@@ -49,11 +48,7 @@ function EventsPageSkeleton() {
 
 export function EventsPage() {
   const { events, loading, error } = usePublishedEvents();
-  const [query, setQuery] = useState("");
-  const [cityFilter, setCityFilter] = useState<string | "all">("all");
-  const [category, setCategory] = useState<EventCategory>("all");
-  const [dateFilter, setDateFilter] = useState<EventsDateFilter>("all");
-  const [priceFilter, setPriceFilter] = useState<EventsPriceFilter>("all");
+  const { filters, setFilters, clearFilters, hasActiveFilters } = useEventsFilters();
 
   const cities = useMemo(() => {
     const unique = new Set(events.map((event) => extractCity(event.location)));
@@ -61,57 +56,70 @@ export function EventsPage() {
   }, [events]);
 
   const filteredEvents = useMemo(() => {
-    let result = filterEvents(events, query, category);
+    let result = filterEvents(events, filters.query, filters.category);
 
-    if (cityFilter !== "all") {
-      const normalizedCity = cityFilter.toLowerCase();
+    if (filters.city !== "all") {
+      const normalizedCity = filters.city.toLowerCase();
       result = result.filter(
         (event) => extractCity(event.location).toLowerCase() === normalizedCity,
       );
     }
 
-    if (dateFilter === "soon") {
+    if (filters.dateFilter === "soon") {
       result = result.filter((event) => isEventSoon(event));
     }
 
-    if (priceFilter === "free") {
+    if (filters.priceFilter === "free") {
       result = result.filter((event) => getLowestPrice(event) === 0);
-    } else if (priceFilter === "paid") {
+    } else if (filters.priceFilter === "paid") {
       result = result.filter((event) => {
         const price = getLowestPrice(event);
         return price !== null && price > 0;
       });
     }
 
-    return result;
-  }, [events, query, category, cityFilter, dateFilter, priceFilter]);
+    if (filters.hideSoldOut) {
+      result = result.filter((event) => !isEventSoldOut(event));
+    }
+
+    return sortEvents(result, filters.sort);
+  }, [events, filters]);
 
   const sectionCityLabel =
-    cityFilter === "all" ? "Brasil" : query.trim() ? "sua busca" : cityFilter;
-
-  const hasActiveFilters =
-    query.trim().length > 0 ||
-    cityFilter !== "all" ||
-    category !== "all" ||
-    dateFilter !== "all" ||
-    priceFilter !== "all";
+    filters.city === "all"
+      ? "Brasil"
+      : filters.query.trim()
+        ? "sua busca"
+        : filters.city;
 
   return (
     <Box className="events-page events-page-section" w="100%">
       <Container size="xl" px="md" pb="xl">
         <Stack gap="xl">
           <Stack gap="lg" className="events-toolbar">
-            <EventsSearchBar value={query} onChange={setQuery} />
+            <EventsSearchBar
+              value={filters.query}
+              onChange={(query) => setFilters({ query })}
+            />
             <EventsFilterBar
               cities={cities}
-              city={cityFilter}
-              onCityChange={setCityFilter}
-              dateFilter={dateFilter}
-              onDateFilterChange={setDateFilter}
-              priceFilter={priceFilter}
-              onPriceFilterChange={setPriceFilter}
+              city={filters.city}
+              onCityChange={(city) => setFilters({ city })}
+              dateFilter={filters.dateFilter}
+              onDateFilterChange={(dateFilter) => setFilters({ dateFilter })}
+              priceFilter={filters.priceFilter}
+              onPriceFilterChange={(priceFilter) => setFilters({ priceFilter })}
+              sort={filters.sort}
+              onSortChange={(sort) => setFilters({ sort })}
+              hideSoldOut={filters.hideSoldOut}
+              onHideSoldOutChange={(hideSoldOut) => setFilters({ hideSoldOut })}
+              showClearFilters={hasActiveFilters}
+              onClearFilters={clearFilters}
             />
-            <EventsCategoryGrid value={category} onChange={setCategory} />
+            <EventsCategoryGrid
+              value={filters.category}
+              onChange={(category) => setFilters({ category })}
+            />
           </Stack>
 
           <EventsPromoBanner />
@@ -126,16 +134,32 @@ export function EventsPage() {
 
           {!loading && !error && filteredEvents.length === 0 ? (
             <Alert icon={<IconAlertCircle size={18} />} color="gray" title="Nenhum evento encontrado">
-              {hasActiveFilters
-                ? "Tente outros filtros ou limpe a busca."
-                : "Não há eventos publicados no momento. Volte em breve!"}
+              <Stack gap="sm">
+                <Text size="sm">
+                  {hasActiveFilters
+                    ? "Nenhum evento corresponde aos filtros atuais."
+                    : "Não há eventos publicados no momento. Volte em breve!"}
+                </Text>
+                {hasActiveFilters ? (
+                  <Button
+                    variant="light"
+                    color="gray"
+                    size="xs"
+                    w="fit-content"
+                    leftSection={<IconX size={14} />}
+                    onClick={clearFilters}
+                  >
+                    Limpar filtros
+                  </Button>
+                ) : null}
+              </Stack>
             </Alert>
           ) : null}
 
           {!loading && !error && filteredEvents.length > 0 ? (
             <Stack gap="lg">
               <Title order={2} className="events-page-heading">
-                {hasActiveFilters && query.trim() ? (
+                {hasActiveFilters ? (
                   <>
                     Resultados{" "}
                     <Text span inherit className="events-page-heading-muted">

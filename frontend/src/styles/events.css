@@ -129,7 +129,27 @@
   color: var(--mantine-color-text) !important;
 }
 
+.events-promo-badge {
+  flex-shrink: 0;
+}
+
+.events-promo-coming-soon {
+  cursor: default;
+  padding: 10px 16px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 .events-promo-mascot {
+  flex-shrink: 0;
+}
+
+.events-promo-mascot {
+  flex-shrink: 0;
+}
+
+.events-clear-filters-btn {
   flex-shrink: 0;
 }
 

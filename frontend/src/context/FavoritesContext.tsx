@@ -65,7 +65,7 @@ async function migrateLocalFavorites(userId: string, serverIds: string[]) {
 interface FavoritesContextValue {
   favoriteIds: string[];
   isFavorite: (eventId: string) => boolean;
-  toggleFavorite: (eventId: string) => Promise<void>;
+  toggleFavorite: (eventId: string) => Promise<boolean>;
   isLoading: boolean;
   isReady: boolean;
 }
@@ -122,9 +122,9 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   );
 
   const toggleFavorite = useCallback(
-    async (eventId: string) => {
+    async (eventId: string): Promise<boolean> => {
       if (!userId) {
-        return;
+        return false;
       }
 
       const wasFavorite = favoriteIds.includes(eventId);
@@ -140,8 +140,10 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         } else {
           await favoritesService.addFavorite(eventId);
         }
+        return true;
       } catch {
         setFavoriteIds(favoriteIds);
+        return false;
       }
     },
     [favoriteIds, userId],

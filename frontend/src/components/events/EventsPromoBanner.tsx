@@ -1,4 +1,4 @@
-import { Box, Button, Group, Stack, Text, Title } from "@mantine/core";
+import { Badge, Box, Group, Stack, Text, Title, Tooltip } from "@mantine/core";
 import { IconBrandSpotify } from "@tabler/icons-react";
 import { ZeMascot } from "../brand/ZeMascot";
 
@@ -7,25 +7,31 @@ export function EventsPromoBanner() {
     <Box className="events-promo-banner">
       <Group justify="space-between" align="center" wrap="wrap" gap="xl">
         <Stack gap="sm" maw={420}>
-          <Title order={3} className="events-promo-title">
-            Shows dos artistas que você curte
-          </Title>
+          <Group gap="sm" align="center">
+            <Title order={3} className="events-promo-title">
+              Shows dos artistas que você curte
+            </Title>
+            <Badge variant="light" color="gray" radius="sm" className="events-promo-badge">
+              Em breve
+            </Badge>
+          </Group>
           <Text className="events-promo-sub" size="sm">
-            Conecte seu Spotify e a VIBRA descobre seus artistas antes de todo mundo.
+            Em breve você poderá conectar o Spotify e a VIBRA vai sugerir eventos com base nos
+            artistas que você mais ouve.
           </Text>
           <Group gap="sm" mt="xs">
-            <Button
-              variant="white"
-              color="dark"
-              radius="xl"
-              leftSection={<IconBrandSpotify size={18} />}
-              className="events-promo-btn"
-            >
-              Spotify
-            </Button>
-            <Button variant="outline" color="gray" radius="xl" className="events-promo-btn-outline">
-              Em breve
-            </Button>
+            <Tooltip label="Integração com Spotify em desenvolvimento" withArrow>
+              <Badge
+                variant="outline"
+                color="gray"
+                size="lg"
+                radius="xl"
+                leftSection={<IconBrandSpotify size={16} />}
+                className="events-promo-coming-soon"
+              >
+                Conectar Spotify
+              </Badge>
+            </Tooltip>
           </Group>
         </Stack>
 

@@ -1,11 +1,16 @@
 import type { ReactNode } from "react";
-import { Group, Menu, UnstyledButton } from "@mantine/core";
+import { Button, Group, Menu, UnstyledButton } from "@mantine/core";
 import {
+  IconArrowsSort,
   IconCalendar,
   IconChevronDown,
   IconCurrencyReal,
   IconMapPin,
+  IconTicket,
+  IconX,
 } from "@tabler/icons-react";
+import type { EventsSort } from "../../utils/eventVisuals";
+import { SORT_LABELS } from "../../utils/eventVisuals";
 
 export type EventsDateFilter = "all" | "soon";
 export type EventsPriceFilter = "all" | "free" | "paid";
@@ -18,6 +23,12 @@ interface EventsFilterBarProps {
   onDateFilterChange: (value: EventsDateFilter) => void;
   priceFilter: EventsPriceFilter;
   onPriceFilterChange: (value: EventsPriceFilter) => void;
+  sort: EventsSort;
+  onSortChange: (value: EventsSort) => void;
+  hideSoldOut: boolean;
+  onHideSoldOutChange: (value: boolean) => void;
+  showClearFilters?: boolean;
+  onClearFilters?: () => void;
 }
 
 const DATE_LABELS: Record<EventsDateFilter, string> = {
@@ -36,11 +47,13 @@ function FilterPill({
   label,
   active,
   onClick,
+  showChevron = true,
 }: {
   icon: ReactNode;
   label: string;
   active?: boolean;
   onClick?: () => void;
+  showChevron?: boolean;
 }) {
   return (
     <UnstyledButton
@@ -49,7 +62,7 @@ function FilterPill({
     >
       {icon}
       <span>{label}</span>
-      <IconChevronDown size={14} stroke={1.8} />
+      {showChevron ? <IconChevronDown size={14} stroke={1.8} /> : null}
     </UnstyledButton>
   );
 }
@@ -62,63 +75,109 @@ export function EventsFilterBar({
   onDateFilterChange,
   priceFilter,
   onPriceFilterChange,
+  sort,
+  onSortChange,
+  hideSoldOut,
+  onHideSoldOutChange,
+  showClearFilters,
+  onClearFilters,
 }: EventsFilterBarProps) {
   const cityLabel = city === "all" ? "Todos" : city.toUpperCase();
 
   return (
-    <Group gap="sm" wrap="wrap" className="events-filter-bar">
-      <Menu withinPortal position="bottom-start" shadow="md">
-        <Menu.Target>
-          <div>
-            <FilterPill
-              icon={<IconMapPin size={16} stroke={1.8} />}
-              label={cityLabel}
-              active={city !== "all"}
-            />
-          </div>
-        </Menu.Target>
-        <Menu.Dropdown>
-          <Menu.Item onClick={() => onCityChange("all")}>Todas as cidades</Menu.Item>
-          {cities.map((item) => (
-            <Menu.Item key={item} onClick={() => onCityChange(item)}>
-              {item}
-            </Menu.Item>
-          ))}
-        </Menu.Dropdown>
-      </Menu>
+    <Group gap="sm" wrap="wrap" className="events-filter-bar" justify="space-between">
+      <Group gap="sm" wrap="wrap">
+        <Menu withinPortal position="bottom-start" shadow="md">
+          <Menu.Target>
+            <div>
+              <FilterPill
+                icon={<IconMapPin size={16} stroke={1.8} />}
+                label={cityLabel}
+                active={city !== "all"}
+              />
+            </div>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item onClick={() => onCityChange("all")}>Todas as cidades</Menu.Item>
+            {cities.map((item) => (
+              <Menu.Item key={item} onClick={() => onCityChange(item)}>
+                {item}
+              </Menu.Item>
+            ))}
+          </Menu.Dropdown>
+        </Menu>
 
-      <Menu withinPortal position="bottom-start" shadow="md">
-        <Menu.Target>
-          <div>
-            <FilterPill
-              icon={<IconCalendar size={16} stroke={1.8} />}
-              label={DATE_LABELS[dateFilter]}
-              active={dateFilter !== "all"}
-            />
-          </div>
-        </Menu.Target>
-        <Menu.Dropdown>
-          <Menu.Item onClick={() => onDateFilterChange("all")}>Qualquer data</Menu.Item>
-          <Menu.Item onClick={() => onDateFilterChange("soon")}>Esta semana</Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
+        <Menu withinPortal position="bottom-start" shadow="md">
+          <Menu.Target>
+            <div>
+              <FilterPill
+                icon={<IconCalendar size={16} stroke={1.8} />}
+                label={DATE_LABELS[dateFilter]}
+                active={dateFilter !== "all"}
+              />
+            </div>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item onClick={() => onDateFilterChange("all")}>Qualquer data</Menu.Item>
+            <Menu.Item onClick={() => onDateFilterChange("soon")}>Esta semana</Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
 
-      <Menu withinPortal position="bottom-start" shadow="md">
-        <Menu.Target>
-          <div>
-            <FilterPill
-              icon={<IconCurrencyReal size={16} stroke={1.8} />}
-              label={PRICE_LABELS[priceFilter]}
-              active={priceFilter !== "all"}
-            />
-          </div>
-        </Menu.Target>
-        <Menu.Dropdown>
-          <Menu.Item onClick={() => onPriceFilterChange("all")}>Qualquer preço</Menu.Item>
-          <Menu.Item onClick={() => onPriceFilterChange("free")}>Gratuito</Menu.Item>
-          <Menu.Item onClick={() => onPriceFilterChange("paid")}>Pago</Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
+        <Menu withinPortal position="bottom-start" shadow="md">
+          <Menu.Target>
+            <div>
+              <FilterPill
+                icon={<IconCurrencyReal size={16} stroke={1.8} />}
+                label={PRICE_LABELS[priceFilter]}
+                active={priceFilter !== "all"}
+              />
+            </div>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item onClick={() => onPriceFilterChange("all")}>Qualquer preço</Menu.Item>
+            <Menu.Item onClick={() => onPriceFilterChange("free")}>Gratuito</Menu.Item>
+            <Menu.Item onClick={() => onPriceFilterChange("paid")}>Pago</Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+
+        <Menu withinPortal position="bottom-start" shadow="md">
+          <Menu.Target>
+            <div>
+              <FilterPill
+                icon={<IconArrowsSort size={16} stroke={1.8} />}
+                label={SORT_LABELS[sort]}
+                active={sort !== "date"}
+              />
+            </div>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item onClick={() => onSortChange("date")}>Data</Menu.Item>
+            <Menu.Item onClick={() => onSortChange("price_asc")}>Menor preço</Menu.Item>
+            <Menu.Item onClick={() => onSortChange("price_desc")}>Maior preço</Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+
+        <FilterPill
+          icon={<IconTicket size={16} stroke={1.8} />}
+          label="Com ingressos"
+          active={hideSoldOut}
+          showChevron={false}
+          onClick={() => onHideSoldOutChange(!hideSoldOut)}
+        />
+      </Group>
+
+      {showClearFilters && onClearFilters ? (
+        <Button
+          variant="subtle"
+          color="gray"
+          size="compact-sm"
+          leftSection={<IconX size={14} />}
+          onClick={onClearFilters}
+          className="events-clear-filters-btn"
+        >
+          Limpar filtros
+        </Button>
+      ) : null}
     </Group>
   );
 }

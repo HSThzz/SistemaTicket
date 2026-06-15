@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Alert,
+  ActionIcon,
   Badge,
   Box,
   Button,
@@ -25,6 +26,8 @@ import {
   IconBolt,
   IconCalendar,
   IconClock,
+  IconHeart,
+  IconHeartFilled,
   IconMapPin,
   IconQrcode,
   IconShieldCheck,
@@ -37,6 +40,7 @@ import { PremiumPaper } from "../components/account/PremiumPaper";
 import { PageLoader } from "../components/account/PageLoader";
 import { StatCard } from "../components/account/StatCard";
 import { useAuth } from "../context/AuthContext";
+import { useEventFavoriteAction } from "../hooks/useEventFavoriteAction";
 import * as eventService from "../features/catalog/api/eventService";
 import type { Event, TicketLot } from "../types/api";
 import { useEventCoverPreload } from "../hooks/useEventCoverPreload";
@@ -136,6 +140,10 @@ export function EventDetailPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { liked, handleToggleFavorite } = useEventFavoriteAction({
+    eventId: eventId ?? "",
+    loginReturnPath: eventId ? `/eventos/${eventId}` : undefined,
+  });
 
   useEffect(() => {
     if (!eventId) {
@@ -233,7 +241,8 @@ export function EventDetailPage() {
         <Box className="producer-manage-hero-overlay" />
         <Container size="lg" px="md" className="event-detail-hero-content">
           <Stack gap="md" className="event-detail-hero-info">
-            <Group gap="xs" wrap="wrap">
+            <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
+              <Group gap="xs" wrap="wrap" flex={1}>
                 <Badge color="white" c="dark" variant="filled" radius="sm">
                   {CATEGORY_LABELS[category]}
                 </Badge>
@@ -253,6 +262,19 @@ export function EventDetailPage() {
                   </Badge>
                 ) : null}
               </Group>
+
+              <ActionIcon
+                className="event-detail-favorite-btn"
+                variant="filled"
+                radius="xl"
+                size="xl"
+                aria-label={liked ? "Remover dos favoritos" : "Salvar evento"}
+                aria-pressed={liked}
+                onClick={handleToggleFavorite}
+              >
+                {liked ? <IconHeartFilled size={20} /> : <IconHeart size={20} />}
+              </ActionIcon>
+            </Group>
 
               <Title
                 order={1}

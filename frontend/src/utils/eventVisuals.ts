@@ -219,6 +219,57 @@ export function filterEvents(
   });
 }
 
+/** Ordenação da vitrine de eventos. */
+export type EventsSort = "date" | "price_asc" | "price_desc";
+
+export const SORT_LABELS: Record<EventsSort, string> = {
+  date: "Data",
+  price_asc: "Menor preço",
+  price_desc: "Maior preço",
+};
+
+/**
+ * Indica se todos os lotes do evento estão esgotados.
+ *
+ * @param event - Evento com lista de lotes.
+ */
+export function isEventSoldOut(event: Event): boolean {
+  return getTotalAvailable(event) === 0;
+}
+
+/**
+ * Ordena eventos por data ou menor preço dos lotes.
+ *
+ * @param events - Lista já filtrada.
+ * @param sort - Critério de ordenação.
+ */
+export function sortEvents(events: Event[], sort: EventsSort): Event[] {
+  const copy = [...events];
+
+  if (sort === "price_asc" || sort === "price_desc") {
+    return copy.sort((left, right) => {
+      const leftPrice = getLowestPrice(left);
+      const rightPrice = getLowestPrice(right);
+
+      if (leftPrice === null && rightPrice === null) {
+        return 0;
+      }
+      if (leftPrice === null) {
+        return 1;
+      }
+      if (rightPrice === null) {
+        return -1;
+      }
+
+      return sort === "price_asc" ? leftPrice - rightPrice : rightPrice - leftPrice;
+    });
+  }
+
+  return copy.sort(
+    (left, right) => new Date(left.date).getTime() - new Date(right.date).getTime(),
+  );
+}
+
 /**
  * Agrupa eventos por cidade extraída do campo de localização.
  *
