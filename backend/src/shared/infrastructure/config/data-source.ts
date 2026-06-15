@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file Configuração do TypeORM DataSource (PostgreSQL).
  * @module shared/infrastructure/config/data-source
  */

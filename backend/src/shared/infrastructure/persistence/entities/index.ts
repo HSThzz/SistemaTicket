@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file Barrel de entidades TypeORM e reexportação de enumeradores do kernel.
  * @module shared/infrastructure/persistence/entities
  */

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file Rotas HTTP de autenticação e gestão de papéis.
  * @module modules/identity/interfaces/http/auth.routes
  */

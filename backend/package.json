@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only --ignore-watch node_modules src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "npm run migration:run:prod && node dist/server.js",
+    "migration:run:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/shared/infrastructure/config/data-source.js",
     "typeorm": "typeorm-ts-node-commonjs -d src/shared/infrastructure/config/data-source.ts",
     "migration:generate": "npm run typeorm -- migration:generate",
     "migration:run": "npm run typeorm -- migration:run",

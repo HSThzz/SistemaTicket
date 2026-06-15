@@ -101,6 +101,17 @@ npm run migration:run
 npm run seed
 ```
 
+> `npm run migration:run` na sua máquina usa o banco do `.env` local (`DB_HOST=localhost`), **não** o Postgres do Railway. Para aplicar no ambiente remoto:
+>
+> ```bash
+> cd backend
+> railway login
+> railway link    # serviço da API
+> railway run npm run migration:run
+> ```
+>
+> Em produção, o `npm start` já executa `migration:run:prod` antes de subir a API (cada deploy aplica migrations pendentes).
+
 > `npm run seed` **apaga** todas as tabelas principais e o Redis (`TRUNCATE` + `FLUSHDB`) antes de popular. Use `npm run seed:keep` para não truncar (só insere se os usuários demo ainda não existirem).
 
 ## Variáveis de ambiente

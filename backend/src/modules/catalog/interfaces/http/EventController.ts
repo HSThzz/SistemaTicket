@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file Controlador HTTP de eventos e lotes de ingressos.
  * @module modules/catalog/interfaces/http/EventController
  */
