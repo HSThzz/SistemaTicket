@@ -27,6 +27,7 @@ import { ColorSchemeToggle } from "./ColorSchemeToggle";
 import { MobileNavDrawer } from "./layout/MobileNavDrawer";
 import { UserAccountMenu } from "./layout/UserAccountMenu";
 import { useAuth } from "../context/AuthContext";
+import { isProducerPanelRole, isStaffRole } from "../utils/adminRoles";
 
 const PUBLIC_NAV_LINKS = [
   { to: "/", label: "Início", exact: true },
@@ -100,8 +101,8 @@ export function Layout() {
   const isFullWidthPage = isHome || isEventsPage || isHeroPage;
   const layoutVariant = isHome ? "home" : isEventsPage ? "events" : isHeroPage ? "hero" : undefined;
 
-  const isProducer = user?.role === "PRODUCER" || user?.role === "ADMIN";
-  const isAdmin = user?.role === "ADMIN";
+  const isProducer = isProducerPanelRole(user?.role);
+  const isAdmin = isStaffRole(user?.role);
 
   const handleLogout = () => {
     clearSession();

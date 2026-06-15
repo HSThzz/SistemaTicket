@@ -12,6 +12,7 @@ import {
   InvalidCredentialsError,
   InvalidCurrentPasswordError,
   InvalidRoleError,
+  RoleAssignmentForbiddenError,
   UserNotFoundError,
 } from "../../domain/errors/AuthError";
 import type { LoginInput, RegisterInput } from "../../application/types";
@@ -24,6 +25,7 @@ import { registerUser } from "../../application/services/registerUser";
 import { updatePassword as changeUserPassword } from "../../application/services/updatePassword";
 import { updateProfile } from "../../application/services/updateProfile";
 import { updateUserRole } from "../../application/services/updateUserRole";
+import { listAdminAuditLogs as fetchAdminAuditLogs } from "../../application/queries/listAdminAuditLogs";
 import { addFavorite as addUserFavorite } from "../../application/services/addFavorite";
 import { listFavoriteEventIds } from "../../application/services/listFavoriteEventIds";
 import { listFavoriteEvents as listUserFavoriteEvents } from "../../application/services/listFavoriteEvents";
@@ -207,7 +209,7 @@ export class AuthController {
   }
 
   /**
-   * GET /auth/users/lookup?email= — busca usuário por e-mail (ADMIN).
+   * GET /auth/users/lookup?email= — busca usuário por e-mail (ADMIN/SUPER_ADMIN).
    */
   async lookupUser(req: Request, res: Response): Promise<void> {
     const { email } = req.query as { email: string };
@@ -221,15 +223,40 @@ export class AuthController {
   }
 
   /**
-   * PATCH /auth/users/:userId/role — altera papel (somente ADMIN).
+   * PATCH /auth/users/:userId/role — altera papel (somente SUPER_ADMIN).
    */
   async updateUserRole(req: Request, res: Response): Promise<void> {
     const { userId } = req.params as { userId: string };
     const { role } = req.body as { role: UserRole };
 
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
     try {
-      const user = await updateUserRole(userId, { role });
+      const user = await updateUserRole(
+        userId,
+        { role },
+        { userId: req.user.id, role: req.user.role },
+      );
       res.status(200).json({ user });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * GET /auth/admin/audit-logs — auditoria de ações sensíveis (SUPER_ADMIN).
+   */
+  async listAdminAuditLogs(req: Request, res: Response): Promise<void> {
+    const limit = Number(req.query.limit ?? 50);
+
+    try {
+      const logs = await fetchAdminAuditLogs(
+        Number.isFinite(limit) ? limit : 50,
+      );
+      res.status(200).json({ logs });
     } catch (error) {
       this.handleError(res, error);
     }
@@ -281,6 +308,11 @@ export class AuthController {
 
     if (error instanceof InvalidRoleError) {
       res.status(400).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof RoleAssignmentForbiddenError) {
+      res.status(403).json({ error: error.message, code: error.code });
       return;
     }
 

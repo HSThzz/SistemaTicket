@@ -11,3 +11,4 @@ export { updateUserRoleSchema as updateRoleBodySchema } from "../../../../module
 export { lookupUserByEmailSchema as lookupUserQuerySchema } from "../../../../modules/identity/validators/schema/lookupUserByEmailSchema";
 export { userIdParamsSchema } from "../../../../modules/identity/validators/schema/userIdSchema";
 export { eventIdParamsSchema } from "../../../../modules/catalog/validators/schema/eventIdSchema";
+export { listAdminAuditLogsQuerySchema } from "../../../../modules/identity/validators/schema/listAdminAuditLogsQuerySchema";

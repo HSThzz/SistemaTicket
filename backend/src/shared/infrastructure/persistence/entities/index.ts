@@ -4,12 +4,14 @@
  */
 
 export {
+  AdminAuditAction,
   EventStatus,
   OrderStatus,
   ReservationStatus,
   TicketStatus,
   UserRole,
 } from "../../../kernel/enums";
+export { AdminAuditLog } from "./AdminAuditLog";
 export { Event } from "./Event";
 export { Order } from "./Order";
 export { Reservation } from "./Reservation";

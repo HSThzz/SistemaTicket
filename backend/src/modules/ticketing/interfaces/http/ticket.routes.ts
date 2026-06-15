@@ -14,6 +14,7 @@ import {
   listUserTicketsQuerySchema,
 } from "../../../../shared/interfaces/http/validation/ticketing.schemas";
 import { UserRole } from "../../../../shared/kernel/enums";
+import { STAFF_ROLES } from "../../../../shared/kernel/staffRoles";
 
 const router = Router();
 
@@ -27,7 +28,7 @@ router.get(
 router.post(
   "/check-in",
   authMiddleware,
-  roleMiddleware([UserRole.ADMIN, UserRole.PRODUCER]),
+  roleMiddleware([...STAFF_ROLES, UserRole.PRODUCER]),
   validateBody(checkInBodySchema),
   (req, res) => void checkInController.checkIn(req, res),
 );

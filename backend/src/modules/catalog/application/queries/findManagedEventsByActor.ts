@@ -4,7 +4,7 @@
  */
 
 import { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
-import { UserRole } from "../../../../shared/kernel/enums";
+import { isStaffRole } from "../../../../shared/kernel/staffRoles";
 import type { EventActor } from "../types";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
@@ -12,7 +12,7 @@ export async function findManagedEventsByActor(actor: EventActor,
 ): Promise<Event[]> {
   const repository = AppDataSource.getRepository(Event);
 
-  if (actor.role === UserRole.ADMIN) {
+  if (isStaffRole(actor.role)) {
     return repository.find({
       order: { date: "ASC" },
       relations: { ticketLots: true },

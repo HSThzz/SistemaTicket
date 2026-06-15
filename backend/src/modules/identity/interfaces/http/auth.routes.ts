@@ -6,11 +6,13 @@
 import { Router } from "express";
 import { authController } from "./AuthController";
 import { UserRole } from "../../../../shared/kernel/enums";
+import { STAFF_ROLES } from "../../../../shared/kernel/staffRoles";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
 import { authLoginRateLimiter } from "../../../../shared/interfaces/http/middlewares/rateLimiter";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
 import { validateBody, validateParams, validateQuery } from "../../../../shared/interfaces/http/middlewares/validate";
 import {
+  listAdminAuditLogsQuerySchema,
   loginBodySchema,
   lookupUserQuerySchema,
   registerBodySchema,
@@ -81,7 +83,7 @@ router.delete(
 router.get(
   "/users/lookup",
   authMiddleware,
-  roleMiddleware([UserRole.ADMIN]),
+  roleMiddleware([...STAFF_ROLES]),
   validateQuery(lookupUserQuerySchema),
   (req, res) => void authController.lookupUser(req, res),
 );
@@ -89,10 +91,18 @@ router.get(
 router.patch(
   "/users/:userId/role",
   authMiddleware,
-  roleMiddleware([UserRole.ADMIN]),
+  roleMiddleware([UserRole.SUPER_ADMIN]),
   validateParams(userIdParamsSchema),
   validateBody(updateRoleBodySchema),
   (req, res) => void authController.updateUserRole(req, res),
+);
+
+router.get(
+  "/admin/audit-logs",
+  authMiddleware,
+  roleMiddleware([UserRole.SUPER_ADMIN]),
+  validateQuery(listAdminAuditLogsQuerySchema),
+  (req, res) => void authController.listAdminAuditLogs(req, res),
 );
 
 export default router;

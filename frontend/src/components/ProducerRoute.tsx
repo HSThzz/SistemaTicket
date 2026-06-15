@@ -7,11 +7,10 @@ import { Navigate, Outlet } from "react-router-dom";
 import { Box, Center, Loader } from "@mantine/core";
 import { ProducerCheckInFab } from "./producer/ProducerCheckInFab";
 import { useAuth } from "../context/AuthContext";
-
-const PRODUCER_ROLES = new Set(["PRODUCER", "ADMIN"]);
+import { isProducerPanelRole } from "../utils/adminRoles";
 
 /**
- * Exige autenticação e papel `PRODUCER` ou `ADMIN`; demais perfis voltam à home.
+ * Exige autenticação e papel de produtor ou equipe admin; demais perfis voltam à home.
  */
 export function ProducerRoute() {
   const { user, isAuthenticated, isBootstrapping } = useAuth();
@@ -28,7 +27,7 @@ export function ProducerRoute() {
     return <Navigate to="/login" replace state={{ from: "/produtor" }} />;
   }
 
-  if (!PRODUCER_ROLES.has(user.role)) {
+  if (!isProducerPanelRole(user.role)) {
     return <Navigate to="/" replace />;
   }
 

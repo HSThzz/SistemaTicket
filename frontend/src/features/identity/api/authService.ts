@@ -4,7 +4,7 @@
  */
 
 import { api } from "../../../shared/api/client";
-import type { AuthResponse, AuthUser } from "../../../types/api";
+import type { AuthResponse, AuthUser, AdminAuditLogEntry } from "../../../types/api";
 
 /** Credenciais de login. */
 export interface LoginInput {
@@ -87,7 +87,7 @@ export async function lookupUserByEmail(email: string): Promise<AuthUser> {
 }
 
 /**
- * Altera o papel de um usuário (admin).
+ * Altera o papel de um usuário (super admin).
  */
 export async function updateUserRole(
   userId: string,
@@ -98,4 +98,17 @@ export async function updateUserRole(
     { role },
   );
   return data.user;
+}
+
+/**
+ * Lista auditoria de ações sensíveis (super admin).
+ */
+export async function listAdminAuditLogs(
+  limit = 50,
+): Promise<AdminAuditLogEntry[]> {
+  const { data } = await api.get<{ logs: AdminAuditLogEntry[] }>(
+    "/auth/admin/audit-logs",
+    { params: { limit } },
+  );
+  return data.logs;
 }

@@ -1,4 +1,5 @@
 import { UserRole } from "../../../../shared/kernel/enums";
+import { isStaffRole } from "../../../../shared/kernel/staffRoles";
 import { findOneTicketForAccessCheck } from "../queries/findOneTicketForAccessCheck";
 
 export interface WalletActor {
@@ -10,7 +11,7 @@ export async function canAccessTicket(
   ticketId: string,
   actor: WalletActor,
 ) {
-  if (actor.role === UserRole.ADMIN) {
+  if (isStaffRole(actor.role)) {
     return true;
   }
 

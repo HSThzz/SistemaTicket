@@ -1,14 +1,15 @@
 /**
- * @file Guard de rota restrita a administradores.
+ * @file Guard de rota restrita à equipe administrativa (suporte e plataforma).
  * @module components/AdminRoute
  */
 
 import { Navigate, Outlet } from "react-router-dom";
 import { Center, Loader } from "@mantine/core";
 import { useAuth } from "../context/AuthContext";
+import { isStaffRole } from "../utils/adminRoles";
 
 /**
- * Exige autenticação e papel `ADMIN`; demais perfis voltam à home.
+ * Exige autenticação e papel `ADMIN` ou `SUPER_ADMIN`; demais perfis voltam à home.
  */
 export function AdminRoute() {
   const { user, isAuthenticated, isBootstrapping } = useAuth();
@@ -25,7 +26,7 @@ export function AdminRoute() {
     return <Navigate to="/login" replace state={{ from: "/admin" }} />;
   }
 
-  if (user.role !== "ADMIN") {
+  if (!isStaffRole(user.role)) {
     return <Navigate to="/" replace />;
   }
 

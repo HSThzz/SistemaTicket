@@ -248,7 +248,7 @@ export async function runDemoSeed(
       email: SEED_DEMO_EMAILS.admin,
       passwordHash,
       document: "10000000001",
-      role: UserRole.ADMIN,
+      role: UserRole.SUPER_ADMIN,
     }),
   );
 

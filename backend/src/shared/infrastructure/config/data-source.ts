@@ -7,6 +7,7 @@ import "reflect-metadata";
 import dotenv from "dotenv";
 import { DataSource } from "typeorm";
 import {
+  AdminAuditLog,
   Event,
   Order,
   Reservation,
@@ -54,6 +55,6 @@ export const AppDataSource = new DataSource({
   ...postgresConfig,
   synchronize: false,
   logging: !isProduction && !isTest,
-  entities: [User, Event, TicketLot, Reservation, Order, Ticket, UserFavorite],
+  entities: [User, Event, TicketLot, Reservation, Order, Ticket, UserFavorite, AdminAuditLog],
   migrations: [`${__dirname}/../persistence/migrations/*.{ts,js}`],
 });

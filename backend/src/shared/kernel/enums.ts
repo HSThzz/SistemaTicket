@@ -8,6 +8,14 @@ export enum UserRole {
   CLIENT = "CLIENT",
   PRODUCER = "PRODUCER",
   ADMIN = "ADMIN",
+  SUPER_ADMIN = "SUPER_ADMIN",
+}
+
+/** Ações sensíveis registradas na auditoria administrativa. */
+export enum AdminAuditAction {
+  USER_ROLE_UPDATED = "USER_ROLE_UPDATED",
+  ORDER_REFUNDED = "ORDER_REFUNDED",
+  STOCK_RECONCILED = "STOCK_RECONCILED",
 }
 
 /** Status do ciclo de vida de um evento. */

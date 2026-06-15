@@ -24,6 +24,8 @@ import { QueueMonitorService } from "../../../../shared/application/QueueMonitor
 import { getReservationStatus } from "../../application/services/getReservationStatus";
 import { reconcileAllStock } from "../../application/services/reconcileAllStock";
 import { reserveTickets } from "../../application/services/reserveTickets";
+import { AdminAuditAction } from "../../../../shared/kernel/enums";
+import { createAdminAuditLog } from "../../../identity/application/commands/createAdminAuditLog";
 
 const CONTEXT = "PurchaseController";
 const logger = Logger.getInstance();
@@ -275,16 +277,29 @@ export class PurchaseController {
   }
 
   /**
-   * Executa reconciliação manual de estoque Redis ↔ PostgreSQL (ADMIN).
-   * @param _req - Requisição autenticada com papel ADMIN.
+   * Executa reconciliação manual de estoque Redis ↔ PostgreSQL (SUPER_ADMIN).
+   * @param req - Requisição autenticada com papel SUPER_ADMIN.
    * @param res - Relatório de lotes verificados e corrigidos.
    */
-  async reconcileStock(_req: Request, res: Response): Promise<void> {
+  async reconcileStock(req: Request, res: Response): Promise<void> {
     try {
       const worker = getStockReconciliationWorker();
       const report = worker
         ? await worker.runOnce()
         : await reconcileAllStock(redis);
+
+      if (req.user) {
+        await createAdminAuditLog({
+          actorUserId: req.user.id,
+          action: AdminAuditAction.STOCK_RECONCILED,
+          targetType: "platform",
+          targetId: "stock",
+          metadata: {
+            lotsChecked: report.lotsChecked,
+            correctedCount: report.correctedCount,
+          },
+        });
+      }
 
       res.status(200).json(report);
     } catch (error) {

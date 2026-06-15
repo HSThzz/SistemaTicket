@@ -4,7 +4,7 @@
  */
 
 /** Papéis de usuário suportados pelo sistema. */
-export type UserRole = "CLIENT" | "PRODUCER" | "ADMIN";
+export type UserRole = "CLIENT" | "PRODUCER" | "ADMIN" | "SUPER_ADMIN";
 
 /** Perfil público do usuário autenticado. */
 export interface AuthUser {
@@ -199,4 +199,32 @@ export interface ProducerDashboardStats {
 export interface ApiErrorBody {
   error?: string;
   code?: string;
+}
+
+/** Registro de auditoria de ações administrativas sensíveis. */
+export interface AdminAuditLogEntry {
+  id: string;
+  actorUserId: string;
+  actorName: string | null;
+  actorEmail: string | null;
+  action: string;
+  targetType: string;
+  targetId: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+/** Relatório de reconciliação manual de estoque Redis ↔ PostgreSQL. */
+export interface StockReconciliationReport {
+  checkedAt: string;
+  lotsChecked: number;
+  correctedCount: number;
+  lots: Array<{
+    ticketLotId: string;
+    pgAvailable: number;
+    pendingInQueues: number;
+    expectedRedis: number;
+    previousRedis: number | null;
+    corrected: boolean;
+  }>;
 }

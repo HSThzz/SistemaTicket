@@ -8,6 +8,7 @@ import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../../../shared/infrastructure/c
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { getRedis } from "../../../../shared/infrastructure/config/redis";
 import { EventStatus, UserRole } from "../../../../shared/kernel/enums";
+import { STAFF_ROLES } from "../../../../shared/kernel/staffRoles";
 import { ValidationError } from "../../../../shared/kernel/validateSchema";
 import {
   EventAccessDeniedError,
@@ -300,8 +301,8 @@ export class EventController {
 /** Instância singleton do controlador de eventos. */
 export const eventController = new EventController();
 
-/** Middlewares padrão para rotas de gestão (auth + PRODUCER ou ADMIN). */
+/** Middlewares padrão para rotas de gestão (auth + PRODUCER ou equipe admin). */
 export const eventManagementMiddlewares = [
   authMiddleware,
-  roleMiddleware([UserRole.ADMIN, UserRole.PRODUCER]),
+  roleMiddleware([...STAFF_ROLES, UserRole.PRODUCER]),
 ] as const;

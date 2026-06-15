@@ -96,3 +96,14 @@ export class InvalidRoleError extends AuthError {
     this.name = "InvalidRoleError";
   }
 }
+
+/** Tentativa de alterar papel sem privilégio de super administrador. */
+export class RoleAssignmentForbiddenError extends AuthError {
+  constructor() {
+    super(
+      "Only super admins can change user roles",
+      "ROLE_ASSIGNMENT_FORBIDDEN",
+    );
+    this.name = "RoleAssignmentForbiddenError";
+  }
+}

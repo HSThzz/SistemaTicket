@@ -17,6 +17,8 @@ import {
 import { getOrderPixPayment } from "../../../payment/application/services/getOrderPixPayment";
 import { refundOrder } from "../../../payment/application/services/refundOrder";
 import { createPaymentGateway } from "../../../payment/infrastructure/gateways/createPaymentGateway";
+import { AdminAuditAction } from "../../../../shared/kernel/enums";
+import { createAdminAuditLog } from "../../../identity/application/commands/createAdminAuditLog";
 import { getOrderByIdForAdmin } from "../../application/services/getOrderByIdForAdmin";
 import { listUserOrders } from "../../application/services/listUserOrders";
 
@@ -153,6 +155,20 @@ export class OrderController {
         orderId,
         paymentGateway,
       );
+
+      if (req.user) {
+        await createAdminAuditLog({
+          actorUserId: req.user.id,
+          action: AdminAuditAction.ORDER_REFUNDED,
+          targetType: "order",
+          targetId: orderId,
+          metadata: {
+            ticketsCancelled: result.ticketsCancelled,
+            stockRestored: result.stockRestored,
+          },
+        });
+      }
+
       res.status(200).json({ refund: result });
     } catch (error) {
       this.handleRefundError(res, orderId, error);

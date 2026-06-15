@@ -62,7 +62,7 @@ npm run dev
 
 | Papel | E-mail | Senha |
 |-------|--------|-------|
-| ADMIN | `admin@ticketflow.com.br` | `123456` |
+| SUPER_ADMIN | `admin@ticketflow.com.br` | `123456` |
 | PRODUCER | `producer@ticketflow.com.br` | `123456` |
 | CLIENT | `client@ticketflow.com.br` | `123456` |
 
@@ -141,9 +141,10 @@ Copie `.env.example` para `.env`. Principais variáveis:
 |------|------------|
 | `CLIENT` | Comprar, ver pedidos/ingressos, wallet dos próprios tickets |
 | `PRODUCER` | Gerenciar **seus** eventos/lotes, check-in nos seus eventos, ops |
-| `ADMIN` | Tudo (qualquer evento, promover usuários, ops) |
+| `ADMIN` | Suporte: qualquer evento, buscar usuários, consultar/reembolsar pedidos |
+| `SUPER_ADMIN` | Tudo do ADMIN + promover papéis, reconciliar estoque, auditoria |
 
-Cadastro público sempre cria usuário como `CLIENT`. Promoção via `PATCH /auth/users/:userId/role` (ADMIN).
+Cadastro público sempre cria usuário como `CLIENT`. Promoção via `PATCH /auth/users/:userId/role` (**SUPER_ADMIN** apenas). Ações sensíveis (reembolso, mudança de papel, reconciliação) são registradas em `admin_audit_logs`.
 
 ---
 
@@ -210,8 +211,9 @@ Authorization: Bearer <token>
 | GET | `/auth/me/favorites/events` | JWT | Eventos publicados favoritados |
 | POST | `/auth/me/favorites/:eventId` | JWT | Adiciona favorito |
 | DELETE | `/auth/me/favorites/:eventId` | JWT | Remove favorito |
-| GET | `/auth/users/lookup?email=` | ADMIN | Busca usuário por e-mail |
-| PATCH | `/auth/users/:userId/role` | ADMIN | Promover role |
+| GET | `/auth/users/lookup?email=` | ADMIN/SUPER_ADMIN | Busca usuário por e-mail |
+| PATCH | `/auth/users/:userId/role` | SUPER_ADMIN | Promover/rebaixar papel |
+| GET | `/auth/admin/audit-logs?limit=` | SUPER_ADMIN | Auditoria de ações sensíveis |
 
 **CPF:** aceito com ou sem máscara; normalizado para 11 dígitos; validação de dígitos verificadores; único por usuário (`DOCUMENT_ALREADY_EXISTS` → 409).
 
@@ -232,10 +234,10 @@ Authorization: Bearer <token>
 |--------|------|------|-----------|
 | GET | `/events` | — | Lista eventos `PUBLISHED` + lotes |
 | GET | `/events/:eventId` | — | Detalhe evento publicado |
-| GET | `/events/mine` | PRODUCER/ADMIN | Eventos gerenciáveis |
-| POST | `/events` | PRODUCER/ADMIN | Cria evento (`DRAFT`) |
-| PATCH | `/events/:eventId` | PRODUCER/ADMIN* | Atualiza evento/status |
-| POST | `/events/:eventId/lots` | PRODUCER/ADMIN* | Cria lote |
+| GET | `/events/mine` | PRODUCER/ADMIN/SUPER_ADMIN | Eventos gerenciáveis |
+| POST | `/events` | PRODUCER/ADMIN/SUPER_ADMIN | Cria evento (`DRAFT`) |
+| PATCH | `/events/:eventId` | PRODUCER/ADMIN/SUPER_ADMIN* | Atualiza evento/status |
+| POST | `/events/:eventId/lots` | PRODUCER/ADMIN/SUPER_ADMIN* | Cria lote |
 
 \* PRODUCER só gerencia eventos onde `producer_id` = seu user id.
 
@@ -382,7 +384,7 @@ Configure no painel MP a URL de notificação apontando para `/payments/webhook`
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
 | GET | `/orders/me` | CLIENT+ | Meus pedidos |
-| POST | `/orders/:id/refund` | ADMIN | Reembolsa pedido pago |
+| POST | `/orders/:id/refund` | ADMIN/SUPER_ADMIN | Reembolsa pedido pago |
 | GET | `/tickets/me` | CLIENT+ | Meus ingressos |
 
 ### Reembolso (`POST /orders/:id/refund`)
@@ -416,7 +418,7 @@ Códigos de erro: `ORDER_NOT_FOUND` (404), `ORDER_ALREADY_REFUNDED` (409), `ORDE
 
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
-| POST | `/tickets/check-in` | PRODUCER/ADMIN* | Valida ingresso na portaria |
+| POST | `/tickets/check-in` | PRODUCER/ADMIN/SUPER_ADMIN* | Valida ingresso na portaria |
 
 ```json
 { "unique_code": "<codigo-qr>" }
@@ -516,7 +518,7 @@ src/
 
 ## Fluxo completo (produtor → cliente)
 
-1. Admin promove produtor: `PATCH /auth/users/:id/role` → `{ "role": "PRODUCER" }`
+1. Super admin promove produtor: `PATCH /auth/users/:id/role` → `{ "role": "PRODUCER" }`
 2. Producer cria evento: `POST /events`
 3. Producer publica: `PATCH /events/:id` → `{ "status": "PUBLISHED" }`
 4. Producer cria lote: `POST /events/:id/lots`

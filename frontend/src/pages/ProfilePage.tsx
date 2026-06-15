@@ -38,9 +38,10 @@ import { useAuth } from "../context/AuthContext";
 import * as authService from "../features/identity/api/authService";
 import * as favoritesService from "../features/identity/api/favoritesService";
 import { useFavorites } from "../hooks/useFavorites";
-import type { AuthUser, Event, UserRole } from "../types/api";
+import type { AuthUser, Event } from "../types/api";
 import { getApiErrorMessage } from "../utils/errors";
 import { formatCpf, normalizeDocument } from "../utils/format";
+import { ROLE_LABELS } from "../utils/adminRoles";
 
 interface ProfileFormValues {
   name: string;
@@ -53,12 +54,6 @@ interface PasswordFormValues {
   newPassword: string;
   confirmPassword: string;
 }
-
-const ROLE_LABELS: Record<UserRole, string> = {
-  CLIENT: "Cliente",
-  PRODUCER: "Produtor",
-  ADMIN: "Administrador",
-};
 
 /**
  * Página de conta com edição de perfil, alteração de senha e lista de favoritos.

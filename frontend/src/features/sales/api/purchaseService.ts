@@ -8,6 +8,7 @@ import type {
   PixPaymentDetails,
   ReservationStatusView,
   ReserveTicketsResponse,
+  StockReconciliationReport,
 } from "../../../types/api";
 
 /**
@@ -107,3 +108,13 @@ export const AWAITING_PAYMENT_PHASES = new Set<ReservationStatusView["phase"]>([
   "AWAITING_PAYMENT",
   ...TERMINAL_PHASES,
 ]);
+
+/**
+ * Executa reconciliação manual de estoque (super admin).
+ */
+export async function reconcileStock(): Promise<StockReconciliationReport> {
+  const { data } = await api.post<StockReconciliationReport>(
+    "/purchases/ops/stock/reconcile",
+  );
+  return data;
+}

@@ -1,5 +1,6 @@
 import { Logger } from "../../../../shared/infrastructure/config/logger";
-import { EventStatus, TicketStatus, UserRole } from "../../../../shared/kernel/enums";
+import { EventStatus, TicketStatus } from "../../../../shared/kernel/enums";
+import { isStaffRole } from "../../../../shared/kernel/staffRoles";
 import {
   CheckInAccessDeniedError,
   CheckInNotAllowedTodayError,
@@ -30,7 +31,7 @@ export async function checkIn(uniqueCode: string, actor: CheckInActor) {
 
   const event = ticket.ticketLot.event;
 
-  if (actor.role !== UserRole.ADMIN && event.producerId !== actor.userId) {
+  if (!isStaffRole(actor.role) && event.producerId !== actor.userId) {
     logger.warn(CONTEXT, "Check-in rejected — producer does not own event", {
       ticketId: ticket.id,
       eventId: event.id,
