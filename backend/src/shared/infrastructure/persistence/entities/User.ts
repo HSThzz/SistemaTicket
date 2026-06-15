@@ -29,7 +29,7 @@ export class User {
   @Column({ name: "password_hash", type: "varchar", length: 255 })
   passwordHash!: string;
 
-  @Column({ type: "varchar", length: 18 })
+  @Column({ type: "varchar", length: 18, unique: true })
   document!: string;
 
   @Column({

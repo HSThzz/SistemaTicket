@@ -2,6 +2,7 @@ import jwt, { type SignOptions } from "jsonwebtoken";
 import { env } from "../../../../shared/infrastructure/config/env";
 import type { User } from "../../../../shared/infrastructure/persistence/entities/User";
 import type { AuthResponse, AuthTokenPayload } from "../types";
+import { toUserProfile } from "./toUserProfile";
 
 export function buildAuthResponse(user: User): AuthResponse {
   const payload: AuthTokenPayload = {
@@ -17,11 +18,6 @@ export function buildAuthResponse(user: User): AuthResponse {
 
   return {
     token,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    },
+    user: toUserProfile(user),
   };
 }

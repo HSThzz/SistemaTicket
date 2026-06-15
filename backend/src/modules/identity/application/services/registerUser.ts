@@ -2,13 +2,17 @@ import bcrypt from "bcrypt";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { UserRole } from "../../../../shared/kernel/enums";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
-import { EmailAlreadyExistsError } from "../../domain/errors/AuthError";
+import {
+  DocumentAlreadyExistsError,
+  EmailAlreadyExistsError,
+} from "../../domain/errors/AuthError";
 import {
   registerUserSchema,
   type RegisterUserInputSchema,
 } from "../../validators/schema/registerUserSchema";
 import { createUser } from "../commands/createUser";
 import { buildAuthResponse } from "../helpers/buildAuthResponse";
+import { findOneUserByDocument } from "../queries/findOneUserByDocument";
 import { findOneUserByEmail } from "../queries/findOneUserByEmail";
 
 const CONTEXT = "registerUser";
@@ -23,6 +27,12 @@ export async function registerUser(
 
   if (existingUser) {
     throw new EmailAlreadyExistsError(data.email);
+  }
+
+  const existingDocument = await findOneUserByDocument(data.document);
+
+  if (existingDocument) {
+    throw new DocumentAlreadyExistsError(data.document);
   }
 
   const passwordHash = await bcrypt.hash(data.password, BCRYPT_ROUNDS);

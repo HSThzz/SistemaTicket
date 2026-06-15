@@ -1,5 +1,8 @@
 import { env, isMercadoPagoSandbox } from "../../../../shared/infrastructure/config/env";
+import { isValidCpf, sanitizeDocument } from "../../../../shared/kernel/cpf";
 import { PaymentGatewayError } from "../../domain/errors/PaymentError";
+
+export { isValidCpf, sanitizeDocument } from "../../../../shared/kernel/cpf";
 
 /** CPF válido usado como fallback em sandbox quando o documento do usuário é inválido. */
 const SANDBOX_DEFAULT_CPF = "11144477735";
@@ -7,41 +10,6 @@ const SANDBOX_DEFAULT_CPF = "11144477735";
 export interface MercadoPagoPayerIdentification {
   type: "CPF" | "CNPJ";
   number: string;
-}
-
-/** Remove caracteres não numéricos de CPF/CNPJ. */
-export function sanitizeDocument(document: string): string {
-  return document.replace(/\D/g, "");
-}
-
-/** Valida dígitos verificadores de um CPF brasileiro. */
-export function isValidCpf(cpf: string): boolean {
-  if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) {
-    return false;
-  }
-
-  let sum = 0;
-  for (let index = 0; index < 9; index += 1) {
-    sum += Number(cpf[index]) * (10 - index);
-  }
-  let remainder = (sum * 10) % 11;
-  if (remainder === 10) {
-    remainder = 0;
-  }
-  if (remainder !== Number(cpf[9])) {
-    return false;
-  }
-
-  sum = 0;
-  for (let index = 0; index < 10; index += 1) {
-    sum += Number(cpf[index]) * (11 - index);
-  }
-  remainder = (sum * 10) % 11;
-  if (remainder === 10) {
-    remainder = 0;
-  }
-
-  return remainder === Number(cpf[10]);
 }
 
 /**

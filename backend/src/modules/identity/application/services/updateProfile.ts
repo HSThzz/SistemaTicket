@@ -1,6 +1,7 @@
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
+  DocumentAlreadyExistsError,
   EmailAlreadyExistsError,
   UserNotFoundError,
 } from "../../domain/errors/AuthError";
@@ -11,14 +12,11 @@ import {
 import { userIdSchema } from "../../validators/schema/userIdSchema";
 import { updateUser } from "../commands/updateUser";
 import { toUserProfile } from "../helpers/toUserProfile";
+import { findOneUserByDocument } from "../queries/findOneUserByDocument";
 import { findOneUserByEmail } from "../queries/findOneUserByEmail";
 import { findOneUserById } from "../queries/findOneUserById";
 
 const CONTEXT = "updateProfile";
-
-function normalizeDocument(value: string): string {
-  return value.replace(/\D/g, "");
-}
 
 export async function updateProfile(
   userId: string,
@@ -34,13 +32,21 @@ export async function updateProfile(
   }
 
   const email = data.email.toLowerCase();
-  const document = normalizeDocument(data.document);
+  const document = data.document;
 
   if (email !== user.email) {
     const existingUser = await findOneUserByEmail(email);
 
     if (existingUser && existingUser.id !== id) {
       throw new EmailAlreadyExistsError(email);
+    }
+  }
+
+  if (document !== user.document) {
+    const existingDocument = await findOneUserByDocument(document);
+
+    if (existingDocument && existingDocument.id !== id) {
+      throw new DocumentAlreadyExistsError(document);
     }
   }
 

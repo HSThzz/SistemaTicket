@@ -7,6 +7,7 @@ import type { Request, Response } from "express";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import {
   AuthError,
+  DocumentAlreadyExistsError,
   EmailAlreadyExistsError,
   InvalidCredentialsError,
   InvalidCurrentPasswordError,
@@ -247,6 +248,15 @@ export class AuthController {
 
     if (error instanceof EmailAlreadyExistsError) {
       logger.warn(CONTEXT, "Registration failed", {
+        code: error.code,
+        error: error.message,
+      });
+      res.status(409).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof DocumentAlreadyExistsError) {
+      logger.warn(CONTEXT, "Registration or profile update failed", {
         code: error.code,
         error: error.message,
       });

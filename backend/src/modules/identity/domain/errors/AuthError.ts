@@ -37,6 +37,17 @@ export class EmailAlreadyExistsError extends AuthError {
   }
 }
 
+/** CPF já cadastrado no registro ou atualização de perfil. */
+export class DocumentAlreadyExistsError extends AuthError {
+  /**
+   * @param document - CPF em conflito (apenas dígitos).
+   */
+  constructor(document: string) {
+    super(`Document already registered: ${document}`, "DOCUMENT_ALREADY_EXISTS");
+    this.name = "DocumentAlreadyExistsError";
+  }
+}
+
 /** Requisição sem autenticação ou token inválido. */
 export class UnauthorizedError extends AuthError {
   /**

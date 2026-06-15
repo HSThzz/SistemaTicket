@@ -201,10 +201,28 @@ Authorization: Bearer <token>
 
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
-| POST | `/auth/register` | — | Cadastro (`CLIENT`) |
+| POST | `/auth/register` | — | Cadastro (`CLIENT`) — nome, e-mail, senha, CPF |
 | POST | `/auth/login` | — | Login → JWT |
 | GET | `/auth/me` | JWT | Perfil do usuário logado |
+| PATCH | `/auth/me` | JWT | Atualiza nome, e-mail e CPF |
+| PATCH | `/auth/me/password` | JWT | Altera senha (`currentPassword`, `newPassword`) |
+| GET | `/auth/me/favorites` | JWT | IDs dos eventos favoritos |
+| GET | `/auth/me/favorites/events` | JWT | Eventos publicados favoritados |
+| POST | `/auth/me/favorites/:eventId` | JWT | Adiciona favorito |
+| DELETE | `/auth/me/favorites/:eventId` | JWT | Remove favorito |
+| GET | `/auth/users/lookup?email=` | ADMIN | Busca usuário por e-mail |
 | PATCH | `/auth/users/:userId/role` | ADMIN | Promover role |
+
+**CPF:** aceito com ou sem máscara; normalizado para 11 dígitos; validação de dígitos verificadores; único por usuário (`DOCUMENT_ALREADY_EXISTS` → 409).
+
+**Atualizar perfil (exemplo):**
+```json
+{
+  "name": "Maria Silva",
+  "email": "maria@email.com",
+  "document": "111.444.777-35"
+}
+```
 
 ---
 
