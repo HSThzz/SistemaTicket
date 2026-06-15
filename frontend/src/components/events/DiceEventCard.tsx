@@ -36,7 +36,7 @@ export function DiceEventCard({ event }: DiceEventCardProps) {
       return;
     }
 
-    toggleFavorite(event.id);
+    toggleFavorite(event.id).catch(() => undefined);
   };
 
   return (

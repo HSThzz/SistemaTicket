@@ -18,6 +18,7 @@ import {
   updateProfileBodySchema,
   updateRoleBodySchema,
   userIdParamsSchema,
+  eventIdParamsSchema,
 } from "../../../../shared/interfaces/http/validation/identity.schemas";
 
 const router = Router();
@@ -49,6 +50,32 @@ router.patch(
   authMiddleware,
   validateBody(updatePasswordBodySchema),
   (req, res) => void authController.updatePassword(req, res),
+);
+
+router.get(
+  "/me/favorites/events",
+  authMiddleware,
+  (req, res) => void authController.listFavoriteEvents(req, res),
+);
+
+router.get(
+  "/me/favorites",
+  authMiddleware,
+  (req, res) => void authController.listFavorites(req, res),
+);
+
+router.post(
+  "/me/favorites/:eventId",
+  authMiddleware,
+  validateParams(eventIdParamsSchema),
+  (req, res) => void authController.addFavorite(req, res),
+);
+
+router.delete(
+  "/me/favorites/:eventId",
+  authMiddleware,
+  validateParams(eventIdParamsSchema),
+  (req, res) => void authController.removeFavorite(req, res),
 );
 
 router.get(

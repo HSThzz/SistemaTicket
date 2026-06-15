@@ -10,3 +10,4 @@ export { loginUserSchema as loginBodySchema } from "../../../../modules/identity
 export { updateUserRoleSchema as updateRoleBodySchema } from "../../../../modules/identity/validators/schema/updateUserRoleSchema";
 export { lookupUserByEmailSchema as lookupUserQuerySchema } from "../../../../modules/identity/validators/schema/lookupUserByEmailSchema";
 export { userIdParamsSchema } from "../../../../modules/identity/validators/schema/userIdSchema";
+export { eventIdParamsSchema } from "../../../../modules/catalog/validators/schema/eventIdSchema";

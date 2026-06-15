@@ -23,6 +23,12 @@ import { registerUser } from "../../application/services/registerUser";
 import { updatePassword as changeUserPassword } from "../../application/services/updatePassword";
 import { updateProfile } from "../../application/services/updateProfile";
 import { updateUserRole } from "../../application/services/updateUserRole";
+import { addFavorite as addUserFavorite } from "../../application/services/addFavorite";
+import { listFavoriteEventIds } from "../../application/services/listFavoriteEventIds";
+import { listFavoriteEvents as listUserFavoriteEvents } from "../../application/services/listFavoriteEvents";
+import { removeFavorite as removeUserFavorite } from "../../application/services/removeFavorite";
+import { serializeEvent } from "../../../catalog/application/helpers/serializeEvent";
+import { EventNotFoundError } from "../../../catalog/domain/errors/EventError";
 import type { UpdatePasswordInputSchema } from "../../validators/schema/updatePasswordSchema";
 import type { UpdateProfileInputSchema } from "../../validators/schema/updateProfileSchema";
 
@@ -103,6 +109,80 @@ export class AuthController {
     try {
       await changeUserPassword(req.user.id, body);
       res.status(200).json({ success: true });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * GET /auth/me/favorites — lista IDs dos eventos favoritos do usuário.
+   */
+  async listFavorites(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    try {
+      const eventIds = await listFavoriteEventIds(req.user.id);
+      res.status(200).json({ eventIds });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * GET /auth/me/favorites/events — lista eventos publicados favoritados.
+   */
+  async listFavoriteEvents(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    try {
+      const events = await listUserFavoriteEvents(req.user.id);
+      res.status(200).json({
+        events: events.map((event) => serializeEvent(event)),
+      });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * POST /auth/me/favorites/:eventId — adiciona evento aos favoritos.
+   */
+  async addFavorite(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    const { eventId } = req.params as { eventId: string };
+
+    try {
+      const result = await addUserFavorite(req.user.id, eventId);
+      res.status(result.created ? 201 : 200).json(result);
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * DELETE /auth/me/favorites/:eventId — remove evento dos favoritos.
+   */
+  async removeFavorite(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    const { eventId } = req.params as { eventId: string };
+
+    try {
+      const result = await removeUserFavorite(req.user.id, eventId);
+      res.status(200).json(result);
     } catch (error) {
       this.handleError(res, error);
     }
@@ -191,6 +271,11 @@ export class AuthController {
 
     if (error instanceof InvalidRoleError) {
       res.status(400).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof EventNotFoundError) {
+      res.status(404).json({ error: error.message, code: error.code });
       return;
     }
 

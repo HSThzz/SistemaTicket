@@ -1,14 +1,15 @@
 /**
- * @file Persistência local de eventos favoritos por usuário.
+ * @file Favoritos do usuário sincronizados com a API.
  * @module hooks/useFavorites
  */
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import * as favoritesService from "../features/identity/api/favoritesService";
 
 const STORAGE_PREFIX = "vibra:favorites";
 
-function readFavorites(userId: string): string[] {
+function readLocalFavorites(userId: string): string[] {
   try {
     const raw = localStorage.getItem(`${STORAGE_PREFIX}:${userId}`);
     if (!raw) {
@@ -24,24 +25,78 @@ function readFavorites(userId: string): string[] {
   }
 }
 
-function writeFavorites(userId: string, ids: string[]) {
-  localStorage.setItem(`${STORAGE_PREFIX}:${userId}`, JSON.stringify(ids));
+function clearLocalFavorites(userId: string) {
+  localStorage.removeItem(`${STORAGE_PREFIX}:${userId}`);
 }
 
-/** Gerencia favoritos do usuário autenticado em localStorage. */
-export function useFavorites() {
-  const { user } = useAuth();
-  const userId = user?.id;
-  const [favoriteIds, setFavoriteIds] = useState<string[]>(() =>
-    userId ? readFavorites(userId) : [],
+async function migrateLocalFavorites(userId: string, serverIds: string[]) {
+  const localIds = readLocalFavorites(userId);
+
+  if (localIds.length === 0) {
+    return serverIds;
+  }
+
+  const serverSet = new Set(serverIds);
+  const toSync = localIds.filter((id) => !serverSet.has(id));
+
+  await Promise.all(
+    toSync.map((eventId) =>
+      favoritesService.addFavorite(eventId).catch(() => undefined),
+    ),
   );
 
+  clearLocalFavorites(userId);
+
+  if (toSync.length === 0) {
+    return serverIds;
+  }
+
+  return favoritesService.listFavoriteIds();
+}
+
+/** Gerencia favoritos do usuário autenticado via API. */
+export function useFavorites() {
+  const { user, isAuthenticated } = useAuth();
+  const userId = user?.id;
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isReady, setIsReady] = useState(!isAuthenticated);
+
   useEffect(() => {
-    if (userId) {
-      setFavoriteIds(readFavorites(userId));
-    } else {
+    if (!userId) {
       setFavoriteIds([]);
+      setIsReady(true);
+      return;
     }
+
+    let cancelled = false;
+
+    setIsLoading(true);
+    setIsReady(false);
+
+    favoritesService
+      .listFavoriteIds()
+      .then((serverIds) => migrateLocalFavorites(userId, serverIds))
+      .then((ids) => {
+        if (!cancelled) {
+          setFavoriteIds(ids);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFavoriteIds(readLocalFavorites(userId));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+          setIsReady(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
 
   const isFavorite = useCallback(
@@ -50,21 +105,30 @@ export function useFavorites() {
   );
 
   const toggleFavorite = useCallback(
-    (eventId: string) => {
+    async (eventId: string) => {
       if (!userId) {
         return;
       }
 
-      setFavoriteIds((current) => {
-        const next = current.includes(eventId)
-          ? current.filter((id) => id !== eventId)
-          : [...current, eventId];
-        writeFavorites(userId, next);
-        return next;
-      });
+      const wasFavorite = favoriteIds.includes(eventId);
+      const optimisticIds = wasFavorite
+        ? favoriteIds.filter((id) => id !== eventId)
+        : [...favoriteIds, eventId];
+
+      setFavoriteIds(optimisticIds);
+
+      try {
+        if (wasFavorite) {
+          await favoritesService.removeFavorite(eventId);
+        } else {
+          await favoritesService.addFavorite(eventId);
+        }
+      } catch {
+        setFavoriteIds(favoriteIds);
+      }
     },
-    [userId],
+    [favoriteIds, userId],
   );
 
-  return { favoriteIds, isFavorite, toggleFavorite };
+  return { favoriteIds, isFavorite, toggleFavorite, isLoading, isReady };
 }

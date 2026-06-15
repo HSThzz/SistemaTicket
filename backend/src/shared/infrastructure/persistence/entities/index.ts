@@ -16,3 +16,4 @@ export { Reservation } from "./Reservation";
 export { Ticket } from "./Ticket";
 export { TicketLot } from "./TicketLot";
 export { User } from "./User";
+export { UserFavorite } from "./UserFavorite";

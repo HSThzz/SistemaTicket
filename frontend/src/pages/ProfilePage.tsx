@@ -35,7 +35,7 @@ import { ProfilePageSkeleton } from "../components/account/ProfilePageSkeleton";
 import { DiceEventCard } from "../components/events/DiceEventCard";
 import { useAuth } from "../context/AuthContext";
 import * as authService from "../features/identity/api/authService";
-import * as eventService from "../features/catalog/api/eventService";
+import * as favoritesService from "../features/identity/api/favoritesService";
 import { useFavorites } from "../hooks/useFavorites";
 import type { AuthUser, Event, UserRole } from "../types/api";
 import { getApiErrorMessage } from "../utils/errors";
@@ -64,7 +64,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
  */
 export function ProfilePage() {
   const { user, updateUserProfile } = useAuth();
-  const { favoriteIds } = useFavorites();
+  const { favoriteIds, isReady: favoritesReady } = useFavorites();
   const [profile, setProfile] = useState<AuthUser | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -142,6 +142,10 @@ export function ProfilePage() {
   }, []);
 
   useEffect(() => {
+    if (!favoritesReady) {
+      return;
+    }
+
     if (favoriteIds.length === 0) {
       setFavoriteEvents([]);
       setFavoritesError(null);
@@ -153,12 +157,11 @@ export function ProfilePage() {
     setLoadingFavorites(true);
     setFavoritesError(null);
 
-    eventService
-      .listPublishedEvents()
+    favoritesService
+      .listFavoriteEvents()
       .then((events) => {
         if (!cancelled) {
-          const favoriteSet = new Set(favoriteIds);
-          setFavoriteEvents(events.filter((event) => favoriteSet.has(event.id)));
+          setFavoriteEvents(events);
         }
       })
       .catch((err) => {
@@ -177,7 +180,7 @@ export function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [favoriteIds]);
+  }, [favoriteIds, favoritesReady]);
 
   const displayRole = useMemo(() => {
     const role = profile?.role ?? user?.role;

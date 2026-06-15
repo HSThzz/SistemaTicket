@@ -7,7 +7,6 @@ import type { Request, Response } from "express";
 import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { getRedis } from "../../../../shared/infrastructure/config/redis";
-import { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
 import { EventStatus, UserRole } from "../../../../shared/kernel/enums";
 import { ValidationError } from "../../../../shared/kernel/validateSchema";
 import {
@@ -25,6 +24,7 @@ import { listManagedEvents } from "../../application/services/listManagedEvents"
 import { listPublishedEvents } from "../../application/services/listPublishedEvents";
 import { updateEvent } from "../../application/services/updateEvent";
 import type { EventActor } from "../../application/types";
+import { serializeEvent } from "../../application/helpers/serializeEvent";
 
 const CONTEXT = "EventController";
 const logger = Logger.getInstance();
@@ -44,31 +44,6 @@ function requireActor(req: Request, res: Response): EventActor | null {
   return {
     userId: req.user.id,
     role: req.user.role,
-  };
-}
-
-/**
- * Serializa entidade Event para JSON da API.
- * @param event - Evento com lotes opcionais.
- * @returns Objeto DTO para resposta HTTP.
- */
-function serializeEvent(event: Event) {
-  return {
-    id: event.id,
-    producerId: event.producerId,
-    title: event.title,
-    description: event.description,
-    date: event.date.toISOString(),
-    location: event.location,
-    imageUrl: event.imageUrl,
-    status: event.status,
-    ticketLots: (event.ticketLots ?? []).map((lot) => ({
-      id: lot.id,
-      name: lot.name,
-      price: lot.price,
-      totalQuantity: lot.totalQuantity,
-      availableQuantity: lot.availableQuantity,
-    })),
   };
 }
 
