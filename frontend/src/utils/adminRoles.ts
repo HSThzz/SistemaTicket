@@ -39,3 +39,16 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   ORDER_REFUNDED: "Pedido reembolsado",
   STOCK_RECONCILED: "Estoque reconciliado",
 };
+
+export function getRoleBadgeColor(role: UserRole): string {
+  switch (role) {
+    case "SUPER_ADMIN":
+      return "grape";
+    case "ADMIN":
+      return "blue";
+    case "PRODUCER":
+      return "teal";
+    default:
+      return "gray";
+  }
+}

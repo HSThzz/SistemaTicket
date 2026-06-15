@@ -19,13 +19,11 @@ export function PageHeader({ icon, title, highlight, description, action }: Page
             <Title order={1} className="page-title">
               {title}{" "}
               {highlight ? (
-                <Text span inherit c="brand">
-                  {highlight}
-                </Text>
+                <span className="page-title-highlight">{highlight}</span>
               ) : null}
             </Title>
           </Group>
-          <Text c="dimmed" size="lg">
+          <Text c="dimmed" size="lg" className="page-header-description">
             {description}
           </Text>
         </Stack>

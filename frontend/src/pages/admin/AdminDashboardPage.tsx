@@ -3,22 +3,26 @@
  * @module pages/admin/AdminDashboardPage
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Badge,
+  Box,
   Button,
+  Divider,
+  Grid,
   Group,
   Modal,
+  Paper,
   Select,
+  SimpleGrid,
+  Skeleton,
   Stack,
-  Table,
-  Tabs,
   Text,
   TextInput,
-  Title,
+  ThemeIcon,
 } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import {
@@ -26,13 +30,19 @@ import {
   IconDatabase,
   IconHistory,
   IconReceiptRefund,
+  IconRefresh,
   IconSearch,
   IconShield,
+  IconUser,
   IconUserCog,
 } from "@tabler/icons-react";
 import { AnimatedSection } from "../../components/home/AnimatedSection";
+import { EmptyState } from "../../components/account/EmptyState";
 import { PageHeader } from "../../components/account/PageHeader";
-import { PremiumPaper } from "../../components/account/PremiumPaper";
+import { StatCard } from "../../components/account/StatCard";
+import { AdminNav, type AdminTab } from "../../components/admin/AdminNav";
+import { AdminSection } from "../../components/admin/AdminSection";
+import { AdminAuditLogList } from "../../components/admin/AdminAuditLogList";
 import * as authService from "../../features/identity/api/authService";
 import * as orderService from "../../features/sales/api/orderService";
 import * as purchaseService from "../../features/sales/api/purchaseService";
@@ -49,7 +59,7 @@ import { getApiErrorMessage } from "../../utils/errors";
 import { getOrderStatusLabel } from "../../utils/statusLabels";
 import {
   ASSIGNABLE_ROLE_OPTIONS,
-  AUDIT_ACTION_LABELS,
+  getRoleBadgeColor,
   isSuperAdmin,
   ROLE_LABELS,
 } from "../../utils/adminRoles";
@@ -60,6 +70,8 @@ import {
 export function AdminDashboardPage() {
   const { user: currentUser } = useAuth();
   const canManagePlatform = isSuperAdmin(currentUser?.role);
+  const isMobile = useMediaQuery("(max-width: 47.99em)");
+  const [activeTab, setActiveTab] = useState<AdminTab>("support");
 
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -93,6 +105,19 @@ export function AdminDashboardPage() {
     },
   });
 
+  const overview = useMemo(() => {
+    const roleLabel = currentUser?.role ? ROLE_LABELS[currentUser.role] : "—";
+
+    return {
+      roleLabel,
+      auditCount: auditLogs.length,
+      lastReconcile:
+        reconcileReport != null
+          ? `${reconcileReport.correctedCount}/${reconcileReport.lotsChecked}`
+          : "—",
+    };
+  }, [auditLogs.length, currentUser?.role, reconcileReport]);
+
   const loadAuditLogs = async () => {
     if (!canManagePlatform) return;
 
@@ -103,7 +128,7 @@ export function AdminDashboardPage() {
       const logs = await authService.listAdminAuditLogs(50);
       setAuditLogs(logs);
     } catch (err) {
-      setAuditError(getApiErrorMessage(err, "Não foi possível carregar a auditoria."));
+      setAuditError(getApiErrorMessage(err, "Não foi possível carregar o histórico."));
     } finally {
       setAuditLoading(false);
     }
@@ -217,15 +242,15 @@ export function AdminDashboardPage() {
       const report = await purchaseService.reconcileStock();
       setReconcileReport(report);
       notifications.show({
-        title: "Reconciliação concluída",
+        title: "Estoque verificado",
         message: `${report.correctedCount} lote(s) corrigido(s) de ${report.lotsChecked} verificados.`,
         color: report.correctedCount > 0 ? "yellow" : "green",
       });
       void loadAuditLogs();
     } catch (err) {
       notifications.show({
-        title: "Reconciliação falhou",
-        message: getApiErrorMessage(err, "Não foi possível reconciliar o estoque."),
+        title: "Falha na verificação",
+        message: getApiErrorMessage(err, "Não foi possível verificar o estoque."),
         color: "red",
       });
     } finally {
@@ -234,63 +259,83 @@ export function AdminDashboardPage() {
   };
 
   const supportPanel = (
-    <Stack gap="xl">
-      <PremiumPaper p="xl">
-        <Group gap="sm" mb="md">
-          <IconUserCog size={22} />
-          <Title order={3}>Usuários</Title>
-        </Group>
-
+    <SimpleGrid cols={{ base: 1, xl: 2 }} spacing="lg">
+      <AdminSection
+        icon={IconUserCog}
+        iconColor="blue"
+        title="Buscar usuário"
+        description="Localize uma conta pelo e-mail para consultar dados ou alterar o papel."
+      >
         <form onSubmit={handleLookupUser}>
-          <Group align="flex-end" wrap="wrap">
-            <TextInput
-              label="E-mail do usuário"
-              placeholder="cliente@exemplo.com"
-              style={{ flex: 1, minWidth: 240 }}
-              {...userForm.getInputProps("email")}
-            />
-            <Button
-              type="submit"
-              loading={lookupLoading}
-              leftSection={<IconSearch size={16} />}
-            >
-              Buscar
-            </Button>
-          </Group>
+          <Grid align="flex-end" gap="md">
+            <Grid.Col span={{ base: 12, sm: 8 }}>
+              <TextInput
+                label="E-mail"
+                placeholder="cliente@exemplo.com"
+                {...userForm.getInputProps("email")}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 4 }}>
+              <Button
+                type="submit"
+                fullWidth
+                loading={lookupLoading}
+                leftSection={<IconSearch size={16} />}
+              >
+                Buscar
+              </Button>
+            </Grid.Col>
+          </Grid>
         </form>
 
         {lookupError ? (
           <Alert
             mt="md"
             color="red"
+            variant="light"
             icon={<IconAlertCircle size={16} />}
-            title="Busca"
+            title="Usuário não encontrado"
+            radius="lg"
           >
             {lookupError}
           </Alert>
         ) : null}
 
         {selectedUser ? (
-          <Stack mt="lg" gap="sm">
-            <Group justify="space-between" wrap="wrap">
-              <div>
-                <Text fw={600}>{selectedUser.name}</Text>
-                <Text size="sm" c="dimmed">
-                  {selectedUser.email}
-                </Text>
-                <Text size="xs" c="dimmed">
-                  ID: {selectedUser.id}
-                </Text>
-              </div>
-              <Badge size="lg" variant="light">
+          <Paper className="admin-result-card" p="md" radius="lg" mt="lg" withBorder>
+            <Stack gap="md" className="admin-result-header">
+              <Group gap="md" wrap="wrap" align="flex-start" className="admin-result-identity">
+                <ThemeIcon size={48} radius="xl" variant="light" color="blue">
+                  <IconUser size={24} />
+                </ThemeIcon>
+                <Stack gap={4} className="admin-result-copy">
+                  <Text fw={700} size="lg" lineClamp={2}>
+                    {selectedUser.name}
+                  </Text>
+                  <Text size="sm" c="dimmed" className="admin-result-email">
+                    {selectedUser.email}
+                  </Text>
+                  <Text size="xs" c="dimmed" className="admin-mono-id">
+                    {selectedUser.id}
+                  </Text>
+                </Stack>
+              </Group>
+              <Badge
+                size="lg"
+                variant="light"
+                color={getRoleBadgeColor(selectedUser.role)}
+                className="admin-result-badge"
+              >
                 {ROLE_LABELS[selectedUser.role]}
               </Badge>
-            </Group>
+            </Stack>
+
+            <Divider my="md" />
 
             {canManagePlatform ? (
               <Select
                 label="Alterar papel"
-                description="Apenas super administradores podem promover ou rebaixar papéis."
+                description="Confirmação obrigatória antes de aplicar a mudança."
                 data={ASSIGNABLE_ROLE_OPTIONS}
                 value={selectedUser.role}
                 allowDeselect={false}
@@ -303,230 +348,336 @@ export function AdminDashboardPage() {
                 disabled={roleSaving}
               />
             ) : (
-              <Alert color="blue" variant="light" title="Somente consulta">
+              <Alert color="blue" variant="light" radius="lg" title="Somente consulta">
                 Administradores de suporte podem buscar usuários, mas não alterar papéis.
               </Alert>
             )}
-          </Stack>
-        ) : null}
-      </PremiumPaper>
+          </Paper>
+        ) : (
+          <Box mt="lg">
+            <EmptyState
+              icon={<IconUser size={28} />}
+              title="Nenhum usuário selecionado"
+              description="Busque pelo e-mail para ver os dados da conta."
+            />
+          </Box>
+        )}
+      </AdminSection>
 
-      <PremiumPaper p="xl">
-        <Group gap="sm" mb="md">
-          <IconReceiptRefund size={22} />
-          <Title order={3}>Reembolsos</Title>
-        </Group>
-
-        <Group align="flex-end" wrap="wrap">
-          <TextInput
-            label="ID do pedido"
-            placeholder="UUID do pedido"
-            value={orderId}
-            onChange={(event) => setOrderId(event.currentTarget.value)}
-            style={{ flex: 1, minWidth: 280 }}
-          />
-          <Button loading={orderLoading} onClick={() => void handleLookupOrder()}>
-            Consultar
-          </Button>
-        </Group>
+      <AdminSection
+        icon={IconReceiptRefund}
+        iconColor="red"
+        title="Reembolsar pedido"
+        description="Consulte um pedido pelo ID e processe o reembolso de pedidos pagos."
+      >
+        <Grid align="flex-end" gap="md">
+          <Grid.Col span={{ base: 12, sm: 8 }}>
+            <TextInput
+              label="ID do pedido"
+              placeholder="UUID do pedido"
+              value={orderId}
+              onChange={(event) => setOrderId(event.currentTarget.value)}
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 4 }}>
+            <Button fullWidth loading={orderLoading} onClick={() => void handleLookupOrder()}>
+              Consultar
+            </Button>
+          </Grid.Col>
+        </Grid>
 
         {orderError ? (
           <Alert
             mt="md"
             color="red"
+            variant="light"
             icon={<IconAlertCircle size={16} />}
-            title="Pedido"
+            title="Pedido não encontrado"
+            radius="lg"
           >
             {orderError}
           </Alert>
         ) : null}
 
         {orderDetails ? (
-          <Stack mt="lg" gap="sm">
-            <Group justify="space-between" wrap="wrap">
-              <div>
-                <Text fw={600}>{orderDetails.eventTitle ?? "Evento"}</Text>
-                <Text size="sm" c="dimmed">
-                  {orderDetails.userName} · {orderDetails.userEmail}
+          <Paper className="admin-result-card" p="md" radius="lg" mt="lg" withBorder>
+            <Stack gap="md" className="admin-result-header">
+              <Stack gap={4} className="admin-result-copy">
+                <Text fw={700} size="lg" lineClamp={2}>
+                  {orderDetails.eventTitle ?? "Evento"}
                 </Text>
-              </div>
-              <Badge size="lg" color={orderDetails.status === "PAID" ? "green" : "gray"}>
+                <Text size="sm" c="dimmed">
+                  {orderDetails.userName}
+                </Text>
+                <Text size="sm" c="dimmed" className="admin-result-email">
+                  {orderDetails.userEmail}
+                </Text>
+                <Text size="xs" c="dimmed" className="admin-mono-id">
+                  {orderDetails.id}
+                </Text>
+              </Stack>
+              <Badge
+                size="lg"
+                variant="light"
+                color={orderDetails.status === "PAID" ? "green" : "gray"}
+                className="admin-result-badge"
+              >
                 {getOrderStatusLabel(orderDetails.status)}
               </Badge>
+            </Stack>
+
+            <Divider my="md" />
+
+            <Group
+              justify="space-between"
+              align="center"
+              wrap="wrap"
+              gap="md"
+              className="admin-result-footer"
+            >
+              <Stack gap={2}>
+                <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                  Valor do pedido
+                </Text>
+                <Text className="admin-result-value">
+                  {formatCurrencyFromCents(orderDetails.totalPrice)}
+                </Text>
+              </Stack>
+
+              <Button
+                color="red"
+                variant="light"
+                radius="xl"
+                leftSection={<IconShield size={16} />}
+                loading={refundLoading}
+                disabled={orderDetails.status !== "PAID"}
+                onClick={openRefundConfirm}
+                className="admin-result-action"
+                w={{ base: "100%", sm: "auto" }}
+              >
+                Reembolsar pedido
+              </Button>
             </Group>
 
-            <Text size="sm">
-              Valor:{" "}
-              <Text span fw={600}>
-                {formatCurrencyFromCents(orderDetails.totalPrice)}
-              </Text>
-            </Text>
-
-            <Button
-              color="red"
-              variant="light"
-              leftSection={<IconShield size={16} />}
-              loading={refundLoading}
-              disabled={orderDetails.status !== "PAID"}
-              onClick={openRefundConfirm}
-            >
-              Reembolsar pedido
-            </Button>
-
             {orderDetails.status !== "PAID" ? (
-              <Text size="xs" c="dimmed">
-                Apenas pedidos com status PAID podem ser reembolsados.
+              <Text size="xs" c="dimmed" mt="sm">
+                Apenas pedidos com status pago podem ser reembolsados.
               </Text>
             ) : null}
-          </Stack>
-        ) : null}
-      </PremiumPaper>
-    </Stack>
+          </Paper>
+        ) : (
+          <Box mt="lg">
+            <EmptyState
+              icon={<IconReceiptRefund size={28} />}
+              title="Nenhum pedido consultado"
+              description="Informe o UUID do pedido para ver detalhes e reembolsar."
+            />
+          </Box>
+        )}
+      </AdminSection>
+    </SimpleGrid>
   );
 
   const platformPanel = (
-    <Stack gap="xl">
-      <PremiumPaper p="xl">
-        <Group gap="sm" mb="md">
-          <IconDatabase size={22} />
-          <Title order={3}>Reconciliar estoque</Title>
-        </Group>
-
-        <Text size="sm" c="dimmed" mb="md">
-          Alinha o estoque no Redis com o PostgreSQL, descontando reservas pendentes nas filas.
-        </Text>
-
-        <Button
-          loading={reconcileLoading}
-          onClick={() => void handleReconcileStock()}
+    <Stack gap="lg">
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+        <AdminSection
+          icon={IconDatabase}
+          iconColor="teal"
+          title="Verificar estoque"
+          description="Ferramenta técnica que alinha o estoque rápido (Redis) com o banco de dados."
         >
-          Executar reconciliação
-        </Button>
-
-        {reconcileReport ? (
-          <Stack mt="md" gap="xs">
-            <Text size="sm">
-              Verificados: <Text span fw={600}>{reconcileReport.lotsChecked}</Text>
-              {" · "}
-              Corrigidos: <Text span fw={600}>{reconcileReport.correctedCount}</Text>
+          <Stack gap="md">
+            <Text size="sm" c="dimmed">
+              Use apenas quando houver suspeita de divergência entre o estoque exibido na
+              compra e o estoque real do evento.
             </Text>
+
+            <Button
+              radius="xl"
+              loading={reconcileLoading}
+              leftSection={<IconRefresh size={16} />}
+              onClick={() => void handleReconcileStock()}
+              w={{ base: "100%", sm: "auto" }}
+            >
+              Executar verificação
+            </Button>
+
+            {reconcileReport ? (
+              <Paper className="admin-result-card admin-result-card--compact" p="md" radius="lg" withBorder>
+                <SimpleGrid cols={2} spacing="md">
+                  <Stack gap={2}>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                      Lotes verificados
+                    </Text>
+                    <Text fw={700} size="lg">
+                      {reconcileReport.lotsChecked}
+                    </Text>
+                  </Stack>
+                  <Stack gap={2}>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                      Corrigidos
+                    </Text>
+                    <Text
+                      fw={700}
+                      size="lg"
+                      c={reconcileReport.correctedCount > 0 ? "yellow.7" : "teal.7"}
+                    >
+                      {reconcileReport.correctedCount}
+                    </Text>
+                  </Stack>
+                </SimpleGrid>
+                <Text size="xs" c="dimmed" mt="sm">
+                  Última execução:{" "}
+                  {new Date(reconcileReport.checkedAt).toLocaleString("pt-BR")}
+                </Text>
+              </Paper>
+            ) : null}
+          </Stack>
+        </AdminSection>
+
+        <AdminSection
+          icon={IconHistory}
+          iconColor="grape"
+          title="Resumo do histórico"
+          description="Registro das ações sensíveis executadas pela equipe administrativa."
+        >
+          <Stack gap="sm">
+            <Group justify="space-between" wrap="wrap">
+              <Text size="sm" c="dimmed">
+                Reembolsos, mudanças de papel e verificações de estoque ficam registrados aqui.
+              </Text>
+              <Badge variant="light" color="grape" size="lg">
+                {auditLogs.length} registro(s)
+              </Badge>
+            </Group>
             <Text size="xs" c="dimmed">
-              Última execução: {new Date(reconcileReport.checkedAt).toLocaleString("pt-BR")}
+              O histórico completo aparece na tabela abaixo.
             </Text>
           </Stack>
-        ) : null}
-      </PremiumPaper>
+        </AdminSection>
+      </SimpleGrid>
 
-      <PremiumPaper p="xl">
-        <Group justify="space-between" mb="md" wrap="wrap">
-          <Group gap="sm">
-            <IconHistory size={22} />
-            <Title order={3}>Auditoria</Title>
-          </Group>
+      <AdminSection
+        icon={IconHistory}
+        iconColor="grape"
+        title="Histórico de ações"
+        className="admin-audit-section"
+        action={
           <Button
             variant="light"
-            size="xs"
+            radius="xl"
+            size="sm"
             loading={auditLoading}
+            leftSection={<IconRefresh size={14} />}
             onClick={() => void loadAuditLogs()}
           >
             Atualizar
           </Button>
-        </Group>
-
+        }
+      >
         {auditError ? (
-          <Alert color="red" icon={<IconAlertCircle size={16} />} title="Auditoria">
+          <Alert
+            color="red"
+            variant="light"
+            icon={<IconAlertCircle size={16} />}
+            title="Histórico indisponível"
+            radius="lg"
+          >
             {auditError}
           </Alert>
         ) : null}
 
-        {auditLogs.length === 0 && !auditLoading ? (
-          <Text size="sm" c="dimmed">
-            Nenhuma ação registrada ainda.
-          </Text>
-        ) : (
-          <Table.ScrollContainer minWidth={520}>
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Quando</Table.Th>
-                  <Table.Th>Ação</Table.Th>
-                  <Table.Th>Ator</Table.Th>
-                  <Table.Th>Alvo</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {auditLogs.map((log) => (
-                  <Table.Tr key={log.id}>
-                    <Table.Td>
-                      <Text size="xs">
-                        {new Date(log.createdAt).toLocaleString("pt-BR")}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="sm">
-                        {AUDIT_ACTION_LABELS[log.action] ?? log.action}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="xs">
-                        {log.actorEmail ?? log.actorUserId}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="xs" c="dimmed">
-                        {log.targetType}/{log.targetId.slice(0, 8)}…
-                      </Text>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
-      </PremiumPaper>
+        {auditLoading && auditLogs.length === 0 ? (
+          <Stack gap="sm">
+            <Skeleton height={36} radius="md" />
+            <Skeleton height={36} radius="md" />
+            <Skeleton height={36} radius="md" />
+          </Stack>
+        ) : null}
+
+        {!auditLoading && auditLogs.length === 0 ? (
+          <EmptyState
+            icon={<IconHistory size={28} />}
+            title="Nenhuma ação registrada"
+            description="Reembolsos, mudanças de papel e verificações de estoque aparecerão aqui."
+          />
+        ) : null}
+
+        {auditLogs.length > 0 ? (
+          <AdminAuditLogList logs={auditLogs} />
+        ) : null}
+      </AdminSection>
     </Stack>
   );
 
   return (
-    <Stack gap="xl">
+    <Stack gap="lg" className="admin-dashboard">
       <AnimatedSection>
         <PageHeader
-          title="Administração"
+          icon={<IconShield size={28} color="var(--mantine-color-brand-6)" />}
+          title="Painel de"
+          highlight="administração" 
           description={
             canManagePlatform
-              ? "Suporte a usuários e pedidos; gestão de papéis, estoque e auditoria."
-              : "Suporte a usuários e reembolsos de pedidos pagos."
+              ? "Suporte ao cliente, gestão de papéis e ferramentas da plataforma."
+              : "Suporte ao cliente: consulta de usuários e reembolso de pedidos."
           }
         />
       </AnimatedSection>
 
-      <AnimatedSection delayMs={40}>
-        {canManagePlatform ? (
-          <Tabs defaultValue="support">
-            <Tabs.List mb="lg">
-              <Tabs.Tab value="support" leftSection={<IconShield size={16} />}>
-                Suporte
-              </Tabs.Tab>
-              <Tabs.Tab value="platform" leftSection={<IconDatabase size={16} />}>
-                Plataforma
-              </Tabs.Tab>
-            </Tabs.List>
+      <AnimatedSection delayMs={20}>
+        <AdminNav
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          showPlatform={canManagePlatform}
+        />
+      </AnimatedSection>
 
-            <Tabs.Panel value="support">{supportPanel}</Tabs.Panel>
-            <Tabs.Panel value="platform">{platformPanel}</Tabs.Panel>
-          </Tabs>
-        ) : (
-          supportPanel
-        )}
+      {canManagePlatform ? (
+        <AnimatedSection delayMs={30}>
+          <section className="admin-dashboard-kpis">
+            <SimpleGrid cols={{ base: 2, md: 3 }} spacing="md">
+              <StatCard
+                label="Seu acesso"
+                value={overview.roleLabel}
+                icon={<IconShield size={20} />}
+                iconColor="grape"
+                valueColor="grape"
+              />
+              <StatCard
+                label="Histórico"
+                value={String(overview.auditCount)}
+                icon={<IconHistory size={20} />}
+                iconColor="blue"
+                valueColor="blue"
+              />
+              <StatCard
+                label="Última verif."
+                value={overview.lastReconcile}
+                icon={<IconDatabase size={20} />}
+                iconColor="teal"
+                valueColor="teal"
+              />
+            </SimpleGrid>
+          </section>
+        </AnimatedSection>
+      ) : null}
+
+      <AnimatedSection delayMs={40}>
+        {activeTab === "support" || !canManagePlatform ? supportPanel : platformPanel}
       </AnimatedSection>
 
       <Modal
         opened={refundConfirmOpened}
         onClose={closeRefundConfirm}
         title="Confirmar reembolso"
-        centered
+        centered={!isMobile}
+        fullScreen={isMobile}
+        radius="lg"
+        classNames={{ title: "admin-modal-title" }}
       >
-        <Stack gap="md">
+        <Stack gap="md" className="admin-modal-body">
           <Text size="sm">
             Reembolsar o pedido de{" "}
             <Text span fw={600}>
@@ -538,18 +689,20 @@ export function AdminDashboardPage() {
             </Text>
             ? Esta ação cancela os ingressos e restaura o estoque.
           </Text>
-          <Group justify="flex-end">
-            <Button variant="default" onClick={closeRefundConfirm}>
-              Cancelar
-            </Button>
+          <Stack gap="sm" className="admin-modal-actions">
             <Button
               color="red"
+              radius="xl"
               loading={refundLoading}
               onClick={() => void handleRefund()}
+              fullWidth
             >
               Confirmar reembolso
             </Button>
-          </Group>
+            <Button variant="default" radius="xl" onClick={closeRefundConfirm} fullWidth>
+              Cancelar
+            </Button>
+          </Stack>
         </Stack>
       </Modal>
 
@@ -557,9 +710,12 @@ export function AdminDashboardPage() {
         opened={roleConfirmOpened}
         onClose={closeRoleConfirm}
         title="Confirmar alteração de papel"
-        centered
+        centered={!isMobile}
+        fullScreen={isMobile}
+        radius="lg"
+        classNames={{ title: "admin-modal-title" }}
       >
-        <Stack gap="md">
+        <Stack gap="md" className="admin-modal-body">
           <Text size="sm">
             Alterar o papel de{" "}
             <Text span fw={600}>
@@ -575,14 +731,19 @@ export function AdminDashboardPage() {
             </Text>
             ?
           </Text>
-          <Group justify="flex-end">
-            <Button variant="default" onClick={closeRoleConfirm}>
-              Cancelar
-            </Button>
-            <Button loading={roleSaving} onClick={() => void handleConfirmRoleChange()}>
+          <Stack gap="sm" className="admin-modal-actions">
+            <Button
+              radius="xl"
+              loading={roleSaving}
+              onClick={() => void handleConfirmRoleChange()}
+              fullWidth
+            >
               Confirmar
             </Button>
-          </Group>
+            <Button variant="default" radius="xl" onClick={closeRoleConfirm} fullWidth>
+              Cancelar
+            </Button>
+          </Stack>
         </Stack>
       </Modal>
     </Stack>

@@ -72,6 +72,12 @@
   letter-spacing: -0.02em;
 }
 
+.page-title-highlight {
+  color: var(--mantine-color-brand-6);
+  font: inherit;
+  letter-spacing: inherit;
+}
+
 .stat-card {
   border: 1px solid var(--mantine-color-default-border);
   background: var(--vibra-surface);
@@ -514,6 +520,216 @@
 
 .producer-nav-create {
   flex-shrink: 0;
+}
+
+/* Painel admin — navegação e cartões */
+.admin-dashboard {
+  padding-bottom: var(--mantine-spacing-xl);
+}
+
+.admin-nav {
+  padding-bottom: 4px;
+}
+
+.admin-nav-tabs {
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.admin-nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: var(--mantine-radius-xl);
+  border: 1px solid var(--mantine-color-default-border);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  color: inherit;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.admin-nav-tab:hover {
+  border-color: var(--vibra-border-accent-hover);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
+}
+
+.admin-nav-tab.is-active {
+  border-color: var(--mantine-color-brand-6);
+  background: light-dark(
+    rgba(var(--mantine-color-brand-6-rgb), 0.1),
+    rgba(var(--mantine-color-brand-6-rgb), 0.18)
+  );
+  box-shadow: 0 8px 24px rgba(var(--mantine-color-brand-6-rgb), 0.12);
+}
+
+.admin-nav-tab.is-active .admin-nav-tab-label {
+  color: var(--mantine-color-brand-7);
+}
+
+.admin-nav-tab-copy {
+  text-align: left;
+}
+
+.admin-nav-tab-label {
+  line-height: 1.2;
+}
+
+.admin-nav-badge {
+  flex-shrink: 0;
+}
+
+.admin-dashboard-kpis .stat-card-value {
+  font-size: clamp(1rem, 2.5vw, 1.35rem);
+}
+
+.admin-section-title {
+  line-height: 1.2;
+}
+
+.admin-result-card {
+  border-color: var(--mantine-color-default-border);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
+}
+
+.admin-result-card--compact {
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+}
+
+.admin-result-value {
+  font-size: clamp(1.25rem, 3vw, 1.6rem);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.admin-mono-id {
+  font-family: var(--mantine-font-family-monospace);
+  word-break: break-all;
+}
+
+.admin-audit-section .empty-state-card {
+  margin-top: 0;
+}
+
+.admin-audit-table .mantine-Table-tr:hover {
+  background: light-dark(
+    rgba(var(--mantine-color-brand-6-rgb), 0.04),
+    rgba(var(--mantine-color-brand-6-rgb), 0.08)
+  );
+}
+
+@media (max-width: 47.99em) {
+  .admin-dashboard .page-header {
+    padding-top: var(--mantine-spacing-md);
+    padding-bottom: var(--mantine-spacing-md);
+    margin-bottom: 0;
+  }
+
+  .admin-dashboard .page-header .page-header-description {
+    font-size: var(--mantine-font-size-sm);
+    line-height: 1.45;
+  }
+
+  .admin-nav-meta {
+    width: 100%;
+  }
+
+  .admin-nav-badge {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-nav-tab-description {
+    display: none;
+  }
+
+  .admin-nav-tab {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+  }
+
+  .admin-nav-tabs--single .admin-nav-tab {
+    flex: 1 1 100%;
+  }
+
+  .admin-dashboard-kpis .stat-card {
+    padding: 12px;
+  }
+
+  .admin-dashboard-kpis .stat-card .mantine-ThemeIcon-root {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+  }
+
+  .admin-dashboard-kpis .stat-card .mantine-Stack-root {
+    gap: 0;
+  }
+
+  .admin-dashboard-kpis .mantine-SimpleGrid-root > :nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .admin-section-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+
+  .admin-section-heading {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .admin-section-copy {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .admin-section-action {
+    width: 100%;
+  }
+
+  .admin-section-action .mantine-Button-root {
+    width: 100%;
+  }
+
+  .admin-section .empty-state-card {
+    padding-block: 28px;
+  }
+
+  .admin-result-copy {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .admin-result-email {
+    word-break: break-word;
+  }
+
+  .admin-result-badge {
+    align-self: flex-start;
+  }
+
+  .admin-result-footer {
+    align-items: stretch !important;
+  }
+
+  .admin-result-value {
+    font-size: 1.35rem;
+  }
+
+  .admin-audit-card {
+    background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
+  }
+
+  .admin-modal-actions {
+    margin-top: auto;
+  }
 }
 
 /* Dashboard do produtor */
