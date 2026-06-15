@@ -15,3 +15,6 @@ coverage/
 .env
 .env.*
 !.env.example
+backend/certs/*.json
+backend/certs/*.pem
+backend/certs/*.p12

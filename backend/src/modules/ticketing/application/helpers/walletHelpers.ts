@@ -88,25 +88,36 @@ export function ensurePassImages(pass: PKPass): void {
 }
 
 export async function loadGoogleCredentials(): Promise<GoogleServiceAccountCredentials> {
+  const credentialsJson = env.wallet.google.credentialsJson.trim();
   const credentialsPath = env.wallet.google.credentialsPath;
 
-  if (!credentialsPath) {
-    throw new WalletConfigError("GOOGLE_WALLET_CREDENTIALS_PATH is not configured");
+  let parsed: GoogleServiceAccountCredentials;
+
+  if (credentialsJson) {
+    try {
+      parsed = JSON.parse(credentialsJson) as GoogleServiceAccountCredentials;
+    } catch {
+      throw new WalletConfigError("GOOGLE_WALLET_CREDENTIALS_JSON is not valid JSON");
+    }
+  } else if (credentialsPath) {
+    const raw = readFileSync(credentialsPath, "utf8");
+    parsed = JSON.parse(raw) as GoogleServiceAccountCredentials;
+  } else {
+    throw new WalletConfigError(
+      "Configure GOOGLE_WALLET_CREDENTIALS_PATH or GOOGLE_WALLET_CREDENTIALS_JSON",
+    );
+  }
+
+  if (!parsed.client_email || !parsed.private_key) {
+    throw new WalletConfigError("Invalid Google service account credentials");
   }
 
   const auth = new google.auth.GoogleAuth({
-    keyFile: credentialsPath,
+    credentials: parsed,
     scopes: [GOOGLE_WALLET_SCOPE],
   });
 
   await auth.getClient();
-
-  const raw = readFileSync(credentialsPath, "utf8");
-  const parsed = JSON.parse(raw) as GoogleServiceAccountCredentials;
-
-  if (!parsed.client_email || !parsed.private_key) {
-    throw new WalletConfigError("Invalid Google service account credentials file");
-  }
 
   return parsed;
 }
