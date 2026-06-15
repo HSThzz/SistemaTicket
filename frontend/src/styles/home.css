@@ -38,6 +38,15 @@
   animation: fade-in-up 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-in-view,
+  .animate-in-view.is-visible {
+    opacity: 1;
+    animation: none;
+    transform: none;
+  }
+}
+
 .hero-carousel {
   border-radius: var(--mantine-radius-xl);
   box-shadow: 0 20px 60px var(--vibra-shadow-card);

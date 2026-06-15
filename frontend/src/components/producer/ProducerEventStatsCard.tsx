@@ -78,7 +78,7 @@ export function ProducerEventStatsCard({ event }: ProducerEventStatsCardProps) {
               <Title order={4} lineClamp={2} style={{ letterSpacing: "-0.01em" }}>
                 {event.title}
               </Title>
-              <Group gap={8} c="dimmed" wrap="nowrap">
+              <Group gap={8} c="dimmed" wrap="wrap">
                 <IconCalendar size={16} style={{ flexShrink: 0 }} />
                 <Text size="sm">{formatShortDate(event.date)}</Text>
               </Group>

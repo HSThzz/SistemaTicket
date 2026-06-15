@@ -30,6 +30,7 @@ import { PageLoader } from "../../components/account/PageLoader";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { StatCard } from "../../components/account/StatCard";
 import { ProducerEventListCard } from "../../components/producer/ProducerEventListCard";
+import { ProducerMobileActions } from "../../components/producer/ProducerMobileActions";
 import * as eventService from "../../features/catalog/api/eventService";
 import type { Event } from "../../types/api";
 import { getApiErrorMessage } from "../../utils/errors";
@@ -94,7 +95,7 @@ export function ProducerEventsPage() {
           highlight="eventos"
           description="Crie, publique e gerencie lotes de ingressos para cada experiência."
           action={
-            <Group gap="sm" visibleFrom="xs">
+            <Group gap="sm" visibleFrom="sm">
               <Button
                 component={Link}
                 to="/produtor"
@@ -125,6 +126,8 @@ export function ProducerEventsPage() {
           }
         />
       </AnimatedSection>
+
+      <ProducerMobileActions variant="events" />
 
       {error ? (
         <Alert icon={<IconAlertCircle size={18} />} color="red" title="Erro" radius="lg">
@@ -213,15 +216,6 @@ export function ProducerEventsPage() {
           </Stack>
         </AnimatedSection>
       ) : null}
-
-      <Group hiddenFrom="xs" grow>
-        <Button component={Link} to="/produtor/eventos/novo" radius="xl" leftSection={<IconPlus size={18} />}>
-          Novo evento
-        </Button>
-        <Button component={Link} to="/produtor/check-in" variant="light" radius="xl" leftSection={<IconScan size={18} />}>
-          Check-in
-        </Button>
-      </Group>
     </Stack>
   );
 }

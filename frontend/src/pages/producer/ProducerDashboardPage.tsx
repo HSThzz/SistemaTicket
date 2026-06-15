@@ -31,6 +31,7 @@ import { PageLoader } from "../../components/account/PageLoader";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { StatCard } from "../../components/account/StatCard";
 import { ProducerEventStatsCard } from "../../components/producer/ProducerEventStatsCard";
+import { ProducerMobileActions } from "../../components/producer/ProducerMobileActions";
 import * as eventService from "../../features/catalog/api/eventService";
 import type { ProducerDashboardStats } from "../../types/api";
 import { formatCurrencyFromCents } from "../../utils/format";
@@ -96,7 +97,7 @@ export function ProducerDashboardPage() {
           highlight="vendas"
           description="Visão geral dos seus eventos, receita e check-ins em tempo real."
           action={
-            <Group gap="sm" visibleFrom="xs">
+            <Group gap="sm" visibleFrom="sm">
               <Button component={Link} to="/produtor/eventos" variant="light" radius="xl">
                 Meus eventos
               </Button>
@@ -121,6 +122,8 @@ export function ProducerDashboardPage() {
           }
         />
       </AnimatedSection>
+
+      <ProducerMobileActions variant="dashboard" />
 
       <AnimatedSection delayMs={60}>
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
@@ -201,15 +204,6 @@ export function ProducerDashboardPage() {
           )}
         </Stack>
       </AnimatedSection>
-
-      <Group hiddenFrom="xs" grow>
-        <Button component={Link} to="/produtor/eventos/novo" radius="xl" leftSection={<IconPlus size={18} />}>
-          Novo evento
-        </Button>
-        <Button component={Link} to="/produtor/check-in" variant="light" radius="xl" leftSection={<IconScan size={18} />}>
-          Check-in
-        </Button>
-      </Group>
     </Stack>
   );
 }

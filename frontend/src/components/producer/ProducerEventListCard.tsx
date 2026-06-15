@@ -77,9 +77,9 @@ export function ProducerEventListCard({ event }: ProducerEventListCardProps) {
                 {event.title}
               </Title>
 
-              <Group gap={8} c="dimmed" wrap="nowrap">
+              <Group gap={8} c="dimmed" wrap="wrap">
                 <IconMapPin size={16} style={{ flexShrink: 0 }} />
-                <Text size="sm" lineClamp={1}>
+                <Text size="sm" lineClamp={2}>
                   {event.location}
                 </Text>
               </Group>

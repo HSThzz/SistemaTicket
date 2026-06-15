@@ -50,7 +50,7 @@ const CHECKIN_TIPS = [
 export function ProducerCheckInPage() {
   const [submitting, setSubmitting] = useState(false);
   const [lastResult, setLastResult] = useState<checkInService.CheckInResult | null>(null);
-  const [scannerPaused, setScannerPaused] = useState(false);
+  const [scannerLocked, setScannerLocked] = useState(false);
 
   const form = useForm<CheckInFormValues>({
     initialValues: { uniqueCode: "" },
@@ -67,7 +67,7 @@ export function ProducerCheckInPage() {
       }
 
       setSubmitting(true);
-      setScannerPaused(true);
+      setScannerLocked(true);
 
       try {
         const result = await checkInService.checkInTicket(uniqueCode);
@@ -89,7 +89,7 @@ export function ProducerCheckInPage() {
         });
       } finally {
         setSubmitting(false);
-        window.setTimeout(() => setScannerPaused(false), 2000);
+        window.setTimeout(() => setScannerLocked(false), 600);
       }
     },
     [form, submitting],
@@ -144,7 +144,7 @@ export function ProducerCheckInPage() {
         <Grid>
           <Grid.Col span={{ base: 12, md: 7 }}>
             <Stack gap="md">
-              <AnimatedSection delayMs={60}>
+              <AnimatedSection animate={false}>
                 <PremiumPaper p="xl">
                   <Stack gap="lg">
                     <Group gap="sm" className="producer-form-section-title">
@@ -158,12 +158,10 @@ export function ProducerCheckInPage() {
                     <Text c="dimmed" size="sm">
                       {submitting
                         ? "Validando ingresso..."
-                        : scannerPaused
-                          ? "Scanner pausado — aguarde um instante"
-                          : "Posicione o QR Code dentro da área destacada"}
+                        : "Centralize o QR code na área destacada"}
                     </Text>
                     <Box className="checkin-scanner-frame">
-                      <QrScanner onScan={handleScan} paused={scannerPaused || submitting} />
+                      <QrScanner onScan={handleScan} locked={scannerLocked || submitting} />
                     </Box>
                   </Stack>
                 </PremiumPaper>

@@ -24,6 +24,7 @@ import {
   IconChevronDown,
   IconLayoutDashboard,
   IconLogout,
+  IconScan,
   IconShield,
   IconTicket,
   IconUser,
@@ -246,14 +247,26 @@ export function Layout() {
         <Stack gap="md">
           <NavLinks onNavigate={close} currentPath={currentPath} isAuthenticated={isAuthenticated} isProducer={isProducer} isAdmin={isAdmin} />
           {isProducer ? (
-            <Button
-              component={Link}
-              to="/produtor/eventos/novo"
-              leftSection={<IconCalendarPlus size={16} />}
-              onClick={close}
-            >
-              Criar evento
-            </Button>
+            <>
+              <Button
+                component={Link}
+                to="/produtor/eventos/novo"
+                leftSection={<IconCalendarPlus size={16} />}
+                onClick={close}
+              >
+                Criar evento
+              </Button>
+              <Button
+                component={Link}
+                to="/produtor/check-in"
+                variant="light"
+                color="teal"
+                leftSection={<IconScan size={16} />}
+                onClick={close}
+              >
+                Check-in
+              </Button>
+            </>
           ) : null}
           <Box pt="sm">
             {isAuthenticated && user ? (

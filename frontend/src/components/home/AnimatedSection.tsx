@@ -9,6 +9,18 @@ interface AnimatedSectionProps {
   animate?: boolean;
 }
 
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined" || !window.matchMedia) {
+    return false;
+  }
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function isInViewport(node: HTMLElement): boolean {
+  const rect = node.getBoundingClientRect();
+  return rect.top < window.innerHeight && rect.bottom > 0;
+}
+
 export function AnimatedSection({
   children,
   delayMs = 0,
@@ -16,10 +28,10 @@ export function AnimatedSection({
   animate = true,
 }: AnimatedSectionProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(!animate || prefersReducedMotion());
 
   useEffect(() => {
-    if (!animate) {
+    if (!animate || prefersReducedMotion()) {
       setVisible(true);
       return;
     }
@@ -29,22 +41,40 @@ export function AnimatedSection({
       return;
     }
 
+    if (isInViewport(node)) {
+      setVisible(true);
+      return;
+    }
+
+    if (typeof IntersectionObserver === "undefined") {
+      setVisible(true);
+      return;
+    }
+
+    const fallbackTimer = window.setTimeout(() => {
+      setVisible(true);
+    }, 1200);
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setVisible(true);
           observer.disconnect();
+          window.clearTimeout(fallbackTimer);
         }
       },
-      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" },
+      { threshold: 0.08, rootMargin: "0px 0px 0px 0px" },
     );
 
     observer.observe(node);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(fallbackTimer);
+    };
   }, [animate]);
 
   const classNames = [
-    animate ? "animate-in-view" : "",
+    animate && !prefersReducedMotion() ? "animate-in-view" : "",
     animate && visible ? "is-visible" : "",
     className ?? "",
   ]
@@ -55,7 +85,7 @@ export function AnimatedSection({
     <Box
       ref={ref}
       className={classNames}
-      style={animate ? { animationDelay: `${delayMs}ms` } : undefined}
+      style={animate && visible ? { animationDelay: `${delayMs}ms` } : undefined}
     >
       {children}
     </Box>
