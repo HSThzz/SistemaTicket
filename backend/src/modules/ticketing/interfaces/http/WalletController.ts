@@ -87,7 +87,10 @@ export class WalletController {
         return;
       }
 
-      const url = await generateGoogleWalletLink(ticketId);
+      const url = await generateGoogleWalletLink(
+        ticketId,
+        req.get("origin") ?? req.get("referer"),
+      );
       res.redirect(302, url);
     } catch (error) {
       this.handleError(res, "Google Wallet link generation failed", ticketId, error);
@@ -122,7 +125,10 @@ export class WalletController {
         return;
       }
 
-      const url = await generateGoogleWalletLink(ticketId);
+      const url = await generateGoogleWalletLink(
+        ticketId,
+        req.get("origin") ?? req.get("referer"),
+      );
       res.json({ url });
     } catch (error) {
       this.handleError(res, "Google Wallet link generation failed", ticketId, error);

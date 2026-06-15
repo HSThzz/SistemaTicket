@@ -106,6 +106,7 @@ export const env = {
       /** JSON completo da service account (alternativa ao arquivo — use no Railway). */
       credentialsJson: process.env.GOOGLE_WALLET_CREDENTIALS_JSON ?? "",
       issuerId: process.env.GOOGLE_WALLET_ISSUER_ID ?? "",
+      issuerName: process.env.GOOGLE_WALLET_ISSUER_NAME ?? "VIBRA",
       origins: (process.env.GOOGLE_WALLET_ORIGINS ?? "http://localhost:3000")
         .split(",")
         .map((origin) => origin.trim())

@@ -1,6 +1,9 @@
 import jwt from "jsonwebtoken";
-import { env } from "../../../../shared/infrastructure/config/env";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import {
+  buildGoogleWalletOrigins,
+  ensureGoogleEventTicketClass,
+} from "./ensureGoogleEventTicketClass";
 import {
   loadGoogleCredentials,
   loadTicketContext,
@@ -12,8 +15,16 @@ const CONTEXT = "WalletService";
 const GOOGLE_WALLET_SAVE_URL = "https://pay.google.com/gp/v/save";
 const logger = Logger.getInstance();
 
+function truncate(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+  return `${value.slice(0, maxLength - 1)}…`;
+}
+
 export async function generateGoogleWalletLink(
   ticketId: string,
+  requestOrigin?: string | null,
 ) {
   const { ticket, event } = await loadTicketContext(ticketId);
 
@@ -24,60 +35,39 @@ export async function generateGoogleWalletLink(
     const objectSuffix = `ticket_${sanitizeWalletId(ticket.id)}`;
     const classId = `${issuerId}.${classSuffix}`;
     const objectId = `${issuerId}.${objectSuffix}`;
+    const origins = buildGoogleWalletOrigins(requestOrigin);
+
+    await ensureGoogleEventTicketClass(event, classId);
 
     const claims = {
       iss: credentials.client_email,
       aud: "google",
       typ: "savetowallet",
       iat: Math.floor(Date.now() / 1000),
-      origins: env.wallet.google.origins,
+      origins,
       payload: {
-        eventTicketClasses: [
-          {
-            id: classId,
-            issuerName: env.wallet.apple.organizationName,
-            reviewStatus: "UNDER_REVIEW",
-            eventName: {
-              defaultValue: {
-                language: "pt-BR",
-                value: event.title,
-              },
-            },
-            venue: {
-              name: {
-                defaultValue: {
-                  language: "pt-BR",
-                  value: event.location,
-                },
-              },
-            },
-            dateTime: {
-              start: event.date.toISOString(),
-            },
-          },
-        ],
         eventTicketObjects: [
           {
             id: objectId,
             classId,
             state: "ACTIVE",
-            ticketHolderName: ticket.ownerName,
+            ticketHolderName: truncate(ticket.ownerName, 80),
             ticketNumber: ticket.uniqueCode.slice(0, 20),
             barcode: {
               type: "QR_CODE",
               value: ticket.uniqueCode,
-              alternateText: ticket.uniqueCode,
+              alternateText: ticket.uniqueCode.slice(0, 20),
             },
             textModulesData: [
               {
                 id: "owner_document",
                 header: "DOCUMENTO",
-                body: ticket.ownerDocument,
+                body: truncate(ticket.ownerDocument, 40),
               },
               {
                 id: "event_description",
                 header: "SOBRE O EVENTO",
-                body: event.description,
+                body: truncate(event.description, 500),
               },
             ],
           },
@@ -95,6 +85,7 @@ export async function generateGoogleWalletLink(
       ticketId: ticket.id,
       classId,
       objectId,
+      origins,
     });
 
     return url;
