@@ -44,7 +44,6 @@ import { PageLoader } from "../components/account/PageLoader";
 import { PremiumPaper } from "../components/account/PremiumPaper";
 import {
   DevSimulatePaymentPanel,
-  OrderProcessingPanel,
   PixPaymentPanel,
   PixPaymentSkeleton,
 } from "../components/PixPaymentPanel";
@@ -55,7 +54,7 @@ import { useEventCoverPreload } from "../hooks/useEventCoverPreload";
 import { useReservationPoller } from "../hooks/useReservationPoller";
 import * as eventService from "../features/catalog/api/eventService";
 import * as purchaseService from "../features/sales/api/purchaseService";
-import type { Event, ReservationStatusView, TicketLot } from "../types/api";
+import type { Event, ReservationPhase, ReservationStatusView, TicketLot } from "../types/api";
 import {
   getEventCoverImageUrl,
   getEventCoverStyle,
@@ -102,6 +101,154 @@ function getActiveStep(phase: string | undefined): number {
     default:
       return 0;
   }
+}
+
+/** Cabeçalho e stepper compartilhados entre fluxo ativo e tela de conclusão. */
+function CheckoutStatusStepper({
+  phase,
+  polling,
+  pollError,
+}: {
+  phase: ReservationPhase | undefined;
+  polling: boolean;
+  pollError: string | null;
+}) {
+  return (
+    <Stack gap="lg">
+      <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
+        <Stack gap={4}>
+          <Title order={3} size="h4" className="producer-section-title">
+            Status da compra
+          </Title>
+          <Text size="sm" c="dimmed">
+            Acompanhe cada etapa até a emissão dos ingressos.
+          </Text>
+        </Stack>
+        <Box className="checkout-phase-slot">
+          {phase ? <PhaseBadge phase={phase} /> : null}
+        </Box>
+      </Group>
+
+      <Stepper
+        active={getActiveStep(phase)}
+        size="sm"
+        allowNextStepsSelect={false}
+        className="checkout-stepper"
+      >
+        <Stepper.Step label="Reserva" description="Confirmada" />
+        <Stepper.Step label="Processamento" description="Persistência" />
+        <Stepper.Step
+          label="Pagamento"
+          description={getPaymentStepDescription(phase)}
+        />
+        <Stepper.Step label="Concluído" description="Ingressos" />
+      </Stepper>
+
+      <Box
+        className={`checkout-status-loading${polling ? " is-active" : ""}`}
+        aria-hidden={!polling}
+      >
+        <Group gap="sm">
+          <Loader size="sm" color="brand" />
+          <Text size="sm" c="dimmed">
+            Atualizando status...
+          </Text>
+        </Group>
+      </Box>
+
+      {pollError ? (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} radius="lg">
+          {pollError}
+        </Alert>
+      ) : null}
+    </Stack>
+  );
+}
+
+function CheckoutPaymentProgressPanel({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <PremiumPaper p="xl" className="checkout-progress-panel" aria-busy="true">
+      <Stack gap="lg" align="center" py="md">
+        <Loader size="md" color="brand" />
+        <Stack gap={4} align="center" ta="center" maw={420}>
+          <Text fw={700}>{title}</Text>
+          <Text size="sm" c="dimmed" style={{ lineHeight: 1.55 }}>
+            {description}
+          </Text>
+        </Stack>
+      </Stack>
+    </PremiumPaper>
+  );
+}
+
+function CheckoutSuccessContent({ eventId }: { eventId: string }) {
+  return (
+    <Stack gap="md" align="center" ta="center" className="checkout-result-content">
+      <ThemeIcon size={64} radius="xl" variant="light" color="green">
+        <IconCheck size={32} />
+      </ThemeIcon>
+      <Stack gap={4}>
+        <Title order={3}>Pagamento confirmado!</Title>
+        <Text c="dimmed">
+          Seus ingressos foram emitidos com sucesso e já estão disponíveis.
+        </Text>
+      </Stack>
+      <Button
+        component={Link}
+        to="/ingressos"
+        radius="xl"
+        size="md"
+        leftSection={<IconTicket size={18} />}
+      >
+        Ver meus ingressos
+      </Button>
+      <Button
+        variant="subtle"
+        component={Link}
+        to={`/eventos/${eventId}`}
+        radius="xl"
+        size="sm"
+      >
+        Voltar ao evento
+      </Button>
+    </Stack>
+  );
+}
+
+function CheckoutErrorContent({
+  eventId,
+  onRetry,
+}: {
+  eventId: string;
+  onRetry: () => void;
+}) {
+  return (
+    <Stack gap="md" align="center" ta="center" className="checkout-result-content">
+      <ThemeIcon size={64} radius="xl" variant="light" color="red">
+        <IconAlertCircle size={32} />
+      </ThemeIcon>
+      <Stack gap={4}>
+        <Title order={3}>Compra não concluída</Title>
+        <Text c="dimmed">
+          A reserva expirou ou o pagamento falhou. Você pode tentar novamente.
+        </Text>
+      </Stack>
+      <Group gap="sm">
+        <Button radius="xl" onClick={onRetry}>
+          Tentar novamente
+        </Button>
+        <Button variant="subtle" component={Link} to={`/eventos/${eventId}`} radius="xl">
+          Voltar ao evento
+        </Button>
+      </Group>
+    </Stack>
+  );
 }
 
 /** Linha label/valor no painel lateral de resumo do checkout. */
@@ -336,6 +483,13 @@ export function CheckoutPage() {
     }
   }, [status?.phase, status?.payment]);
 
+  useEffect(() => {
+    const currentPhase = status?.phase;
+    if (currentPhase === "PAID" || currentPhase === "EXPIRED" || currentPhase === "FAILED") {
+      setConfirmingPayment(false);
+    }
+  }, [status?.phase]);
+
   const generatePix = async (orderId: string) => {
     if (pixGenerating) {
       return;
@@ -555,6 +709,43 @@ export function CheckoutPage() {
   const isPixReady = phase === "AWAITING_PAYMENT" && Boolean(status?.payment);
   const canChoosePayment = isPaymentPending || isPixReady;
   const orderAmountCents = status?.order?.totalPrice ?? totalCents;
+  const isAwaitingCardReview =
+    phase === "AWAITING_PAYMENT" && !status?.payment && confirmingPayment;
+  const showPaymentForm = canChoosePayment && !confirmingPayment && !cardSubmitting;
+  const showCompletionState = isPaid || isFailed;
+
+  const paymentProgressCopy = cardSubmitting
+    ? {
+        title: "Processando pagamento...",
+        description: "Estamos validando os dados do cartão com segurança. Não feche esta página.",
+      }
+    : isAwaitingCardReview
+      ? {
+          title: "Pagamento em análise",
+          description:
+            "Recebemos seu pagamento e estamos aguardando a confirmação. Seus ingressos serão emitidos assim que for aprovado.",
+        }
+      : isPendingPersistence
+        ? {
+            title: "Emitindo seus ingressos",
+            description: "Pagamento confirmado. Estamos gerando seus ingressos — isso leva só alguns segundos.",
+          }
+        : {
+            title: "Finalizando compra",
+            description: "Pagamento recebido. Aguarde enquanto concluímos a emissão dos ingressos.",
+          };
+
+  const showPaymentProgress =
+    !showCompletionState &&
+    (cardSubmitting || confirmingPayment || isAwaitingCardReview) &&
+    !showPaymentForm;
+
+  const handleCheckoutRetry = () => {
+    setReservationId(null);
+    setConfirmingPayment(false);
+    setPaymentMethod("card");
+    setPixGenerateError(null);
+  };
 
   return (
     <Stack gap={0}>
@@ -712,235 +903,170 @@ export function CheckoutPage() {
                 ) : (
                   <AnimatedSection animate={false}>
                     <Stack gap="lg" className="checkout-flow">
-                      <PremiumPaper p="xl">
-                        <Stack gap="lg">
-                          <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
-                            <Stack gap={4}>
-                              <Title order={3} size="h4" className="producer-section-title">
-                                Status da compra
-                              </Title>
-                              <Text size="sm" c="dimmed">
-                                Acompanhe cada etapa até a emissão dos ingressos.
-                              </Text>
-                            </Stack>
-                            <Box className="checkout-phase-slot">
-                              {phase ? <PhaseBadge phase={phase} /> : null}
-                            </Box>
-                          </Group>
-
-                          <Stepper
-                            active={getActiveStep(phase)}
-                            size="sm"
-                            allowNextStepsSelect={false}
-                            className="checkout-stepper"
-                          >
-                            <Stepper.Step label="Reserva" description="Confirmada" />
-                            <Stepper.Step label="Processamento" description="Persistência" />
-                            <Stepper.Step
-                              label="Pagamento"
-                              description={getPaymentStepDescription(phase)}
-                            />
-                            <Stepper.Step label="Concluído" description="Ingressos" />
-                          </Stepper>
-
-                          <Box
-                            className={`checkout-status-loading${polling ? " is-active" : ""}`}
-                            aria-hidden={!polling}
-                          >
-                            <Group gap="sm">
-                              <Loader size="sm" color="brand" />
-                              <Text size="sm" c="dimmed">
-                                Atualizando status...
-                              </Text>
-                            </Group>
-                          </Box>
-
-                          {pollError ? (
-                            <Alert color="red" icon={<IconAlertCircle size={18} />} radius="lg">
-                              {pollError}
-                            </Alert>
-                          ) : null}
-                        </Stack>
-                      </PremiumPaper>
-
-                      <Box className="checkout-payment-slot">
-                        {isPendingPersistence ? <OrderProcessingPanel /> : null}
-
-                        {canChoosePayment ? (
+                      {showCompletionState ? (
+                        <PremiumPaper
+                          p="xl"
+                          className={isPaid ? "checkout-success-panel" : "checkout-error-panel"}
+                        >
                           <Stack gap="lg">
-                            <PremiumPaper p="xl">
-                              <Stack gap="lg">
-                                <Group gap="sm" className="producer-form-section-title">
-                                  <ThemeIcon size={40} radius="md" variant="light" color="brand">
-                                    <IconCreditCard size={20} />
-                                  </ThemeIcon>
-                                  <Stack gap={2}>
-                                    <Title order={3} size="h4" className="producer-section-title">
-                                      Forma de pagamento
-                                    </Title>
-                                    <Text size="sm" c="dimmed">
-                                      Escolha como deseja pagar seu pedido.
-                                    </Text>
-                                  </Stack>
-                                </Group>
-
-                                <SegmentedControl
-                                  fullWidth
-                                  radius="xl"
-                                  value={paymentMethod}
-                                  onChange={handlePaymentMethodChange}
-                                  data={[
-                                    {
-                                      value: "pix",
-                                      label: (
-                                        <Group gap={8} justify="center" wrap="nowrap">
-                                          <IconQrcode size={18} />
-                                          <span>PIX</span>
-                                        </Group>
-                                      ),
-                                    },
-                                    {
-                                      value: "card",
-                                      label: (
-                                        <Group gap={8} justify="center" wrap="nowrap">
-                                          <IconCreditCard size={18} />
-                                          <span>Cartão de crédito</span>
-                                        </Group>
-                                      ),
-                                    },
-                                  ]}
-                                />
-                              </Stack>
-                            </PremiumPaper>
-
-                            {paymentMethod === "pix" && isPixReady && status?.payment ? (
-                              <PixPaymentPanel
-                                pixCopyPaste={status.payment.pixCopyPaste}
-                                amountCents={status.payment.amountCents}
-                                expiresAt={status.payment.expiresAt}
+                            <CheckoutStatusStepper
+                              phase={phase}
+                              polling={polling}
+                              pollError={pollError}
+                            />
+                            <Divider className="checkout-result-divider" />
+                            {isPaid ? (
+                              <CheckoutSuccessContent eventId={event.id} />
+                            ) : (
+                              <CheckoutErrorContent
+                                eventId={event.id}
+                                onRetry={handleCheckoutRetry}
                               />
-                            ) : null}
-
-                            {paymentMethod === "pix" && isPaymentPending ? (
-                              pixGenerating ? (
-                                <PixPaymentSkeleton />
-                              ) : pixGenerateError ? (
-                                <Alert
-                                  color="red"
-                                  variant="light"
-                                  radius="lg"
-                                  icon={<IconAlertCircle size={18} />}
-                                  title="Não foi possível gerar o PIX"
-                                >
-                                  <Stack gap="sm">
-                                    <Text size="sm">{pixGenerateError}</Text>
-                                    {status?.order?.id ? (
-                                      <Button
-                                        radius="xl"
-                                        variant="light"
-                                        onClick={() => void generatePix(status.order!.id)}
-                                      >
-                                        Tentar novamente
-                                      </Button>
-                                    ) : null}
-                                  </Stack>
-                                </Alert>
-                              ) : null
-                            ) : null}
-
-                            {paymentMethod === "card" && status?.order ? (
-                              <CardPaymentPanel
-                                amountCents={orderAmountCents}
-                                defaultEmail={user?.email}
-                                submitting={cardSubmitting}
-                                onSubmit={(payload) => void handleCardPayment(payload)}
-                              />
-                            ) : null}
+                            )}
                           </Stack>
-                        ) : null}
-                      </Box>
+                        </PremiumPaper>
+                      ) : (
+                        <>
+                          <PremiumPaper p="xl">
+                            <CheckoutStatusStepper
+                              phase={phase}
+                              polling={polling}
+                              pollError={pollError}
+                            />
+                          </PremiumPaper>
 
-                      {isPixReady && paymentMethod === "pix" && import.meta.env.DEV ? (
-                        <DevSimulatePaymentPanel
-                          loading={simulating}
-                          onSimulate={() => void handleSimulatePayment()}
-                        />
-                      ) : null}
-
-                      {isPaid ? (
-                        <PremiumPaper p="xl" className="checkout-success-panel">
-                          <Stack gap="md" align="center" ta="center">
-                            <ThemeIcon size={64} radius="xl" variant="light" color="green">
-                              <IconCheck size={32} />
-                            </ThemeIcon>
-                            <Stack gap={4}>
-                              <Title order={3}>Pagamento confirmado!</Title>
-                              <Text c="dimmed">
-                                Seus ingressos foram emitidos com sucesso e já estão disponíveis.
-                              </Text>
-                            </Stack>
-                            <Button
-                              component={Link}
-                              to="/ingressos"
-                              radius="xl"
-                              size="md"
-                              leftSection={<IconTicket size={18} />}
+                          {(showPaymentForm || showPaymentProgress || isPendingPersistence) ? (
+                            <Box
+                              className={`checkout-payment-slot${showPaymentForm ? " checkout-payment-slot--with-form" : ""}`}
                             >
-                              Ver meus ingressos
+                              {showPaymentProgress ? (
+                                <CheckoutPaymentProgressPanel {...paymentProgressCopy} />
+                              ) : isPendingPersistence ? (
+                                <CheckoutPaymentProgressPanel
+                                  title="Preparando seu pedido"
+                                  description="Estamos confirmando sua reserva. Em seguida você poderá escolher a forma de pagamento."
+                                />
+                              ) : null}
+
+                              {showPaymentForm ? (
+                                <Stack gap="lg">
+                                  <PremiumPaper p="xl">
+                                    <Stack gap="lg">
+                                      <Group gap="sm" className="producer-form-section-title">
+                                        <ThemeIcon
+                                          size={40}
+                                          radius="md"
+                                          variant="light"
+                                          color="brand"
+                                        >
+                                          <IconCreditCard size={20} />
+                                        </ThemeIcon>
+                                        <Stack gap={2}>
+                                          <Title order={3} size="h4" className="producer-section-title">
+                                            Forma de pagamento
+                                          </Title>
+                                          <Text size="sm" c="dimmed">
+                                            Escolha como deseja pagar seu pedido.
+                                          </Text>
+                                        </Stack>
+                                      </Group>
+
+                                      <SegmentedControl
+                                        fullWidth
+                                        radius="xl"
+                                        value={paymentMethod}
+                                        onChange={handlePaymentMethodChange}
+                                        data={[
+                                          {
+                                            value: "pix",
+                                            label: (
+                                              <Group gap={8} justify="center" wrap="nowrap">
+                                                <IconQrcode size={18} />
+                                                <span>PIX</span>
+                                              </Group>
+                                            ),
+                                          },
+                                          {
+                                            value: "card",
+                                            label: (
+                                              <Group gap={8} justify="center" wrap="nowrap">
+                                                <IconCreditCard size={18} />
+                                                <span>Cartão de crédito</span>
+                                              </Group>
+                                            ),
+                                          },
+                                        ]}
+                                      />
+                                    </Stack>
+                                  </PremiumPaper>
+
+                                  {paymentMethod === "pix" && isPixReady && status?.payment ? (
+                                    <PixPaymentPanel
+                                      pixCopyPaste={status.payment.pixCopyPaste}
+                                      amountCents={status.payment.amountCents}
+                                      expiresAt={status.payment.expiresAt}
+                                    />
+                                  ) : null}
+
+                                  {paymentMethod === "pix" && isPaymentPending ? (
+                                    pixGenerating ? (
+                                      <PixPaymentSkeleton />
+                                    ) : pixGenerateError ? (
+                                      <Alert
+                                        color="red"
+                                        variant="light"
+                                        radius="lg"
+                                        icon={<IconAlertCircle size={18} />}
+                                        title="Não foi possível gerar o PIX"
+                                      >
+                                        <Stack gap="sm">
+                                          <Text size="sm">{pixGenerateError}</Text>
+                                          {status?.order?.id ? (
+                                            <Button
+                                              radius="xl"
+                                              variant="light"
+                                              onClick={() => void generatePix(status.order!.id)}
+                                            >
+                                              Tentar novamente
+                                            </Button>
+                                          ) : null}
+                                        </Stack>
+                                      </Alert>
+                                    ) : null
+                                  ) : null}
+
+                                  {paymentMethod === "card" && status?.order ? (
+                                    <CardPaymentPanel
+                                      amountCents={orderAmountCents}
+                                      defaultEmail={user?.email}
+                                      submitting={cardSubmitting}
+                                      onSubmit={(payload) => void handleCardPayment(payload)}
+                                    />
+                                  ) : null}
+                                </Stack>
+                              ) : null}
+                            </Box>
+                          ) : null}
+
+                          {isPixReady && paymentMethod === "pix" && import.meta.env.DEV ? (
+                            <DevSimulatePaymentPanel
+                              loading={simulating}
+                              onSimulate={() => void handleSimulatePayment()}
+                            />
+                          ) : null}
+
+                          <Group>
+                            <Button
+                              variant="subtle"
+                              component={Link}
+                              to={`/eventos/${event.id}`}
+                              radius="xl"
+                            >
+                              Voltar ao evento
                             </Button>
-                          </Stack>
-                        </PremiumPaper>
-                      ) : null}
-
-                      {isFailed ? (
-                        <PremiumPaper p="xl" className="checkout-error-panel">
-                          <Stack gap="md" align="center" ta="center">
-                            <ThemeIcon size={64} radius="xl" variant="light" color="red">
-                              <IconAlertCircle size={32} />
-                            </ThemeIcon>
-                            <Stack gap={4}>
-                              <Title order={3}>Compra não concluída</Title>
-                              <Text c="dimmed">
-                                A reserva expirou ou o pagamento falhou. Você pode tentar novamente.
-                              </Text>
-                            </Stack>
-                            <Group gap="sm">
-                              <Button
-                                radius="xl"
-                                onClick={() => {
-                                  setReservationId(null);
-                                  setConfirmingPayment(false);
-                                  setPaymentMethod("card");
-                                  setPixGenerateError(null);
-                                }}
-                              >
-                                Tentar novamente
-                              </Button>
-                              <Button
-                                variant="subtle"
-                                component={Link}
-                                to={`/eventos/${event.id}`}
-                                radius="xl"
-                              >
-                                Voltar ao evento
-                              </Button>
-                            </Group>
-                          </Stack>
-                        </PremiumPaper>
-                      ) : null}
-
-                      {!isPaid && !isFailed ? (
-                        <Group>
-                          <Button
-                            variant="subtle"
-                            component={Link}
-                            to={`/eventos/${event.id}`}
-                            radius="xl"
-                          >
-                            Voltar ao evento
-                          </Button>
-                        </Group>
-                      ) : null}
+                          </Group>
+                        </>
+                      )}
                     </Stack>
                   </AnimatedSection>
                 )}

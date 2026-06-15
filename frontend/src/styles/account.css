@@ -1056,7 +1056,23 @@
 }
 
 .checkout-payment-slot {
+  min-height: 0;
+}
+
+.checkout-payment-slot--with-form {
   min-height: 520px;
+}
+
+.checkout-progress-panel {
+  border-style: solid;
+}
+
+.checkout-result-divider {
+  margin-block: 4px;
+}
+
+.checkout-result-content {
+  padding-block: 8px 4px;
 }
 
 .checkout-status-loading {
@@ -1182,7 +1198,7 @@
     top: auto;
   }
 
-  .checkout-payment-slot {
+  .checkout-payment-slot--with-form {
     min-height: 480px;
   }
 
