@@ -2,8 +2,9 @@
  * @file Alertas operacionais do dashboard do produtor.
  */
 
-import { Alert, Stack, Text } from "@mantine/core";
+import { Badge, Group, Stack, Text, ThemeIcon } from "@mantine/core";
 import { IconAlertTriangle, IconCalendarEvent, IconFileText } from "@tabler/icons-react";
+import { PremiumPaper } from "../account/PremiumPaper";
 import type { ProducerEventStats } from "../../types/api";
 
 interface ProducerDashboardAlertsProps {
@@ -28,7 +29,7 @@ function isTodayOrPast(isoDate: string): boolean {
 }
 
 /**
- * Destaca rascunhos, eventos próximos e check-ins pendentes.
+ * Destaca rascunhos, eventos próximos e check-ins pendentes em um único bloco.
  */
 export function ProducerDashboardAlerts({ events }: ProducerDashboardAlertsProps) {
   const drafts = events.filter((event) => event.status === "DRAFT");
@@ -42,17 +43,18 @@ export function ProducerDashboardAlerts({ events }: ProducerDashboardAlertsProps
       isTodayOrPast(event.date),
   );
 
-  const alerts: { color: string; icon: typeof IconFileText; title: string; message: string }[] = [];
+  const alerts: { color: string; icon: typeof IconFileText; title: string; message: string }[] =
+    [];
 
   if (drafts.length > 0) {
     alerts.push({
       color: "yellow",
       icon: IconFileText,
-      title: `${drafts.length} rascunho${drafts.length === 1 ? "" : "s"} aguardando publicação`,
+      title: `${drafts.length} rascunho${drafts.length === 1 ? "" : "s"}`,
       message:
         drafts.length === 1
           ? `"${drafts[0].title}" ainda não está visível para o público.`
-          : "Publique seus eventos para começar a vender ingressos.",
+          : "Publique para liberar vendas na vitrine.",
     });
   }
 
@@ -60,8 +62,8 @@ export function ProducerDashboardAlerts({ events }: ProducerDashboardAlertsProps
     alerts.push({
       color: "blue",
       icon: IconCalendarEvent,
-      title: `${upcoming.length} evento${upcoming.length === 1 ? "" : "s"} nos próximos 7 dias`,
-      message: "Revise lotes, capacidade e equipe de check-in antes da data.",
+      title: `${upcoming.length} evento${upcoming.length === 1 ? "" : "s"} em 7 dias`,
+      message: "Revise lotes, capacidade e equipe de check-in.",
     });
   }
 
@@ -75,7 +77,7 @@ export function ProducerDashboardAlerts({ events }: ProducerDashboardAlertsProps
       color: "orange",
       icon: IconAlertTriangle,
       title: `${totalPending} check-in${totalPending === 1 ? "" : "s"} pendente${totalPending === 1 ? "" : "s"}`,
-      message: "Há ingressos vendidos ainda não validados na entrada.",
+      message: "Ingressos vendidos ainda não validados na entrada.",
     });
   }
 
@@ -84,19 +86,31 @@ export function ProducerDashboardAlerts({ events }: ProducerDashboardAlertsProps
   }
 
   return (
-    <Stack gap="sm">
-      {alerts.map((alert) => (
-        <Alert
-          key={alert.title}
-          color={alert.color}
-          radius="lg"
-          variant="light"
-          icon={<alert.icon size={18} />}
-          title={alert.title}
-        >
-          <Text size="sm">{alert.message}</Text>
-        </Alert>
-      ))}
-    </Stack>
+    <PremiumPaper p="md" className="producer-dashboard-alerts">
+      <Group gap="sm" mb="sm" wrap="nowrap">
+        <ThemeIcon size={32} radius="md" variant="light" color="orange">
+          <IconAlertTriangle size={16} />
+        </ThemeIcon>
+        <Text fw={700} size="sm">
+          Precisa da sua atenção
+        </Text>
+      </Group>
+      <Stack gap="sm">
+        {alerts.map((alert) => (
+          <Group key={alert.title} gap="sm" align="flex-start" wrap="nowrap">
+            <Badge color={alert.color} variant="light" radius="sm" mt={2}>
+              <alert.icon size={12} />
+            </Badge>
+            <Text size="sm" style={{ lineHeight: 1.45 }}>
+              <Text span fw={600}>
+                {alert.title}
+              </Text>
+              {" — "}
+              {alert.message}
+            </Text>
+          </Group>
+        ))}
+      </Stack>
+    </PremiumPaper>
   );
 }

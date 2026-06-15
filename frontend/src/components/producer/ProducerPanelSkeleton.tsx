@@ -1,4 +1,4 @@
-import { Group, Paper, SimpleGrid, Skeleton, Stack } from "@mantine/core";
+import { Grid, Group, Paper, SimpleGrid, Skeleton, Stack } from "@mantine/core";
 
 function ProducerEventListRowSkeleton() {
   return (
@@ -47,33 +47,27 @@ export function ProducerPanelSkeleton({ variant = "dashboard" }: ProducerPanelSk
 
   return (
     <Stack gap="lg">
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+      <SimpleGrid cols={{ base: 2, lg: 4 }} spacing="md">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Skeleton key={index} h={88} radius="lg" className="skeleton-shimmer" />
-        ))}
-      </SimpleGrid>
-
-      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
-        {Array.from({ length: 3 }).map((_, index) => (
           <Skeleton key={index} h={88} radius="lg" className="skeleton-shimmer" />
         ))}
       </SimpleGrid>
 
       <Skeleton h={72} radius="lg" className="skeleton-shimmer" />
 
-      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
-        <Stack gap="md">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} h={88} radius="lg" className="skeleton-shimmer" />
-          ))}
-        </Stack>
-        <Skeleton h={220} radius="lg" className="skeleton-shimmer" />
-      </SimpleGrid>
+      <Skeleton h={96} radius="lg" className="skeleton-shimmer" />
 
-      <Stack gap="sm">
-        <Skeleton h={24} w={220} radius="sm" className="skeleton-shimmer" />
-        <Skeleton h={280} radius="lg" className="skeleton-shimmer" />
-      </Stack>
+      <Grid gap="lg">
+        <Grid.Col span={{ base: 12, lg: 8 }}>
+          <Skeleton h={320} radius="lg" className="skeleton-shimmer" />
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, lg: 4 }}>
+          <Stack gap="md">
+            <Skeleton h={200} radius="lg" className="skeleton-shimmer" />
+            <Skeleton h={140} radius="lg" className="skeleton-shimmer" />
+          </Stack>
+        </Grid.Col>
+      </Grid>
     </Stack>
   );
 }

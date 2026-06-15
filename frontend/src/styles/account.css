@@ -516,28 +516,111 @@
   flex-shrink: 0;
 }
 
-.producer-dashboard-insight {
-  height: 100%;
+/* Dashboard do produtor */
+.producer-dashboard {
+  padding-bottom: var(--mantine-spacing-md);
 }
 
-.producer-dashboard-insight-item {
-  padding: 12px;
-  border-radius: var(--mantine-radius-md);
+.producer-dashboard-kpis {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-md);
+}
+
+.producer-dashboard-context {
+  border-style: dashed;
   background: light-dark(
-    var(--mantine-color-gray-0),
-    var(--mantine-color-dark-5)
+    rgba(var(--mantine-color-brand-6-rgb), 0.03),
+    rgba(var(--mantine-color-brand-6-rgb), 0.06)
   );
 }
 
-.producer-top-performer {
-  transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
+.producer-dashboard-context-metric {
+  min-width: 0;
 }
 
-.producer-top-performer:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px var(--vibra-shadow-soft);
+.producer-dashboard-context-value {
+  font-size: clamp(1.125rem, 2vw, 1.35rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.producer-dashboard-context-metric.is-warning .producer-dashboard-context-value {
+  color: var(--mantine-color-orange-7);
+}
+
+.producer-dashboard-context-metric.is-success .producer-dashboard-context-value {
+  color: var(--mantine-color-teal-7);
+}
+
+.producer-dashboard-alerts {
+  border-color: light-dark(
+    rgba(var(--mantine-color-orange-6-rgb), 0.28),
+    rgba(var(--mantine-color-orange-6-rgb), 0.35)
+  );
+}
+
+.producer-dashboard-table-panel,
+.producer-dashboard-side-card,
+.producer-dashboard-actions {
+  height: 100%;
+}
+
+.producer-dashboard-layout {
+  align-items: stretch;
+}
+
+.producer-top-performer-row {
+  padding: 10px 12px;
+  border-radius: var(--mantine-radius-md);
+  border: 1px solid var(--mantine-color-default-border);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.producer-top-performer-row:hover {
+  border-color: var(--vibra-border-accent-hover);
+}
+
+.producer-dashboard .stat-card-value {
+  font-size: clamp(1.125rem, 2.4vw, 1.5rem);
+}
+
+@media (max-width: 63.99em) {
+  .producer-dashboard-side {
+    order: -1;
+  }
+
+  .producer-dashboard-main {
+    order: 1;
+  }
+}
+
+@media (max-width: 47.99em) {
+  .producer-dashboard-kpis .stat-card {
+    padding: 12px;
+  }
+
+  .producer-dashboard-kpis .stat-card .mantine-ThemeIcon-root {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+  }
+
+  .producer-dashboard-kpis .stat-card .mantine-Stack-root {
+    gap: 0;
+  }
+
+  .producer-dashboard-context {
+    padding: 12px !important;
+  }
+
+  .producer-dashboard-table-panel {
+    padding: 16px !important;
+  }
 }
 
 .producer-performance-table .producer-performance-row {
