@@ -437,6 +437,8 @@ export function ProducerManageEventPage() {
                       <Select
                         label="Status"
                         radius="md"
+                        allowDeselect={false}
+                        comboboxProps={{ withinPortal: true }}
                         data={[
                           { value: "DRAFT", label: "Rascunho" },
                           { value: "PUBLISHED", label: "Publicado" },

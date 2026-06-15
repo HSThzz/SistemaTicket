@@ -1,3 +1,38 @@
+/* Desktop — links do cabeçalho */
+
+.desktop-nav-link {
+  font-size: var(--mantine-font-size-sm);
+  color: light-dark(var(--mantine-color-gray-8), var(--mantine-color-gray-2)) !important;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.desktop-nav-link:hover {
+  color: light-dark(var(--mantine-color-dark-7), var(--mantine-color-white)) !important;
+}
+
+.desktop-nav-link.is-active {
+  color: light-dark(var(--mantine-color-brand-8), var(--mantine-color-brand-3)) !important;
+}
+
+.layout-home .layout-home-header .desktop-nav-link,
+.layout-events .layout-events-header .desktop-nav-link,
+.layout-hero .layout-hero-header .desktop-nav-link {
+  color: light-dark(var(--mantine-color-dark-7), var(--mantine-color-gray-1)) !important;
+}
+
+.layout-home .layout-home-header .desktop-nav-link:hover,
+.layout-events .layout-events-header .desktop-nav-link:hover,
+.layout-hero .layout-hero-header .desktop-nav-link:hover {
+  color: light-dark(var(--mantine-color-dark-9), var(--mantine-color-white)) !important;
+}
+
+.layout-home .layout-home-header .desktop-nav-link.is-active,
+.layout-events .layout-events-header .desktop-nav-link.is-active,
+.layout-hero .layout-hero-header .desktop-nav-link.is-active {
+  color: light-dark(var(--mantine-color-brand-8), var(--mantine-color-brand-2)) !important;
+}
+
 /* Mobile drawer — menu lateral com scroll isolado */
 
 .layout-mobile-drawer {

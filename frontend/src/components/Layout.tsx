@@ -66,14 +66,10 @@ function DesktopNavLinks({
             key={link.to}
             component={Link}
             to={link.to}
+            className={`desktop-nav-link${isActive ? " is-active" : ""}`}
             fw={isActive ? 600 : 500}
-            c={isActive ? "brand.7" : "dimmed"}
             underline="never"
             onClick={onNavigate}
-            style={{
-              transition: "color 0.2s ease",
-              fontSize: "var(--mantine-font-size-sm)",
-            }}
           >
             {link.label}
           </Anchor>

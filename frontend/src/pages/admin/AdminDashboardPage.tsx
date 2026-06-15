@@ -212,6 +212,8 @@ export function AdminDashboardPage() {
                 label="Alterar papel"
                 data={ROLE_OPTIONS}
                 value={selectedUser.role}
+                allowDeselect={false}
+                comboboxProps={{ withinPortal: true }}
                 onChange={(value) => {
                   if (value) {
                     void handleSaveRole(value as UserRole);
