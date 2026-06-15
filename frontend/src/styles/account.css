@@ -1075,3 +1075,29 @@
   max-height: 160px;
   overflow-y: auto;
 }
+
+.profile-tabs__list {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.profile-tabs__list::-webkit-scrollbar {
+  display: none;
+}
+
+.profile-tabs__list [data-active] {
+  flex-shrink: 0;
+}
+
+@media (max-width: 36em) {
+  .profile-tabs__list .mantine-Tabs-tab {
+    padding-inline: var(--mantine-spacing-sm);
+    font-size: var(--mantine-font-size-sm);
+  }
+
+  .profile-tabs__list .mantine-Tabs-tabLabel {
+    white-space: nowrap;
+  }
+}

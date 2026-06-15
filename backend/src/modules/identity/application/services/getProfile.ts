@@ -1,6 +1,7 @@
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { UserNotFoundError } from "../../domain/errors/AuthError";
 import { userIdSchema } from "../../validators/schema/userIdSchema";
+import { toUserProfile } from "../helpers/toUserProfile";
 import { findOneUserById } from "../queries/findOneUserById";
 
 export async function getProfile(
@@ -13,10 +14,5 @@ export async function getProfile(
     throw new UserNotFoundError(id);
   }
 
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-  };
+  return toUserProfile(user);
 }

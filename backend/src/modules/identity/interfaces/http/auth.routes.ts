@@ -14,6 +14,8 @@ import {
   loginBodySchema,
   lookupUserQuerySchema,
   registerBodySchema,
+  updatePasswordBodySchema,
+  updateProfileBodySchema,
   updateRoleBodySchema,
   userIdParamsSchema,
 } from "../../../../shared/interfaces/http/validation/identity.schemas";
@@ -34,6 +36,20 @@ router.post(
 );
 
 router.get("/me", authMiddleware, (req, res) => void authController.me(req, res));
+
+router.patch(
+  "/me",
+  authMiddleware,
+  validateBody(updateProfileBodySchema),
+  (req, res) => void authController.updateMe(req, res),
+);
+
+router.patch(
+  "/me/password",
+  authMiddleware,
+  validateBody(updatePasswordBodySchema),
+  (req, res) => void authController.updatePassword(req, res),
+);
 
 router.get(
   "/users/lookup",

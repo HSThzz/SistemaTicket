@@ -40,6 +40,7 @@ const PUBLIC_NAV_LINKS = [
 ] as const;
 
 const PRIVATE_NAV_LINKS = [
+  { to: "/perfil", label: "Minha conta", icon: IconUser, exact: false },
   { to: "/ingressos", label: "Meus ingressos", icon: IconTicket, exact: false },
   { to: "/pedidos", label: "Meus pedidos", icon: null, exact: false },
 ] as const;
@@ -208,6 +209,14 @@ export function Layout() {
                   </Menu.Target>
                   <Menu.Dropdown>
                     <Menu.Label>{user.email}</Menu.Label>
+                    <Menu.Item
+                      component={Link}
+                      to="/perfil"
+                      leftSection={<IconUser size={16} />}
+                      onClick={close}
+                    >
+                      Minha conta
+                    </Menu.Item>
                     {isProducer ? (
                       <Menu.Item
                         component={Link}
@@ -275,6 +284,16 @@ export function Layout() {
                 <Text size="sm" c="dimmed">
                   {user.name}
                 </Text>
+                <Button
+                  fullWidth
+                  variant="light"
+                  component={Link}
+                  to="/perfil"
+                  onClick={close}
+                  leftSection={<IconUser size={16} />}
+                >
+                  Minha conta
+                </Button>
                 {isProducer ? (
                   <Button
                     fullWidth

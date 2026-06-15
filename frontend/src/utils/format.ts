@@ -81,3 +81,27 @@ export function formatEventDateDice(isoDate: string): string {
 
   return formatted.replace(/\.$/, "");
 }
+
+/** Remove caracteres não numéricos de CPF/CNPJ. */
+export function normalizeDocument(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+/** Formata CPF parcial para exibição (000.000.000-00). */
+export function formatCpf(value: string): string {
+  const digits = normalizeDocument(value).slice(0, 11);
+
+  if (digits.length <= 3) {
+    return digits;
+  }
+
+  if (digits.length <= 6) {
+    return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  }
+
+  if (digits.length <= 9) {
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  }
+
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}

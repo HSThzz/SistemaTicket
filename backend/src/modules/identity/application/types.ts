@@ -28,6 +28,8 @@ export interface AuthUserProfile {
   name: string;
   email: string;
   role: UserRole;
+  /** CPF (apenas dígitos); presente em `/auth/me` e após atualização de perfil. */
+  document?: string;
 }
 
 /** Resposta de autenticação com token e dados públicos do usuário. */

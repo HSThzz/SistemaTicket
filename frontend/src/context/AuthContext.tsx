@@ -30,6 +30,8 @@ interface AuthContextValue {
   setSession: (token: string, user: AuthUser) => void;
   /** Remove sessão local e estado em memória. */
   clearSession: () => void;
+  /** Atualiza dados do usuário em memória após edição de perfil. */
+  updateUserProfile: (user: AuthUser) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -54,6 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthToken(null);
     setToken(null);
     setUser(null);
+  }, []);
+
+  const updateUserProfile = useCallback((nextUser: AuthUser) => {
+    setUser(nextUser);
   }, []);
 
   useEffect(() => {
@@ -116,8 +122,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isBootstrapping,
       setSession,
       clearSession,
+      updateUserProfile,
     }),
-    [user, token, isBootstrapping, setSession, clearSession],
+    [user, token, isBootstrapping, setSession, clearSession, updateUserProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

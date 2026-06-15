@@ -67,6 +67,14 @@ export class UserNotFoundError extends AuthError {
   }
 }
 
+/** Senha atual incorreta ao alterar senha. */
+export class InvalidCurrentPasswordError extends AuthError {
+  constructor() {
+    super("Current password is incorrect", "INVALID_CURRENT_PASSWORD");
+    this.name = "InvalidCurrentPasswordError";
+  }
+}
+
 /** Papel de usuário inválido na atualização de role. */
 export class InvalidRoleError extends AuthError {
   /**

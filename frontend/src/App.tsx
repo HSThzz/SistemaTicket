@@ -17,6 +17,7 @@ import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { MyOrdersPage } from "./pages/MyOrdersPage";
 import { MyTicketsPage } from "./pages/MyTicketsPage";
+import { ProfilePage } from "./pages/ProfilePage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ProducerCheckInPage } from "./pages/producer/ProducerCheckInPage";
 import { ProducerCreateEventPage } from "./pages/producer/ProducerCreateEventPage";
@@ -46,6 +47,7 @@ export default function App() {
             </Route>
 
             <Route element={<ProtectedRoute />}>
+              <Route path="perfil" element={<ProfilePage />} />
               <Route path="ingressos" element={<MyTicketsPage />} />
               <Route path="pedidos" element={<MyOrdersPage />} />
               <Route path="eventos/:eventId/comprar" element={<CheckoutPage />} />

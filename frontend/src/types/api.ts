@@ -12,6 +12,8 @@ export interface AuthUser {
   name: string;
   email: string;
   role: UserRole;
+  /** CPF (apenas dígitos); retornado por `/auth/me`. */
+  document?: string;
 }
 
 /** Resposta de login ou cadastro com token e usuário. */

@@ -1,7 +1,9 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import type { MouseEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { ActionIcon, Box, Stack, Text, UnstyledButton } from "@mantine/core";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-react";
+import { useAuth } from "../../context/AuthContext";
+import { useFavorites } from "../../hooks/useFavorites";
 import type { Event } from "../../types/api";
 import {
   extractCity,
@@ -16,11 +18,26 @@ interface DiceEventCardProps {
 }
 
 export function DiceEventCard({ event }: DiceEventCardProps) {
-  const [liked, setLiked] = useState(false);
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const liked = isFavorite(event.id);
   const lowestPrice = getLowestPrice(event);
   const totalAvailable = getTotalAvailable(event);
   const soldOut = totalAvailable === 0;
   const venue = extractCity(event.location);
+
+  const handleFavoriteClick = (clickEvent: MouseEvent) => {
+    clickEvent.preventDefault();
+    clickEvent.stopPropagation();
+
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    toggleFavorite(event.id);
+  };
 
   return (
     <Box className="dice-event-card">
@@ -37,11 +54,8 @@ export function DiceEventCard({ event }: DiceEventCardProps) {
             radius="xl"
             size="lg"
             aria-label={liked ? "Remover dos favoritos" : "Salvar evento"}
-            onClick={(clickEvent) => {
-              clickEvent.preventDefault();
-              clickEvent.stopPropagation();
-              setLiked((current) => !current);
-            }}
+            aria-pressed={liked}
+            onClick={handleFavoriteClick}
           >
             {liked ? <IconHeartFilled size={16} /> : <IconHeart size={16} />}
           </ActionIcon>

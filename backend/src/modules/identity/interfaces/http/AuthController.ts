@@ -9,6 +9,7 @@ import {
   AuthError,
   EmailAlreadyExistsError,
   InvalidCredentialsError,
+  InvalidCurrentPasswordError,
   InvalidRoleError,
   UserNotFoundError,
 } from "../../domain/errors/AuthError";
@@ -19,7 +20,11 @@ import { getProfile } from "../../application/services/getProfile";
 import { loginUser } from "../../application/services/loginUser";
 import { lookupUserByEmail } from "../../application/services/lookupUserByEmail";
 import { registerUser } from "../../application/services/registerUser";
+import { updatePassword as changeUserPassword } from "../../application/services/updatePassword";
+import { updateProfile } from "../../application/services/updateProfile";
 import { updateUserRole } from "../../application/services/updateUserRole";
+import type { UpdatePasswordInputSchema } from "../../validators/schema/updatePasswordSchema";
+import type { UpdateProfileInputSchema } from "../../validators/schema/updateProfileSchema";
 
 const CONTEXT = "AuthController";
 const logger = Logger.getInstance();
@@ -60,6 +65,44 @@ export class AuthController {
     try {
       const user = await getProfile(req.user.id);
       res.status(200).json({ user });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * PATCH /auth/me — atualiza nome, e-mail e documento do usuário autenticado.
+   */
+  async updateMe(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    const body = req.body as UpdateProfileInputSchema;
+
+    try {
+      const user = await updateProfile(req.user.id, body);
+      res.status(200).json({ user });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * PATCH /auth/me/password — altera a senha do usuário autenticado.
+   */
+  async updatePassword(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    const body = req.body as UpdatePasswordInputSchema;
+
+    try {
+      await changeUserPassword(req.user.id, body);
+      res.status(200).json({ success: true });
     } catch (error) {
       this.handleError(res, error);
     }
@@ -132,6 +175,11 @@ export class AuthController {
     }
 
     if (error instanceof InvalidCredentialsError) {
+      res.status(401).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof InvalidCurrentPasswordError) {
       res.status(401).json({ error: error.message, code: error.code });
       return;
     }

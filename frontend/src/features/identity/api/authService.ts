@@ -48,6 +48,34 @@ export async function getMe(): Promise<AuthUser> {
   return data.user;
 }
 
+/** Dados para atualização de perfil. */
+export interface UpdateProfileInput {
+  name: string;
+  email: string;
+  document: string;
+}
+
+/**
+ * Atualiza nome, e-mail e documento do usuário autenticado.
+ */
+export async function updateProfile(input: UpdateProfileInput): Promise<AuthUser> {
+  const { data } = await api.patch<{ user: AuthUser }>("/auth/me", input);
+  return data.user;
+}
+
+/** Dados para alteração de senha. */
+export interface UpdatePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+}
+
+/**
+ * Altera a senha do usuário autenticado.
+ */
+export async function updatePassword(input: UpdatePasswordInput): Promise<void> {
+  await api.patch("/auth/me/password", input);
+}
+
 /**
  * Busca usuário por e-mail (admin).
  */
