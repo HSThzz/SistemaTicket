@@ -1,17 +1,35 @@
-/* Mobile drawer — navegação por seções */
+/* Mobile drawer — menu lateral com scroll isolado */
 
-.layout-mobile-navbar {
+.layout-mobile-drawer {
   border-right: 1px solid var(--mantine-color-default-border);
   background: light-dark(
-    rgba(250, 250, 250, 0.96),
-    rgba(12, 12, 12, 0.96)
+    rgba(250, 250, 250, 0.98),
+    rgba(12, 12, 12, 0.98)
   ) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
+.layout-mobile-drawer-body {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px) !important;
+}
+
+.layout-mobile-drawer-overlay {
+  backdrop-filter: blur(2px);
+}
+
+.layout-main-nav-locked {
+  touch-action: none;
+}
+
 .mobile-nav-drawer {
   padding-top: 4px;
+  padding-bottom: 8px;
 }
 
 .mobile-nav-user-card {

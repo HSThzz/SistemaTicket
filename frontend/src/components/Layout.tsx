@@ -3,6 +3,7 @@
  * @module components/Layout
  */
 
+import { useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Anchor,
@@ -10,10 +11,11 @@ import {
   Burger,
   Button,
   Container,
+  Drawer,
   Group,
   UnstyledButton,
 } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import {
   IconCalendarPlus,
@@ -86,6 +88,7 @@ function DesktopNavLinks({
  */
 export function Layout() {
   const [opened, { toggle, close }] = useDisclosure();
+  const isMobileNav = useMediaQuery("(max-width: 47.99em)");
   const { user, isAuthenticated, isBootstrapping, clearSession } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -115,20 +118,24 @@ export function Layout() {
     navigate("/");
   };
 
+  useEffect(() => {
+    close();
+  }, [location.pathname, close]);
+
+  useEffect(() => {
+    if (!isMobileNav) {
+      close();
+    }
+  }, [isMobileNav, close]);
+
   return (
     <AppShell
       header={{ height: 72 }}
-      navbar={{
-        width: 300,
-        breakpoint: "sm",
-        collapsed: { mobile: !opened, desktop: true },
-      }}
       padding={isFullWidthPage ? 0 : "md"}
       className={layoutVariant ? `layout-${layoutVariant}` : undefined}
       classNames={{
         header: layoutVariant ? `layout-${layoutVariant}-header` : undefined,
         main: layoutVariant ? `layout-${layoutVariant}-main` : undefined,
-        navbar: "layout-mobile-navbar",
       }}
     >
       <AppShell.Header>
@@ -215,7 +222,23 @@ export function Layout() {
         </Container>
       </AppShell.Header>
 
-      <AppShell.Navbar p="md" hiddenFrom="sm">
+      <Drawer
+        opened={opened && Boolean(isMobileNav)}
+        onClose={close}
+        position="left"
+        size={300}
+        padding="md"
+        lockScroll
+        withCloseButton={false}
+        hiddenFrom="sm"
+        classNames={{
+          content: "layout-mobile-drawer",
+          body: "layout-mobile-drawer-body",
+          overlay: "layout-mobile-drawer-overlay",
+        }}
+        transitionProps={{ transition: "slide-right", duration: 220 }}
+        aria-label="Menu de navegação"
+      >
         <MobileNavDrawer
           currentPath={currentPath}
           isAuthenticated={isAuthenticated}
@@ -226,9 +249,9 @@ export function Layout() {
           onNavigate={close}
           onLogout={handleLogout}
         />
-      </AppShell.Navbar>
+      </Drawer>
 
-      <AppShell.Main>
+      <AppShell.Main className={opened && isMobileNav ? "layout-main-nav-locked" : undefined}>
         {isFullWidthPage ? (
           <Outlet />
         ) : (
