@@ -11,7 +11,6 @@ import {
   Button,
   Container,
   Group,
-  Menu,
   UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -19,13 +18,12 @@ import { notifications } from "@mantine/notifications";
 import {
   IconCalendarPlus,
   IconChevronDown,
-  IconLayoutDashboard,
-  IconLogout,
   IconUser,
 } from "@tabler/icons-react";
 import { VibraLogo } from "./brand/VibraLogo";
 import { ColorSchemeToggle } from "./ColorSchemeToggle";
 import { MobileNavDrawer } from "./layout/MobileNavDrawer";
+import { UserAccountMenu } from "./layout/UserAccountMenu";
 import { useAuth } from "../context/AuthContext";
 
 const PUBLIC_NAV_LINKS = [
@@ -180,58 +178,22 @@ export function Layout() {
                   ...
                 </Button>
               ) : isAuthenticated && user ? (
-                <Menu shadow="md" width={240} position="bottom-end">
-                  <Menu.Target>
-                    <Button
-                      variant="light"
-                      radius="xl"
-                      rightSection={<IconChevronDown size={16} />}
-                      leftSection={<IconUser size={16} />}
-                    >
-                      {user.name.split(" ")[0]}
-                    </Button>
-                  </Menu.Target>
-                  <Menu.Dropdown>
-                    <Menu.Label>{user.email}</Menu.Label>
-                    <Menu.Item
-                      component={Link}
-                      to="/perfil"
-                      leftSection={<IconUser size={16} />}
-                      onClick={close}
-                    >
-                      Minha conta
-                    </Menu.Item>
-                    <Menu.Label>Ingressos e pedidos</Menu.Label>
-                    <Menu.Item
-                      component={Link}
-                      to="/ingressos"
-                      onClick={close}
-                    >
-                      Meus ingressos
-                    </Menu.Item>
-                    <Menu.Item
-                      component={Link}
-                      to="/pedidos"
-                      onClick={close}
-                    >
-                      Meus pedidos
-                    </Menu.Item>
-                    {isProducer ? (
-                      <Menu.Item
-                        component={Link}
-                        to="/produtor"
-                        leftSection={<IconLayoutDashboard size={16} />}
-                        onClick={close}
-                      >
-                        Painel produtor
-                      </Menu.Item>
-                    ) : null}
-                    <Menu.Divider />
-                    <Menu.Item leftSection={<IconLogout size={16} />} onClick={handleLogout}>
-                      Sair
-                    </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
+                <UserAccountMenu
+                  user={user}
+                  isProducer={isProducer}
+                  onNavigate={close}
+                  onLogout={handleLogout}
+                >
+                  <Button
+                    variant="light"
+                    radius="xl"
+                    rightSection={<IconChevronDown size={16} />}
+                    leftSection={<IconUser size={16} />}
+                    className="user-account-menu-trigger"
+                  >
+                    {user.name.split(" ")[0]}
+                  </Button>
+                </UserAccountMenu>
               ) : (
                 <>
                   <Button
