@@ -2,7 +2,7 @@
  * @file Navegação por abas do painel do produtor.
  */
 
-import { Button, Group } from "@mantine/core";
+import { Button, Group, Stack, Text, ThemeIcon, UnstyledButton } from "@mantine/core";
 import { Link, useLocation } from "react-router-dom";
 import {
   IconCalendarEvent,
@@ -66,18 +66,29 @@ export function ProducerNav({ showCreateEvent = true }: ProducerNavProps) {
           const isActive = activeTab === tab.value;
 
           return (
-            <Button
+            <UnstyledButton
               key={tab.value}
               component={Link}
               to={tab.to}
-              variant={isActive ? "filled" : "light"}
-              radius="xl"
-              leftSection={<Icon size={16} />}
-              className="producer-nav-tab"
+              className={`producer-nav-tab${isActive ? " is-active" : ""}`}
             >
-              <span className="producer-nav-tab-label">{tab.label}</span>
-              <span className="producer-nav-tab-description">{tab.description}</span>
-            </Button>
+              <ThemeIcon
+                size={34}
+                radius="md"
+                variant="light"
+                color={isActive ? "brand" : "gray"}
+              >
+                <Icon size={18} />
+              </ThemeIcon>
+              <Stack gap={2} className="producer-nav-tab-copy">
+                <Text size="sm" fw={700} className="producer-nav-tab-label">
+                  {tab.label}
+                </Text>
+                <Text size="xs" c="dimmed" className="producer-nav-tab-description">
+                  {tab.description}
+                </Text>
+              </Stack>
+            </UnstyledButton>
           );
         })}
       </Group>

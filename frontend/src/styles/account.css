@@ -11,7 +11,7 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  padding-top: var(--app-shell-header-height, 4.5rem);
+  padding-top: calc(var(--app-shell-header-height, 4.5rem) + var(--mantine-spacing-sm));
   overflow: hidden;
   background-size: cover;
   background-position: center;
@@ -98,10 +98,25 @@
 }
 
 .stat-card-value {
-  font-size: clamp(1.5rem, 3vw, 1.75rem);
+  font-size: clamp(1.125rem, 2.2vw, 1.75rem);
   font-weight: 800;
   letter-spacing: -0.02em;
-  line-height: 1;
+  line-height: 1.2;
+}
+
+.stat-card .mantine-Group-root {
+  align-items: flex-start;
+}
+
+.stat-card .mantine-Stack-root {
+  min-width: 0;
+  flex: 1;
+}
+
+.event-detail-stats .stat-card-value {
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 /* Carteira de ingressos */
@@ -458,24 +473,53 @@
 }
 
 .producer-nav-tab {
-  height: auto !important;
-  padding: 10px 16px !important;
-  line-height: 1.2;
-  flex-direction: column;
-  align-items: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: var(--mantine-radius-xl);
+  border: 1px solid var(--mantine-color-default-border);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.producer-nav-tab:hover {
+  border-color: var(--vibra-border-accent-hover);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
+}
+
+.producer-nav-tab.is-active {
+  border-color: var(--mantine-color-brand-6);
+  background: light-dark(
+    rgba(var(--mantine-color-brand-6-rgb), 0.1),
+    rgba(var(--mantine-color-brand-6-rgb), 0.18)
+  );
+  box-shadow: 0 8px 24px rgba(var(--mantine-color-brand-6-rgb), 0.12);
+}
+
+.producer-nav-tab.is-active .producer-nav-tab-label {
+  color: var(--mantine-color-brand-7);
+}
+
+.producer-nav-tab-copy {
+  min-width: 0;
+  text-align: left;
 }
 
 .producer-nav-tab-label {
-  display: block;
-  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .producer-nav-tab-description {
-  display: block;
-  font-size: var(--mantine-font-size-xs);
-  font-weight: 500;
-  opacity: 0.72;
-  margin-top: 2px;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 
 .producer-nav-create {
@@ -558,9 +602,26 @@
   max-width: 100%;
 }
 
+@media (min-width: 48em) and (max-width: 74.99em) {
+  .producer-nav-tab-description {
+    display: none;
+  }
+}
+
+@media (min-width: 75em) {
+  .producer-nav-tab {
+    min-width: 168px;
+  }
+}
+
 @media (max-width: 47.99em) {
   .producer-nav-tab-description {
     display: none;
+  }
+
+  .producer-nav-tab {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 140px;
   }
 
   .producer-nav-create {

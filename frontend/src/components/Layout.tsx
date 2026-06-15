@@ -123,6 +123,10 @@ export function Layout() {
   }, [location.pathname, close]);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  useEffect(() => {
     if (!isMobileNav) {
       close();
     }
