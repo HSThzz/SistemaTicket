@@ -144,6 +144,74 @@ function normalizeMercadoPagoDataId(value: string): string {
   return value;
 }
 
+/**
+ * Coleta possíveis IDs para o manifest (MP assina formatos IPN e webhook diferentes).
+ */
+export function collectMercadoPagoManifestDataIds(req: Request): string[] {
+  const candidates = new Set<string>();
+
+  const normalized = extractMercadoPagoManifestId(req);
+  if (normalized) {
+    candidates.add(normalized);
+  }
+
+  const dotted = readQueryValue(req.query["data.id"]);
+  if (dotted) {
+    candidates.add(dotted);
+  }
+
+  const topicId = readQueryValue(req.query.id);
+  if (topicId) {
+    candidates.add(topicId);
+  }
+
+  const nested = req.query.data;
+  if (nested && typeof nested === "object" && !Array.isArray(nested)) {
+    const nestedId = readQueryValue((nested as { id?: unknown }).id);
+    if (nestedId) {
+      candidates.add(nestedId);
+    }
+  }
+
+  const body = req.body as { data?: { id?: string | number } };
+  if (body?.data?.id !== undefined) {
+    candidates.add(String(body.data.id));
+  }
+
+  return Array.from(candidates);
+}
+
+/**
+ * Tenta validar a assinatura com cada candidato de dataId do manifest.
+ */
+export function verifyMercadoPagoSignatureForRequest(params: {
+  req: Request;
+  requestId: string;
+  ts: string;
+  secret: string;
+  receivedSignature: string;
+}): boolean {
+  for (const dataId of collectMercadoPagoManifestDataIds(params.req)) {
+    const manifest = buildMercadoPagoManifest({
+      dataId,
+      requestId: params.requestId,
+      ts: params.ts,
+    });
+
+    if (
+      verifyMercadoPagoSignature({
+        manifest,
+        secret: params.secret,
+        receivedSignature: params.receivedSignature,
+      })
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function readMercadoPagoDataIdFromQuery(query: Request["query"]): string | null {
   const dotted = readQueryValue(query["data.id"]);
   if (dotted) {

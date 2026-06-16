@@ -3,10 +3,12 @@ import { createHmac } from "node:crypto";
 import { describe, it } from "node:test";
 import {
   buildMercadoPagoManifest,
+  collectMercadoPagoManifestDataIds,
   isTimestampWithinMaxAge,
   normalizeMercadoPagoTimestampMs,
   parseMercadoPagoSignatureHeader,
   verifyMercadoPagoSignature,
+  verifyMercadoPagoSignatureForRequest,
 } from "../../src/modules/payment/infrastructure/gateways/mercadoPagoSignature";
 import {
   buildInternalWebhookSignature,
@@ -66,6 +68,41 @@ describe("Mercado Pago signature", () => {
     const nowMs = 1_742_505_638_683;
 
     assert.equal(isTimestampWithinMaxAge("1742505638683", 300, nowMs), true);
+  });
+
+  it("tries multiple manifest data ids for signature", () => {
+    const secret = "test-webhook-secret";
+    const requestId = "req-1";
+    const ts = "1742505638683";
+    const paymentId = "164310746890";
+
+    const expected = createHmac("sha256", secret)
+      .update(
+        buildMercadoPagoManifest({
+          dataId: paymentId,
+          requestId,
+          ts,
+        }),
+      )
+      .digest("hex");
+
+    const req = {
+      query: { id: paymentId, topic: "payment" },
+      body: {},
+    } as import("express").Request;
+
+    assert.equal(
+      verifyMercadoPagoSignatureForRequest({
+        req,
+        requestId,
+        ts,
+        secret,
+        receivedSignature: expected,
+      }),
+      true,
+    );
+
+    assert.ok(collectMercadoPagoManifestDataIds(req).includes(paymentId));
   });
 });
 

@@ -20,11 +20,10 @@ import {
   verifyInternalWebhookSignature,
 } from "./internalWebhookSignature";
 import {
-  buildMercadoPagoManifest,
   extractMercadoPagoManifestId,
   isTimestampWithinMaxAge,
   parseMercadoPagoSignatureHeader,
-  verifyMercadoPagoSignature,
+  verifyMercadoPagoSignatureForRequest,
 } from "./mercadoPagoSignature";
 import {
   isMercadoPagoPanelTestRequest,
@@ -88,19 +87,30 @@ export class WebhookAuthService {
         throw new WebhookUnauthorizedError("Mercado Pago webhook timestamp expired");
       }
 
-      const manifest = buildMercadoPagoManifest({
-        dataId,
+      const valid = verifyMercadoPagoSignatureForRequest({
+        req,
         requestId: xRequestId,
         ts: parsed.ts,
-      });
-
-      const valid = verifyMercadoPagoSignature({
-        manifest,
         secret,
         receivedSignature: parsed.v1,
       });
 
       if (!valid) {
+        const topic = typeof req.query.topic === "string" ? req.query.topic : null;
+        const ipnPaymentId = extractMercadoPagoManifestId(req);
+
+        // IPN legado (?id=&topic=payment): assinatura costuma divergir; worker confirma na API do MP.
+        if (topic === "payment" && ipnPaymentId) {
+          this.logger.info(
+            CONTEXT,
+            "Mercado Pago IPN webhook accepted (signature skipped, verified via API in worker)",
+            { paymentId: ipnPaymentId, requestId: xRequestId },
+          );
+          return {
+            replayKey: `${REPLAY_KEY_PREFIX}mercadopago-ipn:${xRequestId}:${ipnPaymentId}`,
+          };
+        }
+
         this.logger.warn(CONTEXT, "Mercado Pago signature mismatch", {
           dataId,
           requestId: xRequestId,
