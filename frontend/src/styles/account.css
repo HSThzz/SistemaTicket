@@ -1027,17 +1027,45 @@
 }
 
 .qr-scanner-viewport {
+  position: relative;
   width: 100%;
   max-width: 420px;
   margin: 0 auto;
+  aspect-ratio: 1;
   border-radius: var(--mantine-radius-md);
   overflow: hidden;
-  min-height: 260px;
+  background: #000;
+}
+
+.qr-scanner-viewport > div {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: none !important;
 }
 
 .qr-scanner-viewport video {
-  object-fit: cover;
-  border-radius: var(--mantine-radius-md);
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center;
+  transition: opacity 0.2s ease;
+}
+
+.qr-scanner-viewport--starting video {
+  opacity: 0;
+}
+
+.qr-scanner-viewport #qr-shaded-region {
+  border-width: 10% !important;
+}
+
+.qr-scanner-viewport img[alt="Info icon"] {
+  display: none !important;
 }
 
 .checkin-scanner-frame {

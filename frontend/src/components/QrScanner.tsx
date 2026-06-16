@@ -9,6 +9,7 @@ import {
   Html5Qrcode,
   Html5QrcodeScannerState,
   Html5QrcodeSupportedFormats,
+  type Html5QrcodeCameraScanConfig,
 } from "html5-qrcode";
 import { IconCameraOff, IconScan } from "@tabler/icons-react";
 
@@ -22,18 +23,38 @@ interface QrScannerProps {
 
 type CameraConfig = string | MediaTrackConstraints;
 
-const SCANNER_CONFIG = {
-  fps: 15,
-  disableFlip: true,
-  formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-  qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-    const edge = Math.min(viewfinderWidth, viewfinderHeight);
-    const size = Math.max(180, Math.floor(edge * 0.72));
-    return { width: size, height: size };
-  },
-} as const;
+function isMobileScanner(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+}
+
+function buildScannerConfig(): Html5QrcodeCameraScanConfig {
+  const mobile = isMobileScanner();
+
+  return {
+    fps: mobile ? 12 : 15,
+    aspectRatio: 1,
+    disableFlip: true,
+    formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+    qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+      const edge = Math.min(viewfinderWidth, viewfinderHeight);
+      const ratio = mobile ? 0.8 : 0.72;
+      const size = Math.max(180, Math.floor(edge * ratio));
+      return { width: size, height: size };
+    },
+    videoConstraints: {
+      facingMode: { ideal: "environment" },
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+    },
+  };
+}
 
 const CAMERA_CONSTRAINT_FALLBACKS: MediaTrackConstraints[] = [
+  { facingMode: { ideal: "environment" } },
   { facingMode: "environment" },
   { facingMode: "user" },
 ];
@@ -83,19 +104,12 @@ function rankCameraIds(cameras: Array<{ id: string; label: string }>): string[] 
   return ranked;
 }
 
-async function requestCameraPermission(): Promise<void> {
-  if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error("Este navegador não suporta acesso à câmera.");
+async function buildCameraAttempts(): Promise<CameraConfig[]> {
+  if (isMobileScanner()) {
+    return CAMERA_CONSTRAINT_FALLBACKS;
   }
 
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-  stream.getTracks().forEach((track) => track.stop());
-}
-
-async function buildCameraAttempts(): Promise<CameraConfig[]> {
   const attempts: CameraConfig[] = [];
-
-  await requestCameraPermission();
 
   try {
     const cameras = await Html5Qrcode.getCameras();
@@ -106,6 +120,45 @@ async function buildCameraAttempts(): Promise<CameraConfig[]> {
 
   attempts.push(...CAMERA_CONSTRAINT_FALLBACKS);
   return attempts;
+}
+
+async function applyCameraEnhancements(scanner: Html5Qrcode): Promise<void> {
+  for (let attempt = 0; attempt < 25; attempt += 1) {
+    if (scanner.getState() !== Html5QrcodeScannerState.SCANNING) {
+      await new Promise((resolve) => window.setTimeout(resolve, 80));
+      continue;
+    }
+
+    try {
+      const capabilities = scanner.getRunningTrackCapabilities() as MediaTrackCapabilities & {
+        zoom?: { min?: number; max?: number };
+      };
+
+      const constraints: MediaTrackConstraints & {
+        focusMode?: string;
+        advanced?: Array<{ zoom?: number }>;
+      } = {
+        focusMode: "continuous",
+      };
+
+      const zoomRange = capabilities.zoom;
+      if (
+        zoomRange &&
+        typeof zoomRange.max === "number" &&
+        typeof zoomRange.min === "number" &&
+        zoomRange.max > zoomRange.min
+      ) {
+        const targetZoom = Math.min(Math.max(zoomRange.min, 1.4), zoomRange.max);
+        constraints.advanced = [{ zoom: targetZoom }];
+      }
+
+      await scanner.applyVideoConstraints(constraints);
+    } catch {
+      // iOS/Safari não expõe zoom/focus em todos os dispositivos
+    }
+
+    return;
+  }
 }
 
 function formatCameraError(error: unknown): string {
@@ -155,11 +208,13 @@ async function startScannerWithFallback(
   onEmpty: () => void,
 ): Promise<void> {
   const attempts = await buildCameraAttempts();
+  const config = buildScannerConfig();
   let lastError: unknown = new Error("Nenhuma câmera disponível.");
 
   for (const cameraConfig of attempts) {
     try {
-      await scanner.start(cameraConfig, SCANNER_CONFIG, onSuccess, onEmpty);
+      await scanner.start(cameraConfig, config, onSuccess, onEmpty);
+      await applyCameraEnhancements(scanner);
       return;
     } catch (error) {
       lastError = error;
@@ -274,7 +329,7 @@ export function QrScanner({ onScan, locked = false }: QrScannerProps) {
     <Stack gap="sm">
       <div
         id={containerId}
-        className="qr-scanner-viewport"
+        className={`qr-scanner-viewport${starting ? " qr-scanner-viewport--starting" : ""}`}
         aria-busy={starting || locked}
         hidden={Boolean(error)}
       />
