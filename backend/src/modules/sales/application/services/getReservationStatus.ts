@@ -24,6 +24,7 @@ import type {
   ReservationStatusView,
 } from "./types";
 import type { PixPaymentDetails } from "../../../payment/application/types";
+import { reconcilePendingMercadoPagoPayment } from "../../../payment/application/services/reconcilePendingMercadoPagoPayment";
 
 const CONTEXT = "getReservationStatus";
 
@@ -40,7 +41,7 @@ export async function getReservationStatus(
   const logger = Logger.getInstance();
   const queueMonitor = new QueueMonitorService(redis);
 
-  const [redisRaw, paymentRaw, orderIdCached, dbReservation, queueStats] =
+  const [redisRaw, paymentRaw, orderIdCached, reservationRow, queueStats] =
     await Promise.all([
       redis.get(`${RESERVATION_KEY_PREFIX}${data.reservationId}`),
       redis.get(`${PAYMENT_CACHE_KEY_PREFIX}${data.reservationId}`),
@@ -48,6 +49,8 @@ export async function getReservationStatus(
       findOneReservationById(data.reservationId),
       queueMonitor.getStats(),
     ]);
+
+  let dbReservation = reservationRow;
 
   const redisPayload = redisRaw
     ? (JSON.parse(redisRaw) as ReservationRedisPayload)
@@ -69,6 +72,24 @@ export async function getReservationStatus(
     order = await findOneOrderByReservationId(data.reservationId);
   } else if (orderIdCached) {
     order = await findOneOrderById(orderIdCached);
+  }
+
+  if (order?.status === OrderStatus.PENDING && order.paymentGatewayId) {
+    const reconciled = await reconcilePendingMercadoPagoPayment(redis, order);
+    if (reconciled) {
+      const [refreshedOrder, refreshedReservation] = await Promise.all([
+        findOneOrderByReservationId(data.reservationId),
+        findOneReservationById(data.reservationId),
+      ]);
+
+      if (refreshedOrder) {
+        order = refreshedOrder;
+      }
+
+      if (refreshedReservation) {
+        dbReservation = refreshedReservation;
+      }
+    }
   }
 
   const phase = resolvePhase(dbReservation, order, payment, redisPayload);

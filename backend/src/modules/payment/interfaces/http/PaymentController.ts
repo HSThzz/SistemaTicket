@@ -28,6 +28,7 @@ import {
 import { enqueuePaymentJob } from "../../application/commands/enqueuePaymentJob";
 import { createOrderPixPayment } from "../../application/services/createOrderPixPayment";
 import { getPaymentConfig } from "../../application/services/getPaymentConfig";
+import { reconcileOrderPixPayment } from "../../application/services/reconcileOrderPixPayment";
 import { processCardPayment } from "../../application/services/processCardPayment";
 import { simulateDevPayment } from "../../application/services/simulateDevPayment";
 import { ValidationError } from "../../../../shared/kernel/validateSchema";
@@ -122,6 +123,32 @@ export class PaymentController {
       res.status(200).json(result);
     } catch (error) {
       this.handleCardPaymentError(res, body.orderId, error);
+    }
+  }
+
+  /**
+   * Consulta o Mercado Pago e confirma PIX pendente (fallback quando o webhook falha).
+   *
+   * @param req - Body `{ orderId }` e usuário autenticado.
+   * @param res - `{ reconciled, status }`.
+   */
+  async reconcilePixPayment(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    const { orderId } = req.body as { orderId: string };
+
+    try {
+      const result = await reconcileOrderPixPayment(redis, {
+        orderId,
+        requesterUserId: req.user.id,
+      });
+
+      res.status(200).json(result);
+    } catch (error) {
+      this.handleCardPaymentError(res, orderId, error);
     }
   }
 

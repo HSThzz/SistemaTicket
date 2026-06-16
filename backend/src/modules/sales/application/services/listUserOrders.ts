@@ -9,6 +9,8 @@ import {
 import type { PixPaymentDetails } from "../../../payment/application/types";
 import { listUserOrdersQuerySchema } from "../../validators/schema/listUserOrdersQuerySchema";
 import { findManyOrdersByUserId } from "../queries/findManyOrdersByUserId";
+import { findOneOrderById } from "../../../payment/application/queries/findOneOrderById";
+import { reconcilePendingMercadoPagoPayment } from "../../../payment/application/services/reconcilePendingMercadoPagoPayment";
 
 export interface OrderListItem {
   id: string;
@@ -76,6 +78,21 @@ export async function listUserOrders(
     redis && pendingReservationIds.length > 0
       ? await batchLoadPixPaymentsFromCache(redis, pendingReservationIds)
       : new Map<string, PixPaymentDetails>();
+
+  if (redis) {
+    for (const order of orders) {
+      if (order.status === OrderStatus.PENDING && order.paymentGatewayId) {
+        const reconciled = await reconcilePendingMercadoPagoPayment(redis, order);
+        if (reconciled) {
+          const refreshed = await findOneOrderById(order.id);
+          if (refreshed) {
+            order.status = refreshed.status;
+            order.paymentGatewayId = refreshed.paymentGatewayId;
+          }
+        }
+      }
+    }
+  }
 
   return {
     orders: orders.map((order) => mapOrderToListItem(order, paymentCache)),

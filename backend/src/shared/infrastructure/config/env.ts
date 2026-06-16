@@ -158,6 +158,11 @@ export function validateProductionConfig(): void {
         "MERCADOPAGO_WEBHOOK_SECRET is required when PAYMENT_GATEWAY=mercadopago (except sandbox TEST- token)",
       );
     }
+    if (!env.payment.mercadoPago.notificationUrl.trim()) {
+      errors.push(
+        "MERCADOPAGO_NOTIFICATION_URL is required when PAYMENT_GATEWAY=mercadopago (e.g. https://your-api.railway.app/payments/webhook)",
+      );
+    }
   }
 
   if (errors.length > 0) {

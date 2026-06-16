@@ -36,6 +36,9 @@ export async function handlePaymentSucceeded(
       logger.warn(CONTEXT, "Payment success ignored — already processed", {
         orderId: data.orderId,
       });
+      await clearReservationCache(redis, data.orderId);
+      await clearPaymentCache(redis, data.orderId);
+      return;
     }
     throw error;
   }

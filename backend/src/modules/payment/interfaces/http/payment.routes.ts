@@ -45,5 +45,12 @@ router.post(
   (req, res) => void paymentController.createPixPayment(req, res),
 );
 
+router.post(
+  "/reconcile",
+  authMiddleware,
+  validateBody(createPixPaymentBodySchema),
+  (req, res) => void paymentController.reconcilePixPayment(req, res),
+);
+
 /** Router Express montado em `/payments`. */
 export default router;
