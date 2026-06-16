@@ -28,13 +28,12 @@ export function extractMercadoPagoPaymentId(req: Request): string | null {
   }
 
   const topic = readQueryValue(req.query.topic);
-  const id = readQueryValue(req.query.id);
+  const dataId = readMercadoPagoDataIdFromQuery(req.query);
 
-  if (topic === "payment" && id) {
-    return id;
+  if (topic === "payment" && dataId) {
+    return dataId;
   }
 
-  const dataId = readQueryValue(req.query["data.id"]);
   if (dataId) {
     return dataId;
   }
@@ -57,6 +56,23 @@ export function isMercadoPagoWebhookRequest(req: Request): boolean {
 export function isMercadoPagoPanelTestRequest(req: Request): boolean {
   const paymentId = extractMercadoPagoPaymentId(req);
   return paymentId === MERCADO_PAGO_PANEL_TEST_PAYMENT_ID;
+}
+
+function readMercadoPagoDataIdFromQuery(query: Request["query"]): string | null {
+  const dotted = readQueryValue(query["data.id"]);
+  if (dotted) {
+    return dotted;
+  }
+
+  const nested = query.data;
+  if (nested && typeof nested === "object" && !Array.isArray(nested)) {
+    const nestedId = readQueryValue((nested as { id?: unknown }).id);
+    if (nestedId) {
+      return nestedId;
+    }
+  }
+
+  return readQueryValue(query.id) ?? readQueryValue(query.data_id);
 }
 
 function readQueryValue(value: unknown): string | null {

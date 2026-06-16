@@ -3,6 +3,8 @@ import { createHmac } from "node:crypto";
 import { describe, it } from "node:test";
 import {
   buildMercadoPagoManifest,
+  isTimestampWithinMaxAge,
+  normalizeMercadoPagoTimestampMs,
   parseMercadoPagoSignatureHeader,
   verifyMercadoPagoSignature,
 } from "../../src/modules/payment/infrastructure/gateways/mercadoPagoSignature";
@@ -49,6 +51,21 @@ describe("Mercado Pago signature", () => {
       }),
       true,
     );
+  });
+
+  it("accepts MP ts header in Unix seconds (10 digits)", () => {
+    const nowMs = 1_782_000_000_000;
+    const tsSeconds = "1782000000";
+
+    assert.equal(normalizeMercadoPagoTimestampMs(tsSeconds), 1_782_000_000_000);
+    assert.equal(isTimestampWithinMaxAge(tsSeconds, 300, nowMs), true);
+    assert.equal(isTimestampWithinMaxAge(tsSeconds, 300, nowMs + 400_000), false);
+  });
+
+  it("accepts MP ts header in milliseconds (13 digits)", () => {
+    const nowMs = 1_742_505_638_683;
+
+    assert.equal(isTimestampWithinMaxAge("1742505638683", 300, nowMs), true);
   });
 });
 

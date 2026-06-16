@@ -56,10 +56,7 @@ export function parseMercadoPagoSignatureHeader(
  * @returns ID normalizado para o manifest de assinatura.
  */
 export function extractMercadoPagoManifestId(req: Request): string | null {
-  const fromQuery =
-    readQueryValue(req.query["data.id"]) ??
-    readQueryValue(req.query.id) ??
-    readQueryValue(req.query.data_id);
+  const fromQuery = readMercadoPagoDataIdFromQuery(req.query);
 
   if (fromQuery) {
     return normalizeMercadoPagoDataId(fromQuery);
@@ -103,22 +100,39 @@ export function verifyMercadoPagoSignature(params: {
 }
 
 /**
- * @param timestampMs - Timestamp do header em milissegundos (string).
+ * Normaliza o `ts` do header x-signature para milissegundos.
+ * O MP documenta "milissegundos", mas na prática envia Unix em segundos (10 dígitos).
+ */
+export function normalizeMercadoPagoTimestampMs(raw: string): number | null {
+  const ts = Number(raw);
+  if (!Number.isFinite(ts)) {
+    return null;
+  }
+
+  if (ts < 1_000_000_000_000) {
+    return ts * 1000;
+  }
+
+  return ts;
+}
+
+/**
+ * @param timestamp - Timestamp do header (`ts`), em segundos ou milissegundos.
  * @param maxAgeSeconds - Janela máxima aceita.
  * @param nowMs - Referência temporal (padrão: agora).
  * @returns `true` se a idade absoluta estiver dentro do limite.
  */
 export function isTimestampWithinMaxAge(
-  timestampMs: string,
+  timestamp: string,
   maxAgeSeconds: number,
   nowMs = Date.now(),
 ): boolean {
-  const ts = Number(timestampMs);
-  if (!Number.isFinite(ts)) {
+  const tsMs = normalizeMercadoPagoTimestampMs(timestamp);
+  if (tsMs === null) {
     return false;
   }
 
-  const ageMs = Math.abs(nowMs - ts);
+  const ageMs = Math.abs(nowMs - tsMs);
   return ageMs <= maxAgeSeconds * 1000;
 }
 
@@ -128,6 +142,23 @@ function normalizeMercadoPagoDataId(value: string): string {
   }
 
   return value;
+}
+
+function readMercadoPagoDataIdFromQuery(query: Request["query"]): string | null {
+  const dotted = readQueryValue(query["data.id"]);
+  if (dotted) {
+    return dotted;
+  }
+
+  const nested = query.data;
+  if (nested && typeof nested === "object" && !Array.isArray(nested)) {
+    const nestedId = readQueryValue((nested as { id?: unknown }).id);
+    if (nestedId) {
+      return nestedId;
+    }
+  }
+
+  return readQueryValue(query.id) ?? readQueryValue(query.data_id);
 }
 
 function readQueryValue(value: unknown): string | null {

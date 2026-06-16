@@ -68,7 +68,7 @@ export class WebhookAuthService {
 
     const xSignature = req.header("x-signature");
     const xRequestId = req.header("x-request-id");
-    const secret = env.payment.mercadoPago.webhookSecret;
+    const secret = env.payment.mercadoPago.webhookSecret.trim();
 
     if (xSignature && xRequestId && secret) {
       const parsed = parseMercadoPagoSignatureHeader(xSignature);
@@ -79,6 +79,12 @@ export class WebhookAuthService {
       }
 
       if (!isTimestampWithinMaxAge(parsed.ts, env.payment.webhookMaxAgeSeconds)) {
+        this.logger.warn(CONTEXT, "Mercado Pago webhook timestamp rejected", {
+          dataId,
+          requestId: xRequestId,
+          ts: parsed.ts,
+          maxAgeSeconds: env.payment.webhookMaxAgeSeconds,
+        });
         throw new WebhookUnauthorizedError("Mercado Pago webhook timestamp expired");
       }
 
@@ -111,8 +117,21 @@ export class WebhookAuthService {
       !isMercadoPagoSandbox();
 
     if (requiresSignedWebhook) {
+      const dataId = extractMercadoPagoManifestId(req);
+      this.logger.warn(CONTEXT, "Mercado Pago webhook rejected in production", {
+        hasSignatureHeader: Boolean(xSignature),
+        hasRequestIdHeader: Boolean(xRequestId),
+        hasWebhookSecret: Boolean(secret),
+        dataId,
+        hint: !secret
+          ? "Set MERCADOPAGO_WEBHOOK_SECRET to the secret key from MP Developers → Webhooks (not the access token)"
+          : !xSignature || !xRequestId
+            ? "Mercado Pago did not send x-signature/x-request-id headers"
+            : "Signature mismatch — re-copy MERCADOPAGO_WEBHOOK_SECRET from the MP panel",
+      });
+
       throw new WebhookUnauthorizedError(
-        "Mercado Pago webhook requires x-signature validation in production",
+        "Mercado Pago webhook requires valid x-signature validation in production",
       );
     }
 
