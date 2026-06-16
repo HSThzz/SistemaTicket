@@ -60,7 +60,7 @@ export const env = {
   },
   jwt: {
     secret: requireEnv("JWT_SECRET", "dev-secret-change-in-production"),
-    expiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
+    expiresIn: process.env.JWT_EXPIRES_IN ?? "1d",
   },
   db: {
     url: process.env.DATABASE_URL ?? "",
