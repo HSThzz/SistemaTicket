@@ -8,6 +8,7 @@ import {
 import { EventNotFoundError } from "../../domain/errors/EventError";
 import { createTicketLot as createTicketLotCommand } from "../commands/createTicketLot";
 import { assertCanManageEvent } from "../helpers/assertCanManageEvent";
+import { assertEventIsActive } from "../helpers/assertEventIsActive";
 import { findOneEventById } from "../queries/findOneEventById";
 import type { EventActor } from "../types";
 
@@ -27,6 +28,7 @@ export async function createTicketLot(
   }
 
   assertCanManageEvent(event, actor);
+  assertEventIsActive(event);
 
   const availableQuantity = data.availableQuantity ?? data.totalQuantity;
 

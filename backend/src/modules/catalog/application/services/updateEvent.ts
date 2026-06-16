@@ -10,6 +10,7 @@ import {
   type UpdateEventData,
 } from "../commands/updateEvent";
 import { assertCanManageEvent } from "../helpers/assertCanManageEvent";
+import { assertEventIsActive } from "../helpers/assertEventIsActive";
 import { assertValidEventStatusTransition } from "../helpers/assertValidEventStatusTransition";
 import { loadEventWithLots } from "../helpers/loadEventWithLots";
 import { normalizeImageUrl } from "../helpers/normalizeImageUrl";
@@ -46,6 +47,7 @@ export async function updateEvent(
   }
 
   assertCanManageEvent(event, actor);
+  assertEventIsActive(event);
 
   const changes = buildUpdateEventData(data);
 

@@ -24,6 +24,7 @@ import { getPublishedEventById } from "../../application/services/getPublishedEv
 import { listManagedEvents } from "../../application/services/listManagedEvents";
 import { listPublishedEvents } from "../../application/services/listPublishedEvents";
 import { updateEvent } from "../../application/services/updateEvent";
+import { deleteEvent } from "../../application/services/deleteEvent";
 import type { EventActor } from "../../application/types";
 import { serializeEvent } from "../../application/helpers/serializeEvent";
 
@@ -206,6 +207,26 @@ export class EventController {
       res.status(200).json({ event: serializeEvent(updated) });
     } catch (error) {
       this.handleError(res, error, "update", { eventId });
+    }
+  }
+
+  /**
+   * DELETE /events/:eventId — remove evento cancelado/encerrado da lista do produtor.
+   * @param req - Parâmetro eventId.
+   * @param res - 204 ou erro de domínio.
+   * @returns Promise resolvida após enviar a resposta.
+   */
+  async remove(req: Request, res: Response): Promise<void> {
+    const actor = requireActor(req, res);
+    if (!actor) return;
+
+    const { eventId } = req.params as { eventId: string };
+
+    try {
+      await deleteEvent(eventId, actor);
+      res.status(204).send();
+    } catch (error) {
+      this.handleError(res, error, "delete", { eventId });
     }
   }
 

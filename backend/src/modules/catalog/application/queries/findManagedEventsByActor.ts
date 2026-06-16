@@ -7,6 +7,7 @@ import { Event } from "../../../../shared/infrastructure/persistence/entities/Ev
 import { isStaffRole } from "../../../../shared/kernel/staffRoles";
 import type { EventActor } from "../types";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
+import { IsNull } from "typeorm";
 
 export async function findManagedEventsByActor(actor: EventActor,
 ): Promise<Event[]> {
@@ -14,13 +15,14 @@ export async function findManagedEventsByActor(actor: EventActor,
 
   if (isStaffRole(actor.role)) {
     return repository.find({
+      where: { deletedAt: IsNull() },
       order: { date: "ASC" },
       relations: { ticketLots: true },
     });
   }
 
   return repository.find({
-    where: { producerId: actor.userId },
+    where: { producerId: actor.userId, deletedAt: IsNull() },
     order: { date: "ASC" },
     relations: { ticketLots: true },
   });

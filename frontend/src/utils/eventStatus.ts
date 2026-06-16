@@ -84,3 +84,33 @@ export function getEventStatusConfirmationCopy(to: EventStatus): {
 export function formatInvalidStatusTransition(from: EventStatus, to: EventStatus): string {
   return `Não é possível alterar de ${getEventStatusLabel(from)} para ${getEventStatusLabel(to)}.`;
 }
+
+export function canDeleteEventFromList(status: EventStatus): boolean {
+  return status === "CANCELLED" || status === "FINISHED";
+}
+
+export function getEventDeleteConfirmationCopy(status: EventStatus): {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  color: string;
+} {
+  const baseMessage =
+    "O evento sairá da sua lista. Ingressos vendidos e histórico de vendas permanecem no sistema.";
+
+  if (status === "CANCELLED") {
+    return {
+      title: "Remover evento cancelado?",
+      message: baseMessage,
+      confirmLabel: "Sim, remover da lista",
+      color: "red",
+    };
+  }
+
+  return {
+    title: "Remover evento encerrado?",
+    message: baseMessage,
+    confirmLabel: "Sim, remover da lista",
+    color: "gray",
+  };
+}

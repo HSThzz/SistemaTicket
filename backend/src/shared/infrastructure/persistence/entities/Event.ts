@@ -49,6 +49,9 @@ export class Event {
   })
   status!: EventStatus;
 
+  @Column({ name: "deleted_at", type: "timestamptz", nullable: true })
+  deletedAt!: Date | null;
+
   @ManyToOne(() => User, (user) => user.events, { onDelete: "RESTRICT" })
   @JoinColumn({ name: "producer_id" })
   producer!: User;

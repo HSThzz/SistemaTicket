@@ -82,6 +82,15 @@ export async function updateEvent(eventId: string, input: UpdateEventInput): Pro
 }
 
 /**
+ * Remove evento cancelado ou encerrado da lista do produtor.
+ *
+ * @param eventId - Identificador do evento.
+ */
+export async function deleteManagedEvent(eventId: string): Promise<void> {
+  await api.delete(`/events/${eventId}`);
+}
+
+/**
  * Adiciona lote de ingressos a um evento.
  *
  * @param eventId - Identificador do evento.

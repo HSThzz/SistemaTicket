@@ -47,3 +47,14 @@ export class EventInvalidStatusTransitionError extends EventError {
     this.name = "EventInvalidStatusTransitionError";
   }
 }
+
+/** Evento não pode ser removido da lista (ex.: ainda publicado ou em rascunho). */
+export class EventCannotDeleteError extends EventError {
+  constructor(status: string) {
+    super(
+      `Only cancelled or finished events can be removed from the list (current: ${status})`,
+      "EVENT_CANNOT_DELETE",
+    );
+    this.name = "EventCannotDeleteError";
+  }
+}

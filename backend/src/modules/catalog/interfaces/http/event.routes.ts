@@ -47,6 +47,13 @@ router.patch(
   (req, res) => void eventController.update(req, res),
 );
 
+router.delete(
+  "/:eventId",
+  ...eventManagementMiddlewares,
+  validateParams(eventIdParamsSchema),
+  (req, res) => void eventController.remove(req, res),
+);
+
 router.post(
   "/:eventId/lots",
   ...eventManagementMiddlewares,

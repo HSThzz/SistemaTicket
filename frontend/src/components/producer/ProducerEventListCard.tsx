@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Group, Stack, Text, Title } from "@mantine/core";
+import { ActionIcon, Badge, Box, Button, Group, Stack, Text, Title, Tooltip } from "@mantine/core";
 import { Link } from "react-router-dom";
 import {
   IconCalendar,
@@ -6,23 +6,32 @@ import {
   IconMapPin,
   IconPencil,
   IconTicket,
+  IconTrash,
 } from "@tabler/icons-react";
 import type { Event } from "../../types/api";
 import { extractCity, getEventCoverStyle, getTotalAvailable } from "../../utils/eventVisuals";
 import { formatEventDateOnly, formatEventTimeOnly } from "../../utils/format";
+import { canDeleteEventFromList } from "../../utils/eventStatus";
 import { getEventStatusColor, getEventStatusLabel } from "../../utils/statusLabels";
 
 interface ProducerEventListCardProps {
   event: Event;
+  onDelete?: (event: Event) => void;
+  deleting?: boolean;
 }
 
 /**
  * Linha compacta de evento — foco em gestão (status, data, lotes, ação).
  */
-export function ProducerEventListCard({ event }: ProducerEventListCardProps) {
+export function ProducerEventListCard({
+  event,
+  onDelete,
+  deleting = false,
+}: ProducerEventListCardProps) {
   const totalAvailable = getTotalAvailable(event);
   const soldOut = totalAvailable === 0 && event.ticketLots.length > 0;
   const hasLots = event.ticketLots.length > 0;
+  const canDelete = canDeleteEventFromList(event.status);
 
   return (
     <Box className="producer-event-list-row">
@@ -90,17 +99,36 @@ export function ProducerEventListCard({ event }: ProducerEventListCardProps) {
             </Group>
           </Stack>
 
-          <Button
-            component={Link}
-            to={`/produtor/eventos/${event.id}`}
-            variant="light"
-            radius="xl"
-            size="sm"
-            leftSection={<IconPencil size={16} />}
-            className="producer-event-list-action"
-          >
-            Gerenciar
-          </Button>
+          <Group gap="xs" wrap="nowrap" className="producer-event-list-actions">
+            {canDelete && onDelete ? (
+              <Tooltip label="Remover da lista" withArrow>
+                <ActionIcon
+                  variant="light"
+                  color="red"
+                  radius="xl"
+                  size="lg"
+                  aria-label="Remover evento da lista"
+                  onClick={() => onDelete(event)}
+                  loading={deleting}
+                  disabled={deleting}
+                >
+                  <IconTrash size={16} />
+                </ActionIcon>
+              </Tooltip>
+            ) : null}
+
+            <Button
+              component={Link}
+              to={`/produtor/eventos/${event.id}`}
+              variant="light"
+              radius="xl"
+              size="sm"
+              leftSection={<IconPencil size={16} />}
+              className="producer-event-list-action"
+            >
+              Gerenciar
+            </Button>
+          </Group>
         </Group>
       </Group>
     </Box>
