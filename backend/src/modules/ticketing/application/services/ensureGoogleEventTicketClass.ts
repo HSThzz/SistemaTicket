@@ -20,6 +20,37 @@ function truncate(value: string, maxLength: number): string {
   return `${value.slice(0, maxLength - 1)}…`;
 }
 
+function localizedString(value: string) {
+  return {
+    defaultValue: {
+      language: "pt-BR",
+      value,
+    },
+  };
+}
+
+/** Separa nome e endereço a partir do campo único `location` do evento. */
+function buildGoogleWalletVenue(location: string): { name: string; address: string } {
+  const trimmed = location.trim() || "Local a confirmar";
+  const parts = trimmed
+    .split(/\s*[—–-]\s*|\n/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length >= 2) {
+    const venueName = parts[0] ?? trimmed;
+    return {
+      name: truncate(venueName, 120),
+      address: truncate(parts.slice(1).join("\n"), 200),
+    };
+  }
+
+  return {
+    name: truncate(trimmed, 120),
+    address: truncate(trimmed, 200),
+  };
+}
+
 export async function ensureGoogleEventTicketClass(
   event: Event,
   classId: string,
@@ -31,24 +62,16 @@ export async function ensureGoogleEventTicketClass(
   });
 
   const wallet = google.walletobjects({ version: "v1", auth });
+  const venue = buildGoogleWalletVenue(event.location);
 
   const classBody = {
     id: classId,
     issuerName: getIssuerDisplayName(),
     reviewStatus: "underReview" as const,
-    eventName: {
-      defaultValue: {
-        language: "pt-BR",
-        value: truncate(event.title, 120),
-      },
-    },
+    eventName: localizedString(truncate(event.title, 120)),
     venue: {
-      name: {
-        defaultValue: {
-          language: "pt-BR",
-          value: truncate(event.location, 120),
-        },
-      },
+      name: localizedString(venue.name),
+      address: localizedString(venue.address),
     },
     dateTime: {
       start: event.date.toISOString(),
