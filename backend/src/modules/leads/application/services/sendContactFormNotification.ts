@@ -6,6 +6,10 @@
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { env } from "../../../../shared/infrastructure/config/env";
 import type { EmailProvider } from "../../../notifications/infrastructure/email/EmailProvider";
+import {
+  buildLeadAcknowledgementEmail,
+  buildProducerLeadInternalEmail,
+} from "../../../notifications/infrastructure/email/emailTemplates";
 import { StubEmailProvider } from "../../../notifications/infrastructure/email/StubEmailProvider";
 import type { ContactFormJobData } from "../types/contactFormJob";
 
@@ -21,7 +25,6 @@ export function setContactFormEmailProvider(provider: EmailProvider): void {
 
 /**
  * Dispara notificações externas (e-mail interno, alertas, integrações CRM).
- * Estruturado para plugar Resend/SES e webhooks futuros.
  */
 export async function sendContactFormNotification(
   data: ContactFormJobData,
@@ -35,48 +38,17 @@ export async function sendContactFormNotification(
     to:
       env.resend.producerLeadNotifyEmail.trim() ||
       "contato@sistematicket.local",
-    subject: `[Novo lead produtor] ${data.name}`,
-    html: buildInternalNotificationHtml(data),
+    subject: `[VIBRA] Novo lead de produtor — ${data.name}`,
+    html: buildProducerLeadInternalEmail(data),
   });
 
   await emailProvider.send({
     to: data.email,
-    subject: "Recebemos seu contato — SistemaTicket",
-    html: buildLeadAcknowledgementHtml(data),
+    subject: "Recebemos seu contato — VIBRA",
+    html: buildLeadAcknowledgementEmail(data),
   });
 
   logger.info(CONTEXT, "Contact form notifications sent", {
     leadId: data.leadId,
   });
-}
-
-function buildInternalNotificationHtml(data: ContactFormJobData): string {
-  const phoneLine = data.phone
-    ? `<li><strong>Telefone:</strong> ${escapeHtml(data.phone)}</li>`
-    : "";
-
-  return `
-    <p>Novo lead capturado pelo formulário de produtores:</p>
-    <ul>
-      <li><strong>ID:</strong> ${escapeHtml(data.leadId)}</li>
-      <li><strong>Nome:</strong> ${escapeHtml(data.name)}</li>
-      <li><strong>E-mail:</strong> ${escapeHtml(data.email)}</li>
-      ${phoneLine}
-    </ul>
-  `.trim();
-}
-
-function buildLeadAcknowledgementHtml(data: ContactFormJobData): string {
-  return `
-    <p>Olá, ${escapeHtml(data.name)}!</p>
-    <p>Recebemos sua mensagem. Nossa equipe entrará em contato em até 1 dia útil.</p>
-  `.trim();
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }

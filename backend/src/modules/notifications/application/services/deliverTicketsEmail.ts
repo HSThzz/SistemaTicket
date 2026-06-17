@@ -5,6 +5,7 @@
 
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import type { EmailProvider } from "../../infrastructure/email/EmailProvider";
+import { buildPurchaseConfirmationEmail } from "../../infrastructure/email/emailTemplates";
 import { StubEmailProvider } from "../../infrastructure/email/StubEmailProvider";
 import type { TicketDeliveryJobData } from "../types/ticketDeliveryJob";
 import { generateTicketPdf } from "./generateTicketPdf";
@@ -41,11 +42,11 @@ export async function deliverTicketsEmail(
 
   await emailProvider.send({
     to: data.userEmail,
-    subject: "Seus ingressos estão prontos!",
-    html: buildPurchaseConfirmationHtml(data),
+    subject: "Seus ingressos VIBRA estão prontos",
+    html: buildPurchaseConfirmationEmail(data),
     attachments: [
       {
-        filename: `ingressos-${data.orderId}.pdf`,
+        filename: `vibra-ingressos-${data.orderId.slice(0, 8)}.pdf`,
         content: pdfBuffer,
         contentType: "application/pdf",
       },
@@ -56,20 +57,4 @@ export async function deliverTicketsEmail(
     orderId: data.orderId,
     userEmail: data.userEmail,
   });
-}
-
-function buildPurchaseConfirmationHtml(data: TicketDeliveryJobData): string {
-  return `
-    <p>Olá, ${escapeHtml(data.userName)}!</p>
-    <p>Sua compra foi confirmada. Em anexo estão os ${data.ticketIds.length} ingresso(s) do pedido <strong>${escapeHtml(data.orderId)}</strong>.</p>
-    <p>Apresente o PDF na entrada do evento.</p>
-  `.trim();
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }
