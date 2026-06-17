@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Accordion, Button, TextInput } from "@mantine/core";
+import { useForm } from "@mantine/form";
 import {
   IconArrowRight,
   IconChartBar,
@@ -103,23 +104,35 @@ function FeatureItem({
 }
 
 function ContactForm() {
-  const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name || !form.email || loading) return;
+  const form = useForm({
+    initialValues: {
+      name: "",
+      email: "",
+      phone: "",
+    },
+    validate: {
+      name: (value) =>
+        value.trim().length >= 2 ? null : "Informe seu nome completo",
+      email: (value) =>
+        /^\S+@\S+\.\S+$/.test(value.trim()) ? null : "Informe um e-mail válido",
+    },
+  });
+
+  const handleSubmit = form.onSubmit(async (values) => {
+    if (loading) return;
 
     setLoading(true);
     setError(null);
 
     try {
       await submitProducerContact({
-        name: form.name,
-        email: form.email,
-        phone: form.phone || undefined,
+        name: values.name.trim(),
+        email: values.email.trim(),
+        phone: values.phone.trim() || undefined,
       });
       setSubmitted(true);
     } catch {
@@ -127,7 +140,7 @@ function ContactForm() {
     } finally {
       setLoading(false);
     }
-  };
+  });
 
   if (submitted) {
     return (
@@ -156,15 +169,16 @@ function ContactForm() {
   }
 
   return (
-    <form className="producer-contact-form" onSubmit={handleSubmit}>
+    <form className="producer-contact-form" onSubmit={handleSubmit} noValidate>
       <TextInput
         label="Nome"
         placeholder="Seu nome completo"
         required
         radius="md"
         size="md"
-        value={form.name}
-        onChange={(e) => setForm((f) => ({ ...f, name: e.currentTarget.value }))}
+        name="name"
+        autoComplete="name"
+        {...form.getInputProps("name")}
       />
       <TextInput
         label="E-mail"
@@ -173,8 +187,9 @@ function ContactForm() {
         required
         radius="md"
         size="md"
-        value={form.email}
-        onChange={(e) => setForm((f) => ({ ...f, email: e.currentTarget.value }))}
+        name="email"
+        autoComplete="email"
+        {...form.getInputProps("email")}
       />
       <TextInput
         label="Telefone"
@@ -182,8 +197,9 @@ function ContactForm() {
         type="tel"
         radius="md"
         size="md"
-        value={form.phone}
-        onChange={(e) => setForm((f) => ({ ...f, phone: e.currentTarget.value }))}
+        name="phone"
+        autoComplete="tel"
+        {...form.getInputProps("phone")}
       />
       <Button
         type="submit"
