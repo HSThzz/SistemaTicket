@@ -10,6 +10,7 @@ import {
   AdminAuditLog,
   Event,
   Order,
+  ProducerLead,
   Reservation,
   Ticket,
   TicketLot,
@@ -56,6 +57,6 @@ export const AppDataSource = new DataSource({
   ...postgresConfig,
   synchronize: false,
   logging: !isProduction && !isTest,
-  entities: [User, Event, TicketLot, Reservation, Order, Ticket, UserFavorite, AdminAuditLog, UserSpotifyConnection],
+  entities: [User, Event, TicketLot, Reservation, Order, Ticket, UserFavorite, AdminAuditLog, UserSpotifyConnection, ProducerLead],
   migrations: [`${__dirname}/../persistence/migrations/*.{ts,js}`],
 });

@@ -1,5 +1,6 @@
 import type Redis from "ioredis";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { enqueueTicketDelivery } from "../../../notifications/application/commands/enqueueTicketDelivery";
 import { PaymentAlreadyProcessedError } from "../../domain/errors/PaymentError";
 import { processPaymentSucceeded } from "../commands/processPaymentSucceeded";
 import { clearPaymentCache } from "../helpers/clearPaymentCache";
@@ -31,6 +32,8 @@ export async function handlePaymentSucceeded(
       ticketsCreated: result.ticketsCreated,
       ticketIds: result.ticketIds,
     });
+
+    await enqueueTicketDelivery(result);
   } catch (error) {
     if (error instanceof PaymentAlreadyProcessedError) {
       logger.warn(CONTEXT, "Payment success ignored — already processed", {

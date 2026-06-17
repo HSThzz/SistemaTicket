@@ -11,6 +11,7 @@ export {
   TicketStatus,
   UserRole,
 } from "../../../kernel/enums";
+export { ProducerLead } from "./ProducerLead";
 export { AdminAuditLog } from "./AdminAuditLog";
 export { Event } from "./Event";
 export { Order } from "./Order";

@@ -80,6 +80,14 @@ export const env = {
   stockReconciliationIntervalMs: Number(
     process.env.STOCK_RECONCILIATION_INTERVAL_MS ?? "300000",
   ),
+  resend: {
+    apiKey: process.env.RESEND_API_KEY ?? "",
+    /** Remetente: `Nome <email@dominio.com>`. Sandbox: onboarding@resend.dev */
+    fromEmail:
+      process.env.RESEND_FROM_EMAIL ?? "SistemaTicket <onboarding@resend.dev>",
+    /** Destino dos alertas internos de leads de produtores. */
+    producerLeadNotifyEmail: process.env.PRODUCER_LEAD_NOTIFY_EMAIL ?? "",
+  },
   spotify: {
     clientId: process.env.SPOTIFY_CLIENT_ID ?? "",
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET ?? "",
@@ -163,6 +171,14 @@ export function validateProductionConfig(): void {
         "MERCADOPAGO_NOTIFICATION_URL is required when PAYMENT_GATEWAY=mercadopago (e.g. https://your-api.railway.app/payments/webhook)",
       );
     }
+  }
+
+  if (!env.resend.apiKey.trim()) {
+    errors.push("RESEND_API_KEY is required in production");
+  }
+
+  if (!env.resend.fromEmail.trim()) {
+    errors.push("RESEND_FROM_EMAIL is required in production");
   }
 
   if (errors.length > 0) {

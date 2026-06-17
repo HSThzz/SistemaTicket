@@ -112,3 +112,14 @@ export const reserveRateLimiter = rateLimit({
   skip: skipInTest,
   handler: buildRateLimitHandler("reserve"),
 });
+
+/** Limitador para POST /leads/producer-contact: 10 requisições por minuto. */
+export const contactFormRateLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: createRedisStore("contact-form"),
+  skip: skipInTest,
+  handler: buildRateLimitHandler("contact-form"),
+});

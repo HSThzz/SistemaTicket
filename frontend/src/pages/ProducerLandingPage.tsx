@@ -10,6 +10,7 @@ import {
   IconPlayerPlay,
   IconRocket,
 } from "@tabler/icons-react";
+import { submitProducerContact } from "../features/leads/api/leadService";
 import { AnimatedSection } from "../components/home/AnimatedSection";
 import { SiteFooter } from "../components/home/SiteFooter";
 import { ZeMascot } from "../components/brand/ZeMascot";
@@ -104,11 +105,28 @@ function FeatureItem({
 function ContactForm() {
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email) return;
-    setSubmitted(true);
+    if (!form.name || !form.email || loading) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await submitProducerContact({
+        name: form.name,
+        email: form.email,
+        phone: form.phone || undefined,
+      });
+      setSubmitted(true);
+    } catch {
+      setError("Não foi possível enviar sua mensagem. Tente novamente em instantes.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
@@ -172,11 +190,17 @@ function ContactForm() {
         size="md"
         radius="md"
         fullWidth
+        loading={loading}
         rightSection={<IconArrowRight size={16} />}
         style={{ marginTop: "0.5rem" }}
       >
         Entrar em contato
       </Button>
+      {error && (
+        <p style={{ color: "var(--mantine-color-red-6)", margin: "0.75rem 0 0", fontSize: "0.875rem" }}>
+          {error}
+        </p>
+      )}
     </form>
   );
 }

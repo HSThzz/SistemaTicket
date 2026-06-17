@@ -12,6 +12,7 @@ import paymentRoutes from "../../../../modules/payment/interfaces/http/payment.r
 import purchaseRoutes from "../../../../modules/sales/interfaces/http/purchase.routes";
 import ticketRoutes from "../../../../modules/ticketing/interfaces/http/ticket.routes";
 import walletRoutes from "../../../../modules/ticketing/interfaces/http/wallet.routes";
+import leadRoutes from "../../../../modules/leads/interfaces/http/lead.routes";
 import spotifyRoutes from "../../../../modules/integrations/spotify/interfaces/http/spotify.routes";
 
 const router = Router();
@@ -26,5 +27,6 @@ router.use("/purchases", purchaseRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/tickets", ticketRoutes);
 router.use("/wallet", walletRoutes);
+router.use("/leads", leadRoutes);
 
 export default router;

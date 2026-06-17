@@ -7,11 +7,15 @@ import type { ReservationExpiryWorker } from "../../modules/sales/infrastructure
 import type { ReservationPersistenceWorker } from "../../modules/sales/infrastructure/workers/ReservationPersistenceWorker";
 import type { StockReconciliationWorker } from "../../modules/sales/infrastructure/workers/StockReconciliationWorker";
 import type { PaymentProcessingWorker } from "../../modules/payment/infrastructure/workers/PaymentProcessingWorker";
+import type { ContactFormWorker } from "../../modules/leads/infrastructure/workers/ContactFormWorker";
+import type { TicketDeliveryWorker } from "../../modules/notifications/infrastructure/workers/TicketDeliveryWorker";
 
 let persistenceWorker: ReservationPersistenceWorker | null = null;
 let expiryWorker: ReservationExpiryWorker | null = null;
 let stockReconciliationWorker: StockReconciliationWorker | null = null;
 let paymentProcessingWorker: PaymentProcessingWorker | null = null;
+let ticketDeliveryWorker: TicketDeliveryWorker | null = null;
+let contactFormWorker: ContactFormWorker | null = null;
 
 /**
  * Registra ou remove a instância do worker de persistência (usado no health check).
@@ -83,4 +87,34 @@ export function setPaymentProcessingWorker(
  */
 export function getPaymentProcessingWorker(): PaymentProcessingWorker | null {
   return paymentProcessingWorker;
+}
+
+/**
+ * Registra ou remove a instância do worker de entrega de ingressos (BullMQ).
+ */
+export function setTicketDeliveryWorker(
+  worker: TicketDeliveryWorker | null,
+): void {
+  ticketDeliveryWorker = worker;
+}
+
+/**
+ * Retorna o worker de entrega de ingressos registrado, se existir.
+ */
+export function getTicketDeliveryWorker(): TicketDeliveryWorker | null {
+  return ticketDeliveryWorker;
+}
+
+/**
+ * Registra ou remove a instância do worker do formulário de contato (BullMQ).
+ */
+export function setContactFormWorker(worker: ContactFormWorker | null): void {
+  contactFormWorker = worker;
+}
+
+/**
+ * Retorna o worker do formulário de contato registrado, se existir.
+ */
+export function getContactFormWorker(): ContactFormWorker | null {
+  return contactFormWorker;
 }
