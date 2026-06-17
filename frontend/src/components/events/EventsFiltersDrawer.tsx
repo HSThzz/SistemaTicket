@@ -109,7 +109,7 @@ export function EventsFiltersDrawer({
               leftSection={<IconArrowsSort size={16} />}
               className="events-mobile-sort-btn"
             >
-              {SORT_LABELS[sort]}
+              {sort === "date" ? "Ordenar" : SORT_LABELS[sort]}
             </Button>
           </Menu.Target>
           <Menu.Dropdown>

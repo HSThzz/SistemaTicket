@@ -145,7 +145,7 @@ export function EventsFilterBar({
             <div>
               <FilterPill
                 icon={<IconArrowsSort size={16} stroke={1.8} />}
-                label={SORT_LABELS[sort]}
+                label={sort === "date" ? "Ordenar" : SORT_LABELS[sort]}
                 active={sort !== "date"}
               />
             </div>
