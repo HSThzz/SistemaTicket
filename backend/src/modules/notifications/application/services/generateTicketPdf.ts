@@ -44,6 +44,9 @@ const CARD = {
   insetX: 28,
   accentX: 10,
   accentWidth: 6,
+  /** Padding interno da caixa inferior (stub). */
+  stubPadX: 22,
+  stubPadY: 26,
 } as const;
 
 export type GenerateTicketPdfInput = Prettify<{
@@ -264,36 +267,40 @@ async function drawTicketCard(
 
   const stubY = perforationY + 18;
   const stubHeight = cardY + CARD.height - stubY - 24;
-  drawStubPanel(doc, cardX + CARD.insetX, stubY, CARD.width - CARD.insetX * 2, stubHeight);
+  const stubX = cardX + CARD.insetX;
+  const stubWidth = CARD.width - CARD.insetX * 2;
+  drawStubPanel(doc, stubX, stubY, stubWidth, stubHeight);
 
-  const lowerSectionY = stubY + 20;
-  const qrBoxSize = 168;
-  const qrImageSize = 142;
-  const qrBoxX = cardX + CARD.width - 28 - qrBoxSize;
-  const leftColumnWidth = qrBoxX - contentX - 18;
+  const stubInnerX = stubX + CARD.stubPadX;
+  const stubInnerRight = stubX + stubWidth - CARD.stubPadX;
+  const lowerSectionY = stubY + CARD.stubPadY;
+  const qrBoxSize = 152;
+  const qrImageSize = 128;
+  const qrBoxX = stubInnerRight - qrBoxSize;
+  const leftColumnWidth = qrBoxX - stubInnerX - 20;
 
   doc
     .font("Helvetica-Bold")
     .fontSize(10)
     .fillColor(BRAND.green)
-    .text(`INGRESSO ${input.index + 1} DE ${input.total}`, contentX, lowerSectionY, {
+    .text(`INGRESSO ${input.index + 1} DE ${input.total}`, stubInnerX, lowerSectionY, {
       width: leftColumnWidth,
       characterSpacing: 0.8,
     });
 
-  let infoY = lowerSectionY + 22;
+  let infoY = lowerSectionY + 28;
 
-  infoY = drawInfoLine(doc, contentX, infoY, leftColumnWidth, "Titular", input.ticket.ownerName);
+  infoY = drawInfoLine(doc, stubInnerX, infoY, leftColumnWidth, "Titular", input.ticket.ownerName);
   infoY = drawInfoLine(
     doc,
-    contentX,
+    stubInnerX,
     infoY,
     leftColumnWidth,
     "Documento",
     formatDocument(input.ticket.ownerDocument),
   );
-  infoY = drawInfoLine(doc, contentX, infoY, leftColumnWidth, "Comprador", input.buyerName);
-  drawInfoLine(doc, contentX, infoY, leftColumnWidth, "Pedido", shortenId(input.orderId));
+  infoY = drawInfoLine(doc, stubInnerX, infoY, leftColumnWidth, "Comprador", input.buyerName);
+  drawInfoLine(doc, stubInnerX, infoY, leftColumnWidth, "Pedido", shortenId(input.orderId));
 
   doc.save();
   doc
@@ -602,6 +609,9 @@ function drawInfoLine(
   label: string,
   value: string,
 ): number {
+  const labelGap = 6;
+  const fieldGap = 18;
+
   doc
     .font("Helvetica-Bold")
     .fontSize(8.5)
@@ -612,9 +622,9 @@ function drawInfoLine(
     .font("Helvetica")
     .fontSize(11.5)
     .fillColor(BRAND.text)
-    .text(value, x, y + 12, { width, lineGap: 1 });
+    .text(value, x, y + 11 + labelGap, { width, lineGap: 3 });
 
-  return doc.y + 10;
+  return doc.y + fieldGap;
 }
 
 function drawPerforation(
