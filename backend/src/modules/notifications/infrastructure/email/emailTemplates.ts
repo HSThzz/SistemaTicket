@@ -6,7 +6,7 @@
 import { env } from "../../../../shared/infrastructure/config/env";
 import type { ContactFormJobData } from "../../../leads/application/types/contactFormJob";
 import type { TicketDeliveryJobData } from "../../application/types/ticketDeliveryJob";
-import { renderEmailInfoCard, renderEmailLayout } from "./renderEmailLayout";
+import { renderEmailDataList, renderEmailInfoCard, renderEmailLayout } from "./renderEmailLayout";
 
 function escapeHtml(value: string): string {
   return value
@@ -34,15 +34,27 @@ export function buildPurchaseConfirmationEmail(data: TicketDeliveryJobData): str
     eyebrow: "Confirmação de compra",
     title: "Seus ingressos estão prontos",
     bodyHtml: `
-      <p style="margin: 0 0 12px;">Olá, <strong>${escapeHtml(data.userName)}</strong>.</p>
-      <p style="margin: 0 0 12px;">
-        Pagamento confirmado. Seus ingressos já estão disponíveis em PDF com QR code individual para check-in na entrada.
-      </p>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="padding:0 0 12px;font-size:15px;line-height:1.7;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+            Olá, <strong style="color:#111111;">${escapeHtml(data.userName)}</strong>.
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 0 4px;font-size:15px;line-height:1.7;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+            Pagamento confirmado. Seus ingressos já estão disponíveis em PDF com QR code individual para check-in na entrada.
+          </td>
+        </tr>
+      </table>
       ${renderEmailInfoCard("Pedido", escapeHtml(data.orderId))}
       ${renderEmailInfoCard("Quantidade", escapeHtml(ticketLabel))}
-      <p style="margin: 18px 0 0;">
-        Abra o anexo no celular ou imprima em boa qualidade. Cada página do PDF corresponde a um ingresso nominal.
-      </p>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="padding:16px 0 0;font-size:15px;line-height:1.7;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+            Abra o anexo no celular ou imprima em boa qualidade. Cada página do PDF corresponde a um ingresso nominal.
+          </td>
+        </tr>
+      </table>
     `,
     cta: {
       label: "Ver meus ingressos",
@@ -59,14 +71,26 @@ export function buildLeadAcknowledgementEmail(data: ContactFormJobData): string 
     eyebrow: "Para produtores",
     title: "Mensagem recebida",
     bodyHtml: `
-      <p style="margin: 0 0 12px;">Olá, <strong>${escapeHtml(data.name)}</strong>.</p>
-      <p style="margin: 0 0 12px;">
-        Obrigado por entrar em contato com a VIBRA. Recebemos seus dados e nossa equipe comercial vai retornar em até <strong>1 dia útil</strong>.
-      </p>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="padding:0 0 12px;font-size:15px;line-height:1.7;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+            Olá, <strong style="color:#111111;">${escapeHtml(data.name)}</strong>.
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 0 4px;font-size:15px;line-height:1.7;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+            Obrigado por entrar em contato com a VIBRA. Recebemos seus dados e nossa equipe comercial vai retornar em até <strong style="color:#111111;">1 dia útil</strong>.
+          </td>
+        </tr>
+      </table>
       ${renderEmailInfoCard("E-mail informado", escapeHtml(data.email))}
-      <p style="margin: 18px 0 0;">
-        Enquanto isso, você pode conhecer a plataforma e ver como produtores publicam eventos, vendem ingressos e acompanham tudo em tempo real.
-      </p>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="padding:16px 0 0;font-size:15px;line-height:1.7;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+            Enquanto isso, você pode conhecer a plataforma e ver como produtores publicam eventos, vendem ingressos e acompanham tudo em tempo real.
+          </td>
+        </tr>
+      </table>
     `,
     cta: {
       label: "Conhecer a VIBRA",
@@ -76,22 +100,29 @@ export function buildLeadAcknowledgementEmail(data: ContactFormJobData): string 
 }
 
 export function buildProducerLeadInternalEmail(data: ContactFormJobData): string {
-  const phoneRow = data.phone
-    ? `<tr><td style="padding: 10px 0; border-bottom: 1px solid #ececec; color: #525252;">Telefone</td><td style="padding: 10px 0; border-bottom: 1px solid #ececec; font-weight: 600;">${escapeHtml(data.phone)}</td></tr>`
-    : "";
+  const fields = [
+    { label: "Lead ID", value: escapeHtml(data.leadId) },
+    { label: "Nome", value: escapeHtml(data.name) },
+    { label: "E-mail", value: escapeHtml(data.email) },
+  ];
+
+  if (data.phone) {
+    fields.push({ label: "Telefone", value: escapeHtml(data.phone) });
+  }
 
   return renderEmailLayout({
     preheader: `Novo lead de produtor: ${data.name}`,
     eyebrow: "Alerta interno",
     title: "Novo lead no formulário",
     bodyHtml: `
-      <p style="margin: 0 0 16px;">Um produtor enviou o formulário de contato da landing.</p>
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="font-size: 14px; color: #171717;">
-        <tr><td style="padding: 10px 0; border-bottom: 1px solid #ececec; color: #525252; width: 120px;">Lead ID</td><td style="padding: 10px 0; border-bottom: 1px solid #ececec; font-weight: 600;">${escapeHtml(data.leadId)}</td></tr>
-        <tr><td style="padding: 10px 0; border-bottom: 1px solid #ececec; color: #525252;">Nome</td><td style="padding: 10px 0; border-bottom: 1px solid #ececec; font-weight: 600;">${escapeHtml(data.name)}</td></tr>
-        <tr><td style="padding: 10px 0; border-bottom: 1px solid #ececec; color: #525252;">E-mail</td><td style="padding: 10px 0; border-bottom: 1px solid #ececec; font-weight: 600;">${escapeHtml(data.email)}</td></tr>
-        ${phoneRow}
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="padding:0 0 8px;font-size:15px;line-height:1.7;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+            Um produtor enviou o formulário de contato da landing.
+          </td>
+        </tr>
       </table>
+      ${renderEmailDataList(fields)}
     `,
     footerNote: "Lead salvo no banco. Responda o contato pelo canal comercial da equipe.",
   });

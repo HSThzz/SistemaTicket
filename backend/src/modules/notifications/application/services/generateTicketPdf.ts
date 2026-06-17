@@ -40,6 +40,10 @@ const CARD = {
   height: 620,
   radius: 18,
   headerHeight: 78,
+  /** Margem interna — conteúdo fica à direita da faixa verde. */
+  insetX: 28,
+  accentX: 10,
+  accentWidth: 6,
 } as const;
 
 export type GenerateTicketPdfInput = Prettify<{
@@ -202,9 +206,9 @@ function drawEmptyState(
   drawCardShell(doc, cardX, cardY);
   drawCardHeader(doc, cardX, cardY);
 
-  const contentX = cardX + 28;
+  const contentX = cardX + CARD.insetX;
   const contentY = cardY + CARD.headerHeight + 28;
-  const contentWidth = CARD.width - 56;
+  const contentWidth = CARD.width - CARD.insetX * 2;
 
   doc
     .font("Helvetica-Bold")
@@ -224,6 +228,9 @@ function drawEmptyState(
       contentY + 34,
       { width: contentWidth, lineGap: 4 },
     );
+
+  drawAccentStripe(doc, cardX, cardY);
+  drawCardBorder(doc, cardX, cardY);
 }
 
 async function drawTicketCard(
@@ -242,8 +249,8 @@ async function drawTicketCard(
   drawCardShell(doc, cardX, cardY);
   drawCardHeader(doc, cardX, cardY);
 
-  const contentX = cardX + 28;
-  const contentWidth = CARD.width - 56;
+  const contentX = cardX + CARD.insetX;
+  const contentWidth = CARD.width - CARD.insetX * 2;
   const eventPanelY = cardY + CARD.headerHeight + 18;
 
   drawEventPanel(doc, cardX, eventPanelY, input.ticket);
@@ -253,11 +260,11 @@ async function drawTicketCard(
   cursorY += 34;
 
   const perforationY = cardY + 262;
-  drawPerforation(doc, cardX + 20, perforationY, CARD.width - 40);
+  drawPerforation(doc, cardX + CARD.insetX, perforationY, CARD.width - CARD.insetX * 2);
 
   const stubY = perforationY + 18;
   const stubHeight = cardY + CARD.height - stubY - 24;
-  drawStubPanel(doc, cardX + 16, stubY, CARD.width - 32, stubHeight);
+  drawStubPanel(doc, cardX + CARD.insetX, stubY, CARD.width - CARD.insetX * 2, stubHeight);
 
   const lowerSectionY = stubY + 20;
   const qrBoxSize = 168;
@@ -342,6 +349,9 @@ async function drawTicketCard(
         align: "center",
       },
     );
+
+  drawAccentStripe(doc, cardX, cardY);
+  drawCardBorder(doc, cardX, cardY);
 }
 
 function drawCardShell(
@@ -359,11 +369,37 @@ function drawCardShell(
   doc
     .roundedRect(x, y, CARD.width, CARD.height, CARD.radius)
     .fill(BRAND.white);
+  doc.restore();
+}
 
+/** Faixa verde lateral — desenhada por cima do conteúdo para não ficar coberta. */
+function drawAccentStripe(
+  doc: InstanceType<typeof PDFDocument>,
+  x: number,
+  y: number,
+): void {
+  const stripeTop = y + CARD.radius;
+  const stripeBottom = y + CARD.height - CARD.radius;
+
+  doc.save();
   doc
-    .roundedRect(x + 12, y + 12, 5, CARD.height - 24, 2)
+    .roundedRect(
+      x + CARD.accentX,
+      stripeTop,
+      CARD.accentWidth,
+      stripeBottom - stripeTop,
+      2,
+    )
     .fill(BRAND.green);
+  doc.restore();
+}
 
+function drawCardBorder(
+  doc: InstanceType<typeof PDFDocument>,
+  x: number,
+  y: number,
+): void {
+  doc.save();
   doc
     .roundedRect(x, y, CARD.width, CARD.height, CARD.radius)
     .lineWidth(1.2)
@@ -378,8 +414,8 @@ function drawEventPanel(
   y: number,
   ticket: TicketForPdf,
 ): void {
-  const panelX = cardX + 16;
-  const panelWidth = CARD.width - 32;
+  const panelX = cardX + CARD.insetX;
+  const panelWidth = CARD.width - CARD.insetX * 2;
   const panelHeight = 108;
 
   doc.save();
@@ -543,7 +579,7 @@ function drawMetaRow(
   y: number,
   label: string,
   value: string,
-  width = CARD.width - 56,
+  width = CARD.width - CARD.insetX * 2,
 ): void {
   doc
     .font("Helvetica-Bold")
