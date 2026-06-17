@@ -468,27 +468,41 @@ function drawLotBadge(
   lotName: string,
 ): void {
   const label = `LOTE · ${lotName.toUpperCase()}`;
-  doc.font("Helvetica-Bold").fontSize(8);
-  const badgeWidth = Math.min(280, doc.widthOfString(label) + 24);
+  const fontSize = 8;
+  const charSpacing = 0.6;
+  const padX = 14;
+  const badgeHeight = 22;
+
+  doc.font("Helvetica-Bold").fontSize(fontSize);
+  // Largura do texto incluindo o character spacing (nº de espaços = chars - 1).
+  const textWidth =
+    doc.widthOfString(label) + charSpacing * Math.max(0, label.length - 1);
+  const badgeWidth = Math.min(CARD.width - CARD.insetX * 2, textWidth + padX * 2);
 
   doc.save();
   doc
-    .roundedRect(x, y, badgeWidth, 22, 11)
+    .roundedRect(x, y, badgeWidth, badgeHeight, badgeHeight / 2)
     .fill(BRAND.white);
   doc
-    .roundedRect(x, y, badgeWidth, 22, 11)
+    .roundedRect(x, y, badgeWidth, badgeHeight, badgeHeight / 2)
     .lineWidth(1)
     .strokeColor(BRAND.green)
     .stroke();
   doc.restore();
 
+  // Centraliza verticalmente o texto numa única linha (equivale a line-height:1 + nowrap).
+  const textHeight = doc.currentLineHeight();
+  const textY = y + (badgeHeight - textHeight) / 2;
+
   doc
     .font("Helvetica-Bold")
-    .fontSize(8)
+    .fontSize(fontSize)
     .fillColor(BRAND.green)
-    .text(label, x + 12, y + 7, {
-      width: badgeWidth - 24,
-      characterSpacing: 0.6,
+    .text(label, x, textY, {
+      width: badgeWidth,
+      align: "center",
+      characterSpacing: charSpacing,
+      lineBreak: false,
     });
 }
 
@@ -601,6 +615,9 @@ function drawMetaRow(
     .text(value, x, y + 12, { width });
 }
 
+/** Altura fixa de cada bloco label+valor — garante grade vertical idêntica. */
+const INFO_BLOCK_STEP = 46;
+
 function drawInfoLine(
   doc: InstanceType<typeof PDFDocument>,
   x: number,
@@ -609,22 +626,25 @@ function drawInfoLine(
   label: string,
   value: string,
 ): number {
-  const labelGap = 6;
-  const fieldGap = 18;
+  const labelToValueGap = 17;
 
   doc
     .font("Helvetica-Bold")
     .fontSize(8.5)
     .fillColor(BRAND.soft)
-    .text(label.toUpperCase(), x, y, { width, characterSpacing: 0.6 });
+    .text(label.toUpperCase(), x, y, {
+      width,
+      characterSpacing: 0.6,
+      lineBreak: false,
+    });
 
   doc
     .font("Helvetica")
     .fontSize(11.5)
     .fillColor(BRAND.text)
-    .text(value, x, y + 11 + labelGap, { width, lineGap: 3 });
+    .text(value, x, y + labelToValueGap, { width, lineBreak: false });
 
-  return doc.y + fieldGap;
+  return y + INFO_BLOCK_STEP;
 }
 
 function drawPerforation(

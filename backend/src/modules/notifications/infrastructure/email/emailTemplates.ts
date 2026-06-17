@@ -6,7 +6,10 @@
 import { env } from "../../../../shared/infrastructure/config/env";
 import type { ContactFormJobData } from "../../../leads/application/types/contactFormJob";
 import type { TicketDeliveryJobData } from "../../application/types/ticketDeliveryJob";
-import { renderEmailDataList, renderEmailInfoCard, renderEmailLayout } from "./renderEmailLayout";
+import { EMAIL_BRAND } from "./emailBrand";
+import { renderEmailDataList, renderEmailInfoCard, renderEmailInfoCardGroup, renderEmailLayout } from "./renderEmailLayout";
+
+const F = EMAIL_BRAND.font;
 
 function escapeHtml(value: string): string {
   return value
@@ -25,6 +28,20 @@ function getPublicAppUrl(): string {
   return env.corsOrigins[0] ?? "https://sistema-ticket.vercel.app";
 }
 
+function bodyParagraph(content: string): string {
+  return `
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${EMAIL_BRAND.surface}" style="background-color:${EMAIL_BRAND.surface};">
+      <tr>
+        <td bgcolor="${EMAIL_BRAND.surface}" style="padding:0 0 14px;background-color:${EMAIL_BRAND.surface};">
+          <font face="${F}" color="${EMAIL_BRAND.textMuted}" style="font-size:16px;line-height:1.6;">
+            ${content}
+          </font>
+        </td>
+      </tr>
+    </table>
+  `;
+}
+
 export function buildPurchaseConfirmationEmail(data: TicketDeliveryJobData): string {
   const ticketLabel =
     data.ticketIds.length === 1 ? "1 ingresso" : `${data.ticketIds.length} ingressos`;
@@ -34,27 +51,23 @@ export function buildPurchaseConfirmationEmail(data: TicketDeliveryJobData): str
     eyebrow: "Confirmação de compra",
     title: "Seus ingressos estão prontos",
     bodyHtml: `
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+      ${bodyParagraph(`Olá, <font color="${EMAIL_BRAND.text}"><b>${escapeHtml(data.userName)}</b></font>.`)}
+      ${bodyParagraph(
+        "Pagamento confirmado. Seus ingressos já estão disponíveis em PDF com QR code individual para check-in na entrada.",
+      )}
+      ${renderEmailInfoCardGroup([
+        { label: "Pedido", value: escapeHtml(data.orderId), mono: true },
+        { label: "Quantidade", value: escapeHtml(ticketLabel) },
+      ])}
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${EMAIL_BRAND.surface}" style="background-color:${EMAIL_BRAND.surface};">
         <tr>
-          <td style="padding:0 0 14px;font-size:16px;line-height:1.75;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-            Olá, <strong style="color:#111111;">${escapeHtml(data.userName)}</strong>.
-          </td>
+          <td height="16" bgcolor="${EMAIL_BRAND.surface}" style="height:16px;font-size:1px;background-color:${EMAIL_BRAND.surface};">&nbsp;</td>
         </tr>
         <tr>
-          <td style="padding:0;font-size:16px;line-height:1.75;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-            Pagamento confirmado. Seus ingressos já estão disponíveis em PDF com QR code individual para check-in na entrada.
-          </td>
-        </tr>
-      </table>
-      ${renderEmailInfoCard("Pedido", escapeHtml(data.orderId))}
-      ${renderEmailInfoCard("Quantidade", escapeHtml(ticketLabel))}
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-        <tr>
-          <td height="20" style="height:20px;font-size:0;line-height:0;">&nbsp;</td>
-        </tr>
-        <tr>
-          <td style="padding:0;font-size:16px;line-height:1.75;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-            Abra o anexo no celular ou imprima em boa qualidade. Cada página do PDF corresponde a um ingresso nominal.
+          <td bgcolor="${EMAIL_BRAND.surface}" style="background-color:${EMAIL_BRAND.surface};">
+            <font face="${F}" color="${EMAIL_BRAND.textMuted}" style="font-size:16px;line-height:1.6;">
+              Abra o anexo no celular ou imprima em boa qualidade. Cada página do PDF corresponde a um ingresso nominal.
+            </font>
           </td>
         </tr>
       </table>
@@ -74,26 +87,20 @@ export function buildLeadAcknowledgementEmail(data: ContactFormJobData): string 
     eyebrow: "Para produtores",
     title: "Mensagem recebida",
     bodyHtml: `
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+      ${bodyParagraph(`Olá, <font color="${EMAIL_BRAND.text}"><b>${escapeHtml(data.name)}</b></font>.`)}
+      ${bodyParagraph(
+        `Obrigado por entrar em contato com a VIBRA. Recebemos seus dados e nossa equipe comercial vai retornar em até <font color="${EMAIL_BRAND.text}"><b>1 dia útil</b></font>.`,
+      )}
+      ${renderEmailInfoCard("E-mail informado", escapeHtml(data.email), { mono: true })}
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${EMAIL_BRAND.surface}" style="background-color:${EMAIL_BRAND.surface};">
         <tr>
-          <td style="padding:0 0 14px;font-size:16px;line-height:1.75;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-            Olá, <strong style="color:#111111;">${escapeHtml(data.name)}</strong>.
-          </td>
+          <td height="16" bgcolor="${EMAIL_BRAND.surface}" style="height:16px;font-size:1px;background-color:${EMAIL_BRAND.surface};">&nbsp;</td>
         </tr>
         <tr>
-          <td style="padding:0;font-size:16px;line-height:1.75;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-            Obrigado por entrar em contato com a VIBRA. Recebemos seus dados e nossa equipe comercial vai retornar em até <strong style="color:#111111;">1 dia útil</strong>.
-          </td>
-        </tr>
-      </table>
-      ${renderEmailInfoCard("E-mail informado", escapeHtml(data.email))}
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-        <tr>
-          <td height="20" style="height:20px;font-size:0;line-height:0;">&nbsp;</td>
-        </tr>
-        <tr>
-          <td style="padding:0;font-size:16px;line-height:1.75;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-            Enquanto isso, você pode conhecer a plataforma e ver como produtores publicam eventos, vendem ingressos e acompanham tudo em tempo real.
+          <td bgcolor="${EMAIL_BRAND.surface}" style="background-color:${EMAIL_BRAND.surface};">
+            <font face="${F}" color="${EMAIL_BRAND.textMuted}" style="font-size:16px;line-height:1.6;">
+              Enquanto isso, você pode conhecer a plataforma e ver como produtores publicam eventos, vendem ingressos e acompanham tudo em tempo real.
+            </font>
           </td>
         </tr>
       </table>
@@ -121,13 +128,7 @@ export function buildProducerLeadInternalEmail(data: ContactFormJobData): string
     eyebrow: "Alerta interno",
     title: "Novo lead no formulário",
     bodyHtml: `
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-        <tr>
-          <td style="padding:0 0 12px;font-size:16px;line-height:1.75;color:#555555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-            Um produtor enviou o formulário de contato da landing.
-          </td>
-        </tr>
-      </table>
+      ${bodyParagraph("Um produtor enviou o formulário de contato da landing.")}
       ${renderEmailDataList(fields)}
     `,
     footerNote: "Lead salvo no banco. Responda o contato pelo canal comercial da equipe.",

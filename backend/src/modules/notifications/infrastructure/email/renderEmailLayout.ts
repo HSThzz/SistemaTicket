@@ -1,6 +1,9 @@
 /**
  * @file Layout HTML reutilizável para e-mails transacionais VIBRA.
  * @module modules/notifications/infrastructure/email/renderEmailLayout
+ *
+ * Estratégia bulletproof: 100% tabelas + bgcolor + <font>.
+ * Gmail mobile ignora display:block, <style> e backgrounds em <a>.
  */
 
 import { EMAIL_BRAND } from "./emailBrand";
@@ -19,77 +22,71 @@ export type EmailLayoutOptions = {
   footerNote?: string;
 };
 
-const RESPONSIVE_STYLES = `
-  body, table, td, p, a, li, blockquote {
-    -webkit-text-size-adjust: 100%;
-    -ms-text-size-adjust: 100%;
-  }
-  table, td {
-    mso-table-lspace: 0pt;
-    mso-table-rspace: 0pt;
-    border-collapse: collapse;
-  }
-  img {
-    -ms-interpolation-mode: bicubic;
-    border: 0;
-    outline: none;
-    text-decoration: none;
-  }
-  a[x-apple-data-detectors] {
-    color: inherit !important;
-    text-decoration: none !important;
-    font-size: inherit !important;
-    font-family: inherit !important;
-    font-weight: inherit !important;
-    line-height: inherit !important;
-  }
-  @media only screen and (max-width: 620px) {
-    .email-shell {
-      width: 100% !important;
-      max-width: 100% !important;
-      border-radius: 0 !important;
-    }
-    .email-outer-padding {
-      padding: 12px 0 !important;
-    }
-    .email-header,
-    .email-body,
-    .email-footer,
-    .email-cta-wrap {
-      padding-left: 20px !important;
-      padding-right: 20px !important;
-    }
-    .email-title {
-      font-size: 22px !important;
-      line-height: 1.3 !important;
-    }
-    .email-brand {
-      font-size: 26px !important;
-    }
-    .email-cta-link {
-      display: block !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-      text-align: center !important;
-    }
-    .email-info-card-cell {
-      padding: 18px 18px !important;
-    }
-  }
-`;
+const F = EMAIL_BRAND.font;
+const FM = EMAIL_BRAND.fontMono;
 
-/** Espaçador vertical compatível com Gmail (margin é ignorado). */
-function renderSpacer(height: number): string {
+function spacerRow(height: number, bg = EMAIL_BRAND.surface): string {
   return `
     <tr>
-      <td height="${height}" style="height:${height}px;font-size:0;line-height:0;mso-line-height-rule:exactly;">&nbsp;</td>
+      <td height="${height}" bgcolor="${bg}" style="height:${height}px;line-height:${height}px;font-size:1px;background-color:${bg};">&nbsp;</td>
     </tr>
   `;
 }
 
 /**
- * Monta HTML compatível com Gmail/Outlook mobile (tabelas + CSS inline + bgcolor).
+ * Botão Gmail-safe: padding simulado com border no <a>.
+ * @see https://www.emailonacid.com/blog/article/email-development/building-a-bulletproof-button-with-vml/
  */
+function renderBulletproofButton(href: string, label: string): string {
+  return `
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+      <tr>
+        <td
+          align="center"
+          bgcolor="${EMAIL_BRAND.green}"
+          style="background-color:${EMAIL_BRAND.green};padding:16px 40px;"
+        >
+          <a
+            href="${href}"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="color:#ffffff;font-family:${F};font-size:16px;font-weight:bold;text-decoration:none;"
+          ><font face="${F}" color="#ffffff">${label}</font></a>
+        </td>
+      </tr>
+    </table>
+  `;
+}
+
+/** Label e valor em linhas separadas — Gmail mobile não respeita display:block em span. */
+function renderInfoFieldRows(
+  label: string,
+  value: string,
+  options: { mono?: boolean; isFirst?: boolean; isLast?: boolean } = {},
+): string {
+  const labelPadTop = options.isFirst ? "18px" : "16px";
+  const valuePadBottom = options.isLast ? "18px" : "14px";
+  const valueFace = options.mono ? FM : F;
+  const valueSize = options.mono ? "12px" : "16px";
+
+  return `
+    <tr>
+      <td bgcolor="${EMAIL_BRAND.dataPanel}" style="padding:${labelPadTop} 20px 6px;background-color:${EMAIL_BRAND.dataPanel};font-family:${F};">
+        <font face="${F}" color="${EMAIL_BRAND.labelAccent}" style="font-size:10px;font-weight:bold;letter-spacing:1px;">
+          ${label.toUpperCase()}
+        </font>
+      </td>
+    </tr>
+    <tr>
+      <td bgcolor="${EMAIL_BRAND.dataPanel}" style="padding:0 20px ${valuePadBottom};background-color:${EMAIL_BRAND.dataPanel};font-family:${valueFace};">
+        <font face="${valueFace}" color="${EMAIL_BRAND.text}" style="font-size:${valueSize};font-weight:bold;word-wrap:break-word;word-break:break-all;">
+          ${value}
+        </font>
+      </td>
+    </tr>
+  `;
+}
+
 export function renderEmailLayout(options: EmailLayoutOptions): string {
   const preheader = options.preheader ?? options.title;
   const eyebrow = options.eyebrow ?? EMAIL_BRAND.product;
@@ -99,120 +96,70 @@ export function renderEmailLayout(options: EmailLayoutOptions): string {
 
   const ctaBlock = options.cta
     ? `
-      ${renderSpacer(20)}
+      ${spacerRow(12)}
       <tr>
-        <td class="email-cta-wrap" align="left" bgcolor="${EMAIL_BRAND.surface}" style="padding:0 32px;background-color:${EMAIL_BRAND.surface};font-family:${EMAIL_BRAND.font};">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-            <tr>
-              <td align="left">
-                <!--[if mso]>
-                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${options.cta.href}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="50%" strokecolor="${EMAIL_BRAND.green}" fillcolor="${EMAIL_BRAND.green}">
-                    <w:anchorlock/>
-                    <center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:bold;">${options.cta.label}</center>
-                  </v:roundrect>
-                <![endif]-->
-                <!--[if !mso]><!-->
-                <a
-                  class="email-cta-link"
-                  href="${options.cta.href}"
-                  style="
-                    display:inline-block;
-                    background-color:${EMAIL_BRAND.green};
-                    color:#ffffff !important;
-                    text-decoration:none;
-                    font-size:15px;
-                    font-weight:700;
-                    line-height:1.2;
-                    padding:15px 28px;
-                    border-radius:999px;
-                    mso-hide:all;
-                  "
-                >${options.cta.label}</a>
-                <!--<![endif]-->
-              </td>
-            </tr>
-          </table>
+        <td align="center" bgcolor="${EMAIL_BRAND.surface}" style="padding:8px 24px;background-color:${EMAIL_BRAND.surface};">
+          ${renderBulletproofButton(options.cta.href, options.cta.label)}
         </td>
       </tr>
+      ${spacerRow(20)}
     `
     : "";
 
-  return `<!DOCTYPE html>
-<html lang="pt-BR" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="x-apple-disable-message-reformatting" />
     <meta name="format-detection" content="telephone=no,date=no,address=no,email=no" />
-    <meta name="color-scheme" content="light only" />
-    <meta name="supported-color-schemes" content="light" />
     <title>${options.title}</title>
-    <!--[if mso]>
-      <noscript>
-        <xml>
-          <o:OfficeDocumentSettings>
-            <o:PixelsPerInch>96</o:PixelsPerInch>
-          </o:OfficeDocumentSettings>
-        </xml>
-      </noscript>
-    <![endif]-->
-    <style type="text/css">${RESPONSIVE_STYLES}</style>
   </head>
-  <body bgcolor="${EMAIL_BRAND.canvas}" style="margin:0;padding:0;width:100% !important;min-width:100%;background-color:${EMAIL_BRAND.canvas};font-family:${EMAIL_BRAND.font};">
-    <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">
-      ${preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
-    </div>
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${EMAIL_BRAND.canvas}" style="background-color:${EMAIL_BRAND.canvas};">
+  <body bgcolor="${EMAIL_BRAND.surface}" style="margin:0;padding:0;background-color:${EMAIL_BRAND.surface};font-family:${F};">
+    <div style="display:none;max-height:0;overflow:hidden;">${preheader}</div>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${EMAIL_BRAND.surface}" style="background-color:${EMAIL_BRAND.surface};">
       <tr>
-        <td class="email-outer-padding" align="center" bgcolor="${EMAIL_BRAND.canvas}" style="padding:32px 16px;background-color:${EMAIL_BRAND.canvas};">
-          <table
-            role="presentation"
-            class="email-shell"
-            width="600"
-            cellspacing="0"
-            cellpadding="0"
-            border="0"
-            align="center"
-            bgcolor="${EMAIL_BRAND.surface}"
-            style="width:100%;max-width:600px;background-color:${EMAIL_BRAND.surface};border:1px solid ${EMAIL_BRAND.border};border-radius:16px;"
-          >
+        <td align="center" bgcolor="${EMAIL_BRAND.surface}" style="background-color:${EMAIL_BRAND.surface};">
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" bgcolor="${EMAIL_BRAND.surface}" style="width:100%;max-width:600px;background-color:${EMAIL_BRAND.surface};border:1px solid ${EMAIL_BRAND.border};">
             <tr>
-              <td
-                class="email-header"
-                align="left"
-                bgcolor="${EMAIL_BRAND.dark}"
-                style="padding:28px 32px;background-color:${EMAIL_BRAND.dark};font-family:${EMAIL_BRAND.font};border-radius:16px 16px 0 0;"
-              >
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+              <td bgcolor="${EMAIL_BRAND.dark}" style="padding:32px 24px;background-color:${EMAIL_BRAND.dark};">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${EMAIL_BRAND.dark}" style="background-color:${EMAIL_BRAND.dark};">
                   <tr>
-                    <td style="padding:0 0 10px;font-size:11px;line-height:1.4;letter-spacing:0.16em;text-transform:uppercase;color:${EMAIL_BRAND.greenBright};font-weight:700;font-family:${EMAIL_BRAND.font};">
-                      ${eyebrow}
+                    <td bgcolor="${EMAIL_BRAND.dark}" style="padding:0 0 12px;background-color:${EMAIL_BRAND.dark};">
+                      <font face="${F}" color="${EMAIL_BRAND.greenMuted}" style="font-size:11px;letter-spacing:1px;font-weight:normal;">
+                        ${eyebrow.toUpperCase()}
+                      </font>
                     </td>
                   </tr>
                   <tr>
-                    <td class="email-brand" style="font-size:30px;line-height:1.1;color:#ffffff;font-weight:800;letter-spacing:-0.02em;font-family:${EMAIL_BRAND.font};">
-                      ${EMAIL_BRAND.name}
+                    <td bgcolor="${EMAIL_BRAND.dark}" style="padding:0 0 8px;background-color:${EMAIL_BRAND.dark};">
+                      <font face="${F}" color="#ffffff" style="font-size:32px;font-weight:bold;">
+                        ${EMAIL_BRAND.name}
+                      </font>
                     </td>
                   </tr>
                   <tr>
-                    <td style="padding:6px 0 0;font-size:13px;line-height:1.4;color:${EMAIL_BRAND.greenSoft};font-family:${EMAIL_BRAND.font};">
-                      Ingressos
+                    <td bgcolor="${EMAIL_BRAND.dark}" style="background-color:${EMAIL_BRAND.dark};">
+                      <font face="${F}" color="${EMAIL_BRAND.greenSoft}" style="font-size:14px;">
+                        Ingressos
+                      </font>
                     </td>
                   </tr>
                 </table>
               </td>
             </tr>
             <tr>
-              <td class="email-body" align="left" bgcolor="${EMAIL_BRAND.surface}" style="padding:32px 32px 8px;background-color:${EMAIL_BRAND.surface};font-family:${EMAIL_BRAND.font};color:${EMAIL_BRAND.text};">
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+              <td bgcolor="${EMAIL_BRAND.surface}" style="padding:28px 24px 0;background-color:${EMAIL_BRAND.surface};">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${EMAIL_BRAND.surface}" style="background-color:${EMAIL_BRAND.surface};">
                   <tr>
-                    <td class="email-title" style="padding:0 0 18px;font-size:26px;line-height:1.3;font-weight:800;color:${EMAIL_BRAND.text};font-family:${EMAIL_BRAND.font};">
-                      ${options.title}
+                    <td bgcolor="${EMAIL_BRAND.surface}" style="padding:0 0 16px;background-color:${EMAIL_BRAND.surface};">
+                      <font face="${F}" color="${EMAIL_BRAND.text}" style="font-size:24px;font-weight:bold;">
+                        ${options.title}
+                      </font>
                     </td>
                   </tr>
                   <tr>
-                    <td style="font-size:16px;line-height:1.75;color:${EMAIL_BRAND.textMuted};font-family:${EMAIL_BRAND.font};">
+                    <td bgcolor="${EMAIL_BRAND.surface}" style="background-color:${EMAIL_BRAND.surface};font-family:${F};">
                       ${options.bodyHtml}
                     </td>
                   </tr>
@@ -221,8 +168,10 @@ export function renderEmailLayout(options: EmailLayoutOptions): string {
             </tr>
             ${ctaBlock}
             <tr>
-              <td class="email-footer" align="left" bgcolor="${EMAIL_BRAND.surface}" style="padding:20px 32px 32px;font-family:${EMAIL_BRAND.font};font-size:13px;line-height:1.65;color:${EMAIL_BRAND.textSoft};background-color:${EMAIL_BRAND.surface};border-radius:0 0 16px 16px;">
-                ${footerNote}
+              <td bgcolor="${EMAIL_BRAND.surface}" style="padding:0 24px 36px;background-color:${EMAIL_BRAND.surface};">
+                <font face="${F}" color="${EMAIL_BRAND.textSoft}" style="font-size:13px;line-height:1.6;">
+                  ${footerNote}
+                </font>
               </td>
             </tr>
           </table>
@@ -233,29 +182,65 @@ export function renderEmailLayout(options: EmailLayoutOptions): string {
 </html>`;
 }
 
-export function renderEmailInfoCard(label: string, value: string): string {
+export type EmailInfoCardOptions = {
+  mono?: boolean;
+};
+
+export function renderEmailInfoCard(
+  label: string,
+  value: string,
+  options: EmailInfoCardOptions = {},
+): string {
   return `
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-      ${renderSpacer(16)}
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${EMAIL_BRAND.surface}" style="background-color:${EMAIL_BRAND.surface};">
+      ${spacerRow(16, EMAIL_BRAND.surface)}
       <tr>
-        <td bgcolor="${EMAIL_BRAND.greenSoft}" style="background-color:${EMAIL_BRAND.greenSoft};border:1px solid #bbf7d0;border-radius:12px;">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-            <tr>
-              <td class="email-info-card-cell" style="padding:20px 22px;font-family:${EMAIL_BRAND.font};">
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                  <tr>
-                    <td style="padding:0 0 8px;font-size:11px;line-height:1.4;letter-spacing:0.12em;text-transform:uppercase;color:${EMAIL_BRAND.green};font-weight:700;font-family:${EMAIL_BRAND.font};">
-                      ${label}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="font-size:16px;line-height:1.55;color:${EMAIL_BRAND.text};font-weight:600;word-break:break-word;font-family:${EMAIL_BRAND.font};">
-                      <span style="color:${EMAIL_BRAND.text};text-decoration:none;">${value}</span>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
+        <td bgcolor="${EMAIL_BRAND.dataPanelBorder}" style="padding:1px;background-color:${EMAIL_BRAND.dataPanelBorder};">
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${EMAIL_BRAND.dataPanel}" style="background-color:${EMAIL_BRAND.dataPanel};">
+            ${renderInfoFieldRows(label, value, { mono: options.mono, isFirst: true, isLast: true })}
+          </table>
+        </td>
+      </tr>
+    </table>
+  `;
+}
+
+export type EmailInfoCardItem = {
+  label: string;
+  value: string;
+  mono?: boolean;
+};
+
+export function renderEmailInfoCardGroup(items: EmailInfoCardItem[]): string {
+  const rows = items
+    .map((item, index) => {
+      const divider =
+        index === 0
+          ? ""
+          : `
+        <tr>
+          <td height="1" bgcolor="${EMAIL_BRAND.dataDivider}" style="height:1px;font-size:1px;line-height:1px;background-color:${EMAIL_BRAND.dataDivider};">&nbsp;</td>
+        </tr>
+      `;
+
+      return `
+        ${divider}
+        ${renderInfoFieldRows(item.label, item.value, {
+          mono: item.mono,
+          isFirst: index === 0,
+          isLast: index === items.length - 1,
+        })}
+      `;
+    })
+    .join("");
+
+  return `
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${EMAIL_BRAND.surface}" style="background-color:${EMAIL_BRAND.surface};">
+      ${spacerRow(16, EMAIL_BRAND.surface)}
+      <tr>
+        <td bgcolor="${EMAIL_BRAND.dataPanelBorder}" style="padding:1px;background-color:${EMAIL_BRAND.dataPanelBorder};">
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${EMAIL_BRAND.dataPanel}" style="background-color:${EMAIL_BRAND.dataPanel};">
+            ${rows}
           </table>
         </td>
       </tr>
@@ -268,19 +253,22 @@ export type EmailDataField = {
   value: string;
 };
 
-/** Lista de campos empilhados — funciona bem em Gmail mobile sem colunas fixas. */
 export function renderEmailDataList(fields: EmailDataField[]): string {
   const rows = fields
     .map(
       (field, index) => `
         <tr>
-          <td style="padding:${index === 0 ? "8px" : "20px"} 0 0;font-size:11px;line-height:1.4;letter-spacing:0.1em;text-transform:uppercase;color:${EMAIL_BRAND.textSoft};font-weight:700;font-family:${EMAIL_BRAND.font};">
-            ${field.label}
+          <td bgcolor="${EMAIL_BRAND.surface}" style="padding:${index === 0 ? "4px" : "16px"} 0 0;background-color:${EMAIL_BRAND.surface};">
+            <font face="${F}" color="${EMAIL_BRAND.textSoft}" style="font-size:11px;font-weight:bold;letter-spacing:1px;">
+              ${field.label.toUpperCase()}
+            </font>
           </td>
         </tr>
         <tr>
-          <td style="padding:8px 0 20px;font-size:16px;line-height:1.55;color:${EMAIL_BRAND.text};font-weight:600;word-break:break-word;border-bottom:1px solid ${EMAIL_BRAND.border};font-family:${EMAIL_BRAND.font};">
-            <span style="color:${EMAIL_BRAND.text};text-decoration:none;">${field.value}</span>
+          <td bgcolor="${EMAIL_BRAND.surface}" style="padding:6px 0 16px;background-color:${EMAIL_BRAND.surface};border-bottom:1px solid ${EMAIL_BRAND.border};">
+            <font face="${F}" color="${EMAIL_BRAND.text}" style="font-size:16px;font-weight:bold;">
+              ${field.value}
+            </font>
           </td>
         </tr>
       `,
@@ -288,7 +276,7 @@ export function renderEmailDataList(fields: EmailDataField[]): string {
     .join("");
 
   return `
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:4px;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${EMAIL_BRAND.surface}" style="background-color:${EMAIL_BRAND.surface};">
       ${rows}
     </table>
   `;

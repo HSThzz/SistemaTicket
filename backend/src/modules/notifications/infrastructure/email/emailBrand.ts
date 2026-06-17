@@ -7,9 +7,17 @@ export const EMAIL_BRAND = {
   name: "VIBRA",
   product: "Ingressos",
   green: "#16a34a",
+  greenMid: "#15803d",
   greenBright: "#22c55e",
   greenSoft: "#dcfce7",
+  greenCardBorder: "#bbf7d0",
+  greenMuted: "#86efac",
   dark: "#052e16",
+  darkMid: "#0f3d22",
+  dataPanel: "#f4f7f5",
+  dataPanelBorder: "#0a2e1a",
+  dataDivider: "#c5d4c9",
+  labelAccent: "#15803d",
   text: "#111111",
   textMuted: "#555555",
   textSoft: "#737373",
@@ -17,6 +25,6 @@ export const EMAIL_BRAND = {
   canvas: "#f5f5f3",
   border: "#e0e0dc",
   /** Fontes de sistema — Gmail mobile ignora Google Fonts. */
-  font:
-    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+  font: "Arial,Helvetica,sans-serif",
+  fontMono: "Courier New,Courier,monospace",
 } as const;
