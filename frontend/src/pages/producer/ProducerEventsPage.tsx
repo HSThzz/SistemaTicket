@@ -33,7 +33,7 @@ import { ProducerNav } from "../../components/producer/ProducerNav";
 import { ProducerPanelSkeleton } from "../../components/producer/ProducerPanelSkeleton";
 import * as eventService from "../../features/catalog/api/eventService";
 import type { Event } from "../../types/api";
-import { getEventDeleteConfirmationCopy } from "../../utils/eventStatus";
+import { getEventDeleteConfirmationCopy, toEventStatus } from "../../utils/eventStatus";
 import { getApiErrorMessage } from "../../utils/errors";
 
 type EventFilter = "all" | "published" | "draft";
@@ -80,7 +80,7 @@ export function ProducerEventsPage() {
   }, [loadEvents]);
 
   const deleteConfirmation = eventToDelete
-    ? getEventDeleteConfirmationCopy(eventToDelete.status)
+    ? getEventDeleteConfirmationCopy(toEventStatus(eventToDelete.status))
     : null;
 
   const handleConfirmDelete = async () => {

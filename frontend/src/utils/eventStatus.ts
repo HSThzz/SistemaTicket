@@ -1,6 +1,20 @@
 import type { EventStatus } from "../types/api";
 import { getEventStatusLabel } from "./statusLabels";
 
+const EVENT_STATUS_VALUES = [
+  "DRAFT",
+  "PUBLISHED",
+  "CANCELLED",
+  "FINISHED",
+] as const satisfies readonly EventStatus[];
+
+/** Normaliza status vindo da API para o union tipado. */
+export function toEventStatus(status: EventStatus | string): EventStatus {
+  return EVENT_STATUS_VALUES.includes(status as EventStatus)
+    ? (status as EventStatus)
+    : "DRAFT";
+}
+
 const STATUS_OPTIONS = [
   { value: "DRAFT", label: "Rascunho" },
   { value: "PUBLISHED", label: "Publicado" },

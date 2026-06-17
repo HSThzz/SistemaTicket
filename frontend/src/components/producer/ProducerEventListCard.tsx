@@ -11,7 +11,7 @@ import {
 import type { Event } from "../../types/api";
 import { extractCity, getEventCoverStyle, getTotalAvailable } from "../../utils/eventVisuals";
 import { formatEventDateOnly, formatEventTimeOnly } from "../../utils/format";
-import { canDeleteEventFromList } from "../../utils/eventStatus";
+import { canDeleteEventFromList, toEventStatus } from "../../utils/eventStatus";
 import { getEventStatusColor, getEventStatusLabel } from "../../utils/statusLabels";
 
 interface ProducerEventListCardProps {
@@ -31,7 +31,7 @@ export function ProducerEventListCard({
   const totalAvailable = getTotalAvailable(event);
   const soldOut = totalAvailable === 0 && event.ticketLots.length > 0;
   const hasLots = event.ticketLots.length > 0;
-  const canDelete = canDeleteEventFromList(event.status);
+  const canDelete = canDeleteEventFromList(toEventStatus(event.status));
 
   return (
     <Box className="producer-event-list-row">

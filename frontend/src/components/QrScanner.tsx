@@ -38,7 +38,6 @@ function buildScannerConfig(): Html5QrcodeCameraScanConfig {
     fps: mobile ? 12 : 15,
     aspectRatio: 1,
     disableFlip: true,
-    formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
     qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
       const edge = Math.min(viewfinderWidth, viewfinderHeight);
       const ratio = mobile ? 0.8 : 0.72;
@@ -253,6 +252,7 @@ export function QrScanner({ onScan, locked = false }: QrScannerProps) {
 
     let cancelled = false;
     const scanner = new Html5Qrcode(containerId, {
+      formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
       useBarCodeDetectorIfSupported: true,
       verbose: false,
     });
