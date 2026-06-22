@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { ActionIcon, Box, Stack, Text, UnstyledButton } from "@mantine/core";
-import { IconHeart, IconHeartFilled } from "@tabler/icons-react";
-import { isPrivateEvent } from "./EventPrivateBadge";
+import { Box, Stack, Text, UnstyledButton } from "@mantine/core";
+import { EventFavoriteButton } from "../ui/EventFavoriteButton";
+import { PremiumBadge } from "../ui/PremiumBadge";
+import { EventPrivateBadge, isPrivateEvent } from "./EventPrivateBadge";
 import { useEventFavoriteAction } from "../../hooks/useEventFavoriteAction";
 import type { Event } from "../../types/api";
 import {
@@ -33,25 +34,20 @@ export function DiceEventCard({ event }: DiceEventCardProps) {
         <Box className="dice-event-card__cover" style={getEventCoverStyle(event)}>
           {isPrivateEvent(event) || soldOut ? (
             <Box className="dice-event-card__badges">
-              {isPrivateEvent(event) ? (
-                <span className="dice-event-card__badge dice-event-card__badge--private">
-                  Privado
-                </span>
+              {isPrivateEvent(event) ? <EventPrivateBadge size="xs" overlay /> : null}
+              {soldOut ? (
+                <PremiumBadge tone="sold-out" size="xs" overlay>
+                  Esgotado
+                </PremiumBadge>
               ) : null}
-              {soldOut ? <span className="dice-event-card__badge">Esgotado</span> : null}
             </Box>
           ) : null}
-          <ActionIcon
-            className="dice-event-card__heart"
-            variant="filled"
-            radius="xl"
+          <EventFavoriteButton
+            liked={liked}
+            variant="card"
             size="lg"
-            aria-label={liked ? "Remover dos favoritos" : "Salvar evento"}
-            aria-pressed={liked}
-            onClick={handleToggleFavorite}
-          >
-            {liked ? <IconHeartFilled size={16} /> : <IconHeart size={16} />}
-          </ActionIcon>
+            onClick={(clickEvent) => void handleToggleFavorite(clickEvent)}
+          />
         </Box>
       </UnstyledButton>
 

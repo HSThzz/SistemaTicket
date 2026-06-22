@@ -21,6 +21,7 @@ import "./styles/events.css";
 import "./styles/account.css";
 import "./styles/layout.css";
 import "./styles/producer-landing.css";
+import "./styles/premium-badges.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

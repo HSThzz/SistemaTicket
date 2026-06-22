@@ -1290,17 +1290,6 @@
   width: 100%;
 }
 
-.event-detail-favorite-btn {
-  flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.92) !important;
-  color: #111 !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-}
-
-.event-detail-favorite-btn:hover {
-  background: #fff !important;
-}
-
 .producer-section-title {
   font-size: var(--mantine-font-size-lg);
   font-weight: 700;

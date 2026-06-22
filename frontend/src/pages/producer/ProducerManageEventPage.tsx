@@ -7,7 +7,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Alert,
-  Badge,
   Box,
   Button,
   Container,
@@ -48,6 +47,9 @@ import { StatCard } from "../../components/account/StatCard";
 import { ProducerLotCard } from "../../components/producer/ProducerLotCard";
 import { ProducerParticipationPanel } from "../../components/producer/ProducerParticipationPanel";
 import { EventDateTimeField } from "../../components/producer/EventDateTimeField";
+import { EventPrivateBadge } from "../../components/events/EventPrivateBadge";
+import { EventStatusBadge } from "../../components/ui/EventStatusBadge";
+import { PremiumBadge } from "../../components/ui/PremiumBadge";
 import * as eventService from "../../features/catalog/api/eventService";
 import type { Event, EventStatus } from "../../types/api";
 import { eventDateToIso, isoToEventDate, validateEventDate } from "../../utils/eventDateTime";
@@ -61,7 +63,6 @@ import {
   isTerminalEventStatus,
   requiresEventStatusConfirmation,
 } from "../../utils/eventStatus";
-import { getEventStatusColor, getEventStatusLabel } from "../../utils/statusLabels";
 
 interface EventFormValues {
   title: string;
@@ -401,29 +402,18 @@ export function ProducerManageEventPage() {
           <Stack gap="md" maw={720}>
             <Stack gap="sm" maw={640}>
               <Group gap="sm" wrap="wrap">
-                <Badge color={getEventStatusColor(event.status)} variant="filled" radius="sm">
-                  {getEventStatusLabel(event.status)}
-                </Badge>
-                {event.type === "PRIVATE" ? (
-                  <Badge
-                    color="grape"
-                    variant="filled"
-                    radius="sm"
-                    leftSection={<IconLock size={12} />}
-                  >
-                    Privado
-                  </Badge>
-                ) : null}
+                <EventStatusBadge status={event.status} size="sm" overlay />
+                {event.type === "PRIVATE" ? <EventPrivateBadge size="sm" overlay /> : null}
                 {pendingParticipationCount > 0 ? (
-                  <Badge color="yellow" variant="filled" radius="sm">
+                  <PremiumBadge tone="warning" size="sm" overlay>
                     {pendingParticipationCount} solicitação
                     {pendingParticipationCount === 1 ? "" : "ões"} pendente
                     {pendingParticipationCount === 1 ? "" : "s"}
-                  </Badge>
+                  </PremiumBadge>
                 ) : null}
-                <Badge color="white" c="dark" variant="filled" radius="sm">
+                <PremiumBadge tone="glass" size="sm" overlay>
                   {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}
-                </Badge>
+                </PremiumBadge>
               </Group>
               <Title
                 order={1}
@@ -649,9 +639,9 @@ export function ProducerManageEventPage() {
                   </Text>
                 </Stack>
                 {event.ticketLots.length > 0 ? (
-                  <Badge size="lg" variant="light" color="brand" radius="sm">
+                  <PremiumBadge tone="brand" size="md">
                     {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}
-                  </Badge>
+                  </PremiumBadge>
                 ) : null}
               </Group>
 

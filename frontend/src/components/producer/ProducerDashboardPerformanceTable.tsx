@@ -2,12 +2,12 @@
  * @file Tabela compacta de desempenho por evento no dashboard do produtor.
  */
 
-import { Badge, Box, Group, Progress, Table, Text } from "@mantine/core";
+import { Box, Group, Progress, Table, Text } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import type { ProducerEventStats } from "../../types/api";
 import { formatCurrencyFromCents, formatShortDate } from "../../utils/format";
-import { getEventStatusColor, getEventStatusLabel } from "../../utils/statusLabels";
 import { EventPrivateBadge, isPrivateEvent } from "../events/EventPrivateBadge";
+import { EventStatusBadge } from "../ui/EventStatusBadge";
 
 interface ProducerDashboardPerformanceTableProps {
   events: ProducerEventStats[];
@@ -73,17 +73,8 @@ export function ProducerDashboardPerformanceTable({
                           {event.title}
                         </Text>
                         <Group gap={6} mt={4} wrap="wrap">
-                          <Badge
-                            size="xs"
-                            variant="light"
-                            color={getEventStatusColor(event.status)}
-                            radius="sm"
-                          >
-                            {getEventStatusLabel(event.status)}
-                          </Badge>
-                          {isPrivateEvent(event) ? (
-                            <EventPrivateBadge size="xs" variant="light" />
-                          ) : null}
+                          <EventStatusBadge status={event.status} size="xs" />
+                          {isPrivateEvent(event) ? <EventPrivateBadge size="xs" /> : null}
                         </Group>
                       </Box>
                     </Group>

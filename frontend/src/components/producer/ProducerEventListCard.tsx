@@ -1,4 +1,4 @@
-import { ActionIcon, Badge, Box, Button, Group, Stack, Text, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Box, Button, Group, Stack, Text, Title, Tooltip } from "@mantine/core";
 import { Link } from "react-router-dom";
 import {
   IconCalendar,
@@ -12,11 +12,12 @@ import {
   EventPrivateBadge,
   isPrivateEvent,
 } from "../events/EventPrivateBadge";
+import { EventStatusBadge } from "../ui/EventStatusBadge";
+import { PremiumBadge } from "../ui/PremiumBadge";
 import type { Event } from "../../types/api";
 import { extractCity, getEventCoverStyle, getTotalAvailable } from "../../utils/eventVisuals";
 import { formatEventDateOnly, formatEventTimeOnly } from "../../utils/format";
 import { canDeleteEventFromList, toEventStatus } from "../../utils/eventStatus";
-import { getEventStatusColor, getEventStatusLabel } from "../../utils/statusLabels";
 
 interface ProducerEventListCardProps {
   event: Event;
@@ -52,31 +53,22 @@ export function ProducerEventListCard({
         >
           <Stack gap={6} flex={1} miw={200}>
             <Group gap="xs" wrap="wrap">
-              <Badge
-                color={getEventStatusColor(event.status)}
-                variant="light"
-                radius="sm"
-                size="sm"
-              >
-                {getEventStatusLabel(event.status)}
-              </Badge>
-              {isPrivateEvent(event) ? (
-                <EventPrivateBadge size="xs" variant="light" />
-              ) : null}
+              <EventStatusBadge status={event.status} size="xs" />
+              {isPrivateEvent(event) ? <EventPrivateBadge size="xs" /> : null}
               {(event.pendingParticipationCount ?? 0) > 0 ? (
-                <Badge variant="filled" color="yellow" radius="sm" size="sm">
+                <PremiumBadge tone="warning" size="xs">
                   {event.pendingParticipationCount} pendente
                   {(event.pendingParticipationCount ?? 0) === 1 ? "" : "s"}
-                </Badge>
+                </PremiumBadge>
               ) : null}
               {hasLots ? (
-                <Badge variant="light" color="gray" radius="sm" size="sm">
+                <PremiumBadge tone="neutral" size="xs">
                   {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}
-                </Badge>
+                </PremiumBadge>
               ) : (
-                <Badge variant="light" color="orange" radius="sm" size="sm">
+                <PremiumBadge tone="warning" size="xs">
                   Sem lotes
-                </Badge>
+                </PremiumBadge>
               )}
             </Group>
 

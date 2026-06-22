@@ -7,8 +7,6 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Alert,
-  ActionIcon,
-  Badge,
   Box,
   Button,
   Container,
@@ -27,14 +25,14 @@ import {
   IconCalendar,
   IconCircleCheck,
   IconClock,
-  IconHeart,
-  IconHeartFilled,
-  IconLock,
   IconMapPin,
   IconQrcode,
   IconShieldCheck,
   IconTicket,
 } from "@tabler/icons-react";
+import { EventFavoriteButton } from "../components/ui/EventFavoriteButton";
+import { PremiumBadge } from "../components/ui/PremiumBadge";
+import { EventPrivateBadge } from "../components/events/EventPrivateBadge";
 import { AnimatedSection } from "../components/home/AnimatedSection";
 import { SiteFooter } from "../components/home/SiteFooter";
 import { PageBackNav } from "../components/account/PageBackNav";
@@ -98,16 +96,16 @@ function LotOfferCard({
             {lot.name}
           </Text>
           {soldOut ? (
-            <Badge color="red" variant="filled" size="sm" radius="sm">
+            <PremiumBadge tone="sold-out" size="xs">
               Esgotado
-            </Badge>
+            </PremiumBadge>
           ) : null}
         </Group>
 
         <Group justify="space-between" align="center" wrap="wrap" gap="sm">
-          <Badge variant="light" color={soldOut ? "gray" : "teal"} radius="sm">
+          <PremiumBadge tone={soldOut ? "neutral" : "brand"} size="xs">
             {soldOut ? "Sem estoque" : `${lot.availableQuantity} restantes`}
-          </Badge>
+          </PremiumBadge>
           <Text fw={800} size="lg" c="brand" className="lot-offer-card__price">
             {formatCurrencyFromCents(lot.price)}
           </Text>
@@ -271,32 +269,17 @@ export function EventDetailPage() {
           <Stack gap="md" className="event-detail-hero-info">
             <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
               <Group gap="xs" wrap="wrap" flex={1}>
-                <Badge color="white" c="dark" variant="filled" radius="sm">
+                <PremiumBadge tone="glass" size="sm" overlay>
                   {CATEGORY_LABELS[category]}
-                </Badge>
-                {eventIsPrivate ? (
-                  <Badge
-                    color="grape"
-                    variant="filled"
-                    radius="sm"
-                    leftSection={<IconLock size={12} />}
-                  >
-                    Privado
-                  </Badge>
-                ) : null}
+                </PremiumBadge>
+                {eventIsPrivate ? <EventPrivateBadge size="sm" overlay /> : null}
               </Group>
 
-              <ActionIcon
-                className="event-detail-favorite-btn"
-                variant="filled"
-                radius="xl"
+              <EventFavoriteButton
+                liked={liked}
                 size="xl"
-                aria-label={liked ? "Remover dos favoritos" : "Salvar evento"}
-                aria-pressed={liked}
-                onClick={handleToggleFavorite}
-              >
-                {liked ? <IconHeartFilled size={20} /> : <IconHeart size={20} />}
-              </ActionIcon>
+                onClick={(clickEvent) => void handleToggleFavorite(clickEvent)}
+              />
             </Group>
 
               <Title
@@ -453,16 +436,11 @@ export function EventDetailPage() {
                           Sem lotes disponíveis
                         </Text>
                       )}
-                      <Badge
-                        size="lg"
-                        variant="light"
-                        color={soldOut ? "red" : "teal"}
-                        radius="sm"
-                      >
+                      <PremiumBadge tone={soldOut ? "sold-out" : "published"} size="sm">
                         {soldOut
                           ? "Esgotado"
                           : `${totalAvailable} disponíve${totalAvailable === 1 ? "l" : "is"}`}
-                      </Badge>
+                      </PremiumBadge>
                     </Group>
 
                     <Divider />

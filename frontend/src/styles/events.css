@@ -367,34 +367,11 @@
   max-width: calc(100% - 56px);
 }
 
-.dice-event-card__badge {
-  padding: 4px 10px;
-  border-radius: 100px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background: rgba(0, 0, 0, 0.72);
-  color: #fff;
-}
-
-.dice-event-card__badge--private {
-  background: rgba(134, 25, 143, 0.92);
-}
-
-.dice-event-card__heart {
+.dice-event-card__cover .event-favorite-btn {
   position: absolute;
   right: 10px;
   bottom: 10px;
   z-index: 2;
-  background: rgba(0, 0, 0, 0.55) !important;
-  color: #fff !important;
-  border: none;
-  backdrop-filter: blur(4px);
-}
-
-.dice-event-card__heart:hover {
-  background: rgba(0, 0, 0, 0.72) !important;
 }
 
 .dice-event-card__body {

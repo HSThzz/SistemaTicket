@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Badge, Box, Group, Progress, SimpleGrid, Stack, Text, ThemeIcon, Title } from "@mantine/core";
+import { Box, Group, Progress, SimpleGrid, Stack, Text, ThemeIcon, Title } from "@mantine/core";
 import {
   IconArrowRight,
   IconCalendar,
@@ -11,7 +11,7 @@ import {
 import type { ProducerEventStats } from "../../types/api";
 import { getEventCoverStyle } from "../../utils/eventVisuals";
 import { formatCurrencyFromCents, formatShortDate } from "../../utils/format";
-import { getEventStatusColor, getEventStatusLabel } from "../../utils/statusLabels";
+import { EventStatusBadge } from "../ui/EventStatusBadge";
 
 interface ProducerEventStatsCardProps {
   event: ProducerEventStats;
@@ -66,14 +66,7 @@ export function ProducerEventStatsCard({ event }: ProducerEventStatsCardProps) {
           <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
             <Stack gap="sm" flex={1} miw={0}>
               <Group gap="sm" wrap="wrap">
-                <Badge
-                  color={getEventStatusColor(event.status)}
-                  variant="light"
-                  radius="sm"
-                  size="sm"
-                >
-                  {getEventStatusLabel(event.status)}
-                </Badge>
+                <EventStatusBadge status={event.status} size="xs" />
               </Group>
               <Title order={4} lineClamp={2} style={{ letterSpacing: "-0.01em" }}>
                 {event.title}
