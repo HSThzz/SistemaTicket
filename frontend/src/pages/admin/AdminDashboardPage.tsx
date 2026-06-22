@@ -41,6 +41,7 @@ import { EmptyState } from "../../components/account/EmptyState";
 import { PageHeader } from "../../components/account/PageHeader";
 import { StatCard } from "../../components/account/StatCard";
 import { AdminNav, type AdminTab } from "../../components/admin/AdminNav";
+import { AdminIssueTicketsPanel } from "../../components/admin/AdminIssueTicketsPanel";
 import { AdminSection } from "../../components/admin/AdminSection";
 import { AdminAuditLogList } from "../../components/admin/AdminAuditLogList";
 import * as authService from "../../features/identity/api/authService";
@@ -600,7 +601,7 @@ export function AdminDashboardPage() {
           <EmptyState
             icon={<IconHistory size={28} />}
             title="Nenhuma ação registrada"
-            description="Reembolsos, mudanças de papel e verificações de estoque aparecerão aqui."
+            description="Reembolsos, mudanças de papel, emissões manuais e verificações de estoque aparecerão aqui."
           />
         ) : null}
 
@@ -620,7 +621,7 @@ export function AdminDashboardPage() {
           highlight="administração" 
           description={
             canManagePlatform
-              ? "Suporte ao cliente, gestão de papéis e ferramentas da plataforma."
+              ? "Suporte ao cliente, emissão manual de ingressos e ferramentas da plataforma."
               : "Suporte ao cliente: consulta de usuários e reembolso de pedidos."
           }
         />
@@ -665,7 +666,13 @@ export function AdminDashboardPage() {
       ) : null}
 
       <AnimatedSection delayMs={40}>
-        {activeTab === "support" || !canManagePlatform ? supportPanel : platformPanel}
+        {activeTab === "support" || !canManagePlatform ? (
+          supportPanel
+        ) : activeTab === "issue" ? (
+          <AdminIssueTicketsPanel onIssued={() => void loadAuditLogs()} />
+        ) : (
+          platformPanel
+        )}
       </AnimatedSection>
 
       <Modal

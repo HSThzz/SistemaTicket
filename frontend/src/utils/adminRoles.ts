@@ -38,6 +38,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   USER_ROLE_UPDATED: "Papel alterado",
   ORDER_REFUNDED: "Pedido reembolsado",
   STOCK_RECONCILED: "Estoque reconciliado",
+  TICKETS_ISSUED_MANUALLY: "Ingressos emitidos manualmente",
 };
 
 export function getRoleBadgeColor(role: UserRole): string {

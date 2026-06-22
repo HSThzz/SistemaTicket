@@ -11,6 +11,7 @@ import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/r
 import { validateBody, validateQuery } from "../../../../shared/interfaces/http/middlewares/validate";
 import {
   checkInBodySchema,
+  issueManualTicketBodySchema,
   listUserTicketsQuerySchema,
 } from "../../../../shared/interfaces/http/validation/ticketing.schemas";
 import { UserRole } from "../../../../shared/kernel/enums";
@@ -23,6 +24,14 @@ router.get(
   authMiddleware,
   validateQuery(listUserTicketsQuerySchema),
   (req, res) => void ticketController.listMine(req, res),
+);
+
+router.post(
+  "/admin/issue",
+  authMiddleware,
+  roleMiddleware([UserRole.SUPER_ADMIN]),
+  validateBody(issueManualTicketBodySchema),
+  (req, res) => void ticketController.issueManual(req, res),
 );
 
 router.post(

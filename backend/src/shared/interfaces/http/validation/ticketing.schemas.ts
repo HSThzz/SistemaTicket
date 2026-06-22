@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { checkInSchema } from "../../../../modules/ticketing/validators/schema/checkInSchema";
 import { listUserTicketsQuerySchema } from "../../../../modules/ticketing/validators/schema/listUserTicketsQuerySchema";
+import { issueManualTicketSchema } from "../../../../modules/ticketing/validators/schema/issueManualTicketSchema";
 
 /** Corpo HTTP de check-in (snake_case da API). */
 export const checkInBodySchema = z.object({
@@ -14,3 +15,6 @@ export const checkInBodySchema = z.object({
 
 /** Query de listagem paginada de ingressos do usuário. */
 export { listUserTicketsQuerySchema };
+
+/** Corpo HTTP de emissão manual de ingressos (super admin). */
+export const issueManualTicketBodySchema = issueManualTicketSchema;

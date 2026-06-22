@@ -2,20 +2,22 @@
  * @file Navegação por abas do painel administrativo.
  */
 
-import { Badge, Group, Stack, Text, ThemeIcon, UnstyledButton } from "@mantine/core";
+import { Group, Stack, Text, ThemeIcon, UnstyledButton } from "@mantine/core";
 import {
   IconDatabase,
   IconHeadset,
+  IconTicket,
 } from "@tabler/icons-react";
 import type { TablerIcon } from "@tabler/icons-react";
 
-export type AdminTab = "support" | "platform";
+export type AdminTab = "support" | "issue" | "platform";
 
 const ADMIN_TABS: Array<{
   value: AdminTab;
   label: string;
   description: string;
   icon: TablerIcon;
+  superAdminOnly?: boolean;
 }> = [
   {
     value: "support",
@@ -24,10 +26,18 @@ const ADMIN_TABS: Array<{
     icon: IconHeadset,
   },
   {
+    value: "issue",
+    label: "Emitir ingressos",
+    description: "Cortesia e liberação offline",
+    icon: IconTicket,
+    superAdminOnly: true,
+  },
+  {
     value: "platform",
     label: "Plataforma",
     description: "Papéis, estoque e histórico",
     icon: IconDatabase,
+    superAdminOnly: true,
   },
 ];
 
@@ -47,28 +57,10 @@ export function AdminNav({
 }: AdminNavProps) {
   const tabs = showPlatform
     ? ADMIN_TABS
-    : ADMIN_TABS.filter((tab) => tab.value === "support");
+    : ADMIN_TABS.filter((tab) => !tab.superAdminOnly);
 
   return (
     <Stack gap="sm" className="admin-nav">
-      <Group
-        justify="space-between"
-        align="center"
-        wrap="wrap"
-        gap="sm"
-        className="admin-nav-meta"
-      >
-        {showPlatform ? (
-          <Badge size="lg" variant="light" color="grape" className="admin-nav-badge">
-            Super admin
-          </Badge>
-        ) : (
-          <Badge size="lg" variant="light" color="blue" className="admin-nav-badge">
-            Suporte
-          </Badge>
-        )}
-      </Group>
-
       <Group
         gap="xs"
         wrap="wrap"

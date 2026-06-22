@@ -16,6 +16,7 @@ export enum AdminAuditAction {
   USER_ROLE_UPDATED = "USER_ROLE_UPDATED",
   ORDER_REFUNDED = "ORDER_REFUNDED",
   STOCK_RECONCILED = "STOCK_RECONCILED",
+  TICKETS_ISSUED_MANUALLY = "TICKETS_ISSUED_MANUALLY",
 }
 
 /** Status do ciclo de vida de um evento. */

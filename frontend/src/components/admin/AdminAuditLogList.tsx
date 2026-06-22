@@ -24,6 +24,15 @@ function formatAuditTarget(log: AdminAuditLogEntry): string {
     return `Pedido ${log.targetId.slice(0, 8)}…`;
   }
 
+  if (log.action === "TICKETS_ISSUED_MANUALLY") {
+    const email = log.metadata?.userEmail ? String(log.metadata.userEmail) : null;
+    const qty = log.metadata?.quantity ? String(log.metadata.quantity) : null;
+    if (email && qty) {
+      return `${qty} ingresso(s) → ${email}`;
+    }
+    return `Pedido ${log.targetId.slice(0, 8)}…`;
+  }
+
   return `${log.targetType}/${log.targetId.slice(0, 8)}…`;
 }
 
