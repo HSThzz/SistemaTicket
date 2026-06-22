@@ -42,9 +42,10 @@ import { StatCard } from "../components/account/StatCard";
 import { ParticipationRequestCard } from "../components/participation/ParticipationRequestCard";
 import { useAuth } from "../context/AuthContext";
 import { useEventFavoriteAction } from "../hooks/useEventFavoriteAction";
+import { useParticipation } from "../hooks/useParticipation";
 import * as eventService from "../features/catalog/api/eventService";
 import * as participationService from "../features/participation/api/participationService";
-import type { Event, ParticipationRequest, TicketLot } from "../types/api";
+import type { Event, ParticipationRequest, ParticipationRequestStatus, TicketLot } from "../types/api";
 import { useEventCoverPreload } from "../hooks/useEventCoverPreload";
 import {
   CATEGORY_LABELS,
@@ -140,6 +141,15 @@ export function EventDetailPage() {
     eventId: eventId ?? "",
     loginReturnPath: eventId ? `/eventos/${eventId}` : undefined,
   });
+  const { setParticipationStatus } = useParticipation();
+
+  const handleParticipationSubmitted = (request: ParticipationRequest) => {
+    setParticipation(request);
+    setParticipationStatus(
+      request.eventId,
+      request.status as ParticipationRequestStatus,
+    );
+  };
 
   useEffect(() => {
     if (!eventId) {
@@ -189,6 +199,12 @@ export function EventDetailPage() {
       .then((data) => {
         if (!cancelled) {
           setParticipation(data);
+          if (data) {
+            setParticipationStatus(
+              data.eventId,
+              data.status as ParticipationRequestStatus,
+            );
+          }
         }
       })
       .catch(() => {
@@ -200,7 +216,7 @@ export function EventDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [eventId, isPrivate, isAuthenticated]);
+  }, [eventId, isPrivate, isAuthenticated, setParticipationStatus]);
 
   useEventCoverPreload(getEventCoverImageUrl(event ?? {}));
 
@@ -451,7 +467,7 @@ export function EventDetailPage() {
                         isAuthenticated={isAuthenticated}
                         user={user}
                         request={participation}
-                        onSubmitted={setParticipation}
+                        onSubmitted={handleParticipationSubmitted}
                       />
                     ) : (
                       <>

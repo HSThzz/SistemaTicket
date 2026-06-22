@@ -11,7 +11,9 @@ import {
   EventPrivateBadge,
   isPrivateEvent,
 } from "./events/EventPrivateBadge";
+import { ParticipationStatusBadge } from "./ui/ParticipationStatusBadge";
 import type { Event } from "../types/api";
+import { useParticipation } from "../hooks/useParticipation";
 import {
   extractCity,
   getEventCoverStyle,
@@ -33,6 +35,10 @@ interface EventCardProps {
  * Exibe capa, preço mínimo, estoque e badges de esgotado/últimas unidades.
  */
 export function EventCard({ event, variant = "default" }: EventCardProps) {
+  const { getParticipationStatus } = useParticipation();
+  const participationStatus = isPrivateEvent(event)
+    ? getParticipationStatus(event.id)
+    : null;
   const lowestPrice = getLowestPrice(event);
   const totalAvailable = getTotalAvailable(event);
   const soldOut = totalAvailable === 0;
@@ -59,6 +65,9 @@ export function EventCard({ event, variant = "default" }: EventCardProps) {
                 {event.title}
               </Text>
               {isPrivateEvent(event) ? <EventPrivateBadge size="xs" /> : null}
+              {participationStatus ? (
+                <ParticipationStatusBadge status={participationStatus} size="xs" />
+              ) : null}
             </Group>
             <Group gap={6} c="dimmed">
               <IconMapPin size={14} />
@@ -96,6 +105,9 @@ export function EventCard({ event, variant = "default" }: EventCardProps) {
         <Group justify="space-between" p="sm" align="flex-start" wrap="wrap" gap="xs">
           <Group gap="xs" wrap="wrap">
             {isPrivateEvent(event) ? <EventPrivateBadge size="sm" overlay /> : null}
+            {participationStatus ? (
+              <ParticipationStatusBadge status={participationStatus} size="xs" overlay />
+            ) : null}
           </Group>
           {soldOut ? (
             <PremiumBadge tone="sold-out" size="sm" overlay>

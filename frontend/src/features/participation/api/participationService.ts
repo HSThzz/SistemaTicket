@@ -51,6 +51,16 @@ export async function getMyParticipationRequest(
 }
 
 /**
+ * Lista todas as solicitações de participação do usuário logado.
+ */
+export async function listMyParticipationRequests(): Promise<ParticipationRequest[]> {
+  const { data } = await api.get<{ participationRequests: ParticipationRequest[] }>(
+    "/events/participation-requests/mine",
+  );
+  return data.participationRequests;
+}
+
+/**
  * Lista as solicitações de um evento por status (produtor/equipe).
  *
  * @param eventId - Identificador do evento.

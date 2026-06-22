@@ -25,6 +25,12 @@ import {
 
 const router = Router();
 
+router.get(
+  "/participation-requests/mine",
+  authMiddleware,
+  (req, res) => void participationController.listMine(req, res),
+);
+
 router.post(
   "/:eventId/participation-requests",
   ...participationSubmitMiddlewares,

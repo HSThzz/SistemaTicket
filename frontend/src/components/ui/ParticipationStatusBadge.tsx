@@ -23,16 +23,22 @@ export function getParticipationStatusTone(status: string): PremiumBadgeTone {
 interface ParticipationStatusBadgeProps {
   status: string;
   size?: "xs" | "sm" | "md";
+  overlay?: boolean;
 }
 
 /** Badge de status de solicitação em eventos privados. */
-export function ParticipationStatusBadge({ status, size = "xs" }: ParticipationStatusBadgeProps) {
+export function ParticipationStatusBadge({
+  status,
+  size = "xs",
+  overlay = false,
+}: ParticipationStatusBadgeProps) {
   const isApproved = status === "APPROVED";
 
   return (
     <PremiumBadge
       tone={getParticipationStatusTone(status)}
       size={size}
+      overlay={overlay}
       dot={isApproved}
       pulseDot={isApproved}
     >

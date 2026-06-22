@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { Box, Stack, Text, UnstyledButton } from "@mantine/core";
 import { EventFavoriteButton } from "../ui/EventFavoriteButton";
+import { ParticipationStatusBadge } from "../ui/ParticipationStatusBadge";
 import { PremiumBadge } from "../ui/PremiumBadge";
 import { EventPrivateBadge, isPrivateEvent } from "./EventPrivateBadge";
 import { useEventFavoriteAction } from "../../hooks/useEventFavoriteAction";
+import { useParticipation } from "../../hooks/useParticipation";
 import type { Event } from "../../types/api";
 import {
   extractCity,
@@ -19,6 +21,10 @@ interface DiceEventCardProps {
 
 export function DiceEventCard({ event }: DiceEventCardProps) {
   const { liked, handleToggleFavorite } = useEventFavoriteAction({ eventId: event.id });
+  const { getParticipationStatus } = useParticipation();
+  const participationStatus = isPrivateEvent(event)
+    ? getParticipationStatus(event.id)
+    : null;
   const lowestPrice = getLowestPrice(event);
   const totalAvailable = getTotalAvailable(event);
   const soldOut = totalAvailable === 0;
@@ -32,9 +38,12 @@ export function DiceEventCard({ event }: DiceEventCardProps) {
         className="dice-event-card__link"
       >
         <Box className="dice-event-card__cover" style={getEventCoverStyle(event)}>
-          {isPrivateEvent(event) || soldOut ? (
+          {isPrivateEvent(event) || soldOut || participationStatus ? (
             <Box className="dice-event-card__badges">
               {isPrivateEvent(event) ? <EventPrivateBadge size="xs" overlay /> : null}
+              {participationStatus ? (
+                <ParticipationStatusBadge status={participationStatus} size="xs" overlay />
+              ) : null}
               {soldOut ? (
                 <PremiumBadge tone="sold-out" size="xs" overlay>
                   Esgotado

@@ -6,6 +6,7 @@
 import { env } from "../../../../shared/infrastructure/config/env";
 import type { ContactFormJobData } from "../../../leads/application/types/contactFormJob";
 import type { ParticipationApprovedJobData } from "../../../participation/application/types/participationApprovedJob";
+import type { ParticipationRejectedJobData } from "../../../participation/application/types/participationRejectedJob";
 import type { ParticipationRequestSubmittedJobData } from "../../../participation/application/types/participationRequestSubmittedJob";
 import type { TicketDeliveryJobData } from "../../application/types/ticketDeliveryJob";
 import { EMAIL_BRAND } from "./emailBrand";
@@ -162,6 +163,34 @@ export function buildParticipationApprovedEmail(
     },
     footerNote:
       "Este link leva à página pública do evento. Faça login com a mesma conta usada na solicitação para reservar.",
+  });
+}
+
+export function buildParticipationRejectedEmail(
+  data: ParticipationRejectedJobData,
+): string {
+  const eventsUrl = `${getPublicAppUrl()}/eventos`;
+
+  return renderEmailLayout({
+    preheader: `Sua solicitação para ${data.eventTitle} não foi aprovada.`,
+    eyebrow: "Evento privado",
+    title: "Participação não aprovada",
+    bodyHtml: `
+      ${bodyParagraph(`Olá, <font color="${EMAIL_BRAND.text}"><b>${escapeHtml(data.participantName)}</b></font>.`)}
+      ${bodyParagraph(
+        `Infelizmente o produtor não aprovou sua solicitação para participar de <font color="${EMAIL_BRAND.text}"><b>${escapeHtml(data.eventTitle)}</b></font>.`,
+      )}
+      ${bodyParagraph(
+        "Isso não impede você de explorar outros eventos públicos na plataforma. Se tiver dúvidas, entre em contato diretamente com o organizador.",
+      )}
+      ${renderEmailInfoCard("Evento", escapeHtml(data.eventTitle))}
+    `,
+    cta: {
+      label: "Ver outros eventos",
+      href: eventsUrl,
+    },
+    footerNote:
+      "Esta decisão foi tomada pelo produtor do evento. Você não poderá comprar ingresso para este evento privado.",
   });
 }
 

@@ -8,15 +8,14 @@ import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { getBullMQConnection } from "../../../../shared/infrastructure/messaging/bullmqConnection";
 import { PARTICIPATION_NOTIFICATION_QUEUE } from "../../../../shared/infrastructure/messaging/queueNames";
 import type { ParticipationApprovedJobData } from "../../application/types/participationApprovedJob";
+import type { ParticipationRejectedJobData } from "../../application/types/participationRejectedJob";
 import type { ParticipationRequestSubmittedJobData } from "../../application/types/participationRequestSubmittedJob";
 import { sendParticipationApprovedNotification } from "../../application/services/sendParticipationApprovedNotification";
+import { sendParticipationRejectedNotification } from "../../application/services/sendParticipationRejectedNotification";
 import { sendParticipationRequestSubmittedNotification } from "../../application/services/sendParticipationRequestSubmittedNotification";
+import type { ParticipationNotificationJobData } from "../queues/participationNotificationQueue";
 
 const CONTEXT = "ParticipationNotificationWorker";
-
-type ParticipationNotificationJobData =
-  | ParticipationApprovedJobData
-  | ParticipationRequestSubmittedJobData;
 
 /**
  * Consome a fila `participation-notification` e envia e-mails de forma assíncrona.
@@ -39,7 +38,24 @@ export class ParticipationNotificationWorker {
           return;
         }
 
-        await sendParticipationApprovedNotification(job.data as ParticipationApprovedJobData);
+        if (job.name === "participation-approved") {
+          await sendParticipationApprovedNotification(
+            job.data as ParticipationApprovedJobData,
+          );
+          return;
+        }
+
+        if (job.name === "participation-rejected") {
+          await sendParticipationRejectedNotification(
+            job.data as ParticipationRejectedJobData,
+          );
+          return;
+        }
+
+        this.logger.warn(CONTEXT, "Unknown participation notification job", {
+          jobId: job.id,
+          jobName: job.name,
+        });
       },
       {
         connection: getBullMQConnection(),

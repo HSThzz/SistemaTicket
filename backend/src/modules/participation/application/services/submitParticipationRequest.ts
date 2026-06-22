@@ -19,7 +19,9 @@ import {
 } from "../../validators/schema/submitParticipationRequestSchema";
 import { createParticipationRequest } from "../commands/createParticipationRequest";
 import { enqueueParticipationRequestSubmittedNotification } from "../commands/enqueueParticipationRequestSubmittedNotification";
+import { normalizeParticipationEmail } from "../helpers/normalizeParticipationEmail";
 import { findExistingParticipationRequest } from "../queries/findExistingParticipationRequest";
+import { findExistingParticipationRequestByEmail } from "../queries/findExistingParticipationRequestByEmail";
 import type { ParticipationRequester } from "../types";
 
 const CONTEXT = "submitParticipationRequest";
@@ -49,13 +51,21 @@ export async function submitParticipationRequest(
     if (existing) {
       throw new ParticipationAlreadyRequestedError();
     }
+  } else {
+    const existingByEmail = await findExistingParticipationRequestByEmail(
+      eventId,
+      data.email,
+    );
+    if (existingByEmail) {
+      throw new ParticipationAlreadyRequestedError();
+    }
   }
 
   const created = await createParticipationRequest({
     eventId,
     userId: requester.userId,
     name: data.name,
-    email: data.email,
+    email: normalizeParticipationEmail(data.email),
     phone: data.phone ?? null,
   });
 

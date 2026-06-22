@@ -22,6 +22,7 @@ import {
 } from "../../domain/errors/ParticipationError";
 import { serializeParticipationRequest } from "../../application/helpers/serializeParticipationRequest";
 import { getMyParticipationRequest } from "../../application/services/getMyParticipationRequest";
+import { listMyParticipationRequests } from "../../application/services/listMyParticipationRequests";
 import { listParticipationRequests } from "../../application/services/listParticipationRequests";
 import { reviewParticipationRequest } from "../../application/services/reviewParticipationRequest";
 import { submitParticipationRequest } from "../../application/services/submitParticipationRequest";
@@ -67,6 +68,25 @@ export class ParticipationController {
       });
     } catch (error) {
       this.handleError(res, error, "submit", { eventId });
+    }
+  }
+
+  /**
+   * GET /events/participation-requests/mine — todas as solicitações do usuário logado.
+   */
+  async listMine(req: Request, res: Response): Promise<void> {
+    const actor = requireActor(req, res);
+    if (!actor) return;
+
+    try {
+      const requests = await listMyParticipationRequests(actor.userId);
+      res.status(200).json({
+        participationRequests: requests.map((request) =>
+          serializeParticipationRequest(request),
+        ),
+      });
+    } catch (error) {
+      this.handleError(res, error, "listMine");
     }
   }
 
