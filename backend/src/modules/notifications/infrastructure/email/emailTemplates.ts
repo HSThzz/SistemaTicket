@@ -6,6 +6,7 @@
 import { env } from "../../../../shared/infrastructure/config/env";
 import type { ContactFormJobData } from "../../../leads/application/types/contactFormJob";
 import type { ParticipationApprovedJobData } from "../../../participation/application/types/participationApprovedJob";
+import type { ParticipationRequestSubmittedJobData } from "../../../participation/application/types/participationRequestSubmittedJob";
 import type { TicketDeliveryJobData } from "../../application/types/ticketDeliveryJob";
 import { EMAIL_BRAND } from "./emailBrand";
 import { renderEmailDataList, renderEmailInfoCard, renderEmailInfoCardGroup, renderEmailLayout } from "./renderEmailLayout";
@@ -161,5 +162,40 @@ export function buildParticipationApprovedEmail(
     },
     footerNote:
       "Este link leva à página pública do evento. Faça login com a mesma conta usada na solicitação para reservar.",
+  });
+}
+
+export function buildParticipationRequestSubmittedEmail(
+  data: ParticipationRequestSubmittedJobData,
+): string {
+  const manageUrl = `${getPublicAppUrl()}/produtor/eventos/${data.eventId}`;
+  const phoneRow = data.participantPhone
+    ? renderEmailInfoCard("Telefone", escapeHtml(data.participantPhone))
+    : "";
+
+  return renderEmailLayout({
+    preheader: `${data.participantName} solicitou participação em ${data.eventTitle}.`,
+    eyebrow: "Evento privado",
+    title: "Nova solicitação de participação",
+    bodyHtml: `
+      ${bodyParagraph(`Olá, <font color="${EMAIL_BRAND.text}"><b>${escapeHtml(data.producerName)}</b></font>.`)}
+      ${bodyParagraph(
+        `<font color="${EMAIL_BRAND.text}"><b>${escapeHtml(data.participantName)}</b></font> enviou uma solicitação para participar de <font color="${EMAIL_BRAND.text}"><b>${escapeHtml(data.eventTitle)}</b></font>.`,
+      )}
+      ${bodyParagraph(
+        "Revise os dados abaixo e aprove ou recuse pelo painel do evento quando estiver pronto.",
+      )}
+      ${renderEmailInfoCardGroup([
+        { label: "Participante", value: escapeHtml(data.participantName) },
+        { label: "E-mail", value: escapeHtml(data.participantEmail) },
+      ])}
+      ${phoneRow}
+    `,
+    cta: {
+      label: "Revisar solicitações",
+      href: manageUrl,
+    },
+    footerNote:
+      "A aprovação continua sendo feita na guia de solicitações do evento. Este e-mail é apenas um aviso.",
   });
 }

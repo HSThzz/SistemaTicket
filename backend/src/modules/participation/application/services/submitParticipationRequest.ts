@@ -7,6 +7,7 @@ import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { EventType } from "../../../../shared/kernel/enums";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { findOneEventById } from "../../../catalog/application/queries/findOneEventById";
+import { findOneUserById } from "../../../identity/application/queries/findOneUserById";
 import {
   ParticipationAlreadyRequestedError,
   ParticipationEventNotFoundError,
@@ -17,10 +18,12 @@ import {
   type SubmitParticipationRequestInputSchema,
 } from "../../validators/schema/submitParticipationRequestSchema";
 import { createParticipationRequest } from "../commands/createParticipationRequest";
+import { enqueueParticipationRequestSubmittedNotification } from "../commands/enqueueParticipationRequestSubmittedNotification";
 import { findExistingParticipationRequest } from "../queries/findExistingParticipationRequest";
 import type { ParticipationRequester } from "../types";
 
 const CONTEXT = "submitParticipationRequest";
+const logger = Logger.getInstance();
 
 export async function submitParticipationRequest(
   eventId: string,
@@ -56,11 +59,32 @@ export async function submitParticipationRequest(
     phone: data.phone ?? null,
   });
 
-  Logger.getInstance().info(CONTEXT, "Participation request submitted", {
+  logger.info(CONTEXT, "Participation request submitted", {
     requestId: created.id,
     eventId,
     userId: requester.userId,
   });
+
+  if (event.producerId) {
+    const producer = await findOneUserById(event.producerId);
+    if (producer?.email) {
+      await enqueueParticipationRequestSubmittedNotification({
+        requestId: created.id,
+        eventId,
+        eventTitle: event.title,
+        producerEmail: producer.email,
+        producerName: producer.name,
+        participantName: created.name,
+        participantEmail: created.email,
+        participantPhone: created.phone,
+      });
+    } else {
+      logger.warn(CONTEXT, "Producer email unavailable for participation notification", {
+        eventId,
+        producerId: event.producerId,
+      });
+    }
+  }
 
   return created;
 }

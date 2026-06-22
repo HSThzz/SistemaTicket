@@ -19,6 +19,11 @@ export function setParticipationEmailProvider(provider: EmailProvider): void {
   emailProvider = provider;
 }
 
+/** Provedor compartilhado entre notificações do módulo de participação. */
+export function getParticipationEmailProvider(): EmailProvider {
+  return emailProvider;
+}
+
 /**
  * Envia e-mail transacional informando que a solicitação foi aprovada.
  */
@@ -31,7 +36,7 @@ export async function sendParticipationApprovedNotification(
     email: data.participantEmail,
   });
 
-  await emailProvider.send({
+  await getParticipationEmailProvider().send({
     to: data.participantEmail,
     subject: `Participação aprovada — ${data.eventTitle}`,
     html: buildParticipationApprovedEmail(data),
