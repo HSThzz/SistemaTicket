@@ -8,7 +8,6 @@ import type { CSSProperties } from "react";
 import {
   Alert,
   Anchor,
-  Badge,
   Box,
   Button,
   Group,
@@ -19,9 +18,9 @@ import {
   Title,
 } from "@mantine/core";
 import { IconClock, IconReceipt, IconTicket } from "@tabler/icons-react";
+import { OrderStatusBadge } from "./ui/OrderStatusBadge";
 import type { OrderListItem } from "../types/api";
 import { formatCurrencyFromCents } from "../utils/format";
-import { getOrderStatusColor, getOrderStatusLabel } from "../utils/statusLabels";
 
 /** Propriedades do card de pedido na listagem do cliente. */
 interface OrderCardProps {
@@ -102,9 +101,7 @@ export function OrderCard({ order }: OrderCardProps) {
                 </Text>
               ) : null}
             </Stack>
-            <Badge color={getOrderStatusColor(order.status)} variant="light" radius="sm">
-              {getOrderStatusLabel(order.status)}
-            </Badge>
+            <OrderStatusBadge status={order.status} />
           </Group>
 
           <Stack gap={4}>

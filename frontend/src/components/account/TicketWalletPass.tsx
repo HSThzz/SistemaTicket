@@ -1,9 +1,10 @@
-import { Badge, Box, Group, Stack, Text, Title } from "@mantine/core";
+import { Box, Group, Stack, Text, Title } from "@mantine/core";
 import { IconCalendar, IconMapPin, IconTicket } from "@tabler/icons-react";
+import { PremiumBadge } from "../ui/PremiumBadge";
+import { TicketStatusBadge } from "../ui/TicketStatusBadge";
 import type { TicketListItem } from "../../types/api";
 import { extractCity, getEventCoverStyle } from "../../utils/eventVisuals";
 import { formatCurrencyFromCents, formatShortDate } from "../../utils/format";
-import { getTicketStatusColor, getTicketStatusLabel } from "../../utils/statusLabels";
 
 interface TicketWalletPassProps {
   ticket: TicketListItem;
@@ -28,24 +29,20 @@ export function TicketWalletPass({ ticket, isSelected, onSelect }: TicketWalletP
         <Stack gap="sm" className="ticket-wallet-pass-face-content">
           <Group justify="space-between" align="flex-start" wrap="nowrap" gap="sm">
             <Group gap="xs" wrap="wrap">
-              <Badge
-                color={getTicketStatusColor(ticket.status)}
-                variant="filled"
-                radius="sm"
-                size="sm"
+              <TicketStatusBadge
+                status={ticket.status}
+                size="xs"
+                overlay
                 className="ticket-wallet-pass-badge"
-              >
-                {getTicketStatusLabel(ticket.status)}
-              </Badge>
-              <Badge
-                variant="light"
-                color="gray"
-                radius="sm"
-                size="sm"
+              />
+              <PremiumBadge
+                tone="neutral"
+                size="xs"
+                overlay
                 className="ticket-wallet-pass-badge"
               >
                 {ticket.ticketLot.name}
-              </Badge>
+              </PremiumBadge>
             </Group>
             <Box className="ticket-wallet-pass-chip" aria-hidden>
               <IconTicket size={14} />

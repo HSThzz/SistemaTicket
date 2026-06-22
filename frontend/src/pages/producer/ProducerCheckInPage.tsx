@@ -5,7 +5,6 @@
 
 import { useCallback, useState } from "react";
 import {
-  Badge,
   Box,
   Button,
   Container,
@@ -31,6 +30,7 @@ import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { CheckInSuccessCard } from "../../components/producer/CheckInSuccessCard";
 import { ProducerNav } from "../../components/producer/ProducerNav";
 import { QrScanner } from "../../components/QrScanner";
+import { PremiumBadge } from "../../components/ui/PremiumBadge";
 import * as checkInService from "../../features/ticketing/api/checkInService";
 import { getApiErrorMessage } from "../../utils/errors";
 
@@ -119,12 +119,17 @@ export function ProducerCheckInPage() {
         <Container size="lg" px="md" className="producer-manage-hero-content">
           <Stack gap="sm" maw={640}>
               <Group gap="sm" wrap="wrap">
-                <Badge color="green" variant="filled" radius="sm">
+                <PremiumBadge tone="published" size="sm" overlay dot pulseDot>
                   Portaria
-                </Badge>
-                <Badge color="white" c="dark" variant="filled" radius="sm" leftSection={<IconQrcode size={12} />}>
+                </PremiumBadge>
+                <PremiumBadge
+                  tone="glass"
+                  size="sm"
+                  overlay
+                  icon={<IconQrcode size={12} stroke={2} />}
+                >
                   QR Code
-                </Badge>
+                </PremiumBadge>
               </Group>
               <Title
                 order={1}

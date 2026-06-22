@@ -7,7 +7,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Alert,
-  Badge,
   Box,
   Button,
   Divider,
@@ -30,6 +29,7 @@ import {
 } from "@tabler/icons-react";
 import type { AuthUser, Event, ParticipationRequest } from "../../types/api";
 import * as participationService from "../../features/participation/api/participationService";
+import { PremiumBadge } from "../ui/PremiumBadge";
 import { getApiErrorMessage } from "../../utils/errors";
 
 interface ParticipationFormValues {
@@ -204,9 +204,9 @@ export function ParticipationRequestCard({
         </Button>
 
         <Box>
-          <Badge variant="light" color="grape" radius="sm">
+          <PremiumBadge tone="brand" size="xs">
             Resposta enviada por e-mail
-          </Badge>
+          </PremiumBadge>
         </Box>
       </Stack>
     </form>

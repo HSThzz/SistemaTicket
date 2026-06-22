@@ -6,7 +6,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   ActionIcon,
-  Badge,
   Box,
   Button,
   Group,
@@ -37,10 +36,7 @@ import type {
 } from "../../types/api";
 import { getApiErrorMessage } from "../../utils/errors";
 import { formatEventDate } from "../../utils/format";
-import {
-  getParticipationStatusColor,
-  getParticipationStatusLabel,
-} from "../../utils/statusLabels";
+import { ParticipationStatusBadge } from "../ui/ParticipationStatusBadge";
 
 const STATUS_FILTERS: { value: ParticipationRequestStatus; label: string }[] = [
   { value: "PENDING", label: "Pendentes" },
@@ -68,14 +64,7 @@ function RequestRow({
             <Text fw={700} lineClamp={1}>
               {request.name}
             </Text>
-            <Badge
-              variant="light"
-              color={getParticipationStatusColor(request.status)}
-              radius="sm"
-              size="sm"
-            >
-              {getParticipationStatusLabel(request.status)}
-            </Badge>
+            <ParticipationStatusBadge status={request.status} size="xs" />
           </Group>
           <Group gap="lg" wrap="wrap" c="dimmed">
             <Group gap={6} wrap="nowrap">

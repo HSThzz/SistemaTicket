@@ -7,7 +7,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import {
   Alert,
-  Badge,
   Box,
   Button,
   Container,
@@ -49,6 +48,7 @@ import {
 } from "../components/PixPaymentPanel";
 import { CardPaymentPanel } from "../components/CardPaymentPanel";
 import { PhaseBadge } from "../components/PhaseBadge";
+import { PremiumBadge } from "../components/ui/PremiumBadge";
 import { useAuth } from "../context/AuthContext";
 import { useEventCoverPreload } from "../hooks/useEventCoverPreload";
 import { useReservationPoller } from "../hooks/useReservationPoller";
@@ -758,20 +758,15 @@ export function CheckoutPage() {
         <Box className="producer-manage-hero-overlay" />
         <Container size="lg" px="md" className="checkout-hero-content">
           <Stack gap="sm" maw={640}>
-              <Badge
-                color="white"
-                c="dark"
-                variant="filled"
-                radius="md"
-                size="lg"
-                w="fit-content"
-                tt="uppercase"
-                fw={700}
+              <PremiumBadge
+                tone="glass"
+                size="md"
+                overlay
+                icon={<IconShieldCheck size={13} stroke={2.25} />}
                 className="checkout-secure-badge"
-                leftSection={<IconShieldCheck size={14} stroke={2.25} />}
               >
                 Checkout seguro
-              </Badge>
+              </PremiumBadge>
               <Title
                 order={1}
                 style={{

@@ -1,5 +1,5 @@
-import { Badge, type BadgeProps } from "@mantine/core";
 import type { ReservationPhase } from "../types/api";
+import { PremiumBadge, type PremiumBadgeTone } from "./ui/PremiumBadge";
 
 const PHASE_LABELS: Record<ReservationPhase, string> = {
   PENDING_PERSISTENCE: "Processando reserva",
@@ -11,25 +11,37 @@ const PHASE_LABELS: Record<ReservationPhase, string> = {
   NOT_FOUND: "Não encontrado",
 };
 
-const PHASE_COLORS: Record<ReservationPhase, BadgeProps["color"]> = {
-  PENDING_PERSISTENCE: "blue",
-  PENDING_PAYMENT: "blue",
-  AWAITING_PAYMENT: "yellow",
-  PAID: "green",
-  EXPIRED: "gray",
-  FAILED: "red",
-  NOT_FOUND: "gray",
-};
+/** Mapeia fase da reserva para tom visual do badge. */
+function getPhaseTone(phase: ReservationPhase): PremiumBadgeTone {
+  switch (phase) {
+    case "PENDING_PERSISTENCE":
+    case "PENDING_PAYMENT":
+      return "finished";
+    case "AWAITING_PAYMENT":
+      return "warning";
+    case "PAID":
+      return "published";
+    case "EXPIRED":
+    case "NOT_FOUND":
+      return "neutral";
+    case "FAILED":
+      return "cancelled";
+    default:
+      return "neutral";
+  }
+}
 
 interface PhaseBadgeProps {
   phase: ReservationPhase;
 }
 
 export function PhaseBadge({ phase }: PhaseBadgeProps) {
+  const isPaid = phase === "PAID";
+
   return (
-    <Badge color={PHASE_COLORS[phase]} variant="light" size="lg" radius="sm">
+    <PremiumBadge tone={getPhaseTone(phase)} size="md" dot={isPaid} pulseDot={isPaid}>
       {PHASE_LABELS[phase]}
-    </Badge>
+    </PremiumBadge>
   );
 }
 

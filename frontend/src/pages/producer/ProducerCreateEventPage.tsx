@@ -6,7 +6,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Badge,
   Box,
   Button,
   Container,
@@ -35,6 +34,8 @@ import {
 import { PageBackNav } from "../../components/account/PageBackNav";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { EventDateTimeField } from "../../components/producer/EventDateTimeField";
+import { EventStatusBadge } from "../../components/ui/EventStatusBadge";
+import { PremiumBadge } from "../../components/ui/PremiumBadge";
 import * as eventService from "../../features/catalog/api/eventService";
 import {
   eventDateToIso,
@@ -153,12 +154,10 @@ export function ProducerCreateEventPage() {
         <Container size="lg" px="md" className="producer-manage-hero-content">
           <Stack gap="sm" maw={640}>
               <Group gap="sm" wrap="wrap">
-                <Badge color="gray" variant="filled" radius="sm">
-                  Rascunho
-                </Badge>
-                <Badge color="white" c="dark" variant="filled" radius="sm">
+                <EventStatusBadge status="DRAFT" size="sm" overlay />
+                <PremiumBadge tone="glass" size="sm" overlay>
                   Novo cadastro
-                </Badge>
+                </PremiumBadge>
               </Group>
               <Title
                 order={1}

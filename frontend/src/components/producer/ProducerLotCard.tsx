@@ -1,5 +1,4 @@
 import {
-  Badge,
   Box,
   Group,
   Progress,
@@ -10,6 +9,7 @@ import {
   Title,
 } from "@mantine/core";
 import { IconTicket } from "@tabler/icons-react";
+import { LotStockBadge } from "../ui/LotStockBadge";
 import type { TicketLot } from "../../types/api";
 import { formatCurrencyFromCents } from "../../utils/format";
 
@@ -20,8 +20,6 @@ interface ProducerLotCardProps {
 export function ProducerLotCard({ lot }: ProducerLotCardProps) {
   const sold = lot.totalQuantity - lot.availableQuantity;
   const soldPct = lot.totalQuantity > 0 ? Math.round((sold / lot.totalQuantity) * 100) : 0;
-  const lowStock = lot.availableQuantity > 0 && lot.availableQuantity <= 10;
-  const soldOut = lot.availableQuantity === 0;
 
   return (
     <Box className="producer-lot-card">
@@ -39,19 +37,7 @@ export function ProducerLotCard({ lot }: ProducerLotCardProps) {
             </Text>
           </Stack>
         </Group>
-        {soldOut ? (
-          <Badge color="red" variant="light" radius="sm">
-            Esgotado
-          </Badge>
-        ) : lowStock ? (
-          <Badge color="orange" variant="light" radius="sm">
-            Acabando
-          </Badge>
-        ) : (
-          <Badge color="green" variant="light" radius="sm">
-            Disponível
-          </Badge>
-        )}
+        <LotStockBadge availableQuantity={lot.availableQuantity} />
       </Group>
 
       <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="md" mt="lg">
@@ -67,30 +53,30 @@ export function ProducerLotCard({ lot }: ProducerLotCardProps) {
           <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb={4}>
             Vendidos
           </Text>
-          <Text fw={700} size="lg" c="teal">
+          <Text fw={700} size="lg">
             {sold}
           </Text>
         </Box>
         <Box className="producer-lot-stat">
           <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb={4}>
-            Disponíveis
+            Restantes
           </Text>
-          <Text fw={700} size="lg">
+          <Text fw={700} size="lg" c={lot.availableQuantity === 0 ? "red" : undefined}>
             {lot.availableQuantity}
           </Text>
         </Box>
       </SimpleGrid>
 
-      <Stack gap={8} mt="lg">
+      <Stack gap={6} mt="lg">
         <Group justify="space-between">
-          <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-            Ocupação do lote
+          <Text size="xs" c="dimmed" fw={600}>
+            Ocupação
           </Text>
-          <Text size="sm" fw={600}>
+          <Text size="xs" fw={700}>
             {soldPct}%
           </Text>
         </Group>
-        <Progress value={soldPct} size="lg" radius="xl" color="brand" className="producer-occupancy-progress" />
+        <Progress value={soldPct} radius="xl" size="sm" color="brand" />
       </Stack>
     </Box>
   );
