@@ -1,5 +1,5 @@
 /**
- * @file Card premium de pedido com PIX embutido para status pendente.
+ * @file Card premium de pedido com direcionamento ao checkout quando pendente.
  * @module components/OrderCard
  */
 
@@ -18,9 +18,7 @@ import {
   ThemeIcon,
   Title,
 } from "@mantine/core";
-import { useMediaQuery } from "@mantine/hooks";
 import { IconClock, IconReceipt, IconTicket } from "@tabler/icons-react";
-import { PixPaymentPanel } from "./PixPaymentPanel";
 import type { OrderListItem } from "../types/api";
 import { formatCurrencyFromCents } from "../utils/format";
 import { getOrderStatusColor, getOrderStatusLabel } from "../utils/statusLabels";
@@ -64,13 +62,11 @@ function getOrderStubLabel(status: string): string {
 }
 
 /**
- * Exibe resumo do pedido, PIX quando já gerado e link para ingressos se pago.
+ * Exibe resumo do pedido e link para checkout ou ingressos conforme o status.
  */
 export function OrderCard({ order }: OrderCardProps) {
   const isPaid = order.status === "PAID";
   const isPending = order.status === "PENDING";
-  const isMobile = useMediaQuery("(max-width: 48em)");
-  const payment = order.payment;
   const checkoutUrl = order.eventId
     ? `/eventos/${order.eventId}/comprar?reservation=${order.reservationId}`
     : null;
@@ -121,38 +117,29 @@ export function OrderCard({ order }: OrderCardProps) {
           </Stack>
 
           {isPending ? (
-            <Stack gap="sm" className="order-card-pix-section">
-              {payment ? (
-                <PixPaymentPanel
-                  pixCopyPaste={payment.pixCopyPaste}
-                  amountCents={payment.amountCents}
-                  expiresAt={payment.expiresAt}
-                  compact={isMobile ?? true}
-                />
-              ) : (
-                <Alert
-                  color="orange"
-                  variant="light"
-                  radius="lg"
-                  icon={<IconClock size={18} />}
-                  title="Aguardando pagamento"
-                >
-                  <Text size="sm" style={{ lineHeight: 1.55 }}>
-                    Escolha PIX ou cartão no checkout para concluir esta compra.
-                  </Text>
-                </Alert>
-              )}
+            <Stack gap="sm" className="order-card-pending-section">
+              <Alert
+                color="orange"
+                variant="light"
+                radius="lg"
+                icon={<IconClock size={18} />}
+                title="Aguardando pagamento"
+              >
+                <Text size="sm" style={{ lineHeight: 1.55 }}>
+                  Escolha PIX ou cartão no checkout para concluir esta compra.
+                </Text>
+              </Alert>
 
               {checkoutUrl ? (
                 <Button
                   component={Link}
                   to={checkoutUrl}
-                  variant={payment ? "light" : "filled"}
+                  variant="filled"
                   color="brand"
                   radius="xl"
                   fullWidth
                 >
-                  {payment ? "Voltar ao checkout" : "Continuar no checkout"}
+                  Continuar no checkout
                 </Button>
               ) : null}
             </Stack>
