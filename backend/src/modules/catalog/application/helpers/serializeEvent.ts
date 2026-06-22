@@ -5,7 +5,12 @@
 
 import type { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
 
-export function serializeEvent(event: Event) {
+export interface SerializeEventOptions {
+  /** Solicitações de participação pendentes (painel do produtor). */
+  pendingParticipationCount?: number;
+}
+
+export function serializeEvent(event: Event, options?: SerializeEventOptions) {
   return {
     id: event.id,
     producerId: event.producerId,
@@ -24,5 +29,8 @@ export function serializeEvent(event: Event) {
       totalQuantity: lot.totalQuantity,
       availableQuantity: lot.availableQuantity,
     })),
+    ...(options?.pendingParticipationCount !== undefined
+      ? { pendingParticipationCount: options.pendingParticipationCount }
+      : {}),
   };
 }

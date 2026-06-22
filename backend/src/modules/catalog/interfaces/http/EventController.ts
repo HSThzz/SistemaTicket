@@ -14,6 +14,7 @@ import {
   EventAccessDeniedError,
   EventError,
   EventNotFoundError,
+  EventTypeChangeNotAllowedError,
 } from "../../domain/errors/EventError";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
@@ -27,6 +28,7 @@ import { updateEvent } from "../../application/services/updateEvent";
 import { deleteEvent } from "../../application/services/deleteEvent";
 import type { EventActor } from "../../application/types";
 import { serializeEvent } from "../../application/helpers/serializeEvent";
+import { serializeManagedEvent, serializeManagedEvents } from "../../application/helpers/serializeManagedEvents";
 
 const CONTEXT = "EventController";
 const logger = Logger.getInstance();
@@ -78,7 +80,7 @@ export class EventController {
 
     const events = await listManagedEvents(actor);
     res.status(200).json({
-      events: events.map((event) => serializeEvent(event)),
+      events: await serializeManagedEvents(events),
     });
   }
 
@@ -208,7 +210,7 @@ export class EventController {
         actor,
       );
 
-      res.status(200).json({ event: serializeEvent(updated) });
+      res.status(200).json({ event: await serializeManagedEvent(updated) });
     } catch (error) {
       this.handleError(res, error, "update", { eventId });
     }
@@ -307,6 +309,11 @@ export class EventController {
 
     if (error instanceof EventAccessDeniedError) {
       res.status(403).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof EventTypeChangeNotAllowedError) {
+      res.status(400).json({ error: error.message, code: error.code });
       return;
     }
 

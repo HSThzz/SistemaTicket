@@ -204,6 +204,9 @@ export function ProducerManageEventPage() {
     [event?.status],
   );
 
+  const canChangeEventType = event?.status === "DRAFT";
+  const pendingParticipationCount = event?.pendingParticipationCount ?? 0;
+
   const statusConfirmation = pendingStatus
     ? getEventStatusConfirmationCopy(pendingStatus)
     : null;
@@ -243,6 +246,7 @@ export function ProducerManageEventPage() {
     const data = await eventService.getManagedEvent(eventId);
     if (data) {
       setEvent(data);
+      eventForm.setFieldValue("type", data.type ?? "PUBLIC");
     }
   };
 
@@ -410,6 +414,13 @@ export function ProducerManageEventPage() {
                     Privado
                   </Badge>
                 ) : null}
+                {pendingParticipationCount > 0 ? (
+                  <Badge color="yellow" variant="filled" radius="sm">
+                    {pendingParticipationCount} solicitação
+                    {pendingParticipationCount === 1 ? "" : "ões"} pendente
+                    {pendingParticipationCount === 1 ? "" : "s"}
+                  </Badge>
+                ) : null}
                 <Badge color="white" c="dark" variant="filled" radius="sm">
                   {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}
                 </Badge>
@@ -529,7 +540,12 @@ export function ProducerManageEventPage() {
                         allowDeselect={false}
                         comboboxProps={{ withinPortal: true }}
                         data={[...EVENT_TYPE_OPTIONS]}
-                        description="Eventos privados exigem aprovação do produtor antes da compra."
+                        disabled={!canChangeEventType}
+                        description={
+                          canChangeEventType
+                            ? "Eventos privados exigem aprovação do produtor antes da compra. Altere apenas em rascunho, sem solicitações ou vendas."
+                            : "O tipo só pode ser alterado enquanto o evento estiver em rascunho, sem solicitações de participação e sem vendas."
+                        }
                         leftSection={<IconLock size={16} />}
                         {...eventForm.getInputProps("type")}
                       />
@@ -657,7 +673,10 @@ export function ProducerManageEventPage() {
             </Stack>
 
             {event.type === "PRIVATE" ? (
-              <ProducerParticipationPanel eventId={event.id} />
+              <ProducerParticipationPanel
+                eventId={event.id}
+                onReviewComplete={() => void reloadEvent()}
+              />
             ) : null}
           </Stack>
         </Container>

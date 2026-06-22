@@ -58,3 +58,11 @@ export class EventCannotDeleteError extends EventError {
     this.name = "EventCannotDeleteError";
   }
 }
+
+/** Alteração de tipo (PUBLIC/PRIVATE) não permitida no estado atual do evento. */
+export class EventTypeChangeNotAllowedError extends EventError {
+  constructor(message: string, code: string) {
+    super(message, code);
+    this.name = "EventTypeChangeNotAllowedError";
+  }
+}

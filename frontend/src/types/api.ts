@@ -50,6 +50,8 @@ export interface Event {
   status: EventStatus | string;
   type: EventType | string;
   ticketLots: TicketLot[];
+  /** Solicitações pendentes (resposta do painel do produtor). */
+  pendingParticipationCount?: number;
 }
 
 /** Status de uma solicitação de participação em evento privado. */

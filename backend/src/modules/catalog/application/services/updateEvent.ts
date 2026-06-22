@@ -12,6 +12,7 @@ import {
 import { assertCanManageEvent } from "../helpers/assertCanManageEvent";
 import { assertEventIsActive } from "../helpers/assertEventIsActive";
 import { assertValidEventStatusTransition } from "../helpers/assertValidEventStatusTransition";
+import { assertValidEventTypeChange } from "../helpers/assertValidEventTypeChange";
 import { loadEventWithLots } from "../helpers/loadEventWithLots";
 import { normalizeImageUrl } from "../helpers/normalizeImageUrl";
 import { findOneEventById } from "../queries/findOneEventById";
@@ -54,6 +55,10 @@ export async function updateEvent(
 
   if (changes.status !== undefined) {
     assertValidEventStatusTransition(event.status, changes.status);
+  }
+
+  if (changes.type !== undefined) {
+    await assertValidEventTypeChange(event, changes.type);
   }
 
   const saved = await updateEventCommand(event, changes);

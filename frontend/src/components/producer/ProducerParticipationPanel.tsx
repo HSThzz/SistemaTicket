@@ -129,7 +129,13 @@ function RequestRow({
  *
  * @param props.eventId - Identificador do evento gerenciado.
  */
-export function ProducerParticipationPanel({ eventId }: { eventId: string }) {
+export function ProducerParticipationPanel({
+  eventId,
+  onReviewComplete,
+}: {
+  eventId: string;
+  onReviewComplete?: () => void;
+}) {
   const [statusFilter, setStatusFilter] =
     useState<ParticipationRequestStatus>("PENDING");
   const [requests, setRequests] = useState<ParticipationRequest[]>([]);
@@ -177,6 +183,8 @@ export function ProducerParticipationPanel({ eventId }: { eventId: string }) {
         color: decision === "APPROVE" ? "green" : "orange",
         icon: <IconCheck size={18} />,
       });
+
+      onReviewComplete?.();
     } catch (err) {
       notifications.show({
         title: "Não foi possível concluir",

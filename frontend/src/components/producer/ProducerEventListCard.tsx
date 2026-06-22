@@ -63,6 +63,12 @@ export function ProducerEventListCard({
               {isPrivateEvent(event) ? (
                 <EventPrivateBadge size="xs" variant="light" />
               ) : null}
+              {(event.pendingParticipationCount ?? 0) > 0 ? (
+                <Badge variant="filled" color="yellow" radius="sm" size="sm">
+                  {event.pendingParticipationCount} pendente
+                  {(event.pendingParticipationCount ?? 0) === 1 ? "" : "s"}
+                </Badge>
+              ) : null}
               {hasLots ? (
                 <Badge variant="light" color="gray" radius="sm" size="sm">
                   {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}
