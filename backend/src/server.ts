@@ -25,6 +25,7 @@ import { StockReconciliationWorker } from "./modules/sales/infrastructure/worker
 import { PaymentProcessingWorker } from "./modules/payment/infrastructure/workers/PaymentProcessingWorker";
 import { TicketDeliveryWorker } from "./modules/notifications/infrastructure/workers/TicketDeliveryWorker";
 import { ContactFormWorker } from "./modules/leads/infrastructure/workers/ContactFormWorker";
+import { ParticipationNotificationWorker } from "./modules/participation/infrastructure/workers/ParticipationNotificationWorker";
 import { configureEmailProviders } from "./modules/notifications/infrastructure/email/configureEmailProviders";
 
 const logger = Logger.getInstance();
@@ -36,6 +37,7 @@ let stockReconciliationWorker: StockReconciliationWorker | null = null;
 let paymentProcessingWorker: PaymentProcessingWorker | null = null;
 let ticketDeliveryWorker: TicketDeliveryWorker | null = null;
 let contactFormWorker: ContactFormWorker | null = null;
+let participationNotificationWorker: ParticipationNotificationWorker | null = null;
 
 /**
  * Inicializa dependências (PostgreSQL, Redis), workers de reserva e sobe o HTTP server.
@@ -155,6 +157,17 @@ async function bootstrap(): Promise<void> {
     process.exit(1);
   }
 
+  participationNotificationWorker = new ParticipationNotificationWorker();
+
+  try {
+    await participationNotificationWorker.start();
+  } catch (error) {
+    logger.error(CONTEXT, "Failed to start participation notification worker", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    process.exit(1);
+  }
+
   const app = createApp();
 
   app.listen(env.port, () => {
@@ -195,6 +208,10 @@ async function shutdown(): Promise<void> {
   await contactFormWorker?.stop();
 
   setContactFormWorker(null);
+
+  await participationNotificationWorker?.stop();
+
+  participationNotificationWorker = null;
 
   await closeBullMQQueues();
 

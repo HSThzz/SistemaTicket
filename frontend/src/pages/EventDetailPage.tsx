@@ -25,9 +25,11 @@ import {
   IconAlertCircle,
   IconBolt,
   IconCalendar,
+  IconCircleCheck,
   IconClock,
   IconHeart,
   IconHeartFilled,
+  IconLock,
   IconMapPin,
   IconQrcode,
   IconShieldCheck,
@@ -39,10 +41,12 @@ import { PageBackNav } from "../components/account/PageBackNav";
 import { PremiumPaper } from "../components/account/PremiumPaper";
 import { PageLoader } from "../components/account/PageLoader";
 import { StatCard } from "../components/account/StatCard";
+import { ParticipationRequestCard } from "../components/participation/ParticipationRequestCard";
 import { useAuth } from "../context/AuthContext";
 import { useEventFavoriteAction } from "../hooks/useEventFavoriteAction";
 import * as eventService from "../features/catalog/api/eventService";
-import type { Event, TicketLot } from "../types/api";
+import * as participationService from "../features/participation/api/participationService";
+import type { Event, ParticipationRequest, TicketLot } from "../types/api";
 import { useEventCoverPreload } from "../hooks/useEventCoverPreload";
 import {
   CATEGORY_LABELS,
@@ -136,8 +140,9 @@ function LotOfferCard({
 export function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
+  const [participation, setParticipation] = useState<ParticipationRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { liked, handleToggleFavorite } = useEventFavoriteAction({
@@ -178,6 +183,34 @@ export function EventDetailPage() {
     };
   }, [eventId]);
 
+  const isPrivate = event?.type === "PRIVATE";
+
+  useEffect(() => {
+    if (!eventId || !isPrivate || !isAuthenticated) {
+      setParticipation(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    participationService
+      .getMyParticipationRequest(eventId)
+      .then((data) => {
+        if (!cancelled) {
+          setParticipation(data);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setParticipation(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId, isPrivate, isAuthenticated]);
+
   useEventCoverPreload(getEventCoverImageUrl(event ?? {}));
 
   if (loading) {
@@ -203,6 +236,9 @@ export function EventDetailPage() {
   const [glowColor] = getEventGradient(event.id);
   const soldOut = totalAvailable === 0;
   const lowStock = totalAvailable > 0 && totalAvailable <= 20;
+  const eventIsPrivate = event.type === "PRIVATE";
+  const isApproved = participation?.status === "APPROVED";
+  const canBuy = !eventIsPrivate || isApproved;
 
   const handleBuy = (lotId: string) => {
     if (!isAuthenticated) {
@@ -246,6 +282,16 @@ export function EventDetailPage() {
                 <Badge color="white" c="dark" variant="filled" radius="sm">
                   {CATEGORY_LABELS[category]}
                 </Badge>
+                {eventIsPrivate ? (
+                  <Badge
+                    color="grape"
+                    variant="filled"
+                    radius="sm"
+                    leftSection={<IconLock size={12} />}
+                  >
+                    Privado
+                  </Badge>
+                ) : null}
                 {isEventSoon(event) ? (
                   <Badge color="orange" variant="filled" radius="sm">
                     Em breve
@@ -410,9 +456,13 @@ export function EventDetailPage() {
                 <PremiumPaper p="xl" className="event-detail-tickets-panel">
                   <Stack gap="lg">
                     <Stack gap={4}>
-                      <Title order={3}>Ingressos</Title>
+                      <Title order={3}>
+                        {eventIsPrivate && !canBuy ? "Participação" : "Ingressos"}
+                      </Title>
                       <Text size="sm" c="dimmed">
-                        Escolha o lote ideal e finalize com PIX em minutos.
+                        {eventIsPrivate && !canBuy
+                          ? "Evento privado: sua participação passa pela aprovação do produtor."
+                          : "Escolha o lote ideal e finalize com PIX em minutos."}
                       </Text>
                     </Stack>
 
@@ -440,41 +490,66 @@ export function EventDetailPage() {
 
                     <Divider />
 
-                    {event.ticketLots.length === 0 ? (
-                      <Box className="empty-state-card" p="xl" style={{ borderRadius: "var(--mantine-radius-lg)" }}>
-                        <Stack gap="xs" align="center">
-                          <ThemeIcon size={48} radius="xl" variant="light" color="gray">
-                            <IconTicket size={24} />
-                          </ThemeIcon>
-                          <Text fw={600} ta="center">
-                            Lotes em breve
-                          </Text>
-                          <Text size="sm" c="dimmed" ta="center">
-                            Este evento ainda não possui lotes de ingressos publicados.
-                          </Text>
-                        </Stack>
-                      </Box>
+                    {eventIsPrivate && !canBuy ? (
+                      <ParticipationRequestCard
+                        event={event}
+                        isAuthenticated={isAuthenticated}
+                        user={user}
+                        request={participation}
+                        onSubmitted={setParticipation}
+                      />
                     ) : (
-                      <Stack gap="sm">
-                        {event.ticketLots.map((lot) => (
-                          <LotOfferCard
-                            key={lot.id}
-                            lot={lot}
-                            isAuthenticated={isAuthenticated}
-                            onBuy={handleBuy}
-                          />
-                        ))}
-                      </Stack>
-                    )}
+                      <>
+                        {isApproved ? (
+                          <Alert
+                            color="green"
+                            variant="light"
+                            radius="lg"
+                            icon={<IconCircleCheck size={18} />}
+                            title="Participação aprovada"
+                          >
+                            Você foi aprovado para este evento. Garanta seu ingresso
+                            abaixo.
+                          </Alert>
+                        ) : null}
 
-                    {!isAuthenticated ? (
-                      <Text size="sm" c="dimmed" ta="center">
-                        <Link to="/login" state={{ from: `/eventos/${event.id}` }}>
-                          Faça login
-                        </Link>{" "}
-                        ou <Link to="/cadastro">cadastre-se</Link> para reservar.
-                      </Text>
-                    ) : null}
+                        {event.ticketLots.length === 0 ? (
+                          <Box className="empty-state-card" p="xl" style={{ borderRadius: "var(--mantine-radius-lg)" }}>
+                            <Stack gap="xs" align="center">
+                              <ThemeIcon size={48} radius="xl" variant="light" color="gray">
+                                <IconTicket size={24} />
+                              </ThemeIcon>
+                              <Text fw={600} ta="center">
+                                Lotes em breve
+                              </Text>
+                              <Text size="sm" c="dimmed" ta="center">
+                                Este evento ainda não possui lotes de ingressos publicados.
+                              </Text>
+                            </Stack>
+                          </Box>
+                        ) : (
+                          <Stack gap="sm">
+                            {event.ticketLots.map((lot) => (
+                              <LotOfferCard
+                                key={lot.id}
+                                lot={lot}
+                                isAuthenticated={isAuthenticated}
+                                onBuy={handleBuy}
+                              />
+                            ))}
+                          </Stack>
+                        )}
+
+                        {!isAuthenticated && !eventIsPrivate ? (
+                          <Text size="sm" c="dimmed" ta="center">
+                            <Link to="/login" state={{ from: `/eventos/${event.id}` }}>
+                              Faça login
+                            </Link>{" "}
+                            ou <Link to="/cadastro">cadastre-se</Link> para reservar.
+                          </Text>
+                        ) : null}
+                      </>
+                    )}
                   </Stack>
                 </PremiumPaper>
               </AnimatedSection>

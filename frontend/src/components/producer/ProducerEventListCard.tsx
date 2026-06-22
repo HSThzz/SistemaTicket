@@ -8,6 +8,10 @@ import {
   IconTicket,
   IconTrash,
 } from "@tabler/icons-react";
+import {
+  EventPrivateBadge,
+  isPrivateEvent,
+} from "../events/EventPrivateBadge";
 import type { Event } from "../../types/api";
 import { extractCity, getEventCoverStyle, getTotalAvailable } from "../../utils/eventVisuals";
 import { formatEventDateOnly, formatEventTimeOnly } from "../../utils/format";
@@ -56,6 +60,9 @@ export function ProducerEventListCard({
               >
                 {getEventStatusLabel(event.status)}
               </Badge>
+              {isPrivateEvent(event) ? (
+                <EventPrivateBadge size="xs" variant="light" />
+              ) : null}
               {hasLots ? (
                 <Badge variant="light" color="gray" radius="sm" size="sm">
                   {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}

@@ -20,6 +20,7 @@ import {
   reviewParticipationRequestSchema,
   type ReviewParticipationRequestInputSchema,
 } from "../../validators/schema/reviewParticipationRequestSchema";
+import { enqueueParticipationApprovedNotification } from "../commands/enqueueParticipationApprovedNotification";
 import { reviewParticipationRequest as reviewParticipationRequestCommand } from "../commands/reviewParticipationRequest";
 import { assertCanManageEventParticipation } from "../helpers/assertCanManageEventParticipation";
 import { mapReviewDecisionToStatus } from "../helpers/mapReviewDecisionToStatus";
@@ -68,6 +69,16 @@ export async function reviewParticipationRequest(
     status: saved.status,
     reviewedBy: actor.userId,
   });
+
+  if (saved.status === ParticipationRequestStatus.APPROVED) {
+    await enqueueParticipationApprovedNotification({
+      requestId: saved.id,
+      eventId: validEventId,
+      eventTitle: event.title,
+      participantName: saved.name,
+      participantEmail: saved.email,
+    });
+  }
 
   return saved;
 }

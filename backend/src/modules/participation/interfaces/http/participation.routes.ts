@@ -9,6 +9,7 @@ import {
   participationManagementMiddlewares,
   participationSubmitMiddlewares,
 } from "./ParticipationController";
+import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
 import {
   validateBody,
   validateParams,
@@ -30,6 +31,13 @@ router.post(
   validateParams(participationEventIdParamsSchema),
   validateBody(submitParticipationRequestBodySchema),
   (req, res) => void participationController.submit(req, res),
+);
+
+router.get(
+  "/:eventId/participation-requests/me",
+  authMiddleware,
+  validateParams(participationEventIdParamsSchema),
+  (req, res) => void participationController.mine(req, res),
 );
 
 router.get(

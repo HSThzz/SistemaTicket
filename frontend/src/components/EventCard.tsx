@@ -6,6 +6,10 @@
 import { Link } from "react-router-dom";
 import { Badge, Box, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { IconCalendar, IconMapPin, IconTicket } from "@tabler/icons-react";
+import {
+  EventPrivateBadge,
+  isPrivateEvent,
+} from "./events/EventPrivateBadge";
 import type { Event } from "../types/api";
 import {
   extractCity,
@@ -50,9 +54,12 @@ export function EventCard({ event, variant = "default" }: EventCardProps) {
             style={{ ...getEventCoverStyle(event), width: 120, flexShrink: 0 }}
           />
           <Stack gap={4} justify="center" flex={1}>
-            <Text fw={700} lineClamp={2}>
-              {event.title}
-            </Text>
+            <Group gap="xs" wrap="wrap" align="center">
+              <Text fw={700} lineClamp={2} flex={1}>
+                {event.title}
+              </Text>
+              {isPrivateEvent(event) ? <EventPrivateBadge size="xs" variant="light" /> : null}
+            </Group>
             <Group gap={6} c="dimmed">
               <IconMapPin size={14} />
               <Text size="xs" lineClamp={1}>
@@ -86,14 +93,15 @@ export function EventCard({ event, variant = "default" }: EventCardProps) {
       style={{ textDecoration: "none", color: "inherit", overflow: "hidden" }}
     >
       <Box className="event-card-cover" style={getEventCoverStyle(event)}>
-        <Group justify="space-between" p="sm" align="flex-start">
-          {lowStock ? (
-            <Badge color="orange" variant="filled" size="sm">
-              Acabando
-            </Badge>
-          ) : (
-            <Box />
-          )}
+        <Group justify="space-between" p="sm" align="flex-start" wrap="wrap" gap="xs">
+          <Group gap="xs" wrap="wrap">
+            {isPrivateEvent(event) ? <EventPrivateBadge size="sm" /> : null}
+            {lowStock ? (
+              <Badge color="orange" variant="filled" size="sm">
+                Acabando
+              </Badge>
+            ) : null}
+          </Group>
           {soldOut ? (
             <Badge color="red" variant="filled" size="sm">
               Esgotado

@@ -14,6 +14,7 @@ export interface CreateEventInput {
   location: string;
   imageUrl?: string | null;
   status?: string;
+  type?: string;
 }
 
 /** Campos opcionais para atualização parcial de evento. */
@@ -24,6 +25,7 @@ export interface UpdateEventInput {
   location?: string;
   imageUrl?: string | null;
   status?: string;
+  type?: string;
 }
 
 /** Payload para criação de lote de ingressos em um evento. */

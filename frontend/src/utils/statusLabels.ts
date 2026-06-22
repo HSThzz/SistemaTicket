@@ -86,6 +86,58 @@ export function getEventStatusColor(status: string): BadgeProps["color"] {
 }
 
 /**
+ * Retorna o rótulo em português do tipo de evento.
+ *
+ * @param type - Código do tipo (`PUBLIC` ou `PRIVATE`).
+ */
+export function getEventTypeLabel(type: string): string {
+  switch (type) {
+    case "PUBLIC":
+      return "Público";
+    case "PRIVATE":
+      return "Privado";
+    default:
+      return type;
+  }
+}
+
+/**
+ * Retorna o rótulo em português do status de uma solicitação de participação.
+ *
+ * @param status - Código de status (`PENDING`, `APPROVED`, `REJECTED`).
+ */
+export function getParticipationStatusLabel(status: string): string {
+  switch (status) {
+    case "PENDING":
+      return "Pendente";
+    case "APPROVED":
+      return "Aprovada";
+    case "REJECTED":
+      return "Recusada";
+    default:
+      return status;
+  }
+}
+
+/**
+ * Retorna a cor Mantine do badge conforme o status da solicitação de participação.
+ *
+ * @param status - Código de status da solicitação.
+ */
+export function getParticipationStatusColor(status: string): BadgeProps["color"] {
+  switch (status) {
+    case "PENDING":
+      return "yellow";
+    case "APPROVED":
+      return "green";
+    case "REJECTED":
+      return "red";
+    default:
+      return "gray";
+  }
+}
+
+/**
  * Retorna o rótulo em português do status de um ingresso.
  *
  * @param status - Código de status do ingresso (ex.: `ACTIVE`, `USED`).

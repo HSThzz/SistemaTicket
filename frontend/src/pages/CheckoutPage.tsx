@@ -61,7 +61,7 @@ import {
   preloadEventCoverImage,
 } from "../utils/eventVisuals";
 import { formatCurrencyFromCents, formatEventDateOnly, formatEventTimeOnly } from "../utils/format";
-import { getApiErrorMessage } from "../utils/errors";
+import { getApiErrorCode, getApiErrorMessage } from "../utils/errors";
 import {
   getBillableQuantity,
   getQuantityValidationMessage,
@@ -592,10 +592,15 @@ export function CheckoutPage() {
         icon: <IconCheck size={18} />,
       });
     } catch (error) {
+      const isParticipationBlocked =
+        getApiErrorCode(error) === "PARTICIPATION_NOT_APPROVED";
+
       notifications.show({
-        title: "Não foi possível reservar",
-        message: getApiErrorMessage(error, "Tente novamente."),
-        color: "red",
+        title: isParticipationBlocked ? "Participação pendente" : "Não foi possível reservar",
+        message: isParticipationBlocked
+          ? "Este evento é privado. Sua solicitação de participação precisa ser aprovada antes da compra."
+          : getApiErrorMessage(error, "Tente novamente."),
+        color: isParticipationBlocked ? "orange" : "red",
         icon: <IconX size={18} />,
       });
     } finally {

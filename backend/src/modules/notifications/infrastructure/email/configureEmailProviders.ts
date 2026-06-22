@@ -6,6 +6,7 @@
 import { env } from "../../../../shared/infrastructure/config/env";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { setContactFormEmailProvider } from "../../../leads/application/services/sendContactFormNotification";
+import { setParticipationEmailProvider } from "../../../participation/application/services/sendParticipationApprovedNotification";
 import { setEmailProvider } from "../../application/services/deliverTicketsEmail";
 import { ResendEmailProvider } from "./ResendEmailProvider";
 import { StubEmailProvider } from "./StubEmailProvider";
@@ -23,6 +24,7 @@ export function configureEmailProviders(): void {
     const provider = new ResendEmailProvider(apiKey, env.resend.fromEmail);
     setEmailProvider(provider);
     setContactFormEmailProvider(provider);
+    setParticipationEmailProvider(provider);
     logger.info(CONTEXT, "Resend email provider configured", {
       from: env.resend.fromEmail,
     });
@@ -32,5 +34,6 @@ export function configureEmailProviders(): void {
   const stub = new StubEmailProvider();
   setEmailProvider(stub);
   setContactFormEmailProvider(stub);
+  setParticipationEmailProvider(stub);
   logger.warn(CONTEXT, "RESEND_API_KEY not set — using stub email provider");
 }

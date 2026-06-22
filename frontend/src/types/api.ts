@@ -34,6 +34,9 @@ export interface TicketLot {
 /** Status de publicação e ciclo de vida de um evento. */
 export type EventStatus = "DRAFT" | "PUBLISHED" | "CANCELLED" | "FINISHED";
 
+/** Visibilidade do evento e fluxo de aquisição de ingressos. */
+export type EventType = "PUBLIC" | "PRIVATE";
+
 /** Evento com metadados, local, data e lotes associados. */
 export interface Event {
   id: string;
@@ -45,7 +48,25 @@ export interface Event {
   imageUrl: string | null;
   artists?: string[];
   status: EventStatus | string;
+  type: EventType | string;
   ticketLots: TicketLot[];
+}
+
+/** Status de uma solicitação de participação em evento privado. */
+export type ParticipationRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+/** Solicitação de participação em um evento privado. */
+export interface ParticipationRequest {
+  id: string;
+  eventId: string;
+  userId: string | null;
+  name: string;
+  email: string;
+  phone: string | null;
+  status: ParticipationRequestStatus | string;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
 }
 
 /**

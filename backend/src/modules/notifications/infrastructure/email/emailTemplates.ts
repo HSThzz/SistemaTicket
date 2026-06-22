@@ -5,6 +5,7 @@
 
 import { env } from "../../../../shared/infrastructure/config/env";
 import type { ContactFormJobData } from "../../../leads/application/types/contactFormJob";
+import type { ParticipationApprovedJobData } from "../../../participation/application/types/participationApprovedJob";
 import type { TicketDeliveryJobData } from "../../application/types/ticketDeliveryJob";
 import { EMAIL_BRAND } from "./emailBrand";
 import { renderEmailDataList, renderEmailInfoCard, renderEmailInfoCardGroup, renderEmailLayout } from "./renderEmailLayout";
@@ -132,5 +133,33 @@ export function buildProducerLeadInternalEmail(data: ContactFormJobData): string
       ${renderEmailDataList(fields)}
     `,
     footerNote: "Lead salvo no banco. Responda o contato pelo canal comercial da equipe.",
+  });
+}
+
+export function buildParticipationApprovedEmail(
+  data: ParticipationApprovedJobData,
+): string {
+  const eventUrl = `${getPublicAppUrl()}/eventos/${data.eventId}`;
+
+  return renderEmailLayout({
+    preheader: `Sua participação em ${data.eventTitle} foi aprovada. Garanta seu ingresso.`,
+    eyebrow: "Evento privado",
+    title: "Participação aprovada",
+    bodyHtml: `
+      ${bodyParagraph(`Olá, <font color="${EMAIL_BRAND.text}"><b>${escapeHtml(data.participantName)}</b></font>.`)}
+      ${bodyParagraph(
+        `Boas notícias: o produtor aprovou sua solicitação para participar de <font color="${EMAIL_BRAND.text}"><b>${escapeHtml(data.eventTitle)}</b></font>.`,
+      )}
+      ${bodyParagraph(
+        "Agora você pode acessar a página do evento e concluir a compra do ingresso pelo fluxo normal de checkout.",
+      )}
+      ${renderEmailInfoCard("Evento", escapeHtml(data.eventTitle))}
+    `,
+    cta: {
+      label: "Comprar ingresso",
+      href: eventUrl,
+    },
+    footerNote:
+      "Este link leva à página pública do evento. Faça login com a mesma conta usada na solicitação para reservar.",
   });
 }

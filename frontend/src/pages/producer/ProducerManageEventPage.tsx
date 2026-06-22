@@ -31,6 +31,7 @@ import {
   IconCalendar,
   IconCheck,
   IconExternalLink,
+  IconLock,
   IconMapPin,
   IconPhoto,
   IconPlus,
@@ -45,6 +46,7 @@ import { PageLoader } from "../../components/account/PageLoader";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { StatCard } from "../../components/account/StatCard";
 import { ProducerLotCard } from "../../components/producer/ProducerLotCard";
+import { ProducerParticipationPanel } from "../../components/producer/ProducerParticipationPanel";
 import { EventDateTimeField } from "../../components/producer/EventDateTimeField";
 import * as eventService from "../../features/catalog/api/eventService";
 import type { Event, EventStatus } from "../../types/api";
@@ -68,7 +70,13 @@ interface EventFormValues {
   location: string;
   imageUrl: string;
   status: string;
+  type: string;
 }
+
+const EVENT_TYPE_OPTIONS = [
+  { value: "PUBLIC", label: "Público — venda direta de ingressos" },
+  { value: "PRIVATE", label: "Privado — participação sob aprovação" },
+] as const;
 
 interface LotFormValues {
   name: string;
@@ -101,6 +109,7 @@ export function ProducerManageEventPage() {
       location: "",
       imageUrl: "",
       status: "DRAFT",
+      type: "PUBLIC",
     },
     validate: {
       date: (value) => validateEventDate(value, { allowPast: true }),
@@ -149,6 +158,7 @@ export function ProducerManageEventPage() {
           location: data.location,
           imageUrl: data.imageUrl ?? "",
           status: data.status,
+          type: data.type ?? "PUBLIC",
         });
       })
       .catch((err) => {
@@ -251,6 +261,7 @@ export function ProducerManageEventPage() {
         location: values.location.trim(),
         imageUrl: values.imageUrl.trim() || null,
         status: values.status as EventStatus,
+        type: values.type,
       });
 
       setEvent(updated);
@@ -389,6 +400,16 @@ export function ProducerManageEventPage() {
                 <Badge color={getEventStatusColor(event.status)} variant="filled" radius="sm">
                   {getEventStatusLabel(event.status)}
                 </Badge>
+                {event.type === "PRIVATE" ? (
+                  <Badge
+                    color="grape"
+                    variant="filled"
+                    radius="sm"
+                    leftSection={<IconLock size={12} />}
+                  >
+                    Privado
+                  </Badge>
+                ) : null}
                 <Badge color="white" c="dark" variant="filled" radius="sm">
                   {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}
                 </Badge>
@@ -502,6 +523,16 @@ export function ProducerManageEventPage() {
                         description="Horário local do evento."
                       />
                       <TextInput label="Local" radius="md" {...eventForm.getInputProps("location")} />
+                      <Select
+                        label="Tipo de evento"
+                        radius="md"
+                        allowDeselect={false}
+                        comboboxProps={{ withinPortal: true }}
+                        data={[...EVENT_TYPE_OPTIONS]}
+                        description="Eventos privados exigem aprovação do produtor antes da compra."
+                        leftSection={<IconLock size={16} />}
+                        {...eventForm.getInputProps("type")}
+                      />
                       <TextInput
                         label="URL da imagem de capa"
                         placeholder="https://images.unsplash.com/..."
@@ -624,6 +655,10 @@ export function ProducerManageEventPage() {
                 </Stack>
               )}
             </Stack>
+
+            {event.type === "PRIVATE" ? (
+              <ProducerParticipationPanel eventId={event.id} />
+            ) : null}
           </Stack>
         </Container>
       </Box>

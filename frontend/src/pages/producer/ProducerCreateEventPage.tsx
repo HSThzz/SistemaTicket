@@ -12,6 +12,7 @@ import {
   Container,
   Grid,
   Group,
+  Select,
   Stack,
   Text,
   Textarea,
@@ -24,6 +25,7 @@ import { notifications } from "@mantine/notifications";
 import {
   IconCalendarPlus,
   IconCheck,
+  IconLock,
   IconMapPin,
   IconPhoto,
   IconRocket,
@@ -47,7 +49,13 @@ interface CreateEventFormValues {
   date: Date | null;
   location: string;
   imageUrl: string;
+  type: string;
 }
+
+const EVENT_TYPE_OPTIONS = [
+  { value: "PUBLIC", label: "Público — venda direta de ingressos" },
+  { value: "PRIVATE", label: "Privado — participação sob aprovação" },
+] as const;
 
 const CREATE_STEPS = [
   {
@@ -94,6 +102,7 @@ export function ProducerCreateEventPage() {
       date: null,
       location: "",
       imageUrl: "",
+      type: "PUBLIC",
     },
     validate: {
       title: (value) => (value.trim().length >= 3 ? null : "Informe o título"),
@@ -114,6 +123,7 @@ export function ProducerCreateEventPage() {
         location: values.location.trim(),
         imageUrl: values.imageUrl.trim() || null,
         status: "DRAFT",
+        type: values.type,
       });
 
       notifications.show({
@@ -211,6 +221,16 @@ export function ProducerCreateEventPage() {
                       radius="md"
                       leftSection={<IconMapPin size={16} />}
                       {...form.getInputProps("location")}
+                    />
+                    <Select
+                      label="Tipo de evento"
+                      radius="md"
+                      allowDeselect={false}
+                      comboboxProps={{ withinPortal: true }}
+                      data={[...EVENT_TYPE_OPTIONS]}
+                      description="Eventos privados exigem aprovação do produtor antes da compra."
+                      leftSection={<IconLock size={16} />}
+                      {...form.getInputProps("type")}
                     />
                     <TextInput
                       label="URL da imagem de capa"

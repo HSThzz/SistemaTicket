@@ -21,6 +21,7 @@ import {
   ParticipationRequestNotFoundError,
 } from "../../domain/errors/ParticipationError";
 import { serializeParticipationRequest } from "../../application/helpers/serializeParticipationRequest";
+import { getMyParticipationRequest } from "../../application/services/getMyParticipationRequest";
 import { listParticipationRequests } from "../../application/services/listParticipationRequests";
 import { reviewParticipationRequest } from "../../application/services/reviewParticipationRequest";
 import { submitParticipationRequest } from "../../application/services/submitParticipationRequest";
@@ -66,6 +67,27 @@ export class ParticipationController {
       });
     } catch (error) {
       this.handleError(res, error, "submit", { eventId });
+    }
+  }
+
+  /**
+   * GET /events/:eventId/participation-requests/me — solicitação do usuário logado.
+   */
+  async mine(req: Request, res: Response): Promise<void> {
+    const actor = requireActor(req, res);
+    if (!actor) return;
+
+    const { eventId } = req.params as { eventId: string };
+
+    try {
+      const request = await getMyParticipationRequest(eventId, actor.userId);
+      res.status(200).json({
+        participationRequest: request
+          ? serializeParticipationRequest(request)
+          : null,
+      });
+    } catch (error) {
+      this.handleError(res, error, "mine", { eventId });
     }
   }
 

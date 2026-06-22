@@ -25,3 +25,18 @@ export function getApiErrorMessage(error: unknown, fallback = "Ocorreu um erro i
 
   return fallback;
 }
+
+/**
+ * Extrai o código de erro estável retornado pela API (campo `code`), se houver.
+ *
+ * @param error - Erro capturado (Axios ou outro).
+ * @returns Código como string ou `null`.
+ */
+export function getApiErrorCode(error: unknown): string | null {
+  if (typeof error === "object" && error !== null && "isAxiosError" in error) {
+    const axiosError = error as AxiosError<ApiErrorBody>;
+    return axiosError.response?.data?.code ?? null;
+  }
+
+  return null;
+}

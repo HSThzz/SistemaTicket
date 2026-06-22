@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ActionIcon, Box, Stack, Text, UnstyledButton } from "@mantine/core";
 import { IconHeart, IconHeartFilled } from "@tabler/icons-react";
+import { isPrivateEvent } from "./EventPrivateBadge";
 import { useEventFavoriteAction } from "../../hooks/useEventFavoriteAction";
 import type { Event } from "../../types/api";
 import {
@@ -30,7 +31,16 @@ export function DiceEventCard({ event }: DiceEventCardProps) {
         className="dice-event-card__link"
       >
         <Box className="dice-event-card__cover" style={getEventCoverStyle(event)}>
-          {soldOut ? <span className="dice-event-card__badge">Esgotado</span> : null}
+          {isPrivateEvent(event) || soldOut ? (
+            <Box className="dice-event-card__badges">
+              {isPrivateEvent(event) ? (
+                <span className="dice-event-card__badge dice-event-card__badge--private">
+                  Privado
+                </span>
+              ) : null}
+              {soldOut ? <span className="dice-event-card__badge">Esgotado</span> : null}
+            </Box>
+          ) : null}
           <ActionIcon
             className="dice-event-card__heart"
             variant="filled"
