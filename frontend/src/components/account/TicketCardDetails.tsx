@@ -31,10 +31,16 @@ export function TicketCardDetails({ ticket }: TicketCardDetailsProps) {
   return (
     <Stack gap="lg" className="ticket-wallet-pass-body">
       {isActive ? (
-        <Group justify="center" py="xs">
-          <Stack gap="sm" align="center">
+        <Group justify="center" py="xs" w="100%" maw="100%">
+          <Stack gap="sm" align="center" w="100%" maw="100%">
             <Box className="ticket-qr-frame">
-              <QRCodeSVG value={ticket.uniqueCode} size={200} level="Q" includeMargin={false} />
+              <QRCodeSVG
+                value={ticket.uniqueCode}
+                size={256}
+                level="M"
+                includeMargin
+                className="ticket-qr-svg"
+              />
             </Box>
             <Text size="xs" c="dimmed" ta="center" maw={260}>
               Apresente este QR na entrada do evento

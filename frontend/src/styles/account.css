@@ -276,10 +276,14 @@
   border: 1px solid var(--mantine-color-default-border);
   background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
   box-shadow: 0 4px 24px var(--vibra-shadow-soft);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .ticket-wallet-pass-body {
   padding-top: var(--mantine-spacing-xs);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .tickets-wallet-hint {
@@ -355,18 +359,27 @@
 }
 
 .ticket-qr-frame {
-  padding: 20px;
+  box-sizing: border-box;
+  width: min(100%, 288px);
+  max-width: 100%;
+  margin-inline: auto;
+  padding: 16px;
   border-radius: var(--mantine-radius-md);
   background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-5));
   border: 1px solid var(--mantine-color-default-border);
   box-shadow: 0 4px 20px var(--vibra-shadow-soft);
-  display: inline-flex;
-  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ticket-qr-frame svg {
-  width: min(200px, 72vw);
-  height: auto;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100%;
+  display: block;
+  aspect-ratio: 1;
+  image-rendering: crisp-edges;
 }
 
 .ticket-code-block {
@@ -1060,13 +1073,20 @@
 
 .qr-scanner-viewport {
   position: relative;
-  width: 100%;
-  max-width: 420px;
+  width: min(100%, 400px);
+  max-width: 400px;
   margin: 0 auto;
   aspect-ratio: 1;
   border-radius: var(--mantine-radius-md);
   overflow: hidden;
   background: #000;
+}
+
+@media (max-width: 47.99em) {
+  .qr-scanner-viewport {
+    width: min(100%, 360px);
+    max-width: 100%;
+  }
 }
 
 .qr-scanner-viewport > div {
@@ -1092,8 +1112,24 @@
   opacity: 0;
 }
 
+/* html5-qrcode desenha máscara quando há qrbox — ocultamos para leitura em tela cheia */
 .qr-scanner-viewport #qr-shaded-region {
-  border-width: 10% !important;
+  display: none !important;
+}
+
+.qr-scanner-viewport:not(.qr-scanner-viewport--starting)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: 74%;
+  aspect-ratio: 1;
+  border: 2px dashed rgba(255, 255, 255, 0.35);
+  border-radius: var(--mantine-radius-md);
+  pointer-events: none;
+  z-index: 2;
+  box-sizing: border-box;
 }
 
 .qr-scanner-viewport img[alt="Info icon"] {
@@ -1106,6 +1142,8 @@
   border: 2px solid var(--vibra-border-accent);
   background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
   padding: var(--mantine-spacing-sm);
+  display: flex;
+  justify-content: center;
 }
 
 .producer-metric-block {

@@ -39,8 +39,8 @@ interface CheckInFormValues {
 }
 
 const CHECKIN_TIPS = [
-  "Aponte a câmera para o QR Code na tela ou no ingresso impresso.",
-  "Aguarde o beep visual — o check-in é automático após a leitura.",
+  "Aponte a câmera para o QR Code na tela ou no ingresso impresso — não precisa encaixar perfeito.",
+  "Aproxime ou afaste um pouco se a leitura demorar; brilho alto na tela ajuda.",
   "Se a câmera falhar, cole o código manualmente no campo ao lado.",
 ] as const;
 
@@ -159,7 +159,7 @@ export function ProducerCheckInPage() {
                     <Text c="dimmed" size="sm">
                       {submitting
                         ? "Validando ingresso..."
-                        : "Centralize o QR code na área destacada"}
+                        : "Aponte a câmera para o QR code na tela ou no ingresso"}
                     </Text>
                     <Box className="checkin-scanner-frame">
                       <QrScanner onScan={handleScan} locked={scannerLocked || submitting} />

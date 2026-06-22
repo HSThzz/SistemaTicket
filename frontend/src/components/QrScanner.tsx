@@ -35,27 +35,31 @@ function buildScannerConfig(): Html5QrcodeCameraScanConfig {
   const mobile = isMobileScanner();
 
   return {
-    fps: mobile ? 12 : 15,
-    aspectRatio: 1,
-    disableFlip: true,
-    qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-      const edge = Math.min(viewfinderWidth, viewfinderHeight);
-      const ratio = mobile ? 0.8 : 0.72;
-      const size = Math.max(180, Math.floor(edge * ratio));
-      return { width: size, height: size };
-    },
-    videoConstraints: {
-      facingMode: { ideal: "environment" },
-      width: { ideal: 1280 },
-      height: { ideal: 720 },
-    },
+    // Leitura em tela cheia — sem qrbox — para não exigir alinhamento milimétrico.
+    fps: mobile ? 30 : 20,
+    disableFlip: false,
+    ...(mobile
+      ? {
+          videoConstraints: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920, min: 640 },
+            height: { ideal: 1080, min: 480 },
+          },
+        }
+      : {}),
   };
 }
 
 const CAMERA_CONSTRAINT_FALLBACKS: MediaTrackConstraints[] = [
+  {
+    facingMode: { ideal: "environment" },
+    width: { ideal: 1920, min: 640 },
+    height: { ideal: 1080, min: 480 },
+  },
   { facingMode: { ideal: "environment" } },
-  { facingMode: "environment" },
+  { facingMode: { ideal: "user" } },
   { facingMode: "user" },
+  {},
 ];
 
 async function stopScannerSafely(scanner: Html5Qrcode): Promise<void> {
@@ -79,11 +83,12 @@ async function stopScannerSafely(scanner: Html5Qrcode): Promise<void> {
 }
 
 function rankCameraIds(cameras: Array<{ id: string; label: string }>): string[] {
+  const available = cameras.filter((camera) => camera.id.trim().length > 0);
   const ranked: string[] = [];
-  const back = cameras.find((camera) =>
+  const back = available.find((camera) =>
     /back|rear|environment|trás|tras|traseira/i.test(camera.label),
   );
-  const front = cameras.find((camera) =>
+  const front = available.find((camera) =>
     /front|user|face|frontal|selfie/i.test(camera.label),
   );
 
@@ -94,7 +99,7 @@ function rankCameraIds(cameras: Array<{ id: string; label: string }>): string[] 
     ranked.push(front.id);
   }
 
-  for (const camera of cameras) {
+  for (const camera of available) {
     if (!ranked.includes(camera.id)) {
       ranked.push(camera.id);
     }
@@ -103,21 +108,38 @@ function rankCameraIds(cameras: Array<{ id: string; label: string }>): string[] 
   return ranked;
 }
 
-async function buildCameraAttempts(): Promise<CameraConfig[]> {
-  if (isMobileScanner()) {
-    return CAMERA_CONSTRAINT_FALLBACKS;
+async function ensureCameraPermission(): Promise<void> {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new DOMException("Requested device not found", "NotFoundError");
   }
 
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  for (const track of stream.getTracks()) {
+    track.stop();
+  }
+}
+
+async function buildCameraAttempts(): Promise<CameraConfig[]> {
   const attempts: CameraConfig[] = [];
 
   try {
+    await ensureCameraPermission();
     const cameras = await Html5Qrcode.getCameras();
     attempts.push(...rankCameraIds(cameras));
   } catch {
-    // segue para constraints genéricas
+    // Permissão negada ou enumeração indisponível — tenta constraints genéricas.
   }
 
-  attempts.push(...CAMERA_CONSTRAINT_FALLBACKS);
+  for (const fallback of CAMERA_CONSTRAINT_FALLBACKS) {
+    const key = JSON.stringify(fallback);
+    const alreadyListed = attempts.some(
+      (attempt) => typeof attempt !== "string" && JSON.stringify(attempt) === key,
+    );
+    if (!alreadyListed) {
+      attempts.push(fallback);
+    }
+  }
+
   return attempts;
 }
 
@@ -131,14 +153,18 @@ async function applyCameraEnhancements(scanner: Html5Qrcode): Promise<void> {
     try {
       const capabilities = scanner.getRunningTrackCapabilities() as MediaTrackCapabilities & {
         zoom?: { min?: number; max?: number };
+        focusMode?: string[];
       };
 
       const constraints: MediaTrackConstraints & {
         focusMode?: string;
         advanced?: Array<{ zoom?: number }>;
-      } = {
-        focusMode: "continuous",
-      };
+      } = {};
+
+      const supportedFocusModes = capabilities.focusMode;
+      if (Array.isArray(supportedFocusModes) && supportedFocusModes.includes("continuous")) {
+        constraints.focusMode = "continuous";
+      }
 
       const zoomRange = capabilities.zoom;
       if (
@@ -147,11 +173,17 @@ async function applyCameraEnhancements(scanner: Html5Qrcode): Promise<void> {
         typeof zoomRange.min === "number" &&
         zoomRange.max > zoomRange.min
       ) {
-        const targetZoom = Math.min(Math.max(zoomRange.min, 1.4), zoomRange.max);
+        const span = zoomRange.max - zoomRange.min;
+        const targetZoom = Math.min(
+          zoomRange.max,
+          Math.max(zoomRange.min, zoomRange.min + span * 0.45),
+        );
         constraints.advanced = [{ zoom: targetZoom }];
       }
 
-      await scanner.applyVideoConstraints(constraints);
+      if (constraints.focusMode || constraints.advanced) {
+        await scanner.applyVideoConstraints(constraints);
+      }
     } catch {
       // iOS/Safari não expõe zoom/focus em todos os dispositivos
     }
@@ -163,6 +195,10 @@ async function applyCameraEnhancements(scanner: Html5Qrcode): Promise<void> {
 function formatCameraError(error: unknown): string {
   if (!window.isSecureContext) {
     return "A câmera só funciona em HTTPS ou localhost. Abra o site por uma conexão segura.";
+  }
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    return "Este navegador não suporta acesso à câmera. Tente Chrome, Edge ou Firefox atualizado.";
   }
 
   const message =
@@ -331,7 +367,6 @@ export function QrScanner({ onScan, locked = false }: QrScannerProps) {
         id={containerId}
         className={`qr-scanner-viewport${starting ? " qr-scanner-viewport--starting" : ""}`}
         aria-busy={starting || locked}
-        hidden={Boolean(error)}
       />
 
       {error ? (
@@ -355,7 +390,7 @@ export function QrScanner({ onScan, locked = false }: QrScannerProps) {
               ? "Validando ingresso..."
               : starting
                 ? "Iniciando câmera..."
-                : "Centralize o QR code na área destacada"}
+                : "Aponte para o QR code — a leitura é automática"}
           </Text>
           {starting ? (
             <Center>
