@@ -36,13 +36,11 @@ export function OrdersPageSkeleton() {
           <Skeleton h={88} radius="lg" className="skeleton-shimmer" />
         </Grid.Col>
       </Grid>
-      <Grid>
-        {Array.from({ length: 4 }).map((_, index) => (
-          <Grid.Col key={index} span={{ base: 12, lg: 6 }}>
-            <OrderCardSkeleton />
-          </Grid.Col>
+      <Stack gap="md" className="orders-list-section">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <OrderCardSkeleton key={index} />
         ))}
-      </Grid>
+      </Stack>
     </Stack>
   );
 }

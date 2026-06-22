@@ -8,7 +8,6 @@ import { Link } from "react-router-dom";
 import {
   Alert,
   Button,
-  Grid,
   SegmentedControl,
   SimpleGrid,
   Stack,
@@ -203,29 +202,29 @@ export function MyOrdersPage() {
               />
             </AnimatedSection>
           ) : (
-            <Grid>
-              {orders.map((order, index) => (
-                <Grid.Col key={order.id} span={{ base: 12, lg: 6 }}>
-                  <AnimatedSection delayMs={120 + index * 40}>
+            <Stack gap="md" className="orders-list-section">
+              <Stack gap="md" className="orders-list">
+                {orders.map((order, index) => (
+                  <AnimatedSection key={order.id} delayMs={120 + index * 40}>
                     <OrderCard order={order} />
                   </AnimatedSection>
-                </Grid.Col>
-              ))}
-            </Grid>
-          )}
+                ))}
+              </Stack>
 
-          <AnimatedSection delayMs={140}>
-            <Button
-              variant="light"
-              radius="xl"
-              fullWidth
-              loading={loadingMore}
-              disabled={!hasNextPage}
-              onClick={() => void handleLoadMore()}
-            >
-              Carregar mais
-            </Button>
-          </AnimatedSection>
+              <AnimatedSection delayMs={140}>
+                <Button
+                  variant="light"
+                  radius="xl"
+                  fullWidth
+                  loading={loadingMore}
+                  disabled={!hasNextPage}
+                  onClick={() => void handleLoadMore()}
+                >
+                  Carregar mais
+                </Button>
+              </AnimatedSection>
+            </Stack>
+          )}
         </>
       ) : null}
 

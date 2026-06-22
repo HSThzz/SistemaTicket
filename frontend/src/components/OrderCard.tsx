@@ -87,77 +87,81 @@ export function OrderCard({ order }: OrderCardProps) {
         </Box>
 
         <Stack gap="lg" className="order-card-body">
-          <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
-            <Stack gap={6} flex={1} miw={0}>
-              <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                Pedido
-              </Text>
-              <Title order={4} style={{ letterSpacing: "-0.01em" }}>
-                #{order.id.slice(0, 8).toUpperCase()}
-              </Title>
-              {order.eventTitle ? (
-                <Text size="sm" c="dimmed" lineClamp={2}>
-                  {order.eventTitle}
+          <Stack gap="lg" className="order-card-main">
+            <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+              <Stack gap={6} flex={1} miw={0}>
+                <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                  Pedido
                 </Text>
-              ) : null}
-            </Stack>
-            <OrderStatusBadge status={order.status} />
-          </Group>
+                <Title order={4} style={{ letterSpacing: "-0.01em" }}>
+                  #{order.id.slice(0, 8).toUpperCase()}
+                </Title>
+                {order.eventTitle ? (
+                  <Text size="sm" c="dimmed" lineClamp={2}>
+                    {order.eventTitle}
+                  </Text>
+                ) : null}
+              </Stack>
+              <OrderStatusBadge status={order.status} />
+            </Group>
 
-          <Stack gap={4}>
-            <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-              {isPaid ? "Total pago" : "Total"}
-            </Text>
-            <Text className="order-total-value" c={isPaid ? "green" : undefined}>
-              {formatCurrencyFromCents(order.totalPrice)}
-            </Text>
+            <Stack gap={4}>
+              <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                {isPaid ? "Total pago" : "Total"}
+              </Text>
+              <Text className="order-total-value" c={isPaid ? "green" : undefined}>
+                {formatCurrencyFromCents(order.totalPrice)}
+              </Text>
+            </Stack>
           </Stack>
 
-          {isPending ? (
-            <Stack gap="sm" className="order-card-pending-section">
-              <Alert
-                color="orange"
-                variant="light"
-                radius="lg"
-                icon={<IconClock size={18} />}
-                title="Aguardando pagamento"
-              >
-                <Text size="sm" style={{ lineHeight: 1.55 }}>
-                  Escolha PIX ou cartão no checkout para concluir esta compra.
-                </Text>
-              </Alert>
-
-              {checkoutUrl ? (
-                <Button
-                  component={Link}
-                  to={checkoutUrl}
-                  variant="filled"
-                  color="brand"
-                  radius="xl"
-                  fullWidth
+          <Box className="order-card-footer">
+            {isPending ? (
+              <Stack gap="sm" className="order-card-pending-section">
+                <Alert
+                  color="orange"
+                  variant="light"
+                  radius="lg"
+                  icon={<IconClock size={18} />}
+                  title="Aguardando pagamento"
                 >
-                  Continuar no checkout
-                </Button>
-              ) : null}
-            </Stack>
-          ) : null}
+                  <Text size="sm" style={{ lineHeight: 1.55 }}>
+                    Escolha PIX ou cartão no checkout para concluir esta compra.
+                  </Text>
+                </Alert>
 
-          {isPaid ? (
-            <Anchor
-              component={Link}
-              to="/ingressos"
-              size="sm"
-              fw={600}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-            >
-              <IconTicket size={16} />
-              Ver meus ingressos →
-            </Anchor>
-          ) : !isPending ? (
-            <Text size="sm" c="dimmed">
-              Este pedido não gerou ingressos ativos.
-            </Text>
-          ) : null}
+                {checkoutUrl ? (
+                  <Button
+                    component={Link}
+                    to={checkoutUrl}
+                    variant="filled"
+                    color="brand"
+                    radius="xl"
+                    fullWidth
+                  >
+                    Continuar no checkout
+                  </Button>
+                ) : null}
+              </Stack>
+            ) : null}
+
+            {isPaid ? (
+              <Anchor
+                component={Link}
+                to="/ingressos"
+                size="sm"
+                fw={600}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                <IconTicket size={16} />
+                Ver meus ingressos →
+              </Anchor>
+            ) : !isPending ? (
+              <Text size="sm" c="dimmed">
+                Este pedido não gerou ingressos ativos.
+              </Text>
+            ) : null}
+          </Box>
         </Stack>
       </Group>
     </Paper>

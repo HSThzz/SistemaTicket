@@ -1377,8 +1377,21 @@
 .order-card-body {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
   padding: var(--mantine-spacing-lg) var(--mantine-spacing-lg) var(--mantine-spacing-lg)
     var(--mantine-spacing-xl);
+}
+
+.order-card-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.order-card-footer {
+  margin-top: auto;
+  width: 100%;
+  min-width: 0;
 }
 
 .order-total-value {
@@ -1567,6 +1580,16 @@
 .order-card-pending-section {
   width: 100%;
   min-width: 0;
+}
+
+.orders-list-section {
+  width: 100%;
+  max-width: 52rem;
+  margin-inline: auto;
+}
+
+.orders-list {
+  width: 100%;
 }
 
 @media (max-width: 47.99em) {
