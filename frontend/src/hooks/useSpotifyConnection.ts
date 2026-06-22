@@ -8,6 +8,7 @@ import { notifications } from "@mantine/notifications";
 import * as spotifyService from "../features/integrations/api/spotifyService";
 import type { SpotifyRecommendationsResponse, SpotifyStatus } from "../features/integrations/api/spotifyService";
 import { useAuth } from "../context/AuthContext";
+import { useResetOnPageReturn } from "./useResetOnPageReturn";
 import { getApiErrorMessage } from "../utils/errors";
 
 const GUEST_STATUS: SpotifyStatus = {
@@ -26,6 +27,8 @@ export function useSpotifyConnection() {
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+
+  useResetOnPageReturn(useCallback(() => setConnecting(false), []));
 
   const refreshStatus = useCallback(async () => {
     setLoadingStatus(true);

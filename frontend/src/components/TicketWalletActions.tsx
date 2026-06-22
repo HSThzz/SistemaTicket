@@ -3,11 +3,12 @@
  * @module components/TicketWalletActions
  */
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Button, Group, Stack, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconBrandApple, IconBrandGoogle, IconWallet } from "@tabler/icons-react";
 import * as walletService from "../features/ticketing/api/walletService";
+import { useResetOnPageReturn } from "../hooks/useResetOnPageReturn";
 
 /** Propriedades dos botões de carteira digital. */
 interface TicketWalletActionsProps {
@@ -21,6 +22,13 @@ interface TicketWalletActionsProps {
 export function TicketWalletActions({ ticketId }: TicketWalletActionsProps) {
   const [appleLoading, setAppleLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  useResetOnPageReturn(
+    useCallback(() => {
+      setAppleLoading(false);
+      setGoogleLoading(false);
+    }, []),
+  );
 
   async function handleAppleWallet() {
     setAppleLoading(true);
