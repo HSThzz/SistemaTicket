@@ -12,6 +12,7 @@ import {
   RESERVATION_PERSIST_RETRY_SCHEDULE_KEY,
 } from "../../../../shared/infrastructure/config/constants";
 import {
+  ParticipationNotApprovedError,
   PurchaseError,
   ReservationAccessDeniedError,
   ReservationNotFoundError,
@@ -337,6 +338,11 @@ export class PurchaseController {
 
     if (error instanceof ReserveUserNotFoundError) {
       res.status(401).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof ParticipationNotApprovedError) {
+      res.status(403).json({ error: error.message, code: error.code });
       return;
     }
 

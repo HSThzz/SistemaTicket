@@ -16,6 +16,7 @@ export function serializeEvent(event: Event) {
     imageUrl: event.imageUrl,
     artists: Array.isArray(event.artists) ? event.artists : [],
     status: event.status,
+    type: event.type,
     ticketLots: (event.ticketLots ?? []).map((lot) => ({
       id: lot.id,
       name: lot.name,

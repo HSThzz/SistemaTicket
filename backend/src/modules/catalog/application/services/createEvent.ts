@@ -1,5 +1,5 @@
 import { Logger } from "../../../../shared/infrastructure/config/logger";
-import { EventStatus } from "../../../../shared/kernel/enums";
+import { EventStatus, EventType } from "../../../../shared/kernel/enums";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
   createEventSchema,
@@ -26,6 +26,7 @@ export async function createEvent(
     location: data.location,
     imageUrl: normalizeImageUrl(data.imageUrl),
     status: data.status ?? EventStatus.DRAFT,
+    type: data.type ?? EventType.PUBLIC,
   });
 
   Logger.getInstance().info(CONTEXT, "Event created", {

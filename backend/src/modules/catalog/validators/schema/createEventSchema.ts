@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EventStatus } from "../../../../shared/kernel/enums";
+import { EventStatus, EventType } from "../../../../shared/kernel/enums";
 import { dateStringSchema, optionalImageUrlSchema } from "../../../../shared/kernel/zodFields";
 
 export const createEventSchema = z.object({
@@ -9,6 +9,7 @@ export const createEventSchema = z.object({
   location: z.string().trim().min(1, "Local é obrigatório"),
   imageUrl: optionalImageUrlSchema,
   status: z.enum(EventStatus, { message: "Status inválido" }).optional(),
+  type: z.enum(EventType, { message: "Tipo de evento inválido" }).optional(),
 });
 
 export type CreateEventInputSchema = z.infer<typeof createEventSchema>;

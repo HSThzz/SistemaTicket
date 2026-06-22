@@ -17,6 +17,7 @@ export type UpdateEventData = Prettify<
       | "location"
       | "imageUrl"
       | "status"
+      | "type"
     >
   >
 >;

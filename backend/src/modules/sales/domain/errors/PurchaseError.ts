@@ -111,3 +111,16 @@ export class ReserveUserNotFoundError extends PurchaseError {
     this.name = "ReserveUserNotFoundError";
   }
 }
+
+/**
+ * Evento privado exige solicitação de participação aprovada antes do checkout.
+ */
+export class ParticipationNotApprovedError extends PurchaseError {
+  constructor() {
+    super(
+      "This is a private event. Your participation request must be approved before checkout.",
+      "PARTICIPATION_NOT_APPROVED",
+    );
+    this.name = "ParticipationNotApprovedError";
+  }
+}

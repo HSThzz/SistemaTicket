@@ -26,6 +26,19 @@ export enum EventStatus {
   FINISHED = "FINISHED",
 }
 
+/** Visibilidade do evento e fluxo de aquisição de ingressos. */
+export enum EventType {
+  PUBLIC = "PUBLIC",
+  PRIVATE = "PRIVATE",
+}
+
+/** Status de uma solicitação de participação em evento privado. */
+export enum ParticipationRequestStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+}
+
 /** Status de uma reserva temporária de ingressos. */
 export enum ReservationStatus {
   PENDING = "PENDING",

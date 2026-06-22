@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EventStatus } from "../../../../shared/kernel/enums";
+import { EventStatus, EventType } from "../../../../shared/kernel/enums";
 import { dateStringSchema, optionalImageUrlSchema } from "../../../../shared/kernel/zodFields";
 
 export const updateEventSchema = z
@@ -10,6 +10,7 @@ export const updateEventSchema = z
     location: z.string().trim().min(1).optional(),
     imageUrl: optionalImageUrlSchema,
     status: z.nativeEnum(EventStatus, { message: "Status inválido" }).optional(),
+    type: z.nativeEnum(EventType, { message: "Tipo de evento inválido" }).optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "Informe ao menos um campo para atualizar",

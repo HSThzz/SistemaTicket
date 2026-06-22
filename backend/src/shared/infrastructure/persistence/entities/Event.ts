@@ -11,7 +11,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { EventStatus } from "../../../kernel/enums";
+import { EventStatus, EventType } from "../../../kernel/enums";
 import { TicketLot } from "./TicketLot";
 import { User } from "./User";
 
@@ -48,6 +48,13 @@ export class Event {
     default: EventStatus.DRAFT,
   })
   status!: EventStatus;
+
+  @Column({
+    type: "enum",
+    enum: EventType,
+    default: EventType.PUBLIC,
+  })
+  type!: EventType;
 
   @Column({ name: "deleted_at", type: "timestamptz", nullable: true })
   deletedAt!: Date | null;

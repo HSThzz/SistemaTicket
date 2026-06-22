@@ -6,11 +6,14 @@
 export {
   AdminAuditAction,
   EventStatus,
+  EventType,
   OrderStatus,
+  ParticipationRequestStatus,
   ReservationStatus,
   TicketStatus,
   UserRole,
 } from "../../../kernel/enums";
+export { ParticipationRequest } from "./ParticipationRequest";
 export { ProducerLead } from "./ProducerLead";
 export { AdminAuditLog } from "./AdminAuditLog";
 export { Event } from "./Event";

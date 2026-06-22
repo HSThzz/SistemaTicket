@@ -7,7 +7,7 @@ import type { Request, Response } from "express";
 import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { getRedis } from "../../../../shared/infrastructure/config/redis";
-import { EventStatus, UserRole } from "../../../../shared/kernel/enums";
+import { EventStatus, EventType, UserRole } from "../../../../shared/kernel/enums";
 import { STAFF_ROLES } from "../../../../shared/kernel/staffRoles";
 import { ValidationError } from "../../../../shared/kernel/validateSchema";
 import {
@@ -136,13 +136,14 @@ export class EventController {
     if (!actor) return;
 
     try {
-      const { title, description, date, location, imageUrl, status } = req.body as {
+      const { title, description, date, location, imageUrl, status, type } = req.body as {
         title: string;
         description: string;
         date: string;
         location: string;
         imageUrl?: string | null;
         status?: EventStatus;
+        type?: EventType;
       };
 
       const created = await createEvent({
@@ -155,6 +156,7 @@ export class EventController {
               ? undefined
               : imageUrl,
           status,
+          type,
         },
         actor,
       );
@@ -178,13 +180,14 @@ export class EventController {
     const { eventId } = req.params as { eventId: string };
 
     try {
-      const { title, description, date, location, imageUrl, status } = req.body as {
+      const { title, description, date, location, imageUrl, status, type } = req.body as {
         title?: string;
         description?: string;
         date?: string;
         location?: string;
         imageUrl?: string | null;
         status?: EventStatus;
+        type?: EventType;
       };
 
       const updated = await updateEvent(eventId,
@@ -200,6 +203,7 @@ export class EventController {
                 ? null
                 : imageUrl,
           status,
+          type,
         },
         actor,
       );

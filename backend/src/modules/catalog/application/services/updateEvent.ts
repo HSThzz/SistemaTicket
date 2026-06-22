@@ -28,6 +28,7 @@ function buildUpdateEventData(input: UpdateEventInputSchema): UpdateEventData {
   if (input.location !== undefined) changes.location = input.location;
   if (input.imageUrl !== undefined) changes.imageUrl = normalizeImageUrl(input.imageUrl);
   if (input.status !== undefined) changes.status = input.status;
+  if (input.type !== undefined) changes.type = input.type;
   if (input.date !== undefined) changes.date = new Date(input.date);
 
   return changes;
