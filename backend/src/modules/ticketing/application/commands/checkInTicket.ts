@@ -9,6 +9,7 @@ import { TicketStatus } from "../../../../shared/kernel/enums";
 import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { InvalidTicketStatusError } from "../../domain/errors/CheckInError";
+import { resolveTicketLookupCodes } from "../../../../shared/kernel/ticketCheckInCode";
 
 export type CheckInTicketResult = Prettify<
   Pick<Ticket, "ownerName" | "ownerDocument"> & {
@@ -24,13 +25,21 @@ type CheckInTicketChanges = Prettify<
   }
 >;
 
-export async function checkInTicket(uniqueCode: string,
+export async function checkInTicket(
+  scannedCode: string,
 ): Promise<CheckInTicketResult | null> {
+  const { compactCheckInCode, uniqueCode } = resolveTicketLookupCodes(scannedCode);
+
   return AppDataSource.transaction(async (manager) => {
-    const locked = await manager.findOne(Ticket, {
-      where: { uniqueCode },
-      lock: { mode: "pessimistic_write" },
-    });
+    const locked = uniqueCode
+      ? await manager.findOne(Ticket, {
+          where: { uniqueCode },
+          lock: { mode: "pessimistic_write" },
+        })
+      : await manager.findOne(Ticket, {
+          where: { checkInCode: compactCheckInCode },
+          lock: { mode: "pessimistic_write" },
+        });
 
     if (!locked) {
       return null;

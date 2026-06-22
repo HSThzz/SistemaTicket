@@ -7,6 +7,10 @@ import {
   loadAppleCertificates,
   loadTicketContext,
 } from "../helpers/walletHelpers";
+import {
+  formatTicketCheckInCode,
+  getTicketQrPayload,
+} from "../../../../shared/kernel/ticketCheckInCode";
 
 const CONTEXT = "WalletService";
 const logger = Logger.getInstance();
@@ -82,15 +86,17 @@ export async function generateApplePass(
       {
         key: "code",
         label: "CÓDIGO",
-        value: ticket.uniqueCode,
+        value: formatTicketCheckInCode(ticket.checkInCode),
       },
     );
 
+    const qrPayload = getTicketQrPayload(ticket);
+
     pass.setBarcodes({
-      message: ticket.uniqueCode,
+      message: qrPayload,
       format: "PKBarcodeFormatQR",
       messageEncoding: "iso-8859-1",
-      altText: ticket.uniqueCode,
+      altText: formatTicketCheckInCode(ticket.checkInCode),
     });
 
     const buffer = pass.getAsBuffer();

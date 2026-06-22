@@ -360,10 +360,10 @@
 
 .ticket-qr-frame {
   box-sizing: border-box;
-  width: min(100%, 288px);
+  width: min(100%, 272px);
   max-width: 100%;
   margin-inline: auto;
-  padding: 16px;
+  padding: 12px;
   border-radius: var(--mantine-radius-md);
   background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-5));
   border: 1px solid var(--mantine-color-default-border);
@@ -374,12 +374,10 @@
 }
 
 .ticket-qr-frame svg {
-  width: 100% !important;
-  height: auto !important;
+  width: 240px !important;
+  height: 240px !important;
   max-width: 100%;
   display: block;
-  aspect-ratio: 1;
-  image-rendering: crisp-edges;
 }
 
 .ticket-code-block {

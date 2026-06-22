@@ -35,7 +35,7 @@ import * as checkInService from "../../features/ticketing/api/checkInService";
 import { getApiErrorMessage } from "../../utils/errors";
 
 interface CheckInFormValues {
-  uniqueCode: string;
+  checkInCode: string;
 }
 
 const CHECKIN_TIPS = [
@@ -53,16 +53,22 @@ export function ProducerCheckInPage() {
   const [scannerLocked, setScannerLocked] = useState(false);
 
   const form = useForm<CheckInFormValues>({
-    initialValues: { uniqueCode: "" },
+    initialValues: { checkInCode: "" },
     validate: {
-      uniqueCode: (value) => (value.trim().length >= 8 ? null : "Informe o código do ingresso"),
+      checkInCode: (value) => {
+        const compact = value.trim().replace(/[\s-]/g, "");
+        if (compact.length >= 6) {
+          return null;
+        }
+        return "Informe o código do ingresso (ex.: ABCD-EFGH)";
+      },
     },
   });
 
   const performCheckIn = useCallback(
     async (rawCode: string) => {
-      const uniqueCode = rawCode.trim();
-      if (uniqueCode.length < 8 || submitting) {
+      const checkInCode = rawCode.trim();
+      if (checkInCode.replace(/[\s-]/g, "").length < 6 || submitting) {
         return;
       }
 
@@ -70,7 +76,7 @@ export function ProducerCheckInPage() {
       setScannerLocked(true);
 
       try {
-        const result = await checkInService.checkInTicket(uniqueCode);
+        const result = await checkInService.checkInTicket(checkInCode);
         setLastResult(result);
         form.reset();
 
@@ -96,7 +102,7 @@ export function ProducerCheckInPage() {
   );
 
   const handleSubmit = form.onSubmit(async (values) => {
-    await performCheckIn(values.uniqueCode);
+    await performCheckIn(values.checkInCode);
   });
 
   const handleScan = useCallback(
@@ -191,10 +197,10 @@ export function ProducerCheckInPage() {
                       </Text>
                       <TextInput
                         label="Código do ingresso"
-                        placeholder="Cole o código completo"
+                        placeholder="Ex.: ABCD-EFGH"
                         leftSection={<IconScan size={18} />}
                         radius="md"
-                        {...form.getInputProps("uniqueCode")}
+                        {...form.getInputProps("checkInCode")}
                       />
                       <Button
                         type="submit"

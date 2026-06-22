@@ -13,6 +13,7 @@ import {
   PrimaryGeneratedColumn,
 } from "typeorm";
 import { TicketStatus } from "../../../kernel/enums";
+import { generateTicketCheckInCode } from "../../../kernel/ticketCheckInCode";
 import { Order } from "./Order";
 import { TicketLot } from "./TicketLot";
 
@@ -37,6 +38,9 @@ export class Ticket {
   @Column({ name: "unique_code", type: "varchar", length: 64, unique: true })
   uniqueCode!: string;
 
+  @Column({ name: "check_in_code", type: "varchar", length: 8, unique: true })
+  checkInCode!: string;
+
   @Column({
     type: "enum",
     enum: TicketStatus,
@@ -58,12 +62,16 @@ export class Ticket {
   ticketLot!: TicketLot;
 
   /**
-   * Gera código único hexadecimal antes da inserção, se ainda não definido.
+   * Gera códigos antes da inserção, se ainda não definidos.
    */
   @BeforeInsert()
-  generateUniqueCode(): void {
+  assignTicketCodes(): void {
     if (!this.uniqueCode) {
       this.uniqueCode = randomBytes(32).toString("hex");
+    }
+
+    if (!this.checkInCode) {
+      this.checkInCode = generateTicketCheckInCode();
     }
   }
 }

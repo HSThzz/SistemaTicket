@@ -10,6 +10,10 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 import { Ticket } from "../../../../shared/infrastructure/persistence/entities/Ticket";
 import type { Prettify } from "../../../../shared/kernel/prettify";
 import { sanitizeDocument } from "../../../../shared/kernel/cpf";
+import {
+  formatTicketCheckInCode,
+  getTicketQrPayload,
+} from "../../../../shared/kernel/ticketCheckInCode";
 
 const BRAND = {
   green: "#16a34a",
@@ -58,6 +62,7 @@ export type GenerateTicketPdfInput = Prettify<{
 type TicketForPdf = Prettify<{
   id: string;
   uniqueCode: string;
+  checkInCode: string;
   ownerName: string;
   ownerDocument: string;
   lotName: string;
@@ -98,6 +103,7 @@ async function loadTickets(ticketIds: string[]): Promise<TicketForPdf[]> {
       {
         id: ticket.id,
         uniqueCode: ticket.uniqueCode,
+        checkInCode: ticket.checkInCode,
         ownerName: ticket.ownerName,
         ownerDocument: ticket.ownerDocument,
         lotName: ticket.ticketLot?.name ?? "Ingresso",
@@ -310,10 +316,11 @@ async function drawTicketCard(
     .stroke();
   doc.restore();
 
-  const qrBuffer = await QRCode.toBuffer(input.ticket.uniqueCode, {
+  const qrPayload = getTicketQrPayload(input.ticket);
+  const qrBuffer = await QRCode.toBuffer(qrPayload, {
     type: "png",
     width: 280,
-    margin: 0,
+    margin: 2,
     color: {
       dark: BRAND.dark,
       light: "#ffffff",
@@ -348,7 +355,7 @@ async function drawTicketCard(
     .fontSize(8.5)
     .fillColor(BRAND.soft)
     .text(
-      `Código de validação ${formatShortCode(input.ticket.uniqueCode)} · Documento nominal · VIBRA Ingressos`,
+      `Código na portaria ${formatTicketCheckInCode(input.ticket.checkInCode)} · Documento nominal · VIBRA Ingressos`,
       contentX,
       footerY,
       {
@@ -699,8 +706,4 @@ function shortenId(value: string): string {
   }
 
   return `${value.slice(0, 8)}…${value.slice(-4)}`;
-}
-
-function formatShortCode(uniqueCode: string): string {
-  return uniqueCode.slice(0, 8).toUpperCase();
 }

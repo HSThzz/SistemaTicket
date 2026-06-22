@@ -10,6 +10,10 @@ import {
   requireGoogleIssuerId,
   sanitizeWalletId,
 } from "../helpers/walletHelpers";
+import {
+  formatTicketCheckInCode,
+  getTicketQrPayload,
+} from "../../../../shared/kernel/ticketCheckInCode";
 
 const CONTEXT = "WalletService";
 const GOOGLE_WALLET_SAVE_URL = "https://pay.google.com/gp/v/save";
@@ -39,6 +43,9 @@ export async function generateGoogleWalletLink(
 
     await ensureGoogleEventTicketClass(event, classId);
 
+    const qrPayload = getTicketQrPayload(ticket);
+    const displayCode = formatTicketCheckInCode(ticket.checkInCode);
+
     const claims = {
       iss: credentials.client_email,
       aud: "google",
@@ -52,11 +59,11 @@ export async function generateGoogleWalletLink(
             classId,
             state: "ACTIVE",
             ticketHolderName: truncate(ticket.ownerName, 80),
-            ticketNumber: ticket.uniqueCode.slice(0, 20),
+            ticketNumber: displayCode,
             barcode: {
               type: "QR_CODE",
-              value: ticket.uniqueCode,
-              alternateText: ticket.uniqueCode.slice(0, 20),
+              value: qrPayload,
+              alternateText: displayCode,
             },
             textModulesData: [
               {

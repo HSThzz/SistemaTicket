@@ -7,6 +7,7 @@ export interface TicketListItem {
   id: string;
   status: string;
   uniqueCode: string;
+  checkInCode: string;
   checkedInAt: string | null;
   event: {
     id: string;
@@ -42,6 +43,7 @@ function mapTicketToListItem(
     id: ticket.id,
     status: ticket.status,
     uniqueCode: ticket.uniqueCode,
+    checkInCode: ticket.checkInCode,
     checkedInAt: ticket.checkedInAt ? ticket.checkedInAt.toISOString() : null,
     event: {
       id: ticket.ticketLot.event.id,

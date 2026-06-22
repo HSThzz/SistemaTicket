@@ -15,6 +15,7 @@ import {
   TicketStatus,
 } from "../../../../shared/kernel/enums";
 import type { Prettify } from "../../../../shared/kernel/prettify";
+import { generateTicketCheckInCode } from "../../../../shared/kernel/ticketCheckInCode";
 import {
   OrderNotFoundError,
   PaymentAlreadyProcessedError,
@@ -37,7 +38,13 @@ export type ProcessPaymentSucceededResult = Prettify<
 type CreateTicketData = Prettify<
   Pick<
     Ticket,
-    "orderId" | "ticketLotId" | "ownerName" | "ownerDocument" | "uniqueCode" | "status"
+    | "orderId"
+    | "ticketLotId"
+    | "ownerName"
+    | "ownerDocument"
+    | "uniqueCode"
+    | "checkInCode"
+    | "status"
   >
 >;
 
@@ -98,6 +105,7 @@ export async function processPaymentSucceeded(
         ownerName: user.name,
         ownerDocument: user.document,
         uniqueCode: randomBytes(32).toString("hex"),
+        checkInCode: generateTicketCheckInCode(),
         status: TicketStatus.ACTIVE,
       }),
     );

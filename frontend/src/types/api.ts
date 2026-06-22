@@ -137,6 +137,7 @@ export interface TicketListItem {
   id: string;
   status: string;
   uniqueCode: string;
+  checkInCode: string;
   checkedInAt: string | null;
   event: {
     id: string;

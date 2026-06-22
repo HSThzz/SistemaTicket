@@ -4,7 +4,7 @@ export const checkInSchema = z.object({
   uniqueCode: z
     .string()
     .trim()
-    .min(1, "Código do ingresso é obrigatório")
+    .min(6, "Código do ingresso é obrigatório")
     .max(128),
 });
 

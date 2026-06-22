@@ -21,6 +21,7 @@ import {
   TicketStatus,
   UserRole,
 } from "../shared/kernel/enums";
+import { generateTicketCheckInCode } from "../shared/kernel/ticketCheckInCode";
 
 /** Senha padrão de todos os usuários criados pelo seed. */
 export const SEED_PASSWORD = "123456";
@@ -401,6 +402,7 @@ async function seedPaidOrder(
         ownerName: params.user.name,
         ownerDocument: params.user.document,
         uniqueCode: randomBytes(32).toString("hex"),
+        checkInCode: generateTicketCheckInCode(),
         status,
         checkedInAt: status === TicketStatus.USED ? (params.checkedInAt ?? new Date()) : null,
       }),

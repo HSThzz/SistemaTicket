@@ -11,16 +11,16 @@ import {
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { checkInSchema } from "../../validators/schema/checkInSchema";
 import { checkInTicket } from "../commands/checkInTicket";
-import { findOneTicketByUniqueCode } from "../queries/findOneTicketByUniqueCode";
+import { findOneTicketByCheckInCode } from "../queries/findOneTicketByCheckInCode";
 import type { CheckInActor } from "./types";
 
 const CONTEXT = "CheckInService";
 const CHECK_IN_TIMEZONE = "America/Sao_Paulo";
 const logger = Logger.getInstance();
 
-export async function checkIn(uniqueCode: string, actor: CheckInActor) {
-  const { uniqueCode: code } = validateSchema(checkInSchema, { uniqueCode });
-  const ticket = await findOneTicketByUniqueCode(code);
+export async function checkIn(scannedCode: string, actor: CheckInActor) {
+  const { uniqueCode: code } = validateSchema(checkInSchema, { uniqueCode: scannedCode });
+  const ticket = await findOneTicketByCheckInCode(code);
 
   if (!ticket?.ticketLot?.event) {
     logger.warn(CONTEXT, "Check-in failed — ticket not found", {

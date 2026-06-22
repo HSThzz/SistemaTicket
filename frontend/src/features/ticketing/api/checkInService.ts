@@ -17,11 +17,11 @@ export interface CheckInResult {
 /**
  * Registra check-in pelo código único do ingresso (QR ou digitação).
  *
- * @param uniqueCode - Código impresso ou lido do QR Code.
+ * @param checkInCode - Código curto (QR) ou uniqueCode legado.
  */
-export async function checkInTicket(uniqueCode: string): Promise<CheckInResult> {
+export async function checkInTicket(checkInCode: string): Promise<CheckInResult> {
   const { data } = await api.post<CheckInResult>("/tickets/check-in", {
-    unique_code: uniqueCode.trim(),
+    unique_code: checkInCode.trim(),
   });
   return data;
 }

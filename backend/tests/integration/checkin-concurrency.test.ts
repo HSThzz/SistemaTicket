@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
+import { generateTicketCheckInCode } from "../../src/shared/kernel/ticketCheckInCode";
 import { after, before, beforeEach, describe, it } from "node:test";
 import { Event } from "../../src/shared/infrastructure/persistence/entities/Event";
 import { Order } from "../../src/shared/infrastructure/persistence/entities/Order";
@@ -102,6 +103,7 @@ describe("Check-in concurrency", () => {
     );
 
     const uniqueCode = randomBytes(16).toString("hex");
+    const checkInCode = generateTicketCheckInCode();
 
     await ticketRepo.save(
       ticketRepo.create({
@@ -110,6 +112,7 @@ describe("Check-in concurrency", () => {
         ownerName: "Cliente Check-in",
         ownerDocument: "99999999999",
         uniqueCode,
+        checkInCode,
         status: TicketStatus.ACTIVE,
       }),
     );
@@ -117,7 +120,7 @@ describe("Check-in concurrency", () => {
     const attempts = 20;
     const results = await Promise.allSettled(
       Array.from({ length: attempts }, () =>
-        checkIn(uniqueCode, { userId: producer.id, role: UserRole.PRODUCER }),
+        checkIn(checkInCode, { userId: producer.id, role: UserRole.PRODUCER }),
       ),
     );
 
@@ -134,7 +137,7 @@ describe("Check-in concurrency", () => {
       }
     }
 
-    const ticket = await ticketRepo.findOneBy({ uniqueCode });
+    const ticket = await ticketRepo.findOneBy({ checkInCode });
     assert.equal(ticket?.status, TicketStatus.USED);
     assert.ok(ticket?.checkedInAt);
   });

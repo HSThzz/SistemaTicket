@@ -17,6 +17,10 @@ import { QRCodeSVG } from "qrcode.react";
 import type { TicketListItem } from "../../types/api";
 import { TicketWalletActions } from "../TicketWalletActions";
 import { formatShortDate } from "../../utils/format";
+import {
+  formatTicketCheckInCode,
+  getTicketQrPayload,
+} from "../../utils/ticketCheckInCode";
 
 interface TicketCardDetailsProps {
   ticket: TicketListItem;
@@ -27,6 +31,8 @@ export function TicketCardDetails({ ticket }: TicketCardDetailsProps) {
   const isActive = ticket.status === "ACTIVE";
   const isUsed = ticket.status === "USED";
   const eventHref = `/eventos/${ticket.event.id}`;
+  const qrPayload = getTicketQrPayload(ticket);
+  const displayCheckInCode = formatTicketCheckInCode(ticket.checkInCode ?? ticket.uniqueCode);
 
   return (
     <Stack gap="lg" className="ticket-wallet-pass-body">
@@ -35,10 +41,10 @@ export function TicketCardDetails({ ticket }: TicketCardDetailsProps) {
           <Stack gap="sm" align="center" w="100%" maw="100%">
             <Box className="ticket-qr-frame">
               <QRCodeSVG
-                value={ticket.uniqueCode}
-                size={256}
-                level="M"
-                includeMargin
+                value={qrPayload}
+                size={240}
+                level="L"
+                marginSize={2}
                 className="ticket-qr-svg"
               />
             </Box>
@@ -71,8 +77,11 @@ export function TicketCardDetails({ ticket }: TicketCardDetailsProps) {
           <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb={6}>
             Código do ingresso
           </Text>
-          <Text ff="monospace" size="sm" fw={500} style={{ wordBreak: "break-all" }}>
-            {ticket.uniqueCode}
+          <Text ff="monospace" size="xl" fw={700} ta="center" lts={2}>
+            {displayCheckInCode}
+          </Text>
+          <Text size="xs" c="dimmed" mt={6}>
+            Digite na portaria com ou sem hífen.
           </Text>
         </Box>
       ) : null}
@@ -106,8 +115,11 @@ export function TicketCardDetails({ ticket }: TicketCardDetailsProps) {
           <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb={6}>
             Código do ingresso
           </Text>
-          <Text ff="monospace" size="sm" fw={500} style={{ wordBreak: "break-all" }}>
-            {ticket.uniqueCode}
+          <Text ff="monospace" size="xl" fw={700} ta="center" lts={2}>
+            {displayCheckInCode}
+          </Text>
+          <Text size="xs" c="dimmed" mt={6}>
+            Digite na portaria com ou sem hífen.
           </Text>
         </Box>
       ) : null}
