@@ -7,6 +7,7 @@ import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { EventsDateFilter, EventsPriceFilter } from "../components/events/EventsFilterBar";
 import type { EventCategory, EventsSort } from "../utils/eventVisuals";
+import type { EventTypeFilter } from "../utils/eventTypeFilter";
 
 export interface EventsFilters {
   query: string;
@@ -16,6 +17,7 @@ export interface EventsFilters {
   priceFilter: EventsPriceFilter;
   sort: EventsSort;
   hideSoldOut: boolean;
+  typeFilter: EventTypeFilter;
 }
 
 export const DEFAULT_EVENTS_FILTERS: EventsFilters = {
@@ -26,6 +28,7 @@ export const DEFAULT_EVENTS_FILTERS: EventsFilters = {
   priceFilter: "all",
   sort: "date",
   hideSoldOut: false,
+  typeFilter: "all",
 };
 
 const VALID_CATEGORIES = new Set<EventCategory>([
@@ -39,12 +42,14 @@ const VALID_CATEGORIES = new Set<EventCategory>([
 const VALID_DATE_FILTERS = new Set<EventsDateFilter>(["all", "soon"]);
 const VALID_PRICE_FILTERS = new Set<EventsPriceFilter>(["all", "free", "paid"]);
 const VALID_SORTS = new Set<EventsSort>(["date", "price_asc", "price_desc"]);
+const VALID_TYPE_FILTERS = new Set<EventTypeFilter>(["all", "public", "private"]);
 
 function parseFilters(params: URLSearchParams): EventsFilters {
   const category = params.get("cat");
   const dateFilter = params.get("date");
   const priceFilter = params.get("price");
   const sort = params.get("sort");
+  const typeFilter = params.get("access");
 
   return {
     query: params.get("q") ?? "",
@@ -63,6 +68,10 @@ function parseFilters(params: URLSearchParams): EventsFilters {
         : "all",
     sort: sort && VALID_SORTS.has(sort as EventsSort) ? (sort as EventsSort) : "date",
     hideSoldOut: params.get("available") === "1",
+    typeFilter:
+      typeFilter && VALID_TYPE_FILTERS.has(typeFilter as EventTypeFilter)
+        ? (typeFilter as EventTypeFilter)
+        : "all",
   };
 }
 
@@ -74,6 +83,7 @@ function writeFilters(params: URLSearchParams, filters: EventsFilters) {
   params.delete("price");
   params.delete("sort");
   params.delete("available");
+  params.delete("access");
 
   const trimmedQuery = filters.query.trim();
   if (trimmedQuery) {
@@ -96,6 +106,9 @@ function writeFilters(params: URLSearchParams, filters: EventsFilters) {
   }
   if (filters.hideSoldOut) {
     params.set("available", "1");
+  }
+  if (filters.typeFilter !== "all") {
+    params.set("access", filters.typeFilter);
   }
 }
 
@@ -129,7 +142,8 @@ export function useEventsFilters() {
     filters.dateFilter !== "all" ||
     filters.priceFilter !== "all" ||
     filters.sort !== "date" ||
-    filters.hideSoldOut;
+    filters.hideSoldOut ||
+    filters.typeFilter !== "all";
 
   return { filters, setFilters, clearFilters, hasActiveFilters };
 }

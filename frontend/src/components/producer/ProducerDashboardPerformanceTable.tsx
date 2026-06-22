@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import type { ProducerEventStats } from "../../types/api";
 import { formatCurrencyFromCents, formatShortDate } from "../../utils/format";
 import { getEventStatusColor, getEventStatusLabel } from "../../utils/statusLabels";
+import { EventPrivateBadge, isPrivateEvent } from "../events/EventPrivateBadge";
 
 interface ProducerDashboardPerformanceTableProps {
   events: ProducerEventStats[];
@@ -71,15 +72,19 @@ export function ProducerDashboardPerformanceTable({
                         <Text fw={600} size="sm" lineClamp={1}>
                           {event.title}
                         </Text>
-                        <Badge
-                          size="xs"
-                          variant="light"
-                          color={getEventStatusColor(event.status)}
-                          radius="sm"
-                          mt={4}
-                        >
-                          {getEventStatusLabel(event.status)}
-                        </Badge>
+                        <Group gap={6} mt={4} wrap="wrap">
+                          <Badge
+                            size="xs"
+                            variant="light"
+                            color={getEventStatusColor(event.status)}
+                            radius="sm"
+                          >
+                            {getEventStatusLabel(event.status)}
+                          </Badge>
+                          {isPrivateEvent(event) ? (
+                            <EventPrivateBadge size="xs" variant="light" />
+                          ) : null}
+                        </Group>
                       </Box>
                     </Group>
                   </Table.Td>

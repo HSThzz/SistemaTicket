@@ -18,11 +18,16 @@ import {
   IconMapPin,
   IconTicket,
   IconX,
+  IconLock,
 } from "@tabler/icons-react";
 import { EventsCategoryGrid } from "./EventsCategoryGrid";
 import type { EventsDateFilter, EventsPriceFilter } from "./EventsFilterBar";
 import type { EventCategory, EventsSort } from "../../utils/eventVisuals";
 import { SORT_LABELS } from "../../utils/eventVisuals";
+import {
+  EVENT_TYPE_FILTER_LABELS,
+  type EventTypeFilter,
+} from "../../utils/eventTypeFilter";
 
 interface EventsFiltersDrawerProps {
   cities: string[];
@@ -36,6 +41,8 @@ interface EventsFiltersDrawerProps {
   onSortChange: (value: EventsSort) => void;
   hideSoldOut: boolean;
   onHideSoldOutChange: (value: boolean) => void;
+  typeFilter: EventTypeFilter;
+  onTypeFilterChange: (value: EventTypeFilter) => void;
   category: EventCategory;
   onCategoryChange: (value: EventCategory) => void;
   activeFiltersCount: number;
@@ -73,6 +80,8 @@ export function EventsFiltersDrawer({
   onSortChange,
   hideSoldOut,
   onHideSoldOutChange,
+  typeFilter,
+  onTypeFilterChange,
   category,
   onCategoryChange,
   activeFiltersCount,
@@ -198,6 +207,25 @@ export function EventsFiltersDrawer({
                 active={priceFilter === "paid"}
                 onClick={() => onPriceFilterChange("paid")}
               />
+            </Group>
+          </Stack>
+
+          <Stack gap="xs">
+            <Group gap={6}>
+              <IconLock size={16} />
+              <Text fw={700} size="sm">
+                Acesso
+              </Text>
+            </Group>
+            <Group gap="xs">
+              {(["all", "public", "private"] as const).map((value) => (
+                <DrawerOption
+                  key={value}
+                  label={EVENT_TYPE_FILTER_LABELS[value]}
+                  active={typeFilter === value}
+                  onClick={() => onTypeFilterChange(value)}
+                />
+              ))}
             </Group>
           </Stack>
 

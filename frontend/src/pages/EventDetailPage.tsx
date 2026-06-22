@@ -57,7 +57,6 @@ import {
   getLowestPrice,
   getTotalAvailable,
   inferEventCategory,
-  isEventSoon,
   preloadEventCoverImage,
 } from "../utils/eventVisuals";
 import {
@@ -90,7 +89,6 @@ function LotOfferCard({
   onBuy: (lotId: string) => void;
 }) {
   const soldOut = lot.availableQuantity === 0;
-  const lowStock = lot.availableQuantity > 0 && lot.availableQuantity <= 20;
 
   return (
     <Box className="lot-offer-card" p="md">
@@ -99,11 +97,6 @@ function LotOfferCard({
           <Text fw={700} lineClamp={2} flex={1}>
             {lot.name}
           </Text>
-          {lowStock ? (
-            <Badge color="orange" variant="filled" size="sm" radius="sm">
-              Últimos
-            </Badge>
-          ) : null}
           {soldOut ? (
             <Badge color="red" variant="filled" size="sm" radius="sm">
               Esgotado
@@ -235,7 +228,6 @@ export function EventDetailPage() {
   const category = inferEventCategory(event);
   const [glowColor] = getEventGradient(event.id);
   const soldOut = totalAvailable === 0;
-  const lowStock = totalAvailable > 0 && totalAvailable <= 20;
   const eventIsPrivate = event.type === "PRIVATE";
   const isApproved = participation?.status === "APPROVED";
   const canBuy = !eventIsPrivate || isApproved;
@@ -290,21 +282,6 @@ export function EventDetailPage() {
                     leftSection={<IconLock size={12} />}
                   >
                     Privado
-                  </Badge>
-                ) : null}
-                {isEventSoon(event) ? (
-                  <Badge color="orange" variant="filled" radius="sm">
-                    Em breve
-                  </Badge>
-                ) : null}
-                {lowStock ? (
-                  <Badge color="orange" variant="filled" radius="sm">
-                    Últimos ingressos
-                  </Badge>
-                ) : null}
-                {lowestPrice !== null ? (
-                  <Badge color="white" c="dark" variant="filled" radius="sm">
-                    a partir de {formatCurrencyFromCents(lowestPrice)}
                   </Badge>
                 ) : null}
               </Group>

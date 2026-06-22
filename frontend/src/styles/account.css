@@ -891,6 +891,38 @@
   max-width: 100%;
 }
 
+.producer-events-filter-panel {
+  overflow: hidden;
+}
+
+.producer-events-filter-row__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.04em;
+}
+
+.producer-events-filter-chip .mantine-Chip-label {
+  font-weight: 500;
+}
+
+.producer-events-filter-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--mantine-radius-xl);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 500;
+  color: var(--mantine-color-dimmed);
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.producer-events-filter-clear:hover {
+  color: var(--mantine-color-text);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
+}
+
 @media (min-width: 48em) and (max-width: 74.99em) {
   .producer-nav-tab-description {
     display: none;

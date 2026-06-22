@@ -5,12 +5,17 @@ import {
   IconCalendar,
   IconChevronDown,
   IconCurrencyReal,
+  IconLock,
   IconMapPin,
   IconTicket,
   IconX,
 } from "@tabler/icons-react";
 import type { EventsSort } from "../../utils/eventVisuals";
 import { SORT_LABELS } from "../../utils/eventVisuals";
+import {
+  EVENT_TYPE_FILTER_LABELS,
+  type EventTypeFilter,
+} from "../../utils/eventTypeFilter";
 
 export type EventsDateFilter = "all" | "soon";
 export type EventsPriceFilter = "all" | "free" | "paid";
@@ -27,6 +32,8 @@ interface EventsFilterBarProps {
   onSortChange: (value: EventsSort) => void;
   hideSoldOut: boolean;
   onHideSoldOutChange: (value: boolean) => void;
+  typeFilter: EventTypeFilter;
+  onTypeFilterChange: (value: EventTypeFilter) => void;
   showClearFilters?: boolean;
   onClearFilters?: () => void;
 }
@@ -79,6 +86,8 @@ export function EventsFilterBar({
   onSortChange,
   hideSoldOut,
   onHideSoldOutChange,
+  typeFilter,
+  onTypeFilterChange,
   showClearFilters,
   onClearFilters,
 }: EventsFilterBarProps) {
@@ -137,6 +146,27 @@ export function EventsFilterBar({
             <Menu.Item onClick={() => onPriceFilterChange("all")}>Qualquer preço</Menu.Item>
             <Menu.Item onClick={() => onPriceFilterChange("free")}>Gratuito</Menu.Item>
             <Menu.Item onClick={() => onPriceFilterChange("paid")}>Pago</Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+
+        <Menu withinPortal position="bottom-start" shadow="md">
+          <Menu.Target>
+            <div>
+              <FilterPill
+                icon={<IconLock size={16} stroke={1.8} />}
+                label={
+                  typeFilter === "all"
+                    ? "Acesso"
+                    : EVENT_TYPE_FILTER_LABELS[typeFilter]
+                }
+                active={typeFilter !== "all"}
+              />
+            </div>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item onClick={() => onTypeFilterChange("all")}>Todos</Menu.Item>
+            <Menu.Item onClick={() => onTypeFilterChange("public")}>Públicos</Menu.Item>
+            <Menu.Item onClick={() => onTypeFilterChange("private")}>Privados</Menu.Item>
           </Menu.Dropdown>
         </Menu>
 

@@ -47,6 +47,7 @@ export async function getProducerDashboard(
       eventId: event.id,
       title: event.title,
       status: event.status,
+      type: event.type,
       date: event.date.toISOString(),
       imageUrl: event.imageUrl,
       ticketsSold: soldByEvent.get(event.id) ?? 0,

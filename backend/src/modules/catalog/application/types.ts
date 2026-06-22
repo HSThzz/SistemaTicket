@@ -20,6 +20,7 @@ export interface ProducerEventStats {
   eventId: string;
   title: string;
   status: string;
+  type: string;
   date: string;
   imageUrl: string | null;
   ticketsSold: number;

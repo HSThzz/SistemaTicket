@@ -35,9 +35,16 @@ import { ProducerDashboardPerformanceTable } from "../../components/producer/Pro
 import { ProducerNav } from "../../components/producer/ProducerNav";
 import { ProducerPanelSkeleton } from "../../components/producer/ProducerPanelSkeleton";
 import { ProducerTopPerformers } from "../../components/producer/ProducerTopPerformers";
+import { EventTypeFilterControl } from "../../components/events/EventTypeFilterControl";
 import * as eventService from "../../features/catalog/api/eventService";
 import type { ProducerDashboardStats } from "../../types/api";
 import { formatCurrencyFromCents } from "../../utils/format";
+import {
+  computeProducerEventSummary,
+  countEventsByTypeFilter,
+  filterProducerStatsByType,
+  type EventTypeFilter,
+} from "../../utils/eventTypeFilter";
 import { getApiErrorMessage } from "../../utils/errors";
 
 const DASHBOARD_HEADER = (
@@ -73,6 +80,7 @@ export function ProducerDashboardPage() {
   const [stats, setStats] = useState<ProducerDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<EventTypeFilter>("all");
 
   useEffect(() => {
     let cancelled = false;
@@ -100,21 +108,42 @@ export function ProducerDashboardPage() {
     };
   }, []);
 
+  const filteredEvents = useMemo(() => {
+    if (!stats) {
+      return [];
+    }
+
+    return filterProducerStatsByType(stats.events, typeFilter);
+  }, [stats, typeFilter]);
+
+  const typeCounts = useMemo(() => {
+    if (!stats) {
+      return { all: 0, public: 0, private: 0 };
+    }
+
+    return countEventsByTypeFilter(stats.events);
+  }, [stats]);
+
+  const filteredSummary = useMemo(
+    () => computeProducerEventSummary(filteredEvents),
+    [filteredEvents],
+  );
+
   const derived = useMemo(() => {
     if (!stats) {
       return null;
     }
 
     const checkInRate =
-      stats.summary.ticketsSold > 0
-        ? Math.round((stats.summary.ticketsCheckedIn / stats.summary.ticketsSold) * 100)
+      filteredSummary.ticketsSold > 0
+        ? Math.round((filteredSummary.ticketsCheckedIn / filteredSummary.ticketsSold) * 100)
         : 0;
 
-    const pendingCheckIns = stats.summary.ticketsSold - stats.summary.ticketsCheckedIn;
-    const draftEvents = stats.summary.draftEvents;
+    const pendingCheckIns = filteredSummary.ticketsSold - filteredSummary.ticketsCheckedIn;
+    const draftEvents = filteredSummary.draftEvents;
     const avgRevenuePerPublished =
-      stats.summary.publishedEvents > 0
-        ? Math.round(stats.summary.grossRevenueCents / stats.summary.publishedEvents)
+      filteredSummary.publishedEvents > 0
+        ? Math.round(filteredSummary.grossRevenueCents / filteredSummary.publishedEvents)
         : 0;
 
     return {
@@ -123,7 +152,7 @@ export function ProducerDashboardPage() {
       draftEvents,
       avgRevenuePerPublished,
     };
-  }, [stats]);
+  }, [stats, filteredSummary]);
 
   if (loading) {
     return (
@@ -153,23 +182,31 @@ export function ProducerDashboardPage() {
       <ProducerNav />
 
       <section className="producer-dashboard-kpis">
+        <Group justify="flex-end" mb="sm">
+          <EventTypeFilterControl
+            value={typeFilter}
+            onChange={setTypeFilter}
+            counts={typeCounts}
+          />
+        </Group>
+
         <SimpleGrid cols={{ base: 2, lg: 4 }} spacing="md">
           <StatCard
             label="Receita bruta"
-            value={formatCurrencyFromCents(stats.summary.grossRevenueCents)}
+            value={formatCurrencyFromCents(filteredSummary.grossRevenueCents)}
             icon={<IconCash size={20} />}
             iconColor="brand"
           />
           <StatCard
             label="Ingressos vendidos"
-            value={String(stats.summary.ticketsSold)}
+            value={String(filteredSummary.ticketsSold)}
             icon={<IconTicket size={20} />}
             iconColor="teal"
             valueColor="teal"
           />
           <StatCard
             label="Check-ins"
-            value={String(stats.summary.ticketsCheckedIn)}
+            value={String(filteredSummary.ticketsCheckedIn)}
             icon={<IconScan size={20} />}
             iconColor="blue"
             valueColor="blue"
@@ -187,11 +224,11 @@ export function ProducerDashboardPage() {
           <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
             <ContextMetric
               label="Eventos"
-              value={String(stats.summary.totalEvents)}
+              value={String(filteredSummary.totalEvents)}
             />
             <ContextMetric
               label="Publicados"
-              value={String(stats.summary.publishedEvents)}
+              value={String(filteredSummary.publishedEvents)}
               tone="success"
             />
             <ContextMetric
@@ -225,9 +262,22 @@ export function ProducerDashboardPage() {
             }
           />
         </PremiumPaper>
+      ) : filteredEvents.length === 0 ? (
+        <PremiumPaper p="xl">
+          <Stack gap="md" align="center">
+            <Text ta="center" c="dimmed" size="sm">
+              Nenhum evento {typeFilter === "private" ? "privado" : "público"} cadastrado.
+            </Text>
+            <EventTypeFilterControl
+              value={typeFilter}
+              onChange={setTypeFilter}
+              counts={typeCounts}
+            />
+          </Stack>
+        </PremiumPaper>
       ) : (
         <>
-          <ProducerDashboardAlerts events={stats.events} />
+          <ProducerDashboardAlerts events={filteredEvents} />
 
           <Grid gap="lg" className="producer-dashboard-layout">
             <Grid.Col span={{ base: 12, lg: 8 }} className="producer-dashboard-main">
@@ -242,10 +292,10 @@ export function ProducerDashboardPage() {
                     </Text>
                   </Stack>
                   <Badge size="lg" variant="light" color="brand" radius="sm">
-                    {stats.events.length} evento{stats.events.length === 1 ? "" : "s"}
+                    {filteredEvents.length} evento{filteredEvents.length === 1 ? "" : "s"}
                   </Badge>
                 </Group>
-                <ProducerDashboardPerformanceTable events={stats.events} />
+                <ProducerDashboardPerformanceTable events={filteredEvents} />
               </PremiumPaper>
             </Grid.Col>
 
@@ -261,7 +311,7 @@ export function ProducerDashboardPage() {
                         Maior receita até agora.
                       </Text>
                     </Stack>
-                    <ProducerTopPerformers events={stats.events} />
+                    <ProducerTopPerformers events={filteredEvents} />
                   </Stack>
                 </PremiumPaper>
 

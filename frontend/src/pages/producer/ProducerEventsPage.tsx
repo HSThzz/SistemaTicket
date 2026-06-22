@@ -11,7 +11,6 @@ import {
   Button,
   Group,
   Modal,
-  SegmentedControl,
   SimpleGrid,
   Stack,
   Text,
@@ -29,11 +28,17 @@ import { PageHeader } from "../../components/account/PageHeader";
 import { PremiumPaper } from "../../components/account/PremiumPaper";
 import { StatCard } from "../../components/account/StatCard";
 import { ProducerEventListCard } from "../../components/producer/ProducerEventListCard";
+import { ProducerEventsFilterPanel } from "../../components/producer/ProducerEventsFilterPanel";
 import { ProducerNav } from "../../components/producer/ProducerNav";
 import { ProducerPanelSkeleton } from "../../components/producer/ProducerPanelSkeleton";
 import * as eventService from "../../features/catalog/api/eventService";
 import type { Event } from "../../types/api";
 import { getEventDeleteConfirmationCopy, toEventStatus } from "../../utils/eventStatus";
+import {
+  countEventsByTypeFilter,
+  filterEventsByType,
+  type EventTypeFilter,
+} from "../../utils/eventTypeFilter";
 import { getApiErrorMessage } from "../../utils/errors";
 
 type EventFilter = "all" | "published" | "draft";
@@ -55,6 +60,7 @@ export function ProducerEventsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<EventFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<EventTypeFilter>("all");
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -111,34 +117,66 @@ export function ProducerEventsPage() {
     }
   };
 
+  const eventsForStatusCounts = useMemo(
+    () => filterEventsByType(events, typeFilter),
+    [events, typeFilter],
+  );
+
   const summary = useMemo(() => {
-    const published = events.filter((event) => event.status === "PUBLISHED").length;
-    const drafts = events.filter((event) => event.status === "DRAFT").length;
-    const lots = events.reduce((sum, event) => sum + event.ticketLots.length, 0);
+    const published = eventsForStatusCounts.filter((event) => event.status === "PUBLISHED").length;
+    const drafts = eventsForStatusCounts.filter((event) => event.status === "DRAFT").length;
+    const lots = eventsForStatusCounts.reduce((sum, event) => sum + event.ticketLots.length, 0);
 
     return {
-      total: events.length,
+      total: eventsForStatusCounts.length,
       published,
       drafts,
       lots,
     };
-  }, [events]);
+  }, [eventsForStatusCounts]);
+
+  const typeCounts = useMemo(() => {
+    const eventsForTypeCounts =
+      filter === "published"
+        ? events.filter((event) => event.status === "PUBLISHED")
+        : filter === "draft"
+          ? events.filter((event) => event.status === "DRAFT")
+          : events;
+
+    return countEventsByTypeFilter(eventsForTypeCounts);
+  }, [events, filter]);
+
+  const statusCounts = useMemo(
+    (): Record<"all" | "published" | "draft", number> => ({
+      all: summary.total,
+      published: summary.published,
+      draft: summary.drafts,
+    }),
+    [summary],
+  );
 
   const filteredEvents = useMemo(() => {
     const sorted = [...events].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
 
+    let result = sorted;
+
     if (filter === "published") {
-      return sorted.filter((event) => event.status === "PUBLISHED");
+      result = result.filter((event) => event.status === "PUBLISHED");
+    } else if (filter === "draft") {
+      result = result.filter((event) => event.status === "DRAFT");
     }
 
-    if (filter === "draft") {
-      return sorted.filter((event) => event.status === "DRAFT");
-    }
+    return filterEventsByType(result, typeFilter);
+  }, [events, filter, typeFilter]);
 
-    return sorted;
-  }, [events, filter]);
+  const hasActiveFilters = filter !== "all" || typeFilter !== "all";
+
+  const handleClearFilters = () => {
+    setFilter("all");
+    setTypeFilter("all");
+  };
 
   if (loading) {
     return (
@@ -245,28 +283,25 @@ export function ProducerEventsPage() {
 
       {events.length > 0 ? (
         <Stack gap="md">
-          <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm">
-            <Stack gap={4}>
-              <Title order={3} size="h4">
-                Catálogo de eventos
-              </Title>
-              <Text c="dimmed" size="sm">
-                Selecione um evento para editar detalhes, publicar ou gerenciar lotes.
-              </Text>
-            </Stack>
+          <Stack gap={4}>
+            <Title order={3} size="h4">
+              Catálogo de eventos
+            </Title>
+            <Text c="dimmed" size="sm">
+              Selecione um evento para editar detalhes, publicar ou gerenciar lotes.
+            </Text>
+          </Stack>
 
-            <SegmentedControl
-              value={filter}
-              onChange={(value) => setFilter(value as EventFilter)}
-              data={[
-                { label: `Todos (${summary.total})`, value: "all" },
-                { label: `Publicados (${summary.published})`, value: "published" },
-                { label: `Rascunhos (${summary.drafts})`, value: "draft" },
-              ]}
-              radius="xl"
-              className="producer-events-filter"
-            />
-          </Group>
+          <ProducerEventsFilterPanel
+            statusFilter={filter}
+            onStatusFilterChange={setFilter}
+            statusCounts={statusCounts}
+            typeFilter={typeFilter}
+            onTypeFilterChange={setTypeFilter}
+            typeCounts={typeCounts}
+            showClearFilters={hasActiveFilters}
+            onClearFilters={handleClearFilters}
+          />
 
           {filteredEvents.length === 0 ? (
             <PremiumPaper p="lg">
@@ -291,6 +326,7 @@ export function ProducerEventsPage() {
             <Text size="sm" c="dimmed">
               {filteredEvents.length} de {events.length} evento
               {events.length === 1 ? "" : "s"}
+              {hasActiveFilters ? " com os filtros atuais" : ""}
             </Text>
             <Badge size="lg" variant="light" color="brand" radius="sm">
               {summary.lots} lote{summary.lots === 1 ? "" : "s"} no total

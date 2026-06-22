@@ -35,7 +35,6 @@ export function EventCard({ event, variant = "default" }: EventCardProps) {
   const lowestPrice = getLowestPrice(event);
   const totalAvailable = getTotalAvailable(event);
   const soldOut = totalAvailable === 0;
-  const lowStock = totalAvailable > 0 && totalAvailable <= 20;
 
   if (variant === "horizontal") {
     return (
@@ -96,11 +95,6 @@ export function EventCard({ event, variant = "default" }: EventCardProps) {
         <Group justify="space-between" p="sm" align="flex-start" wrap="wrap" gap="xs">
           <Group gap="xs" wrap="wrap">
             {isPrivateEvent(event) ? <EventPrivateBadge size="sm" /> : null}
-            {lowStock ? (
-              <Badge color="orange" variant="filled" size="sm">
-                Acabando
-              </Badge>
-            ) : null}
           </Group>
           {soldOut ? (
             <Badge color="red" variant="filled" size="sm">

@@ -2,17 +2,15 @@ import { Link } from "react-router-dom";
 import { Carousel } from "@mantine/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { useRef } from "react";
-import { Badge, Box, Button, Group, Stack, Text, Title } from "@mantine/core";
+import { Box, Button, Group, Stack, Text, Title } from "@mantine/core";
 import { IconCalendar, IconMapPin, IconTicket } from "@tabler/icons-react";
 import type { Event } from "../../types/api";
 import {
   extractCity,
   getEventCoverStyle,
   getEventGradient,
-  getLowestPrice,
-  getTotalAvailable,
 } from "../../utils/eventVisuals";
-import { formatCurrencyFromCents, formatShortDate } from "../../utils/format";
+import { formatShortDate } from "../../utils/format";
 
 interface HeroCarouselProps {
   events: Event[];
@@ -54,8 +52,6 @@ export function HeroCarousel({ events }: HeroCarouselProps) {
         }}
       >
         {slides.map((event, index) => {
-          const lowestPrice = getLowestPrice(event);
-          const available = getTotalAvailable(event);
           const [glowColor] = getEventGradient(event.id);
 
           return (
@@ -89,19 +85,6 @@ export function HeroCarousel({ events }: HeroCarouselProps) {
                   gap="md"
                   style={{ position: "relative", zIndex: 2 }}
                 >
-                  <Group gap="xs">
-                    {available <= 20 && available > 0 ? (
-                      <Badge color="orange" variant="filled" radius="sm">
-                        Últimos ingressos
-                      </Badge>
-                    ) : null}
-                    {lowestPrice !== null ? (
-                      <Badge color="white" c="dark" variant="filled" radius="sm">
-                        a partir de {formatCurrencyFromCents(lowestPrice)}
-                      </Badge>
-                    ) : null}
-                  </Group>
-
                   <Title order={1} size="h2" maw={640} style={{ lineHeight: 1.15 }}>
                     {event.title}
                   </Title>

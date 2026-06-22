@@ -37,6 +37,7 @@ import {
   isEventSoldOut,
   sortEvents,
 } from "../utils/eventVisuals";
+import { filterEventsByType } from "../utils/eventTypeFilter";
 
 function EventsPageSkeleton() {
   return (
@@ -61,6 +62,7 @@ function countActiveFilters(filters: ReturnType<typeof useEventsFilters>["filter
   if (filters.priceFilter !== "all") count += 1;
   if (filters.hideSoldOut) count += 1;
   if (filters.sort !== "date") count += 1;
+  if (filters.typeFilter !== "all") count += 1;
   return count;
 }
 
@@ -102,6 +104,8 @@ export function EventsPage() {
     if (filters.hideSoldOut) {
       result = result.filter((event) => !isEventSoldOut(event));
     }
+
+    result = filterEventsByType(result, filters.typeFilter);
 
     return sortEvents(result, filters.sort);
   }, [events, filters]);
@@ -166,6 +170,8 @@ export function EventsPage() {
                 onSortChange={(sort) => setFilters({ sort })}
                 hideSoldOut={filters.hideSoldOut}
                 onHideSoldOutChange={(hideSoldOut) => setFilters({ hideSoldOut })}
+                typeFilter={filters.typeFilter}
+                onTypeFilterChange={(typeFilter) => setFilters({ typeFilter })}
                 category={filters.category}
                 onCategoryChange={(category) => setFilters({ category })}
                 activeFiltersCount={activeFiltersCount}
@@ -185,6 +191,8 @@ export function EventsPage() {
                   onSortChange={(sort) => setFilters({ sort })}
                   hideSoldOut={filters.hideSoldOut}
                   onHideSoldOutChange={(hideSoldOut) => setFilters({ hideSoldOut })}
+                  typeFilter={filters.typeFilter}
+                  onTypeFilterChange={(typeFilter) => setFilters({ typeFilter })}
                   showClearFilters={hasActiveFilters}
                   onClearFilters={clearFilters}
                 />
