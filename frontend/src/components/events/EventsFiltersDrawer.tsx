@@ -22,12 +22,12 @@ import {
 } from "@tabler/icons-react";
 import { EventsCategoryGrid } from "./EventsCategoryGrid";
 import type { EventsDateFilter, EventsPriceFilter } from "./EventsFilterBar";
-import type { EventCategory, EventsSort } from "../../utils/eventVisuals";
-import { SORT_LABELS } from "../../utils/eventVisuals";
+import type { EventCategory, EventsSort } from "@/modules/catalog/utils/eventVisuals";
+import { SORT_LABELS } from "@/modules/catalog/utils/eventVisuals";
 import {
   EVENT_TYPE_FILTER_LABELS,
   type EventTypeFilter,
-} from "../../utils/eventTypeFilter";
+} from "@/modules/catalog/utils/eventTypeFilter";
 
 interface EventsFiltersDrawerProps {
   cities: string[];

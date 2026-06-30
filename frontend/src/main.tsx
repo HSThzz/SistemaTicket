@@ -11,7 +11,7 @@ import "@mantine/core/styles.css";
 import "@mantine/carousel/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/notifications/styles.css";
-import App from "./App.tsx";
+import App from "@/app/App.tsx";
 import { appTheme } from "./theme";
 import { colorSchemeManager } from "./theme/colorScheme";
 import "./index.css";

@@ -4,7 +4,7 @@
  */
 
 import { PremiumBadge, type PremiumBadgeTone } from "./PremiumBadge";
-import { getEventStatusLabel } from "../../utils/statusLabels";
+import { getEventStatusLabel } from "@/shared/utils/statusLabels";
 
 /** Mapeia status de evento para tom visual do badge. */
 export function getEventStatusTone(status: string): PremiumBadgeTone {

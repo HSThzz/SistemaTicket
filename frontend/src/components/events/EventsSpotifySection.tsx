@@ -3,7 +3,7 @@ import { IconBrandSpotify } from "@tabler/icons-react";
 import type {
   SpotifyArtistRef,
   SpotifyRecommendedEvent,
-} from "../../features/integrations/api/spotifyService";
+} from "@/modules/integrations/api/spotifyService";
 import { DiceEventCard } from "./DiceEventCard";
 
 interface EventsSpotifySectionProps {

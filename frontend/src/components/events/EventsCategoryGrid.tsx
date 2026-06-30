@@ -6,7 +6,7 @@ import {
   IconMicrophone2,
   IconSparkles,
 } from "@tabler/icons-react";
-import { CATEGORY_LABELS, type EventCategory } from "../../utils/eventVisuals";
+import { CATEGORY_LABELS, type EventCategory } from "@/modules/catalog/utils/eventVisuals";
 
 const CATEGORIES: {
   value: EventCategory;

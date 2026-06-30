@@ -2,9 +2,9 @@ import { Box, Group, Stack, Text, Title } from "@mantine/core";
 import { IconCalendar, IconMapPin, IconTicket } from "@tabler/icons-react";
 import { PremiumBadge } from "../ui/PremiumBadge";
 import { TicketStatusBadge } from "../ui/TicketStatusBadge";
-import type { TicketListItem } from "../../types/api";
-import { extractCity, getEventCoverStyle } from "../../utils/eventVisuals";
-import { formatCurrencyFromCents, formatShortDate } from "../../utils/format";
+import type { TicketListItem } from "@/shared/types/api";
+import { extractCity, getEventCoverStyle } from "@/modules/catalog/utils/eventVisuals";
+import { formatCurrencyFromCents, formatShortDate } from "@/shared/utils/format";
 
 interface TicketWalletPassProps {
   ticket: TicketListItem;

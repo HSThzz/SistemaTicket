@@ -1,8 +1,8 @@
 import { Badge, Box, Button, Group, Loader, Stack, Text, Title } from "@mantine/core";
 import { IconBrandSpotify, IconLogin } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import type { SpotifyStatus } from "../../features/integrations/api/spotifyService";
+import { useAuth } from "@/modules/identity/context/AuthContext";
+import type { SpotifyStatus } from "@/modules/integrations/api/spotifyService";
 import { ZeMascot } from "../brand/ZeMascot";
 
 interface EventsPromoBannerProps {

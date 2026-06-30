@@ -26,13 +26,13 @@ import { notifications } from "@mantine/notifications";
 import { IconMail, IconSearch, IconTicket, IconUser } from "@tabler/icons-react";
 import { EmptyState } from "../account/EmptyState";
 import { AdminSection } from "./AdminSection";
-import * as authService from "../../features/identity/api/authService";
-import * as eventService from "../../features/catalog/api/eventService";
-import * as adminTicketService from "../../features/ticketing/api/adminTicketService";
-import type { AuthUser, Event, TicketLot } from "../../types/api";
-import { formatCurrencyFromCents } from "../../utils/format";
-import { getApiErrorMessage } from "../../utils/errors";
-import { getRoleBadgeColor, ROLE_LABELS } from "../../utils/adminRoles";
+import * as authService from "@/modules/identity/api/authService";
+import * as eventService from "@/modules/catalog/api/eventService";
+import * as adminTicketService from "@/modules/ticketing/api/adminTicketService";
+import type { AuthUser, Event, TicketLot } from "@/shared/types/api";
+import { formatCurrencyFromCents } from "@/shared/utils/format";
+import { getApiErrorMessage } from "@/shared/utils/errors";
+import { getRoleBadgeColor, ROLE_LABELS } from "@/modules/identity/utils/adminRoles";
 
 interface AdminIssueTicketsPanelProps {
   onIssued?: () => void;

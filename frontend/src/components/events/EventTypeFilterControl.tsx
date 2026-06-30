@@ -7,7 +7,7 @@ import { SegmentedControl } from "@mantine/core";
 import {
   EVENT_TYPE_FILTER_LABELS,
   type EventTypeFilter,
-} from "../../utils/eventTypeFilter";
+} from "@/modules/catalog/utils/eventTypeFilter";
 
 interface EventTypeFilterControlProps {
   value: EventTypeFilter;

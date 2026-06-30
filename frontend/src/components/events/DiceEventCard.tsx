@@ -4,16 +4,16 @@ import { EventFavoriteButton } from "../ui/EventFavoriteButton";
 import { ParticipationStatusBadge } from "../ui/ParticipationStatusBadge";
 import { PremiumBadge } from "../ui/PremiumBadge";
 import { EventPrivateBadge, isPrivateEvent } from "./EventPrivateBadge";
-import { useEventFavoriteAction } from "../../hooks/useEventFavoriteAction";
-import { useParticipation } from "../../hooks/useParticipation";
-import type { Event } from "../../types/api";
+import { useEventFavoriteAction } from "@/modules/identity/hooks/useEventFavoriteAction";
+import { useParticipation } from "@/modules/participation/hooks/useParticipation";
+import type { Event } from "@/shared/types/api";
 import {
   extractCity,
   getEventCoverStyle,
   getLowestPrice,
   getTotalAvailable,
-} from "../../utils/eventVisuals";
-import { formatCurrencyFromCents, formatEventDateDice } from "../../utils/format";
+} from "@/modules/catalog/utils/eventVisuals";
+import { formatCurrencyFromCents, formatEventDateDice } from "@/shared/utils/format";
 
 interface DiceEventCardProps {
   event: Event;

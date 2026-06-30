@@ -12,7 +12,7 @@ import {
   IconTicket,
   IconUser,
 } from "@tabler/icons-react";
-import type { AuthUser } from "../../types/api";
+import type { AuthUser } from "@/shared/types/api";
 
 interface UserAccountMenuProps {
   user: AuthUser;

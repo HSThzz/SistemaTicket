@@ -29,13 +29,13 @@ import {
 } from "@tabler/icons-react";
 import { EmptyState } from "../account/EmptyState";
 import { PremiumPaper } from "../account/PremiumPaper";
-import * as participationService from "../../features/participation/api/participationService";
+import * as participationService from "@/modules/participation/api/participationService";
 import type {
   ParticipationRequest,
   ParticipationRequestStatus,
-} from "../../types/api";
-import { getApiErrorMessage } from "../../utils/errors";
-import { formatEventDate } from "../../utils/format";
+} from "@/shared/types/api";
+import { getApiErrorMessage } from "@/shared/utils/errors";
+import { formatEventDate } from "@/shared/utils/format";
 import { ParticipationStatusBadge } from "../ui/ParticipationStatusBadge";
 
 const STATUS_FILTERS: { value: ParticipationRequestStatus; label: string }[] = [

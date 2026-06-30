@@ -14,10 +14,10 @@ import {
 } from "../events/EventPrivateBadge";
 import { EventStatusBadge } from "../ui/EventStatusBadge";
 import { PremiumBadge } from "../ui/PremiumBadge";
-import type { Event } from "../../types/api";
-import { extractCity, getEventCoverStyle, getTotalAvailable } from "../../utils/eventVisuals";
-import { formatEventDateOnly, formatEventTimeOnly } from "../../utils/format";
-import { canDeleteEventFromList, toEventStatus } from "../../utils/eventStatus";
+import type { Event } from "@/shared/types/api";
+import { extractCity, getEventCoverStyle, getTotalAvailable } from "@/modules/catalog/utils/eventVisuals";
+import { formatEventDateOnly, formatEventTimeOnly } from "@/shared/utils/format";
+import { canDeleteEventFromList, toEventStatus } from "@/modules/catalog/utils/eventStatus";
 
 interface ProducerEventListCardProps {
   event: Event;

@@ -2,7 +2,7 @@ import { Chip, Group, ScrollArea, Stack, Text } from "@mantine/core";
 import {
   CATEGORY_LABELS,
   type EventCategory,
-} from "../../utils/eventVisuals";
+} from "@/modules/catalog/utils/eventVisuals";
 
 const CATEGORIES: EventCategory[] = ["all", "festival", "show", "corporate", "online"];
 

@@ -4,7 +4,7 @@
  */
 
 import { PremiumBadge, type PremiumBadgeTone } from "./PremiumBadge";
-import { getTicketStatusLabel } from "../../utils/statusLabels";
+import { getTicketStatusLabel } from "@/shared/utils/statusLabels";
 
 /** Mapeia status de ingresso para tom visual do badge. */
 export function getTicketStatusTone(status: string): PremiumBadgeTone {

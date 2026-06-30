@@ -5,7 +5,7 @@
 
 import { IconLock } from "@tabler/icons-react";
 import { PremiumBadge } from "../ui/PremiumBadge";
-import type { Event } from "../../types/api";
+import type { Event } from "@/shared/types/api";
 
 /** Indica se o evento usa fluxo privado com aprovação. */
 export function isPrivateEvent(event: Pick<Event, "type">): boolean {

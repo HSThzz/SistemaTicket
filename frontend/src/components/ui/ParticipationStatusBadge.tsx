@@ -4,7 +4,7 @@
  */
 
 import { PremiumBadge, type PremiumBadgeTone } from "./PremiumBadge";
-import { getParticipationStatusLabel } from "../../utils/statusLabels";
+import { getParticipationStatusLabel } from "@/shared/utils/statusLabels";
 
 /** Mapeia status de participação para tom visual do badge. */
 export function getParticipationStatusTone(status: string): PremiumBadgeTone {

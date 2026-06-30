@@ -5,7 +5,7 @@
 import { Badge, Group, Stack, Text, ThemeIcon } from "@mantine/core";
 import { IconAlertTriangle, IconCalendarEvent, IconFileText } from "@tabler/icons-react";
 import { PremiumPaper } from "../account/PremiumPaper";
-import type { ProducerEventStats } from "../../types/api";
+import type { ProducerEventStats } from "@/shared/types/api";
 
 interface ProducerDashboardAlertsProps {
   events: ProducerEventStats[];

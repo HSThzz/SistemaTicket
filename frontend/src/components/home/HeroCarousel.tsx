@@ -4,13 +4,13 @@ import Autoplay from "embla-carousel-autoplay";
 import { useRef } from "react";
 import { Box, Button, Group, Stack, Text, Title } from "@mantine/core";
 import { IconCalendar, IconMapPin, IconTicket } from "@tabler/icons-react";
-import type { Event } from "../../types/api";
+import type { Event } from "@/shared/types/api";
 import {
   extractCity,
   getEventCoverStyle,
   getEventGradient,
-} from "../../utils/eventVisuals";
-import { formatShortDate } from "../../utils/format";
+} from "@/modules/catalog/utils/eventVisuals";
+import { formatShortDate } from "@/shared/utils/format";
 
 interface HeroCarouselProps {
   events: Event[];

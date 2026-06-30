@@ -12,8 +12,8 @@ import {
   Text,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
-import type { AdminAuditLogEntry } from "../../types/api";
-import { AUDIT_ACTION_LABELS } from "../../utils/adminRoles";
+import type { AdminAuditLogEntry } from "@/shared/types/api";
+import { AUDIT_ACTION_LABELS } from "@/modules/identity/utils/adminRoles";
 
 function formatAuditTarget(log: AdminAuditLogEntry): string {
   if (log.action === "USER_ROLE_UPDATED" && log.metadata?.email) {

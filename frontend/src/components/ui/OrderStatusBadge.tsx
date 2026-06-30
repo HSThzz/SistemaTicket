@@ -4,7 +4,7 @@
  */
 
 import { PremiumBadge, type PremiumBadgeTone } from "./PremiumBadge";
-import { getOrderStatusLabel } from "../../utils/statusLabels";
+import { getOrderStatusLabel } from "@/shared/utils/statusLabels";
 
 /** Mapeia status de pedido para tom visual do badge. */
 export function getOrderStatusTone(status: string): PremiumBadgeTone {

@@ -9,7 +9,7 @@ import { PremiumPaper } from "../account/PremiumPaper";
 import {
   EVENT_TYPE_FILTER_LABELS,
   type EventTypeFilter,
-} from "../../utils/eventTypeFilter";
+} from "@/modules/catalog/utils/eventTypeFilter";
 
 export type ProducerEventStatusFilter = "all" | "published" | "draft";
 

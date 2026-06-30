@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { Box, Group, Stack, Text, ThemeIcon, Title } from "@mantine/core";
 import { IconCalendar, IconCheck, IconId, IconTicket } from "@tabler/icons-react";
-import type { CheckInResult } from "../../features/ticketing/api/checkInService";
-import { formatShortDate } from "../../utils/format";
+import type { CheckInResult } from "@/modules/ticketing/api/checkInService";
+import { formatShortDate } from "@/shared/utils/format";
 
 interface CheckInSuccessCardProps {
   result: CheckInResult;

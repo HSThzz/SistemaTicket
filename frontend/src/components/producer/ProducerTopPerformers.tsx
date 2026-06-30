@@ -4,8 +4,8 @@
 
 import { Badge, Box, Group, Stack, Text, ThemeIcon } from "@mantine/core";
 import { IconCash, IconTicket, IconTrophy } from "@tabler/icons-react";
-import type { ProducerEventStats } from "../../types/api";
-import { formatCurrencyFromCents, formatShortDate } from "../../utils/format";
+import type { ProducerEventStats } from "@/shared/types/api";
+import { formatCurrencyFromCents, formatShortDate } from "@/shared/utils/format";
 
 interface ProducerTopPerformersProps {
   events: ProducerEventStats[];

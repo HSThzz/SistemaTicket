@@ -4,8 +4,8 @@
 
 import { Box, Group, Progress, Table, Text } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
-import type { ProducerEventStats } from "../../types/api";
-import { formatCurrencyFromCents, formatShortDate } from "../../utils/format";
+import type { ProducerEventStats } from "@/shared/types/api";
+import { formatCurrencyFromCents, formatShortDate } from "@/shared/utils/format";
 import { EventPrivateBadge, isPrivateEvent } from "../events/EventPrivateBadge";
 import { EventStatusBadge } from "../ui/EventStatusBadge";
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Box, Group, Text } from "@mantine/core";
 import { IconChevronLeft, IconChevronRight, IconWallet } from "@tabler/icons-react";
-import type { TicketListItem } from "../../types/api";
+import type { TicketListItem } from "@/shared/types/api";
 import { TicketCardDetails } from "./TicketCardDetails";
 import { TicketWalletPass } from "./TicketWalletPass";
 

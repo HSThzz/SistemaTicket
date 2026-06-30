@@ -14,13 +14,13 @@ import {
   IconChevronUp,
 } from "@tabler/icons-react";
 import { QRCodeSVG } from "qrcode.react";
-import type { TicketListItem } from "../../types/api";
-import { TicketWalletActions } from "../TicketWalletActions";
-import { formatShortDate } from "../../utils/format";
+import type { TicketListItem } from "@/shared/types/api";
+import { TicketWalletActions } from "@/components/tickets/TicketWalletActions";
+import { formatShortDate } from "@/shared/utils/format";
 import {
   formatTicketCheckInCode,
   getTicketQrPayload,
-} from "../../utils/ticketCheckInCode";
+} from "@/modules/ticketing/utils/ticketCheckInCode";
 
 interface TicketCardDetailsProps {
   ticket: TicketListItem;

@@ -10,12 +10,12 @@ import {
   IconTicket,
   IconX,
 } from "@tabler/icons-react";
-import type { EventsSort } from "../../utils/eventVisuals";
-import { SORT_LABELS } from "../../utils/eventVisuals";
+import type { EventsSort } from "@/modules/catalog/utils/eventVisuals";
+import { SORT_LABELS } from "@/modules/catalog/utils/eventVisuals";
 import {
   EVENT_TYPE_FILTER_LABELS,
   type EventTypeFilter,
-} from "../../utils/eventTypeFilter";
+} from "@/modules/catalog/utils/eventTypeFilter";
 
 export type EventsDateFilter = "all" | "soon";
 export type EventsPriceFilter = "all" | "free" | "paid";

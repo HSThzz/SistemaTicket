@@ -8,9 +8,9 @@ import {
   IconScan,
   IconTicket,
 } from "@tabler/icons-react";
-import type { ProducerEventStats } from "../../types/api";
-import { getEventCoverStyle } from "../../utils/eventVisuals";
-import { formatCurrencyFromCents, formatShortDate } from "../../utils/format";
+import type { ProducerEventStats } from "@/shared/types/api";
+import { getEventCoverStyle } from "@/modules/catalog/utils/eventVisuals";
+import { formatCurrencyFromCents, formatShortDate } from "@/shared/utils/format";
 import { EventStatusBadge } from "../ui/EventStatusBadge";
 
 interface ProducerEventStatsCardProps {

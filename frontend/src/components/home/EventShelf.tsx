@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 import { Anchor, Badge, Box, Group, Stack, Text, Title } from "@mantine/core";
 import { Carousel } from "@mantine/carousel";
 import { IconChevronRight } from "@tabler/icons-react";
-import { EventCard } from "../EventCard";
-import type { Event } from "../../types/api";
+import { EventCard } from "@/components/events/EventCard";
+import type { Event } from "@/shared/types/api";
 
 interface EventShelfProps {
   title: string;

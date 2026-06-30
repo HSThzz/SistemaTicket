@@ -10,8 +10,8 @@ import {
 } from "@mantine/core";
 import { IconTicket } from "@tabler/icons-react";
 import { LotStockBadge } from "../ui/LotStockBadge";
-import type { TicketLot } from "../../types/api";
-import { formatCurrencyFromCents } from "../../utils/format";
+import type { TicketLot } from "@/shared/types/api";
+import { formatCurrencyFromCents } from "@/shared/utils/format";
 
 interface ProducerLotCardProps {
   lot: TicketLot;
