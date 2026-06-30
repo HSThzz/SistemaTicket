@@ -5,7 +5,7 @@
 
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Center, Loader } from "@mantine/core";
-import { useAuth } from "@/modules/identity/context/AuthContext";
+import { useAuth } from "@/modules/identity/features/auth/context/AuthContext";
 
 /**
  * Redireciona para login se não autenticado; preserva `from` no state para retorno.

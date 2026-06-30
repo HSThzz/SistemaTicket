@@ -5,8 +5,8 @@
 
 import { Navigate, Outlet } from "react-router-dom";
 import { Center, Loader } from "@mantine/core";
-import { useAuth } from "@/modules/identity/context/AuthContext";
-import { isStaffRole } from "@/modules/identity/utils/adminRoles";
+import { useAuth } from "@/modules/identity/features/auth/context/AuthContext";
+import { isStaffRole } from "@/modules/identity/features/admin/utils/adminRoles";
 
 /**
  * Exige autenticação e papel `ADMIN` ou `SUPER_ADMIN`; demais perfis voltam à home.

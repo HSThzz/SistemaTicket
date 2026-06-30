@@ -5,7 +5,7 @@
 
 import { Navigate, Outlet } from "react-router-dom";
 import { Center, Loader } from "@mantine/core";
-import { useAuth } from "@/modules/identity/context/AuthContext";
+import { useAuth } from "@/modules/identity/features/auth/context/AuthContext";
 
 /**
  * Redireciona usuários já logados para a home; exibe loader durante bootstrap.

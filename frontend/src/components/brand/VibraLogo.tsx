@@ -1,5 +1,5 @@
 import { Group, Text } from "@mantine/core";
-import { ZeMascot } from "./ZeMascot";
+import { ZeMascot } from "@/modules/leads/features/contact/components/ZeMascot";
 
 interface VibraLogoProps {
   showMascot?: boolean;

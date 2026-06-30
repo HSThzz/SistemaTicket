@@ -5,9 +5,9 @@
 
 import { Navigate, Outlet } from "react-router-dom";
 import { Box, Center, Loader } from "@mantine/core";
-import { ProducerCheckInFab } from "@/components/producer/ProducerCheckInFab";
-import { useAuth } from "@/modules/identity/context/AuthContext";
-import { isProducerPanelRole } from "@/modules/identity/utils/adminRoles";
+import { ProducerCheckInFab } from "@/modules/catalog/features/producer/components/ProducerCheckInFab";
+import { useAuth } from "@/modules/identity/features/auth/context/AuthContext";
+import { isProducerPanelRole } from "@/modules/identity/features/admin/utils/adminRoles";
 
 /**
  * Exige autenticação e papel de produtor ou equipe admin; demais perfis voltam à home.

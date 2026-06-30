@@ -6,16 +6,16 @@
 import { Box, Button, Stack, Text, Title } from "@mantine/core";
 import { Link } from "react-router-dom";
 import { IconArrowRight, IconCalendarPlus } from "@tabler/icons-react";
-import { FaqSection } from "@/components/home/FaqSection";
-import { SiteFooter } from "@/components/home/SiteFooter";
-import { LandingCta } from "@/components/landing/LandingCta";
-import { LandingEaseBand } from "@/components/landing/LandingEaseBand";
-import { LandingFeatures } from "@/components/landing/LandingFeatures";
-import { LandingHero } from "@/components/landing/LandingHero";
-import { LandingPartnerStrip } from "@/components/landing/LandingPartnerStrip";
-import { LandingProblem } from "@/components/landing/LandingProblem";
-import { LandingSolution } from "@/components/landing/LandingSolution";
-import { AnimatedSection } from "@/components/home/AnimatedSection";
+import { FaqSection } from "@/app/components/FaqSection";
+import { SiteFooter } from "@/app/components/SiteFooter";
+import { LandingCta } from "@/app/components/LandingCta";
+import { LandingEaseBand } from "@/app/components/LandingEaseBand";
+import { LandingFeatures } from "@/app/components/LandingFeatures";
+import { LandingHero } from "@/app/components/LandingHero";
+import { LandingPartnerStrip } from "@/app/components/LandingPartnerStrip";
+import { LandingProblem } from "@/app/components/LandingProblem";
+import { LandingSolution } from "@/app/components/LandingSolution";
+import { AnimatedSection } from "@/shared/components/AnimatedSection";
 
 /**
  * Landing page institucional com conteúdo do pitch deck VIBRA.

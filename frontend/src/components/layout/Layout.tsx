@@ -26,8 +26,8 @@ import { VibraLogo } from "@/components/brand/VibraLogo";
 import { ColorSchemeToggle } from "@/components/layout/ColorSchemeToggle";
 import { MobileNavDrawer } from "@/components/layout/MobileNavDrawer";
 import { UserAccountMenu } from "@/components/layout/UserAccountMenu";
-import { useAuth } from "@/modules/identity/context/AuthContext";
-import { isProducerPanelRole, isStaffRole } from "@/modules/identity/utils/adminRoles";
+import { useAuth } from "@/modules/identity/features/auth/context/AuthContext";
+import { isProducerPanelRole, isStaffRole } from "@/modules/identity/features/admin/utils/adminRoles";
 
 const PUBLIC_NAV_LINKS = [
   { to: "/", label: "Início", exact: true },
