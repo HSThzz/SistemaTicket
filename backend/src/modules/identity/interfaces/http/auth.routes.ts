@@ -8,7 +8,7 @@ import { authController } from "./AuthController";
 import { UserRole } from "../../../../shared/kernel/enums";
 import { STAFF_ROLES } from "../../../../shared/kernel/staffRoles";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
-import { authLoginRateLimiter } from "../../../../shared/interfaces/http/middlewares/rateLimiter";
+import { authLoginRateLimiter, authPasswordChangeRateLimiter } from "../../../../shared/interfaces/http/middlewares/rateLimiter";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
 import { validateBody, validateParams, validateQuery } from "../../../../shared/interfaces/http/middlewares/validate";
 import {
@@ -50,6 +50,7 @@ router.patch(
 router.patch(
   "/me/password",
   authMiddleware,
+  authPasswordChangeRateLimiter,
   validateBody(updatePasswordBodySchema),
   (req, res) => void authController.updatePassword(req, res),
 );

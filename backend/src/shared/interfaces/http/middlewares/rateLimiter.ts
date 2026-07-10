@@ -102,6 +102,18 @@ export const authLoginRateLimiter = rateLimit({
   handler: buildRateLimitHandler("auth-login"),
 });
 
+/** Limitador para PATCH /auth/me/password: 5 tentativas por minuto por usuário. */
+export const authPasswordChangeRateLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: createRedisStore("auth-password-change"),
+  skip: skipInTest,
+  keyGenerator: (req) => req.user?.id ?? req.ip ?? "unknown",
+  handler: buildRateLimitHandler("auth-password-change"),
+});
+
 /** Limitador para POST /purchases/reserve: 15 requisições por minuto. */
 export const reserveRateLimiter = rateLimit({
   windowMs: WINDOW_MS,
