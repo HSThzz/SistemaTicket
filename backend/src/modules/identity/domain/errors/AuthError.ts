@@ -119,6 +119,28 @@ export class InvalidRoleError extends AuthError {
   }
 }
 
+/** Tentativa de redefinir a própria senha pelo painel admin. */
+export class AdminSelfPasswordResetForbiddenError extends AuthError {
+  constructor() {
+    super(
+      "Use a página de perfil para alterar sua própria senha",
+      "ADMIN_SELF_PASSWORD_RESET_FORBIDDEN",
+    );
+    this.name = "AdminSelfPasswordResetForbiddenError";
+  }
+}
+
+/** Admin de suporte sem permissão para redefinir senha de equipe. */
+export class AdminPasswordResetForbiddenError extends AuthError {
+  constructor() {
+    super(
+      "Apenas super admins podem redefinir senha de administradores",
+      "ADMIN_PASSWORD_RESET_FORBIDDEN",
+    );
+    this.name = "AdminPasswordResetForbiddenError";
+  }
+}
+
 /** Tentativa de alterar papel sem privilégio de super administrador. */
 export class RoleAssignmentForbiddenError extends AuthError {
   constructor() {

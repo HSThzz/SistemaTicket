@@ -7,6 +7,8 @@ import type { Request, Response } from "express";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import {
   AuthError,
+  AdminPasswordResetForbiddenError,
+  AdminSelfPasswordResetForbiddenError,
   DocumentAlreadyExistsError,
   EmailAlreadyExistsError,
   InvalidCredentialsError,
@@ -24,6 +26,7 @@ import { getProfile } from "../../application/services/getProfile";
 import { loginUser } from "../../application/services/loginUser";
 import { lookupUserByEmail } from "../../application/services/lookupUserByEmail";
 import { registerUser } from "../../application/services/registerUser";
+import { adminResetUserPassword } from "../../application/services/adminResetUserPassword";
 import { requestPasswordReset } from "../../application/services/requestPasswordReset";
 import { resetPasswordWithToken } from "../../application/services/resetPasswordWithToken";
 import { updatePassword as changeUserPassword } from "../../application/services/updatePassword";
@@ -40,6 +43,7 @@ import type { UpdatePasswordInputSchema } from "../../validators/schema/updatePa
 import type { UpdateProfileInputSchema } from "../../validators/schema/updateProfileSchema";
 import type { ForgotPasswordInputSchema } from "../../validators/schema/forgotPasswordSchema";
 import type { ResetPasswordInputSchema } from "../../validators/schema/resetPasswordSchema";
+import type { AdminResetUserPasswordInputSchema } from "../../validators/schema/adminResetUserPasswordSchema";
 
 const CONTEXT = "AuthController";
 const logger = Logger.getInstance();
@@ -281,6 +285,30 @@ export class AuthController {
   }
 
   /**
+   * PATCH /auth/users/:userId/password — redefine senha de outro usuário (equipe admin).
+   */
+  async adminResetUserPassword(req: Request, res: Response): Promise<void> {
+    const { userId } = req.params as { userId: string };
+    const body = req.body as AdminResetUserPasswordInputSchema;
+
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    try {
+      const result = await adminResetUserPassword(
+        userId,
+        body,
+        { userId: req.user.id, role: req.user.role },
+      );
+      res.status(200).json(result);
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
    * GET /auth/admin/audit-logs — auditoria de ações sensíveis (SUPER_ADMIN).
    */
   async listAdminAuditLogs(req: Request, res: Response): Promise<void> {
@@ -356,6 +384,14 @@ export class AuthController {
     }
 
     if (error instanceof RoleAssignmentForbiddenError) {
+      res.status(403).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (
+      error instanceof AdminPasswordResetForbiddenError ||
+      error instanceof AdminSelfPasswordResetForbiddenError
+    ) {
       res.status(403).json({ error: error.message, code: error.code });
       return;
     }

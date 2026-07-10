@@ -16,7 +16,10 @@ import type { AdminAuditLogEntry } from "@/shared/types/api";
 import { AUDIT_ACTION_LABELS } from "@/modules/identity/features/admin/utils/adminRoles";
 
 function formatAuditTarget(log: AdminAuditLogEntry): string {
-  if (log.action === "USER_ROLE_UPDATED" && log.metadata?.email) {
+  if (
+    (log.action === "USER_ROLE_UPDATED" || log.action === "USER_PASSWORD_RESET") &&
+    log.metadata?.email
+  ) {
     return String(log.metadata.email);
   }
 

@@ -128,6 +128,25 @@ export async function updateUserRole(
   return data.user;
 }
 
+/** Dados para redefinição de senha por admin. */
+export interface AdminResetUserPasswordInput {
+  newPassword: string;
+}
+
+/**
+ * Redefine a senha de outro usuário (equipe admin).
+ */
+export async function adminResetUserPassword(
+  userId: string,
+  input: AdminResetUserPasswordInput,
+): Promise<{ success: true }> {
+  const { data } = await api.patch<{ success: true }>(
+    `/auth/users/${userId}/password`,
+    input,
+  );
+  return data;
+}
+
 /**
  * Lista auditoria de ações sensíveis (super admin).
  */

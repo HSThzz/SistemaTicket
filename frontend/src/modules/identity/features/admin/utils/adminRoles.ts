@@ -36,10 +36,34 @@ export const ASSIGNABLE_ROLE_OPTIONS: { value: UserRole; label: string }[] = [
 
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
   USER_ROLE_UPDATED: "Papel alterado",
+  USER_PASSWORD_RESET: "Senha redefinida",
   ORDER_REFUNDED: "Pedido reembolsado",
   STOCK_RECONCILED: "Estoque reconciliado",
   TICKETS_ISSUED_MANUALLY: "Ingressos emitidos manualmente",
 };
+
+/** Indica se o admin pode redefinir a senha do usuário selecionado. */
+export function canAdminResetUserPassword(
+  actor: { id: string; role: UserRole } | null | undefined,
+  target: { id: string; role: UserRole } | null | undefined,
+): boolean {
+  if (!actor || !target) {
+    return false;
+  }
+
+  if (actor.id === target.id) {
+    return false;
+  }
+
+  if (
+    !isSuperAdmin(actor.role) &&
+    (target.role === "ADMIN" || target.role === "SUPER_ADMIN")
+  ) {
+    return false;
+  }
+
+  return isStaffRole(actor.role);
+}
 
 export function getRoleBadgeColor(role: UserRole): string {
   switch (role) {

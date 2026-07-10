@@ -14,6 +14,7 @@ import {
   Group,
   Modal,
   Paper,
+  PasswordInput,
   Select,
   SimpleGrid,
   Skeleton,
@@ -29,6 +30,7 @@ import {
   IconAlertCircle,
   IconDatabase,
   IconHistory,
+  IconLock,
   IconReceiptRefund,
   IconRefresh,
   IconSearch,
@@ -57,9 +59,14 @@ import type {
 } from "@/shared/types/api";
 import { formatCurrencyFromCents } from "@/shared/utils/format";
 import { getApiErrorMessage } from "@/shared/utils/errors";
+import {
+  PASSWORD_REQUIREMENTS_HINT,
+  validatePassword,
+} from "@/shared/utils/passwordValidation";
 import { getOrderStatusLabel } from "@/shared/utils/statusLabels";
 import {
   ASSIGNABLE_ROLE_OPTIONS,
+  canAdminResetUserPassword,
   getRoleBadgeColor,
   isSuperAdmin,
   ROLE_LABELS,
@@ -80,6 +87,9 @@ export function AdminDashboardPage() {
   const [roleSaving, setRoleSaving] = useState(false);
   const [pendingRole, setPendingRole] = useState<UserRole | null>(null);
   const [roleConfirmOpened, { open: openRoleConfirm, close: closeRoleConfirm }] =
+    useDisclosure(false);
+  const [passwordResetSaving, setPasswordResetSaving] = useState(false);
+  const [passwordResetConfirmOpened, { open: openPasswordResetConfirm, close: closePasswordResetConfirm }] =
     useDisclosure(false);
 
   const [orderId, setOrderId] = useState("");
@@ -103,6 +113,18 @@ export function AdminDashboardPage() {
     validate: {
       email: (value) =>
         /^\S+@\S+\.\S+$/.test(value.trim()) ? null : "E-mail inválido",
+    },
+  });
+
+  const passwordResetForm = useForm({
+    initialValues: {
+      newPassword: "",
+      confirmPassword: "",
+    },
+    validate: {
+      newPassword: (value) => validatePassword(value),
+      confirmPassword: (value, values) =>
+        value === values.newPassword ? null : "As senhas não coincidem",
     },
   });
 
@@ -149,6 +171,7 @@ export function AdminDashboardPage() {
     try {
       const user = await authService.lookupUserByEmail(values.email.trim());
       setSelectedUser(user);
+      passwordResetForm.reset();
     } catch (err) {
       setLookupError(getApiErrorMessage(err, "Usuário não encontrado."));
     } finally {
@@ -185,6 +208,50 @@ export function AdminDashboardPage() {
       });
     } finally {
       setRoleSaving(false);
+    }
+  };
+
+  const canResetSelectedUserPassword = canAdminResetUserPassword(
+    currentUser,
+    selectedUser,
+  );
+
+  const handlePasswordResetSubmit = passwordResetForm.onSubmit(() => {
+    openPasswordResetConfirm();
+  });
+
+  const handleConfirmPasswordReset = async () => {
+    if (!selectedUser) {
+      return;
+    }
+
+    setPasswordResetSaving(true);
+
+    try {
+      await authService.adminResetUserPassword(selectedUser.id, {
+        newPassword: passwordResetForm.values.newPassword,
+      });
+
+      passwordResetForm.reset();
+      closePasswordResetConfirm();
+
+      notifications.show({
+        title: "Senha redefinida",
+        message: `A senha de ${selectedUser.email} foi alterada. Sessões anteriores foram encerradas.`,
+        color: "green",
+      });
+
+      if (canManagePlatform) {
+        void loadAuditLogs();
+      }
+    } catch (err) {
+      notifications.show({
+        title: "Erro ao redefinir senha",
+        message: getApiErrorMessage(err, "Não foi possível redefinir a senha."),
+        color: "red",
+      });
+    } finally {
+      setPasswordResetSaving(false);
     }
   };
 
@@ -353,6 +420,50 @@ export function AdminDashboardPage() {
                 Administradores de suporte podem buscar usuários, mas não alterar papéis.
               </Alert>
             )}
+
+            <Divider my="md" label="Segurança" labelPosition="left" />
+
+            {canResetSelectedUserPassword ? (
+              <form onSubmit={handlePasswordResetSubmit}>
+                <Stack gap="sm">
+                  <Text size="sm" c="dimmed">
+                    {PASSWORD_REQUIREMENTS_HINT}
+                  </Text>
+                  <PasswordInput
+                    label="Nova senha"
+                    placeholder="Defina a nova senha"
+                    autoComplete="new-password"
+                    {...passwordResetForm.getInputProps("newPassword")}
+                  />
+                  <PasswordInput
+                    label="Confirmar nova senha"
+                    placeholder="Repita a nova senha"
+                    autoComplete="new-password"
+                    {...passwordResetForm.getInputProps("confirmPassword")}
+                  />
+                  <Button
+                    type="submit"
+                    variant="light"
+                    color="orange"
+                    radius="xl"
+                    leftSection={<IconLock size={16} />}
+                    loading={passwordResetSaving}
+                    w={{ base: "100%", sm: "auto" }}
+                  >
+                    Redefinir senha
+                  </Button>
+                </Stack>
+              </form>
+            ) : selectedUser.id === currentUser?.id ? (
+              <Alert color="blue" variant="light" radius="lg" title="Sua própria conta">
+                Para alterar sua senha, use a aba Segurança em Minha conta.
+              </Alert>
+            ) : !canManagePlatform &&
+              (selectedUser.role === "ADMIN" || selectedUser.role === "SUPER_ADMIN") ? (
+              <Alert color="yellow" variant="light" radius="lg" title="Acesso restrito">
+                Apenas super admins podem redefinir senha de administradores.
+              </Alert>
+            ) : null}
           </Paper>
         ) : (
           <Box mt="lg">
@@ -748,6 +859,39 @@ export function AdminDashboardPage() {
               Confirmar
             </Button>
             <Button variant="default" radius="xl" onClick={closeRoleConfirm} fullWidth>
+              Cancelar
+            </Button>
+          </Stack>
+        </Stack>
+      </Modal>
+      <Modal
+        opened={passwordResetConfirmOpened}
+        onClose={closePasswordResetConfirm}
+        title="Confirmar redefinição de senha"
+        centered={!isMobile}
+        fullScreen={isMobile}
+        radius="lg"
+        classNames={{ title: "admin-modal-title" }}
+      >
+        <Stack gap="md" className="admin-modal-body">
+          <Text size="sm">
+            Redefinir a senha de{" "}
+            <Text span fw={600}>
+              {selectedUser?.email}
+            </Text>
+            ? Todas as sessões ativas desse usuário serão encerradas.
+          </Text>
+          <Stack gap="sm" className="admin-modal-actions">
+            <Button
+              color="orange"
+              radius="xl"
+              loading={passwordResetSaving}
+              onClick={() => void handleConfirmPasswordReset()}
+              fullWidth
+            >
+              Confirmar redefinição
+            </Button>
+            <Button variant="default" radius="xl" onClick={closePasswordResetConfirm} fullWidth>
               Cancelar
             </Button>
           </Stack>

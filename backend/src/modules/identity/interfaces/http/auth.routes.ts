@@ -8,13 +8,14 @@ import { authController } from "./AuthController";
 import { UserRole } from "../../../../shared/kernel/enums";
 import { STAFF_ROLES } from "../../../../shared/kernel/staffRoles";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
-import { authLoginRateLimiter, authForgotPasswordRateLimiter, authPasswordChangeRateLimiter, authResetPasswordRateLimiter } from "../../../../shared/interfaces/http/middlewares/rateLimiter";
+import { authLoginRateLimiter, authAdminPasswordResetRateLimiter, authForgotPasswordRateLimiter, authPasswordChangeRateLimiter, authResetPasswordRateLimiter } from "../../../../shared/interfaces/http/middlewares/rateLimiter";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
 import { validateBody, validateParams, validateQuery } from "../../../../shared/interfaces/http/middlewares/validate";
 import {
   listAdminAuditLogsQuerySchema,
   loginBodySchema,
   forgotPasswordBodySchema,
+  adminResetUserPasswordBodySchema,
   lookupUserQuerySchema,
   registerBodySchema,
   resetPasswordBodySchema,
@@ -112,6 +113,16 @@ router.patch(
   validateParams(userIdParamsSchema),
   validateBody(updateRoleBodySchema),
   (req, res) => void authController.updateUserRole(req, res),
+);
+
+router.patch(
+  "/users/:userId/password",
+  authMiddleware,
+  roleMiddleware([...STAFF_ROLES]),
+  authAdminPasswordResetRateLimiter,
+  validateParams(userIdParamsSchema),
+  validateBody(adminResetUserPasswordBodySchema),
+  (req, res) => void authController.adminResetUserPassword(req, res),
 );
 
 router.get(

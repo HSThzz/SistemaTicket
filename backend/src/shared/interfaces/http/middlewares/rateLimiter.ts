@@ -143,6 +143,25 @@ export const authResetPasswordRateLimiter = rateLimit({
   handler: buildRateLimitHandler("auth-reset-password"),
 });
 
+/** Limitador para PATCH /auth/users/:userId/password: 5 redefinições por minuto por admin. */
+export const authAdminPasswordResetRateLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: createRedisStore("auth-admin-password-reset"),
+  skip: skipInTest,
+  keyGenerator: (req) => {
+    if (req.user?.id) {
+      return req.user.id;
+    }
+
+    const ip = req.ip;
+    return ip ? ipKeyGenerator(ip) : "unknown";
+  },
+  handler: buildRateLimitHandler("auth-admin-password-reset"),
+});
+
 /** Limitador para POST /purchases/reserve: 15 requisições por minuto. */
 export const reserveRateLimiter = rateLimit({
   windowMs: WINDOW_MS,

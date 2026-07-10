@@ -14,3 +14,4 @@ export { eventIdParamsSchema } from "../../../../modules/catalog/validators/sche
 export { listAdminAuditLogsQuerySchema } from "../../../../modules/identity/validators/schema/listAdminAuditLogsQuerySchema";
 export { forgotPasswordSchema as forgotPasswordBodySchema } from "../../../../modules/identity/validators/schema/forgotPasswordSchema";
 export { resetPasswordSchema as resetPasswordBodySchema } from "../../../../modules/identity/validators/schema/resetPasswordSchema";
+export { adminResetUserPasswordSchema as adminResetUserPasswordBodySchema } from "../../../../modules/identity/validators/schema/adminResetUserPasswordSchema";

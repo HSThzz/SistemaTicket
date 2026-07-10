@@ -14,6 +14,7 @@ export enum UserRole {
 /** Ações sensíveis registradas na auditoria administrativa. */
 export enum AdminAuditAction {
   USER_ROLE_UPDATED = "USER_ROLE_UPDATED",
+  USER_PASSWORD_RESET = "USER_PASSWORD_RESET",
   ORDER_REFUNDED = "ORDER_REFUNDED",
   STOCK_RECONCILED = "STOCK_RECONCILED",
   TICKETS_ISSUED_MANUALLY = "TICKETS_ISSUED_MANUALLY",
