@@ -3,6 +3,7 @@ import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
   InvalidCurrentPasswordError,
+  PasswordReuseError,
   UserNotFoundError,
 } from "../../domain/errors/AuthError";
 import {
@@ -40,6 +41,19 @@ export async function updatePassword(
       reason: "invalid_current_password",
     });
     throw new InvalidCurrentPasswordError();
+  }
+
+  const reusesCurrentPassword = await bcrypt.compare(
+    data.newPassword,
+    user.passwordHash,
+  );
+
+  if (reusesCurrentPassword) {
+    Logger.getInstance().warn(CONTEXT, "Password change rejected", {
+      userId: id,
+      reason: "password_reuse",
+    });
+    throw new PasswordReuseError();
   }
 
   const passwordHash = await bcrypt.hash(data.newPassword, BCRYPT_ROUNDS);

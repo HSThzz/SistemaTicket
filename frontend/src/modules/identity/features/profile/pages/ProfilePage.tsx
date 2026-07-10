@@ -100,7 +100,18 @@ export function ProfilePage() {
     },
     validate: {
       currentPassword: (value) => (value.length > 0 ? null : "Informe a senha atual"),
-      newPassword: (value) => validatePassword(value),
+      newPassword: (value, values) => {
+        const complexityError = validatePassword(value);
+        if (complexityError) {
+          return complexityError;
+        }
+
+        if (value === values.currentPassword) {
+          return "A nova senha deve ser diferente da senha atual";
+        }
+
+        return null;
+      },
       confirmPassword: (value, values) =>
         value === values.newPassword ? null : "As senhas não coincidem",
     },

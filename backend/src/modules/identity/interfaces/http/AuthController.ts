@@ -12,6 +12,7 @@ import {
   InvalidCredentialsError,
   InvalidCurrentPasswordError,
   InvalidRoleError,
+  PasswordReuseError,
   RoleAssignmentForbiddenError,
   UserNotFoundError,
 } from "../../domain/errors/AuthError";
@@ -298,6 +299,11 @@ export class AuthController {
 
     if (error instanceof InvalidCurrentPasswordError) {
       res.status(401).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof PasswordReuseError) {
+      res.status(400).json({ error: error.message, code: error.code });
       return;
     }
 

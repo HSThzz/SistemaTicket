@@ -86,6 +86,17 @@ export class InvalidCurrentPasswordError extends AuthError {
   }
 }
 
+/** Nova senha igual à senha atual. */
+export class PasswordReuseError extends AuthError {
+  constructor() {
+    super(
+      "A nova senha deve ser diferente da senha atual",
+      "PASSWORD_REUSE",
+    );
+    this.name = "PasswordReuseError";
+  }
+}
+
 /** Papel de usuário inválido na atualização de role. */
 export class InvalidRoleError extends AuthError {
   /**
