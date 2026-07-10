@@ -29,7 +29,7 @@ import { ProducerDashboardPage } from "@/modules/catalog/features/producer/pages
 import { ProducerEventsPage } from "@/modules/catalog/features/producer/pages/ProducerEventsPage";
 import { ProducerManageEventPage } from "@/modules/catalog/features/producer/pages/ProducerManageEventPage";
 import { AdminDashboardPage } from "@/modules/identity/features/admin/pages/AdminDashboardPage";
-import { ProducerLandingPage } from "@/modules/leads/features/contact/pages/ProducerLandingPage";
+// import { ProducerLandingPage } from "@/modules/leads/features/contact/pages/ProducerLandingPage";
 
 /**
  * Aplicação SPA: layout compartilhado, rotas públicas, protegidas e área do produtor.
@@ -39,45 +39,63 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <FavoritesProvider>
-        <ParticipationProvider>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route index element={<HomePage />} />
-            <Route path="eventos" element={<EventsPage />} />
-            <Route path="para-produtores" element={<ProducerLandingPage />} />
-            <Route path="eventos/:eventId" element={<EventDetailPage />} />
+          <ParticipationProvider>
+            <Routes>
+              <Route element={<Layout />}>
+                <Route index element={<HomePage />} />
+                <Route path="eventos" element={<EventsPage />} />
+                {/* <Route path="para-produtores" element={<ProducerLandingPage />} /> */}
+                <Route path="eventos/:eventId" element={<EventDetailPage />} />
 
-            <Route element={<GuestRoute />}>
-              <Route path="login" element={<LoginPage />} />
-              <Route path="cadastro" element={<RegisterPage />} />
-              <Route path="esqueci-senha" element={<ForgotPasswordPage />} />
-            </Route>
+                <Route element={<GuestRoute />}>
+                  <Route path="login" element={<LoginPage />} />
+                  <Route path="cadastro" element={<RegisterPage />} />
+                  <Route
+                    path="esqueci-senha"
+                    element={<ForgotPasswordPage />}
+                  />
+                </Route>
 
-            <Route path="redefinir-senha" element={<ResetPasswordPage />} />
+                <Route path="redefinir-senha" element={<ResetPasswordPage />} />
 
-            <Route element={<ProtectedRoute />}>
-              <Route path="perfil" element={<ProfilePage />} />
-              <Route path="ingressos" element={<MyTicketsPage />} />
-              <Route path="pedidos" element={<MyOrdersPage />} />
-              <Route path="eventos/:eventId/comprar" element={<CheckoutPage />} />
-            </Route>
+                <Route element={<ProtectedRoute />}>
+                  <Route path="perfil" element={<ProfilePage />} />
+                  <Route path="ingressos" element={<MyTicketsPage />} />
+                  <Route path="pedidos" element={<MyOrdersPage />} />
+                  <Route
+                    path="eventos/:eventId/comprar"
+                    element={<CheckoutPage />}
+                  />
+                </Route>
 
-            <Route element={<ProducerRoute />}>
-              <Route path="produtor" element={<ProducerDashboardPage />} />
-              <Route path="produtor/eventos" element={<ProducerEventsPage />} />
-              <Route path="produtor/eventos/novo" element={<ProducerCreateEventPage />} />
-              <Route path="produtor/eventos/:eventId" element={<ProducerManageEventPage />} />
-              <Route path="produtor/check-in" element={<ProducerCheckInPage />} />
-            </Route>
+                <Route element={<ProducerRoute />}>
+                  <Route path="produtor" element={<ProducerDashboardPage />} />
+                  <Route
+                    path="produtor/eventos"
+                    element={<ProducerEventsPage />}
+                  />
+                  <Route
+                    path="produtor/eventos/novo"
+                    element={<ProducerCreateEventPage />}
+                  />
+                  <Route
+                    path="produtor/eventos/:eventId"
+                    element={<ProducerManageEventPage />}
+                  />
+                  <Route
+                    path="produtor/check-in"
+                    element={<ProducerCheckInPage />}
+                  />
+                </Route>
 
-            <Route element={<AdminRoute />}>
-              <Route path="admin" element={<AdminDashboardPage />} />
-            </Route>
+                <Route element={<AdminRoute />}>
+                  <Route path="admin" element={<AdminDashboardPage />} />
+                </Route>
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-        </ParticipationProvider>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
+            </Routes>
+          </ParticipationProvider>
         </FavoritesProvider>
       </AuthProvider>
     </BrowserRouter>

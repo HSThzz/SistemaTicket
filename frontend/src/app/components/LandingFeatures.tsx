@@ -11,7 +11,8 @@ const FAN_FEATURES = [
   {
     icon: IconSparkles,
     title: "Algoritmo de gosto",
-    description: "Recomendações baseadas no que você ouve — não no que está impulsionado.",
+    description:
+      "Recomendações baseadas no que você ouve — não no que está impulsionado.",
   },
   {
     icon: IconUsers,
@@ -21,7 +22,8 @@ const FAN_FEATURES = [
   {
     icon: IconCoin,
     title: "Cashback em cada compra",
-    description: "Quando o mesmo show está em duas plataformas, você escolhe a VIBRA.",
+    description:
+      "Quando o mesmo show está em duas plataformas, você escolhe a VIBRA.",
   },
 ] as const;
 
@@ -34,7 +36,9 @@ export function LandingFeatures() {
             visualBleed
             title="O que mais?"
             body={null}
-            footer={<LandingFeatureList items={[...FAN_FEATURES]} activeIndex={1} />}
+            footer={
+              <LandingFeatureList items={[...FAN_FEATURES]} activeIndex={1} />
+            }
             visual={
               <LandingDeviceStage>
                 <PhoneMockup screen="feed" />
@@ -47,7 +51,6 @@ export function LandingFeatures() {
       <AnimatedSection delayMs={60}>
         <StaggerTestimonials />
       </AnimatedSection>
-
     </>
   );
 }

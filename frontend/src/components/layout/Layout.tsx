@@ -32,7 +32,7 @@ import { isProducerPanelRole, isStaffRole } from "@/modules/identity/features/ad
 const PUBLIC_NAV_LINKS = [
   { to: "/", label: "Início", exact: true },
   { to: "/eventos", label: "Eventos", exact: true },
-  { to: "/para-produtores", label: "Para produtores", exact: true },
+  // { to: "/para-produtores", label: "Para produtores", exact: true },
 ] as const;
 
 /**

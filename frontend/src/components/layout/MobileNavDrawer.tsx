@@ -12,7 +12,6 @@ import {
   IconLogout,
   IconScan,
   IconShield,
-  IconSparkles,
   IconTicket,
   IconUser,
 } from "@tabler/icons-react";
@@ -87,7 +86,7 @@ function MobileNavItem({
 const EXPLORE_LINKS: NavItem[] = [
   { to: "/", label: "Início", icon: IconHome, exact: true },
   { to: "/eventos", label: "Eventos", icon: IconTicket, exact: true },
-  { to: "/para-produtores", label: "Para produtores", icon: IconSparkles, exact: true },
+  // { to: "/para-produtores", label: "Para produtores", icon: IconSparkles, exact: true },
 ];
 
 const PRODUCER_LINKS: NavItem[] = [
