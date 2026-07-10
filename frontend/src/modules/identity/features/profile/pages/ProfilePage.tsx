@@ -41,6 +41,10 @@ import { useFavorites } from "@/modules/identity/features/profile/hooks/useFavor
 import type { AuthUser, Event } from "@/shared/types/api";
 import { getApiErrorMessage } from "@/shared/utils/errors";
 import { formatCpf, normalizeDocument } from "@/shared/utils/format";
+import {
+  PASSWORD_REQUIREMENTS_HINT,
+  validatePassword,
+} from "@/shared/utils/passwordValidation";
 import { ROLE_LABELS } from "@/modules/identity/features/admin/utils/adminRoles";
 
 interface ProfileFormValues {
@@ -96,8 +100,7 @@ export function ProfilePage() {
     },
     validate: {
       currentPassword: (value) => (value.length > 0 ? null : "Informe a senha atual"),
-      newPassword: (value) =>
-        value.length >= 6 ? null : "A nova senha deve ter pelo menos 6 caracteres",
+      newPassword: (value) => validatePassword(value),
       confirmPassword: (value, values) =>
         value === values.newPassword ? null : "As senhas não coincidem",
     },
@@ -396,7 +399,7 @@ export function ProfilePage() {
                 <Stack gap={4}>
                   <Text fw={600}>Alterar senha</Text>
                   <Text size="sm" c="dimmed">
-                    Use uma senha forte com pelo menos 6 caracteres.
+                    {PASSWORD_REQUIREMENTS_HINT}
                   </Text>
                 </Stack>
 

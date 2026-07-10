@@ -24,7 +24,7 @@ import {
 import { generateTicketCheckInCode } from "../shared/kernel/ticketCheckInCode";
 
 /** Senha padrão de todos os usuários criados pelo seed. */
-export const SEED_PASSWORD = "123456";
+export const SEED_PASSWORD = "Senha123!";
 
 /** E-mails dos usuários demo criados pelo seed. */
 export const SEED_DEMO_EMAILS = {

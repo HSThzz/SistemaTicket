@@ -16,7 +16,7 @@ import {
   TicketStatus,
   UserRole,
 } from "../../src/shared/kernel/enums";
-import { createUser } from "../helpers/fixtures";
+import { createUser, TEST_USER_PASSWORD } from "../helpers/fixtures";
 import {
   resetTestState,
   setupTestContext,
@@ -43,7 +43,7 @@ describe("Check-in concurrency", () => {
     const producer = await createUser(ctx.dataSource, {
       name: "Producer",
       email: "producer-checkin@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "12121212121",
       role: UserRole.PRODUCER,
     });
@@ -51,7 +51,7 @@ describe("Check-in concurrency", () => {
     const client = await createUser(ctx.dataSource, {
       name: "Client",
       email: "client-checkin@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "34343434343",
     });
 

@@ -8,6 +8,7 @@ import {
   login,
   pollReservationPhase,
   pollUntilAwaitingPayment,
+  TEST_USER_PASSWORD,
 } from "../helpers/fixtures";
 import {
   resetTestState,
@@ -35,7 +36,7 @@ describe("Purchase flow integration", () => {
     const producer = await createUser(ctx.dataSource, {
       name: "Producer",
       email: "producer@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "11111111111",
       role: UserRole.PRODUCER,
     });
@@ -43,7 +44,7 @@ describe("Purchase flow integration", () => {
     const client = await createUser(ctx.dataSource, {
       name: "Client",
       email: "client@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "22222222222",
     });
 
@@ -114,7 +115,7 @@ describe("Purchase flow integration", () => {
     const producer = await createUser(ctx.dataSource, {
       name: "Producer",
       email: "producer2@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "33333333333",
       role: UserRole.PRODUCER,
     });
@@ -122,7 +123,7 @@ describe("Purchase flow integration", () => {
     const client = await createUser(ctx.dataSource, {
       name: "Client",
       email: "client2@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "44444444444",
     });
 

@@ -12,6 +12,7 @@ import {
   login,
   pollReservationPhase,
   pollUntilAwaitingPayment,
+  TEST_USER_PASSWORD,
 } from "../helpers/fixtures";
 import {
   resetTestState,
@@ -42,7 +43,7 @@ describe("Order refund integration", () => {
     const admin = await createUser(ctx.dataSource, {
       name: "Admin",
       email: "admin-refund@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "14141414141",
       role: UserRole.ADMIN,
     });
@@ -50,7 +51,7 @@ describe("Order refund integration", () => {
     const producer = await createUser(ctx.dataSource, {
       name: "Producer",
       email: "producer-refund@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "15151515151",
       role: UserRole.PRODUCER,
     });
@@ -58,7 +59,7 @@ describe("Order refund integration", () => {
     const client = await createUser(ctx.dataSource, {
       name: "Client",
       email: "client-refund@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "16161616161",
     });
 
@@ -154,7 +155,7 @@ describe("Order refund integration", () => {
     const producer = await createUser(ctx.dataSource, {
       name: "Producer",
       email: "producer-refund-deny@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "17171717171",
       role: UserRole.PRODUCER,
     });
@@ -162,7 +163,7 @@ describe("Order refund integration", () => {
     const client = await createUser(ctx.dataSource, {
       name: "Client",
       email: "client-refund-deny@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "18181818181",
     });
 

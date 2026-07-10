@@ -7,6 +7,9 @@ import { EventStatus, UserRole } from "../../src/shared/kernel/enums";
 
 const BCRYPT_ROUNDS = 4;
 
+/** Senha padrão em testes de integração (atende regras de complexidade). */
+export const TEST_USER_PASSWORD = "Senha123!";
+
 export interface TestUser {
   id: string;
   email: string;

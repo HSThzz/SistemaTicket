@@ -4,7 +4,7 @@ import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../src/shared/infrastructure/con
 import { UserRole } from "../../src/shared/kernel/enums";
 import { InsufficientStockError } from "../../src/modules/sales/domain/errors/PurchaseError";
 import { reserveTickets } from "../../src/modules/sales/application/services/reserveTickets";
-import { createPublishedEventWithLot, createUser } from "../helpers/fixtures";
+import { createPublishedEventWithLot, createUser, TEST_USER_PASSWORD } from "../helpers/fixtures";
 import {
   resetTestState,
   setupTestContext,
@@ -34,14 +34,14 @@ describe("Stock concurrency", () => {
     const user = await createUser(ctx.dataSource, {
       name: "Buyer",
       email: "buyer@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "55555555555",
     });
 
     const producer = await createUser(ctx.dataSource, {
       name: "Producer",
       email: "producer-stock@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "66666666666",
       role: UserRole.PRODUCER,
     });
@@ -83,14 +83,14 @@ describe("Stock concurrency", () => {
     const user = await createUser(ctx.dataSource, {
       name: "Buyer 2",
       email: "buyer2@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "77777777777",
     });
 
     const producer = await createUser(ctx.dataSource, {
       name: "Producer 2",
       email: "producer2-stock@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "88888888888",
       role: UserRole.PRODUCER,
     });

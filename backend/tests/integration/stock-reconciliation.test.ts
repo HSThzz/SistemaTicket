@@ -6,7 +6,7 @@ import {
 } from "../../src/shared/infrastructure/config/constants";
 import { UserRole } from "../../src/shared/kernel/enums";
 import { reconcileAllStock } from "../../src/modules/sales/application/services/reconcileAllStock";
-import { createPublishedEventWithLot, createUser } from "../helpers/fixtures";
+import { createPublishedEventWithLot, createUser, TEST_USER_PASSWORD } from "../helpers/fixtures";
 import {
   resetTestState,
   setupTestContext,
@@ -33,7 +33,7 @@ describe("Stock reconciliation", () => {
     const producer = await createUser(ctx.dataSource, {
       name: "Producer",
       email: "producer-reconcile@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "11111111111",
       role: UserRole.PRODUCER,
     });
@@ -55,7 +55,7 @@ describe("Stock reconciliation", () => {
     const producer = await createUser(ctx.dataSource, {
       name: "Producer 2",
       email: "producer-reconcile2@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "22222222222",
       role: UserRole.PRODUCER,
     });
@@ -88,7 +88,7 @@ describe("Stock reconciliation", () => {
     const producer = await createUser(ctx.dataSource, {
       name: "Producer 3",
       email: "producer-reconcile3@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "33333333333",
       role: UserRole.PRODUCER,
     });

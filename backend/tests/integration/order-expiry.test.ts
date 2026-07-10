@@ -19,6 +19,7 @@ import {
   createUser,
   login,
   pollReservationPhase,
+  TEST_USER_PASSWORD,
 } from "../helpers/fixtures";
 import {
   resetTestState,
@@ -49,7 +50,7 @@ describe("Order expiry integration", () => {
     const producer = await createUser(ctx.dataSource, {
       name: "Producer",
       email: "producer-expiry@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "12121212121",
       role: UserRole.PRODUCER,
     });
@@ -57,7 +58,7 @@ describe("Order expiry integration", () => {
     const client = await createUser(ctx.dataSource, {
       name: "Client",
       email: "client-expiry@test.com",
-      password: "pass123",
+      password: TEST_USER_PASSWORD,
       document: "13131313131",
     });
 
@@ -135,7 +136,7 @@ describe("Order expiry integration", () => {
       const producer = await createUser(ctx.dataSource, {
         name: "Producer TTL",
         email: "producer-ttl-worker@test.com",
-        password: "pass123",
+        password: TEST_USER_PASSWORD,
         document: "14141414141",
         role: UserRole.PRODUCER,
       });
@@ -143,7 +144,7 @@ describe("Order expiry integration", () => {
       const client = await createUser(ctx.dataSource, {
         name: "Client TTL",
         email: "client-ttl-worker@test.com",
-        password: "pass123",
+        password: TEST_USER_PASSWORD,
         document: "15151515151",
       });
 

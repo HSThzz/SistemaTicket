@@ -20,6 +20,10 @@ import { AuthCard } from "@/modules/identity/features/auth/components/AuthCard";
 import { useAuth } from "@/modules/identity/features/auth/context/AuthContext";
 import * as authService from "@/modules/identity/api/authService";
 import { getApiErrorMessage } from "@/shared/utils/errors";
+import {
+  PASSWORD_REQUIREMENTS_HINT,
+  validatePassword,
+} from "@/shared/utils/passwordValidation";
 
 interface RegisterFormValues {
   name: string;
@@ -52,8 +56,7 @@ export function RegisterPage() {
       name: (value) => (value.trim().length >= 2 ? null : "Informe seu nome"),
       email: (value) =>
         /^\S+@\S+\.\S+$/.test(value.trim()) ? null : "Informe um e-mail válido",
-      password: (value) =>
-        value.length >= 6 ? null : "A senha deve ter pelo menos 6 caracteres",
+      password: (value) => validatePassword(value),
       document: (value) =>
         normalizeDocument(value).length === 11
           ? null
@@ -125,7 +128,8 @@ export function RegisterPage() {
           />
           <PasswordInput
             label="Senha"
-            placeholder="Mínimo 6 caracteres"
+            placeholder="Crie uma senha forte"
+            description={PASSWORD_REQUIREMENTS_HINT}
             autoComplete="new-password"
             radius="md"
             {...form.getInputProps("password")}
