@@ -97,6 +97,17 @@ export class PasswordReuseError extends AuthError {
   }
 }
 
+/** Token de redefinição de senha inválido, expirado ou já utilizado. */
+export class InvalidPasswordResetTokenError extends AuthError {
+  constructor() {
+    super(
+      "Link de redefinição inválido ou expirado. Solicite um novo e-mail.",
+      "INVALID_PASSWORD_RESET_TOKEN",
+    );
+    this.name = "InvalidPasswordResetTokenError";
+  }
+}
+
 /** Papel de usuário inválido na atualização de role. */
 export class InvalidRoleError extends AuthError {
   /**

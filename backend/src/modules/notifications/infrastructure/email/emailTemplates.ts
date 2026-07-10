@@ -228,3 +228,31 @@ export function buildParticipationRequestSubmittedEmail(
       "A aprovação continua sendo feita na guia de solicitações do evento. Este e-mail é apenas um aviso.",
   });
 }
+
+export type PasswordResetEmailTemplateData = {
+  userName: string;
+  resetUrl: string;
+};
+
+export function buildPasswordResetEmail(data: PasswordResetEmailTemplateData): string {
+  return renderEmailLayout({
+    preheader: "Use o link abaixo para redefinir sua senha com segurança.",
+    eyebrow: "Segurança da conta",
+    title: "Redefinir senha",
+    bodyHtml: `
+      ${bodyParagraph(`Olá, <font color="${EMAIL_BRAND.text}"><b>${escapeHtml(data.userName)}</b></font>.`)}
+      ${bodyParagraph(
+        "Recebemos uma solicitação para redefinir a senha da sua conta. Se foi você, use o botão abaixo. O link expira em 1 hora.",
+      )}
+      ${bodyParagraph(
+        "Se você não solicitou esta alteração, ignore este e-mail. Sua senha atual continuará válida.",
+      )}
+    `,
+    cta: {
+      label: "Redefinir senha",
+      href: data.resetUrl,
+    },
+    footerNote:
+      "Por segurança, após redefinir a senha todas as sessões anteriores serão encerradas.",
+  });
+}

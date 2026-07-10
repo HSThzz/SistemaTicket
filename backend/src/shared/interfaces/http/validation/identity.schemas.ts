@@ -12,3 +12,5 @@ export { lookupUserByEmailSchema as lookupUserQuerySchema } from "../../../../mo
 export { userIdParamsSchema } from "../../../../modules/identity/validators/schema/userIdSchema";
 export { eventIdParamsSchema } from "../../../../modules/catalog/validators/schema/eventIdSchema";
 export { listAdminAuditLogsQuerySchema } from "../../../../modules/identity/validators/schema/listAdminAuditLogsQuerySchema";
+export { forgotPasswordSchema as forgotPasswordBodySchema } from "../../../../modules/identity/validators/schema/forgotPasswordSchema";
+export { resetPasswordSchema as resetPasswordBodySchema } from "../../../../modules/identity/validators/schema/resetPasswordSchema";

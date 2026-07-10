@@ -69,11 +69,38 @@ export interface UpdatePasswordInput {
   newPassword: string;
 }
 
+/** Dados para solicitar redefinição de senha. */
+export interface ForgotPasswordInput {
+  email: string;
+}
+
+/** Dados para redefinir senha com token do e-mail. */
+export interface ResetPasswordInput {
+  token: string;
+  newPassword: string;
+}
+
 /**
  * Altera a senha do usuário autenticado e retorna nova sessão (token + user).
  */
 export async function updatePassword(input: UpdatePasswordInput): Promise<AuthResponse> {
   const { data } = await api.patch<AuthResponse>("/auth/me/password", input);
+  return data;
+}
+
+/**
+ * Solicita envio de link de redefinição de senha por e-mail.
+ */
+export async function forgotPassword(input: ForgotPasswordInput): Promise<{ success: true }> {
+  const { data } = await api.post<{ success: true }>("/auth/forgot-password", input);
+  return data;
+}
+
+/**
+ * Redefine a senha com token recebido por e-mail.
+ */
+export async function resetPassword(input: ResetPasswordInput): Promise<AuthResponse> {
+  const { data } = await api.post<AuthResponse>("/auth/reset-password", input);
   return data;
 }
 

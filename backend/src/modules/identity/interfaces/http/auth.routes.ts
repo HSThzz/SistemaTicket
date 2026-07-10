@@ -8,14 +8,16 @@ import { authController } from "./AuthController";
 import { UserRole } from "../../../../shared/kernel/enums";
 import { STAFF_ROLES } from "../../../../shared/kernel/staffRoles";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
-import { authLoginRateLimiter, authPasswordChangeRateLimiter } from "../../../../shared/interfaces/http/middlewares/rateLimiter";
+import { authLoginRateLimiter, authForgotPasswordRateLimiter, authPasswordChangeRateLimiter, authResetPasswordRateLimiter } from "../../../../shared/interfaces/http/middlewares/rateLimiter";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
 import { validateBody, validateParams, validateQuery } from "../../../../shared/interfaces/http/middlewares/validate";
 import {
   listAdminAuditLogsQuerySchema,
   loginBodySchema,
+  forgotPasswordBodySchema,
   lookupUserQuerySchema,
   registerBodySchema,
+  resetPasswordBodySchema,
   updatePasswordBodySchema,
   updateProfileBodySchema,
   updateRoleBodySchema,
@@ -36,6 +38,20 @@ router.post(
   authLoginRateLimiter,
   validateBody(loginBodySchema),
   (req, res) => void authController.login(req, res),
+);
+
+router.post(
+  "/forgot-password",
+  authForgotPasswordRateLimiter,
+  validateBody(forgotPasswordBodySchema),
+  (req, res) => void authController.forgotPassword(req, res),
+);
+
+router.post(
+  "/reset-password",
+  authResetPasswordRateLimiter,
+  validateBody(resetPasswordBodySchema),
+  (req, res) => void authController.resetPassword(req, res),
 );
 
 router.get("/me", authMiddleware, (req, res) => void authController.me(req, res));

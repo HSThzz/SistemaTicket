@@ -4,7 +4,7 @@
  */
 
 import type { Request, Response } from "express";
-import { rateLimit } from "express-rate-limit";
+import { ipKeyGenerator, rateLimit } from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
 import { Logger } from "../../../infrastructure/config/logger";
 import { getRedis } from "../../../infrastructure/config/redis";
@@ -110,8 +110,37 @@ export const authPasswordChangeRateLimiter = rateLimit({
   legacyHeaders: false,
   store: createRedisStore("auth-password-change"),
   skip: skipInTest,
-  keyGenerator: (req) => req.user?.id ?? req.ip ?? "unknown",
+  keyGenerator: (req) => {
+    if (req.user?.id) {
+      return req.user.id;
+    }
+
+    const ip = req.ip;
+    return ip ? ipKeyGenerator(ip) : "unknown";
+  },
   handler: buildRateLimitHandler("auth-password-change"),
+});
+
+/** Limitador para POST /auth/forgot-password: 5 requisições por minuto por IP. */
+export const authForgotPasswordRateLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: createRedisStore("auth-forgot-password"),
+  skip: skipInTest,
+  handler: buildRateLimitHandler("auth-forgot-password"),
+});
+
+/** Limitador para POST /auth/reset-password: 10 requisições por minuto por IP. */
+export const authResetPasswordRateLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: createRedisStore("auth-reset-password"),
+  skip: skipInTest,
+  handler: buildRateLimitHandler("auth-reset-password"),
 });
 
 /** Limitador para POST /purchases/reserve: 15 requisições por minuto. */

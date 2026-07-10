@@ -11,6 +11,7 @@ import {
   EmailAlreadyExistsError,
   InvalidCredentialsError,
   InvalidCurrentPasswordError,
+  InvalidPasswordResetTokenError,
   InvalidRoleError,
   PasswordReuseError,
   RoleAssignmentForbiddenError,
@@ -23,6 +24,8 @@ import { getProfile } from "../../application/services/getProfile";
 import { loginUser } from "../../application/services/loginUser";
 import { lookupUserByEmail } from "../../application/services/lookupUserByEmail";
 import { registerUser } from "../../application/services/registerUser";
+import { requestPasswordReset } from "../../application/services/requestPasswordReset";
+import { resetPasswordWithToken } from "../../application/services/resetPasswordWithToken";
 import { updatePassword as changeUserPassword } from "../../application/services/updatePassword";
 import { updateProfile } from "../../application/services/updateProfile";
 import { updateUserRole } from "../../application/services/updateUserRole";
@@ -35,6 +38,8 @@ import { serializeEvent } from "../../../catalog/application/helpers/serializeEv
 import { EventNotFoundError } from "../../../catalog/domain/errors/EventError";
 import type { UpdatePasswordInputSchema } from "../../validators/schema/updatePasswordSchema";
 import type { UpdateProfileInputSchema } from "../../validators/schema/updateProfileSchema";
+import type { ForgotPasswordInputSchema } from "../../validators/schema/forgotPasswordSchema";
+import type { ResetPasswordInputSchema } from "../../validators/schema/resetPasswordSchema";
 
 const CONTEXT = "AuthController";
 const logger = Logger.getInstance();
@@ -210,6 +215,34 @@ export class AuthController {
   }
 
   /**
+   * POST /auth/forgot-password — envia link de redefinição por e-mail (se a conta existir).
+   */
+  async forgotPassword(req: Request, res: Response): Promise<void> {
+    const body = req.body as ForgotPasswordInputSchema;
+
+    try {
+      const result = await requestPasswordReset(body);
+      res.status(200).json(result);
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * POST /auth/reset-password — redefine senha com token do e-mail.
+   */
+  async resetPassword(req: Request, res: Response): Promise<void> {
+    const body = req.body as ResetPasswordInputSchema;
+
+    try {
+      const result = await resetPasswordWithToken(body);
+      res.status(200).json(result);
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
    * GET /auth/users/lookup?email= — busca usuário por e-mail (ADMIN/SUPER_ADMIN).
    */
   async lookupUser(req: Request, res: Response): Promise<void> {
@@ -303,6 +336,11 @@ export class AuthController {
     }
 
     if (error instanceof PasswordReuseError) {
+      res.status(400).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof InvalidPasswordResetTokenError) {
       res.status(400).json({ error: error.message, code: error.code });
       return;
     }

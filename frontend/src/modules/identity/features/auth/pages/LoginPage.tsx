@@ -96,6 +96,9 @@ export function LoginPage() {
             radius="md"
             {...form.getInputProps("password")}
           />
+          <Anchor component={Link} to="/esqueci-senha" size="sm">
+            Esqueci minha senha
+          </Anchor>
           <Button type="submit" loading={submitting} fullWidth radius="xl" size="md">
             Entrar
           </Button>

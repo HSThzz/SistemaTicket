@@ -17,6 +17,8 @@ import { EventDetailPage } from "@/modules/catalog/features/browse/pages/EventDe
 import { EventsPage } from "@/modules/catalog/features/browse/pages/EventsPage";
 import { HomePage } from "@/app/pages/HomePage";
 import { LoginPage } from "@/modules/identity/features/auth/pages/LoginPage";
+import { ForgotPasswordPage } from "@/modules/identity/features/auth/pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "@/modules/identity/features/auth/pages/ResetPasswordPage";
 import { MyOrdersPage } from "@/modules/sales/features/orders/pages/MyOrdersPage";
 import { MyTicketsPage } from "@/modules/ticketing/features/wallet/pages/MyTicketsPage";
 import { ProfilePage } from "@/modules/identity/features/profile/pages/ProfilePage";
@@ -48,7 +50,10 @@ export default function App() {
             <Route element={<GuestRoute />}>
               <Route path="login" element={<LoginPage />} />
               <Route path="cadastro" element={<RegisterPage />} />
+              <Route path="esqueci-senha" element={<ForgotPasswordPage />} />
             </Route>
+
+            <Route path="redefinir-senha" element={<ResetPasswordPage />} />
 
             <Route element={<ProtectedRoute />}>
               <Route path="perfil" element={<ProfilePage />} />
