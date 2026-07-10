@@ -41,7 +41,7 @@ export function HomePage() {
 
         <LandingCta />
 
-        <AnimatedSection delayMs={40}>
+        {/* <AnimatedSection delayMs={40}>
           <Box
             style={{
               borderTop: "1px solid var(--mantine-color-default-border)",
@@ -93,7 +93,7 @@ export function HomePage() {
               Ver como funciona
             </Button>
           </Box>
-        </AnimatedSection>
+        </AnimatedSection> */}
       </Stack>
 
       <SiteFooter />

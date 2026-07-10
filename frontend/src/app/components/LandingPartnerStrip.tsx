@@ -46,8 +46,10 @@ export function LandingPartnerStrip() {
   return (
     <AnimatedSection delayMs={30}>
       <Box className="landing-band landing-band--partners">
-        <Box className="landing-partners-header">
-          <Text className="landing-partners-kicker">Rede de venues e produtores</Text>
+        <Box className="landing-band-inner landing-band-inner--partners">
+          <Box className="landing-partners-header">
+            <Text className="landing-partners-kicker">Rede de venues e produtores</Text>
+          </Box>
         </Box>
 
         <Box className="landing-partners-marquee" aria-label="Marcas parceiras">
