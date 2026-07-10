@@ -111,8 +111,8 @@ export class AuthController {
     const body = req.body as UpdatePasswordInputSchema;
 
     try {
-      await changeUserPassword(req.user.id, body);
-      res.status(200).json({ success: true });
+      const result = await changeUserPassword(req.user.id, body);
+      res.status(200).json(result);
     } catch (error) {
       this.handleError(res, error);
     }

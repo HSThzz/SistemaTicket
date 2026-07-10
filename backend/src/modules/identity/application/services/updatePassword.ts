@@ -12,6 +12,7 @@ import {
 } from "../../validators/schema/updatePasswordSchema";
 import { userIdSchema } from "../../validators/schema/userIdSchema";
 import { updateUser } from "../commands/updateUser";
+import { buildAuthResponse } from "../helpers/buildAuthResponse";
 import { findOneUserById } from "../queries/findOneUserById";
 
 const CONTEXT = "updatePassword";
@@ -57,10 +58,11 @@ export async function updatePassword(
   }
 
   const passwordHash = await bcrypt.hash(data.newPassword, BCRYPT_ROUNDS);
+  const passwordChangedAt = new Date();
 
-  await updateUser(user, { passwordHash });
+  const updatedUser = await updateUser(user, { passwordHash, passwordChangedAt });
 
   Logger.getInstance().info(CONTEXT, "Password updated", { userId: id });
 
-  return { success: true };
+  return buildAuthResponse(updatedUser);
 }

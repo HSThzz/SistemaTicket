@@ -20,6 +20,8 @@ export type LoginInput = LoginUserInputSchema;
 export interface AuthTokenPayload {
   userId: string;
   role: UserRole;
+  /** Timestamp (ms) da última troca de senha; `0` se nunca alterada. */
+  pwdAt: number;
 }
 
 /** Dados públicos do usuário autenticado. */

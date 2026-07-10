@@ -70,10 +70,11 @@ export interface UpdatePasswordInput {
 }
 
 /**
- * Altera a senha do usuário autenticado.
+ * Altera a senha do usuário autenticado e retorna nova sessão (token + user).
  */
-export async function updatePassword(input: UpdatePasswordInput): Promise<void> {
-  await api.patch("/auth/me/password", input);
+export async function updatePassword(input: UpdatePasswordInput): Promise<AuthResponse> {
+  const { data } = await api.patch<AuthResponse>("/auth/me/password", input);
+  return data;
 }
 
 /**

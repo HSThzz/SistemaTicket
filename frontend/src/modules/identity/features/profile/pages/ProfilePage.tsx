@@ -63,7 +63,7 @@ interface PasswordFormValues {
  * Página de conta com edição de perfil, alteração de senha e lista de favoritos.
  */
 export function ProfilePage() {
-  const { user, updateUserProfile } = useAuth();
+  const { user, updateUserProfile, setSession } = useAuth();
   const { favoriteIds, isReady: favoritesReady } = useFavorites();
   const [profile, setProfile] = useState<AuthUser | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -255,16 +255,17 @@ export function ProfilePage() {
     setSavingPassword(true);
 
     try {
-      await authService.updatePassword({
+      const session = await authService.updatePassword({
         currentPassword: values.currentPassword,
         newPassword: values.newPassword,
       });
 
+      setSession(session.token, session.user);
       passwordForm.reset();
 
       notifications.show({
         title: "Senha alterada",
-        message: "Sua nova senha já está ativa.",
+        message: "Sua nova senha já está ativa. Outras sessões foram encerradas.",
         color: "green",
       });
     } catch (err) {

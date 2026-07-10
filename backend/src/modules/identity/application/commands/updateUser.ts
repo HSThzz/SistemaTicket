@@ -8,7 +8,9 @@ import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
 export type UpdateUserData = Prettify<
-  Partial<Pick<User, "name" | "email" | "passwordHash" | "document" | "role">>
+  Partial<
+    Pick<User, "name" | "email" | "passwordHash" | "passwordChangedAt" | "document" | "role">
+  >
 >;
 
 export async function updateUser(

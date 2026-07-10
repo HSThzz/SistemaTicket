@@ -5,9 +5,11 @@
 
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { isAuthTokenRevoked } from "../../../../modules/identity/application/helpers/authToken";
+import type { AuthTokenPayload } from "../../../../modules/identity/application/types";
+import { findUserPasswordChangedAtById } from "../../../../modules/identity/application/queries/findUserPasswordChangedAtById";
 import { env } from "../../../infrastructure/config/env";
 import type { UserRole } from "../../../kernel/enums";
-import type { AuthTokenPayload } from "../../../../modules/identity/application/types";
 
 /**
  * Tenta autenticar via header Authorization Bearer. Se o token for válido, preenche `req.user`;
@@ -16,11 +18,11 @@ import type { AuthTokenPayload } from "../../../../modules/identity/application/
  * @param _res - Resposta Express (não utilizada).
  * @param next - Próximo middleware.
  */
-export function optionalAuthMiddleware(
+export async function optionalAuthMiddleware(
   req: Request,
   _res: Response,
   next: NextFunction,
-): void {
+): Promise<void> {
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith("Bearer ")) {
@@ -33,12 +35,25 @@ export function optionalAuthMiddleware(
   try {
     const decoded = jwt.verify(token, env.jwt.secret) as AuthTokenPayload;
 
-    if (decoded.userId && decoded.role) {
-      req.user = {
-        id: decoded.userId,
-        role: decoded.role as UserRole,
-      };
+    if (!decoded.userId || !decoded.role) {
+      next();
+      return;
     }
+
+    const passwordChangedAt = await findUserPasswordChangedAtById(decoded.userId);
+
+    if (
+      passwordChangedAt === undefined ||
+      isAuthTokenRevoked(decoded.pwdAt, passwordChangedAt)
+    ) {
+      next();
+      return;
+    }
+
+    req.user = {
+      id: decoded.userId,
+      role: decoded.role as UserRole,
+    };
   } catch {
     // Token inválido/expirado em rota opcional: prossegue como anônimo.
   }
