@@ -12,7 +12,6 @@ export type SubmitProducerContactInput = {
 };
 
 export type SubmitProducerContactResponse = {
-  id: string;
   message: string;
 };
 

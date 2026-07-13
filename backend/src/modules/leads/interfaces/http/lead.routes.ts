@@ -4,7 +4,10 @@
  */
 
 import { Router } from "express";
-import { contactFormRateLimiter } from "../../../../shared/interfaces/http/middlewares/rateLimiter";
+import {
+  contactFormEmailRateLimiter,
+  contactFormRateLimiter,
+} from "../../../../shared/interfaces/http/middlewares/rateLimiter";
 import { validateBody } from "../../../../shared/interfaces/http/middlewares/validate";
 import { producerLeadSchema } from "../../validators/schema/producerLeadSchema";
 import { leadController } from "./LeadController";
@@ -15,6 +18,7 @@ router.post(
   "/producer-contact",
   contactFormRateLimiter,
   validateBody(producerLeadSchema),
+  contactFormEmailRateLimiter,
   (req, res) => void leadController.submitProducerContact(req, res),
 );
 

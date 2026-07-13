@@ -203,7 +203,7 @@ export const checkInRateLimiter = rateLimit({
   handler: buildRateLimitHandler("check-in"),
 });
 
-/** Limitador para POST /leads/producer-contact: 10 requisições por minuto. */
+/** Limitador para POST /leads/producer-contact: 10 requisições por minuto por IP. */
 export const contactFormRateLimiter = rateLimit({
   windowMs: WINDOW_MS,
   max: 10,
@@ -212,6 +212,31 @@ export const contactFormRateLimiter = rateLimit({
   store: createRedisStore("contact-form"),
   skip: skipInTest,
   handler: buildRateLimitHandler("contact-form"),
+});
+
+/**
+ * Limitador por e-mail no formulário de produtores: 3 envios por hora.
+ * Deve rodar depois de `validateBody` (usa `req.body.email` já normalizado).
+ */
+export const contactFormEmailRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: createRedisStore("contact-form-email"),
+  skip: skipInTest,
+  keyGenerator: (req) => {
+    const email =
+      typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+
+    if (email) {
+      return email;
+    }
+
+    const ip = req.ip;
+    return ip ? ipKeyGenerator(ip) : "unknown";
+  },
+  handler: buildRateLimitHandler("contact-form-email"),
 });
 
 /** Limitador para POST participação: 10 requisições por minuto por usuário. */
