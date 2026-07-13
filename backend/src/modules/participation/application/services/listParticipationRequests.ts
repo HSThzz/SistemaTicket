@@ -20,7 +20,7 @@ export async function listParticipationRequests(
   const id = validateSchema(uuidSchema, eventId);
 
   const event = await findOneEventById(id);
-  if (!event) {
+  if (!event || event.deletedAt) {
     throw new ParticipationEventNotFoundError(id);
   }
 

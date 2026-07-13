@@ -24,6 +24,7 @@ import { enqueueParticipationApprovedNotification } from "../commands/enqueuePar
 import { enqueueParticipationRejectedNotification } from "../commands/enqueueParticipationRejectedNotification";
 import { reviewParticipationRequest as reviewParticipationRequestCommand } from "../commands/reviewParticipationRequest";
 import { assertCanManageEventParticipation } from "../helpers/assertCanManageEventParticipation";
+import { assertEventAllowsParticipationReview } from "../helpers/assertEventParticipationLifecycle";
 import { mapReviewDecisionToStatus } from "../helpers/mapReviewDecisionToStatus";
 import { findOneParticipationRequestById } from "../queries/findOneParticipationRequestById";
 import type { ParticipationActor } from "../types";
@@ -46,23 +47,25 @@ export async function reviewParticipationRequest(
   }
 
   assertCanManageEventParticipation(event, actor);
-
-  const request = await findOneParticipationRequestById(validRequestId);
-  if (!request || request.eventId !== validEventId) {
-    throw new ParticipationRequestNotFoundError(validRequestId);
-  }
-
-  if (request.status !== ParticipationRequestStatus.PENDING) {
-    throw new ParticipationAlreadyReviewedError(request.status);
-  }
+  assertEventAllowsParticipationReview(event);
 
   const nextStatus = mapReviewDecisionToStatus(data.decision);
 
   const saved = await reviewParticipationRequestCommand(
-    request,
+    validRequestId,
+    validEventId,
     nextStatus,
     actor.userId,
   );
+
+  if (!saved) {
+    const current = await findOneParticipationRequestById(validRequestId);
+    if (!current || current.eventId !== validEventId) {
+      throw new ParticipationRequestNotFoundError(validRequestId);
+    }
+
+    throw new ParticipationAlreadyReviewedError(current.status);
+  }
 
   Logger.getInstance().info(CONTEXT, "Participation request reviewed", {
     requestId: saved.id,

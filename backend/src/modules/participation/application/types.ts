@@ -14,7 +14,7 @@ export interface ParticipationActor {
   role: UserRole;
 }
 
-/** Identidade opcional de quem envia a solicitação (usuário logado). */
+/** Identidade autenticada de quem envia a solicitação. */
 export interface ParticipationRequester {
-  userId: string | null;
+  userId: string;
 }

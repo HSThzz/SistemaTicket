@@ -1,17 +1,17 @@
 /**
- * @file Serviço: usuário envia solicitação de participação em evento privado.
+ * @file Serviço: usuário autenticado envia solicitação de participação em evento privado.
  * @module modules/participation/application/services/submitParticipationRequest
  */
 
 import { Logger } from "../../../../shared/infrastructure/config/logger";
-import { EventType } from "../../../../shared/kernel/enums";
+import { isUniqueViolation } from "../../../../shared/infrastructure/persistence/isUniqueViolation";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { findOneEventById } from "../../../catalog/application/queries/findOneEventById";
 import { findOneUserById } from "../../../identity/application/queries/findOneUserById";
 import {
   ParticipationAlreadyRequestedError,
+  ParticipationError,
   ParticipationEventNotFoundError,
-  ParticipationNotPrivateEventError,
 } from "../../domain/errors/ParticipationError";
 import {
   submitParticipationRequestSchema,
@@ -19,6 +19,8 @@ import {
 } from "../../validators/schema/submitParticipationRequestSchema";
 import { createParticipationRequest } from "../commands/createParticipationRequest";
 import { enqueueParticipationRequestSubmittedNotification } from "../commands/enqueueParticipationRequestSubmittedNotification";
+import { assertEventAcceptsParticipationRequests } from "../helpers/assertEventParticipationLifecycle";
+import { assertNoBlockingParticipationRequest } from "../helpers/assertNoBlockingParticipationRequest";
 import { normalizeParticipationEmail } from "../helpers/normalizeParticipationEmail";
 import { findExistingParticipationRequest } from "../queries/findExistingParticipationRequest";
 import { findExistingParticipationRequestByEmail } from "../queries/findExistingParticipationRequestByEmail";
@@ -34,40 +36,49 @@ export async function submitParticipationRequest(
 ) {
   const data = validateSchema(submitParticipationRequestSchema, input);
 
+  const user = await findOneUserById(requester.userId);
+  if (!user) {
+    throw new ParticipationError("Authenticated user not found", "USER_NOT_FOUND");
+  }
+
   const event = await findOneEventById(eventId);
   if (!event) {
     throw new ParticipationEventNotFoundError(eventId);
   }
 
-  if (event.type !== EventType.PRIVATE) {
-    throw new ParticipationNotPrivateEventError();
-  }
+  assertEventAcceptsParticipationRequests(event);
 
-  if (requester.userId) {
-    const existing = await findExistingParticipationRequest(
-      eventId,
-      requester.userId,
-    );
-    if (existing) {
-      throw new ParticipationAlreadyRequestedError();
-    }
-  } else {
-    const existingByEmail = await findExistingParticipationRequestByEmail(
-      eventId,
-      data.email,
-    );
-    if (existingByEmail) {
-      throw new ParticipationAlreadyRequestedError();
-    }
-  }
+  const email = normalizeParticipationEmail(user.email);
 
-  const created = await createParticipationRequest({
+  const existingByUser = await findExistingParticipationRequest(
     eventId,
-    userId: requester.userId,
-    name: data.name,
-    email: normalizeParticipationEmail(data.email),
-    phone: data.phone ?? null,
-  });
+    requester.userId,
+  );
+  assertNoBlockingParticipationRequest(existingByUser);
+
+  const existingByEmail = await findExistingParticipationRequestByEmail(
+    eventId,
+    email,
+  );
+  if (!existingByUser || existingByEmail?.id !== existingByUser.id) {
+    assertNoBlockingParticipationRequest(existingByEmail);
+  }
+
+  let created;
+  try {
+    created = await createParticipationRequest({
+      eventId,
+      userId: requester.userId,
+      name: user.name,
+      email,
+      phone: data.phone ?? null,
+    });
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      throw new ParticipationAlreadyRequestedError();
+    }
+    throw error;
+  }
 
   logger.info(CONTEXT, "Participation request submitted", {
     requestId: created.id,

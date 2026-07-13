@@ -1,5 +1,5 @@
 /**
- * @file Query: verifica solicitação existente por e-mail em evento (guest).
+ * @file Query: verifica solicitação existente por e-mail no evento (dedupe unificado).
  * @module modules/participation/application/queries/findExistingParticipationRequestByEmail
  */
 

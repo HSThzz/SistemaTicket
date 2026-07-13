@@ -40,6 +40,28 @@ export class ParticipationNotPrivateEventError extends ParticipationError {
   }
 }
 
+/** Evento não está publicado / aberto para novas solicitações. */
+export class ParticipationEventNotAcceptingError extends ParticipationError {
+  constructor() {
+    super(
+      "This event is not accepting participation requests",
+      "EVENT_NOT_ACCEPTING_PARTICIPATION",
+    );
+    this.name = "ParticipationEventNotAcceptingError";
+  }
+}
+
+/** Evento em status terminal não permite revisar solicitações. */
+export class ParticipationEventNotReviewableError extends ParticipationError {
+  constructor(status: string) {
+    super(
+      `Cannot review participation requests while event status is ${status}`,
+      "EVENT_NOT_REVIEWABLE",
+    );
+    this.name = "ParticipationEventNotReviewableError";
+  }
+}
+
 /** Já existe uma solicitação do mesmo usuário para o evento. */
 export class ParticipationAlreadyRequestedError extends ParticipationError {
   constructor() {
@@ -48,6 +70,17 @@ export class ParticipationAlreadyRequestedError extends ParticipationError {
       "PARTICIPATION_ALREADY_REQUESTED",
     );
     this.name = "ParticipationAlreadyRequestedError";
+  }
+}
+
+/** Solicitação anterior foi recusada; reenvio não é permitido. */
+export class ParticipationPreviouslyRejectedError extends ParticipationError {
+  constructor() {
+    super(
+      "Your participation request for this event was previously rejected",
+      "PARTICIPATION_REJECTED",
+    );
+    this.name = "ParticipationPreviouslyRejectedError";
   }
 }
 

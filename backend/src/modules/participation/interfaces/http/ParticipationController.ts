@@ -9,7 +9,7 @@ import { ParticipationRequestStatus, UserRole } from "../../../../shared/kernel/
 import { STAFF_ROLES } from "../../../../shared/kernel/staffRoles";
 import { ValidationError } from "../../../../shared/kernel/validateSchema";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
-import { optionalAuthMiddleware } from "../../../../shared/interfaces/http/middlewares/optionalAuthMiddleware";
+import { participationSubmitRateLimiter } from "../../../../shared/interfaces/http/middlewares/rateLimiter";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
 import {
   ParticipationAccessDeniedError,
@@ -18,6 +18,7 @@ import {
   ParticipationError,
   ParticipationEventNotFoundError,
   ParticipationNotPrivateEventError,
+  ParticipationPreviouslyRejectedError,
   ParticipationRequestNotFoundError,
 } from "../../domain/errors/ParticipationError";
 import { serializeParticipationRequest } from "../../application/helpers/serializeParticipationRequest";
@@ -48,18 +49,19 @@ function requireActor(req: Request, res: Response): ParticipationActor | null {
  */
 export class ParticipationController {
   /**
-   * POST /events/:eventId/participation-requests — usuário solicita participação.
-   * Aceita autenticação opcional: vincula `userId` se houver token válido.
+   * POST /events/:eventId/participation-requests — usuário autenticado solicita participação.
+   * Nome e e-mail vêm da conta; o body aceita apenas telefone opcional.
    */
   async submit(req: Request, res: Response): Promise<void> {
+    const actor = requireActor(req, res);
+    if (!actor) return;
+
     const { eventId } = req.params as { eventId: string };
 
     try {
-      const created = await submitParticipationRequest(
-        eventId,
-        req.body,
-        { userId: req.user?.id ?? null },
-      );
+      const created = await submitParticipationRequest(eventId, req.body, {
+        userId: actor.userId,
+      });
 
       res.status(201).json({
         participationRequest: serializeParticipationRequest(created),
@@ -190,7 +192,10 @@ export class ParticipationController {
       return;
     }
 
-    if (error instanceof ParticipationAlreadyRequestedError) {
+    if (
+      error instanceof ParticipationAlreadyRequestedError ||
+      error instanceof ParticipationPreviouslyRejectedError
+    ) {
       res.status(409).json({ error: error.message, code: error.code });
       return;
     }
@@ -225,5 +230,8 @@ export const participationManagementMiddlewares = [
   roleMiddleware([...STAFF_ROLES, UserRole.PRODUCER]),
 ] as const;
 
-/** Middleware de submissão (autenticação opcional). */
-export const participationSubmitMiddlewares = [optionalAuthMiddleware] as const;
+/** Middlewares de submissão (auth obrigatório + rate limit). */
+export const participationSubmitMiddlewares = [
+  authMiddleware,
+  participationSubmitRateLimiter,
+] as const;

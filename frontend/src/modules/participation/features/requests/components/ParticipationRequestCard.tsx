@@ -33,8 +33,6 @@ import { PremiumBadge } from "@/components/ui/PremiumBadge";
 import { getApiErrorMessage } from "@/shared/utils/errors";
 
 interface ParticipationFormValues {
-  name: string;
-  email: string;
   phone: string;
 }
 
@@ -59,14 +57,7 @@ export function ParticipationRequestCard({
 
   const form = useForm<ParticipationFormValues>({
     initialValues: {
-      name: user?.name ?? "",
-      email: user?.email ?? "",
       phone: "",
-    },
-    validate: {
-      name: (value) =>
-        value.trim().length >= 2 ? null : "Informe seu nome completo",
-      email: (value) => (/^\S+@\S+\.\S+$/.test(value.trim()) ? null : "E-mail inválido"),
     },
   });
 
@@ -135,8 +126,6 @@ export function ParticipationRequestCard({
 
     try {
       const created = await participationService.submitParticipationRequest(event.id, {
-        name: values.name.trim(),
-        email: values.email.trim(),
         phone: values.phone.trim() || undefined,
       });
 
@@ -170,8 +159,8 @@ export function ParticipationRequestCard({
           <Stack gap={2}>
             <Text fw={700}>Solicitar participação</Text>
             <Text size="sm" c="dimmed" style={{ lineHeight: 1.55 }}>
-              Este é um evento privado. Envie seus dados e, após a aprovação do
-              produtor, você poderá comprar o ingresso.
+              Este é um evento privado. Usaremos os dados da sua conta; após a
+              aprovação do produtor, você poderá comprar o ingresso.
             </Text>
           </Stack>
         </Group>
@@ -182,14 +171,16 @@ export function ParticipationRequestCard({
           label="Nome completo"
           radius="md"
           leftSection={<IconUser size={16} />}
-          {...form.getInputProps("name")}
+          value={user?.name ?? ""}
+          readOnly
         />
         <TextInput
           label="E-mail"
           radius="md"
           type="email"
           leftSection={<IconMail size={16} />}
-          {...form.getInputProps("email")}
+          value={user?.email ?? ""}
+          readOnly
         />
         <TextInput
           label="Telefone"

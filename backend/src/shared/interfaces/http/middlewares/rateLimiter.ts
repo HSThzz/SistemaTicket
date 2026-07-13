@@ -213,3 +213,22 @@ export const contactFormRateLimiter = rateLimit({
   skip: skipInTest,
   handler: buildRateLimitHandler("contact-form"),
 });
+
+/** Limitador para POST participação: 10 requisições por minuto por usuário. */
+export const participationSubmitRateLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: createRedisStore("participation-submit"),
+  skip: skipInTest,
+  keyGenerator: (req) => {
+    if (req.user?.id) {
+      return req.user.id;
+    }
+
+    const ip = req.ip;
+    return ip ? ipKeyGenerator(ip) : "unknown";
+  },
+  handler: buildRateLimitHandler("participation-submit"),
+});

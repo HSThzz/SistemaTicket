@@ -9,10 +9,8 @@ import type {
   ParticipationRequestStatus,
 } from "@/shared/types/api";
 
-/** Payload de envio de uma solicitação de participação. */
+/** Payload de envio — nome/e-mail vêm da conta; só telefone é opcional no body. */
 export interface SubmitParticipationRequestInput {
-  name: string;
-  email: string;
   phone?: string;
 }
 
@@ -23,11 +21,11 @@ export type ParticipationReviewDecision = "APPROVE" | "REJECT";
  * Envia uma solicitação de participação para um evento privado.
  *
  * @param eventId - Identificador do evento.
- * @param input - Nome, e-mail e telefone do interessado.
+ * @param input - Telefone opcional do interessado.
  */
 export async function submitParticipationRequest(
   eventId: string,
-  input: SubmitParticipationRequestInput,
+  input: SubmitParticipationRequestInput = {},
 ): Promise<ParticipationRequest> {
   const { data } = await api.post<{ participationRequest: ParticipationRequest }>(
     `/events/${eventId}/participation-requests`,
