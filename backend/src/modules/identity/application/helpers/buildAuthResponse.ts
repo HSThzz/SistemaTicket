@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import { env } from "../../../../shared/infrastructure/config/env";
 import type { User } from "../../../../shared/infrastructure/persistence/entities/User";
@@ -10,6 +11,7 @@ export function buildAuthResponse(user: User): AuthResponse {
     userId: user.id,
     role: user.role,
     pwdAt: getUserPwdAt(user.passwordChangedAt),
+    jti: randomUUID(),
   };
 
   const signOptions: SignOptions = {

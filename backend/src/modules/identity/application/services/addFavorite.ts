@@ -1,4 +1,5 @@
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { isUniqueViolation } from "../../../../shared/infrastructure/persistence/isUniqueViolation";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { EventNotFoundError } from "../../../catalog/domain/errors/EventError";
 import { findOnePublishedEventById } from "../../../catalog/application/queries/findOnePublishedEventById";
@@ -25,7 +26,15 @@ export async function addFavorite(userId: string, eventId: string) {
     return { eventId: validatedEventId, created: false };
   }
 
-  await createUserFavorite(id, validatedEventId);
+  try {
+    await createUserFavorite(id, validatedEventId);
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      return { eventId: validatedEventId, created: false };
+    }
+
+    throw error;
+  }
 
   Logger.getInstance().info(CONTEXT, "Favorite added", {
     userId: id,

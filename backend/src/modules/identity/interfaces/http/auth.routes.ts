@@ -8,7 +8,14 @@ import { authController } from "./AuthController";
 import { UserRole } from "../../../../shared/kernel/enums";
 import { STAFF_ROLES } from "../../../../shared/kernel/staffRoles";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
-import { authLoginRateLimiter, authAdminPasswordResetRateLimiter, authForgotPasswordRateLimiter, authPasswordChangeRateLimiter, authResetPasswordRateLimiter } from "../../../../shared/interfaces/http/middlewares/rateLimiter";
+import {
+  authLoginRateLimiter,
+  authRegisterRateLimiter,
+  authAdminPasswordResetRateLimiter,
+  authForgotPasswordRateLimiter,
+  authPasswordChangeRateLimiter,
+  authResetPasswordRateLimiter,
+} from "../../../../shared/interfaces/http/middlewares/rateLimiter";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
 import { validateBody, validateParams, validateQuery } from "../../../../shared/interfaces/http/middlewares/validate";
 import {
@@ -30,6 +37,7 @@ const router = Router();
 
 router.post(
   "/register",
+  authRegisterRateLimiter,
   validateBody(registerBodySchema),
   (req, res) => void authController.register(req, res),
 );
@@ -54,6 +62,8 @@ router.post(
   validateBody(resetPasswordBodySchema),
   (req, res) => void authController.resetPassword(req, res),
 );
+
+router.post("/logout", authMiddleware, (req, res) => void authController.logout(req, res));
 
 router.get("/me", authMiddleware, (req, res) => void authController.me(req, res));
 

@@ -28,23 +28,39 @@ export class InvalidCredentialsError extends AuthError {
 
 /** Email já cadastrado no registro. */
 export class EmailAlreadyExistsError extends AuthError {
-  /**
-   * @param email - Email em conflito.
-   */
-  constructor(email: string) {
-    super(`Email already registered: ${email}`, "EMAIL_ALREADY_EXISTS");
+  constructor(_email?: string) {
+    super("Email already registered", "EMAIL_ALREADY_EXISTS");
     this.name = "EmailAlreadyExistsError";
   }
 }
 
 /** CPF já cadastrado no registro ou atualização de perfil. */
 export class DocumentAlreadyExistsError extends AuthError {
-  /**
-   * @param document - CPF em conflito (apenas dígitos).
-   */
-  constructor(document: string) {
-    super(`Document already registered: ${document}`, "DOCUMENT_ALREADY_EXISTS");
+  constructor(_document?: string) {
+    super("Document already registered", "DOCUMENT_ALREADY_EXISTS");
     this.name = "DocumentAlreadyExistsError";
+  }
+}
+
+/** Troca de e-mail exige confirmação da senha atual. */
+export class CurrentPasswordRequiredError extends AuthError {
+  constructor() {
+    super(
+      "Informe a senha atual para alterar o e-mail",
+      "CURRENT_PASSWORD_REQUIRED",
+    );
+    this.name = "CurrentPasswordRequiredError";
+  }
+}
+
+/** Não é permitido remover o último SUPER_ADMIN da plataforma. */
+export class LastSuperAdminProtectionError extends AuthError {
+  constructor() {
+    super(
+      "Não é possível remover o último super administrador",
+      "LAST_SUPER_ADMIN_PROTECTION",
+    );
+    this.name = "LastSuperAdminProtectionError";
   }
 }
 

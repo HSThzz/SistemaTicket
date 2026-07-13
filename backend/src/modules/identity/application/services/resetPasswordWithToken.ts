@@ -1,5 +1,5 @@
-import bcrypt from "bcrypt";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
   InvalidPasswordResetTokenError,
@@ -9,15 +9,15 @@ import {
   resetPasswordSchema,
   type ResetPasswordInputSchema,
 } from "../../validators/schema/resetPasswordSchema";
+import { consumePasswordResetToken } from "../commands/consumePasswordResetToken";
 import { invalidatePasswordResetTokensForUser } from "../commands/invalidatePasswordResetTokensForUser";
-import { markPasswordResetTokenUsed } from "../commands/markPasswordResetTokenUsed";
 import { updateUser } from "../commands/updateUser";
 import { buildAuthResponse } from "../helpers/buildAuthResponse";
+import { hashPassword, verifyPassword } from "../helpers/passwordHash";
 import { hashPasswordResetToken } from "../helpers/passwordResetToken";
 import { findValidPasswordResetTokenByHash } from "../queries/findValidPasswordResetTokenByHash";
 
 const CONTEXT = "resetPasswordWithToken";
-const BCRYPT_ROUNDS = 12;
 
 export async function resetPasswordWithToken(input: ResetPasswordInputSchema) {
   const data = validateSchema(resetPasswordSchema, input);
@@ -39,7 +39,7 @@ export async function resetPasswordWithToken(input: ResetPasswordInputSchema) {
 
   const user = resetToken.user;
 
-  const reusesCurrentPassword = await bcrypt.compare(
+  const reusesCurrentPassword = await verifyPassword(
     data.newPassword,
     user.passwordHash,
   );
@@ -48,12 +48,30 @@ export async function resetPasswordWithToken(input: ResetPasswordInputSchema) {
     throw new PasswordReuseError();
   }
 
-  const passwordHash = await bcrypt.hash(data.newPassword, BCRYPT_ROUNDS);
+  const passwordHash = await hashPassword(data.newPassword);
   const passwordChangedAt = new Date();
 
-  const updatedUser = await updateUser(user, { passwordHash, passwordChangedAt });
-  await markPasswordResetTokenUsed(resetToken);
-  await invalidatePasswordResetTokensForUser(user.id);
+  const updatedUser = await AppDataSource.transaction(async (manager) => {
+    const consumed = await consumePasswordResetToken(
+      resetToken.id,
+      passwordChangedAt,
+      manager,
+    );
+
+    if (!consumed) {
+      throw new InvalidPasswordResetTokenError();
+    }
+
+    const savedUser = await updateUser(
+      user,
+      { passwordHash, passwordChangedAt },
+      manager,
+    );
+
+    await invalidatePasswordResetTokensForUser(user.id, manager);
+
+    return savedUser;
+  });
 
   Logger.getInstance().info(CONTEXT, "Password reset completed", {
     userId: user.id,

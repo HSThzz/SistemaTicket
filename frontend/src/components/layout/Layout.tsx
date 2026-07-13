@@ -86,7 +86,7 @@ function DesktopNavLinks({
 export function Layout() {
   const [opened, { toggle, close }] = useDisclosure();
   const isMobileNav = useMediaQuery("(max-width: 47.99em)");
-  const { user, isAuthenticated, isBootstrapping, clearSession } = useAuth();
+  const { user, isAuthenticated, isBootstrapping, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
@@ -105,14 +105,15 @@ export function Layout() {
   const isAdmin = isStaffRole(user?.role);
 
   const handleLogout = () => {
-    clearSession();
-    close();
-    notifications.show({
-      title: "Sessão encerrada",
-      message: "Até logo!",
-      color: "gray",
+    void logout().finally(() => {
+      close();
+      navigate("/");
+      notifications.show({
+        title: "Sessão encerrada",
+        message: "Até logo!",
+        color: "gray",
+      });
     });
-    navigate("/");
   };
 
   useEffect(() => {

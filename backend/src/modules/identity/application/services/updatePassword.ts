@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
@@ -11,12 +10,13 @@ import {
   type UpdatePasswordInputSchema,
 } from "../../validators/schema/updatePasswordSchema";
 import { userIdSchema } from "../../validators/schema/userIdSchema";
+import { invalidatePasswordResetTokensForUser } from "../commands/invalidatePasswordResetTokensForUser";
 import { updateUser } from "../commands/updateUser";
 import { buildAuthResponse } from "../helpers/buildAuthResponse";
+import { hashPassword, verifyPassword } from "../helpers/passwordHash";
 import { findOneUserById } from "../queries/findOneUserById";
 
 const CONTEXT = "updatePassword";
-const BCRYPT_ROUNDS = 12;
 
 export async function updatePassword(
   userId: string,
@@ -31,7 +31,7 @@ export async function updatePassword(
     throw new UserNotFoundError(id);
   }
 
-  const passwordMatches = await bcrypt.compare(
+  const passwordMatches = await verifyPassword(
     data.currentPassword,
     user.passwordHash,
   );
@@ -44,7 +44,7 @@ export async function updatePassword(
     throw new InvalidCurrentPasswordError();
   }
 
-  const reusesCurrentPassword = await bcrypt.compare(
+  const reusesCurrentPassword = await verifyPassword(
     data.newPassword,
     user.passwordHash,
   );
@@ -57,10 +57,11 @@ export async function updatePassword(
     throw new PasswordReuseError();
   }
 
-  const passwordHash = await bcrypt.hash(data.newPassword, BCRYPT_ROUNDS);
+  const passwordHash = await hashPassword(data.newPassword);
   const passwordChangedAt = new Date();
 
   const updatedUser = await updateUser(user, { passwordHash, passwordChangedAt });
+  await invalidatePasswordResetTokensForUser(user.id);
 
   Logger.getInstance().info(CONTEXT, "Password updated", { userId: id });
 

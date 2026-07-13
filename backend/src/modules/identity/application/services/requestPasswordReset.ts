@@ -41,6 +41,9 @@ export async function requestPasswordReset(input: ForgotPasswordInputSchema) {
         resetUrl: buildPasswordResetUrl(rawToken),
       });
     } catch (error) {
+      // Remove o token para o usuário poder tentar de novo com um link novo.
+      await invalidatePasswordResetTokensForUser(user.id);
+
       Logger.getInstance().error(CONTEXT, "Failed to send password reset email", {
         userId: user.id,
         error: error instanceof Error ? error.message : String(error),
@@ -52,5 +55,6 @@ export async function requestPasswordReset(input: ForgotPasswordInputSchema) {
     });
   }
 
+  // Sempre a mesma resposta (anti-enumeração), mesmo se o e-mail falhou.
   return { success: true as const };
 }

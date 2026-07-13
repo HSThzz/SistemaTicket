@@ -51,6 +51,7 @@ interface ProfileFormValues {
   name: string;
   email: string;
   document: string;
+  currentPassword: string;
 }
 
 interface PasswordFormValues {
@@ -80,6 +81,7 @@ export function ProfilePage() {
       name: "",
       email: "",
       document: "",
+      currentPassword: "",
     },
     validate: {
       name: (value) => (value.trim().length >= 2 ? null : "Informe seu nome"),
@@ -89,6 +91,14 @@ export function ProfilePage() {
         normalizeDocument(value).length === 11
           ? null
           : "Informe um CPF com 11 dígitos",
+      currentPassword: (value, values) => {
+        const originalEmail = (profile?.email ?? "").toLowerCase();
+        const nextEmail = values.email.trim().toLowerCase();
+        if (nextEmail !== originalEmail && value.length === 0) {
+          return "Informe a senha atual para alterar o e-mail";
+        }
+        return null;
+      },
     },
   });
 
@@ -132,6 +142,7 @@ export function ProfilePage() {
             name: loadedProfile.name,
             email: loadedProfile.email,
             document: loadedProfile.document ? formatCpf(loadedProfile.document) : "",
+            currentPassword: "",
           });
         }
       })
@@ -221,10 +232,14 @@ export function ProfilePage() {
     setSavingProfile(true);
 
     try {
+      const nextEmail = values.email.trim().toLowerCase();
+      const emailChanged = nextEmail !== (profile?.email ?? "").toLowerCase();
+
       const updatedProfile = await authService.updateProfile({
         name: values.name.trim(),
-        email: values.email.trim().toLowerCase(),
+        email: nextEmail,
         document: normalizeDocument(values.document),
+        ...(emailChanged ? { currentPassword: values.currentPassword } : {}),
       });
 
       setProfile(updatedProfile);
@@ -233,6 +248,7 @@ export function ProfilePage() {
         name: updatedProfile.name,
         email: updatedProfile.email,
         document: updatedProfile.document ? formatCpf(updatedProfile.document) : "",
+        currentPassword: "",
       });
 
       notifications.show({
@@ -340,6 +356,16 @@ export function ProfilePage() {
                   required
                   {...profileForm.getInputProps("email")}
                 />
+                {profileForm.values.email.trim().toLowerCase() !==
+                (profile?.email ?? "").toLowerCase() ? (
+                  <PasswordInput
+                    label="Senha atual"
+                    description="Necessária para confirmar a troca de e-mail"
+                    placeholder="Sua senha atual"
+                    required
+                    {...profileForm.getInputProps("currentPassword")}
+                  />
+                ) : null}
                 <TextInput
                   label="CPF"
                   placeholder="000.000.000-00"

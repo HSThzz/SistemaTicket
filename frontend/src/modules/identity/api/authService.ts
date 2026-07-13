@@ -53,6 +53,8 @@ export interface UpdateProfileInput {
   name: string;
   email: string;
   document: string;
+  /** Obrigatório quando o e-mail muda. */
+  currentPassword?: string;
 }
 
 /**
@@ -85,6 +87,14 @@ export interface ResetPasswordInput {
  */
 export async function updatePassword(input: UpdatePasswordInput): Promise<AuthResponse> {
   const { data } = await api.patch<AuthResponse>("/auth/me/password", input);
+  return data;
+}
+
+/**
+ * Encerra a sessão atual no servidor (denylist do JWT).
+ */
+export async function logout(): Promise<{ success: true }> {
+  const { data } = await api.post<{ success: true }>("/auth/logout");
   return data;
 }
 

@@ -14,5 +14,5 @@ export async function getProfile(
     throw new UserNotFoundError(id);
   }
 
-  return toUserProfile(user);
+  return toUserProfile(user, { includeDocument: true });
 }

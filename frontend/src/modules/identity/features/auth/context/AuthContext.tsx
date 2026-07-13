@@ -30,6 +30,8 @@ interface AuthContextValue {
   setSession: (token: string, user: AuthUser) => void;
   /** Remove sessão local e estado em memória. */
   clearSession: () => void;
+  /** Logout com invalidação server-side do JWT, depois limpa sessão local. */
+  logout: () => Promise<void>;
   /** Atualiza dados do usuário em memória após edição de perfil. */
   updateUserProfile: (user: AuthUser) => void;
 }
@@ -57,6 +59,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setUser(null);
   }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await authService.logout();
+    } catch {
+      // Mesmo se a denylist falhar, remove a sessão local.
+    }
+    clearSession();
+  }, [clearSession]);
 
   const updateUserProfile = useCallback((nextUser: AuthUser) => {
     setUser(nextUser);
@@ -122,9 +133,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isBootstrapping,
       setSession,
       clearSession,
+      logout,
       updateUserProfile,
     }),
-    [user, token, isBootstrapping, setSession, clearSession, updateUserProfile],
+    [user, token, isBootstrapping, setSession, clearSession, logout, updateUserProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

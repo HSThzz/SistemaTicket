@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { AdminAuditAction, UserRole } from "../../../../shared/kernel/enums";
 import { isStaffRole, isSuperAdmin } from "../../../../shared/kernel/staffRoles";
@@ -17,10 +16,10 @@ import { userIdSchema } from "../../validators/schema/userIdSchema";
 import { createAdminAuditLog } from "../commands/createAdminAuditLog";
 import { invalidatePasswordResetTokensForUser } from "../commands/invalidatePasswordResetTokensForUser";
 import { updateUser } from "../commands/updateUser";
+import { hashPassword, verifyPassword } from "../helpers/passwordHash";
 import { findOneUserById } from "../queries/findOneUserById";
 
 const CONTEXT = "adminResetUserPassword";
-const BCRYPT_ROUNDS = 12;
 
 export interface AdminResetUserPasswordActor {
   userId: string;
@@ -56,7 +55,7 @@ export async function adminResetUserPassword(
     throw new AdminPasswordResetForbiddenError();
   }
 
-  const reusesCurrentPassword = await bcrypt.compare(
+  const reusesCurrentPassword = await verifyPassword(
     data.newPassword,
     user.passwordHash,
   );
@@ -65,7 +64,7 @@ export async function adminResetUserPassword(
     throw new PasswordReuseError();
   }
 
-  const passwordHash = await bcrypt.hash(data.newPassword, BCRYPT_ROUNDS);
+  const passwordHash = await hashPassword(data.newPassword);
   const passwordChangedAt = new Date();
 
   await updateUser(user, { passwordHash, passwordChangedAt });

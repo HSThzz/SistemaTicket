@@ -5,6 +5,8 @@ export const updateProfileSchema = z.object({
   name: z.string().trim().min(2, "Nome deve ter ao menos 2 caracteres").max(255),
   email: z.string().trim().email("E-mail inválido").max(255),
   document: cpfDocumentSchema,
+  /** Obrigatório no serviço quando o e-mail muda. */
+  currentPassword: z.string().min(1).optional(),
 });
 
 export type UpdateProfileInputSchema = z.infer<typeof updateProfileSchema>;

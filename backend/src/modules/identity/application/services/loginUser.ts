@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { InvalidCredentialsError } from "../../domain/errors/AuthError";
@@ -7,6 +6,7 @@ import {
   type LoginUserInputSchema,
 } from "../../validators/schema/loginUserSchema";
 import { buildAuthResponse } from "../helpers/buildAuthResponse";
+import { verifyPassword } from "../helpers/passwordHash";
 import { findOneUserByEmail } from "../queries/findOneUserByEmail";
 
 const CONTEXT = "loginUser";
@@ -26,7 +26,7 @@ export async function loginUser(
     throw new InvalidCredentialsError();
   }
 
-  const passwordMatches = await bcrypt.compare(data.password, user.passwordHash);
+  const passwordMatches = await verifyPassword(data.password, user.passwordHash);
 
   if (!passwordMatches) {
     Logger.getInstance().warn(CONTEXT, "Failed login attempt", {

@@ -3,6 +3,7 @@
  * @module modules/identity/application/commands/updateUser
  */
 
+import type { EntityManager } from "typeorm";
 import { User } from "../../../../shared/infrastructure/persistence/entities/User";
 import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
@@ -16,10 +17,15 @@ export type UpdateUserData = Prettify<
 export async function updateUser(
   user: User,
   changes?: UpdateUserData,
+  manager?: EntityManager,
 ): Promise<User> {
   if (changes) {
     Object.assign(user, changes);
   }
 
-  return AppDataSource.getRepository(User).save(user);
+  const repository = manager
+    ? manager.getRepository(User)
+    : AppDataSource.getRepository(User);
+
+  return repository.save(user);
 }

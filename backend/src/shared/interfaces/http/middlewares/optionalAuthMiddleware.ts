@@ -5,15 +5,16 @@
 
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { isAuthTokenDenylisted } from "../../../../modules/identity/application/helpers/authTokenDenylist";
 import { isAuthTokenRevoked } from "../../../../modules/identity/application/helpers/authToken";
 import type { AuthTokenPayload } from "../../../../modules/identity/application/types";
-import { findUserPasswordChangedAtById } from "../../../../modules/identity/application/queries/findUserPasswordChangedAtById";
+import { findUserAuthStateById } from "../../../../modules/identity/application/queries/findUserAuthStateById";
 import { env } from "../../../infrastructure/config/env";
-import type { UserRole } from "../../../kernel/enums";
 
 /**
  * Tenta autenticar via header Authorization Bearer. Se o token for válido, preenche `req.user`;
  * caso contrário, segue adiante anonimamente (sem responder 401).
+ * A role sempre vem do banco (não do token).
  * @param req - Requisição Express.
  * @param _res - Resposta Express (não utilizada).
  * @param next - Próximo middleware.
@@ -33,18 +34,25 @@ export async function optionalAuthMiddleware(
   const token = authHeader.slice("Bearer ".length);
 
   try {
-    const decoded = jwt.verify(token, env.jwt.secret) as AuthTokenPayload;
+    const decoded = jwt.verify(token, env.jwt.secret) as AuthTokenPayload & {
+      exp?: number;
+    };
 
     if (!decoded.userId || !decoded.role) {
       next();
       return;
     }
 
-    const passwordChangedAt = await findUserPasswordChangedAtById(decoded.userId);
+    if (decoded.jti && (await isAuthTokenDenylisted(decoded.jti))) {
+      next();
+      return;
+    }
+
+    const authState = await findUserAuthStateById(decoded.userId);
 
     if (
-      passwordChangedAt === undefined ||
-      isAuthTokenRevoked(decoded.pwdAt, passwordChangedAt)
+      !authState ||
+      isAuthTokenRevoked(decoded.pwdAt, authState.passwordChangedAt)
     ) {
       next();
       return;
@@ -52,7 +60,9 @@ export async function optionalAuthMiddleware(
 
     req.user = {
       id: decoded.userId,
-      role: decoded.role as UserRole,
+      role: authState.role,
+      jti: decoded.jti,
+      tokenExp: decoded.exp,
     };
   } catch {
     // Token inválido/expirado em rota opcional: prossegue como anônimo.

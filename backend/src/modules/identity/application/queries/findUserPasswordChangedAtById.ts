@@ -3,23 +3,20 @@
  * @module modules/identity/application/queries/findUserPasswordChangedAtById
  */
 
-import { User } from "../../../../shared/infrastructure/persistence/entities/User";
-import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
+import { findUserAuthStateById } from "./findUserAuthStateById";
 
 /**
  * @returns `undefined` se o usuário não existir; caso contrário, data ou `null`.
+ * @deprecated Prefira `findUserAuthStateById` quando também precisar da role.
  */
 export async function findUserPasswordChangedAtById(
   userId: string,
 ): Promise<Date | null | undefined> {
-  const row = await AppDataSource.getRepository(User).findOne({
-    where: { id: userId },
-    select: { id: true, passwordChangedAt: true },
-  });
+  const authState = await findUserAuthStateById(userId);
 
-  if (!row) {
+  if (!authState) {
     return undefined;
   }
 
-  return row.passwordChangedAt;
+  return authState.passwordChangedAt;
 }

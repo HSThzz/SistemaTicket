@@ -22,6 +22,8 @@ export interface AuthTokenPayload {
   role: UserRole;
   /** Timestamp (ms) da última troca de senha; `0` se nunca alterada. */
   pwdAt: number;
+  /** Identificador único do token (logout / denylist). Ausente em tokens legados. */
+  jti?: string;
 }
 
 /** Dados públicos do usuário autenticado. */
@@ -30,7 +32,7 @@ export interface AuthUserProfile {
   name: string;
   email: string;
   role: UserRole;
-  /** CPF (apenas dígitos); presente em `/auth/me` e após atualização de perfil. */
+  /** CPF (apenas dígitos); somente em `/auth/me` e após atualização de perfil. */
   document?: string;
 }
 

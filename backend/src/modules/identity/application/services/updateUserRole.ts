@@ -3,6 +3,7 @@ import { AdminAuditAction, UserRole } from "../../../../shared/kernel/enums";
 import { isSuperAdmin } from "../../../../shared/kernel/staffRoles";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
+  LastSuperAdminProtectionError,
   RoleAssignmentForbiddenError,
   UserNotFoundError,
 } from "../../domain/errors/AuthError";
@@ -13,6 +14,7 @@ import {
 import { userIdSchema } from "../../validators/schema/userIdSchema";
 import { createAdminAuditLog } from "../commands/createAdminAuditLog";
 import { updateUser } from "../commands/updateUser";
+import { countUsersByRole } from "../queries/countUsersByRole";
 import { findOneUserById } from "../queries/findOneUserById";
 
 const CONTEXT = "updateUserRole";
@@ -41,6 +43,17 @@ export async function updateUserRole(
   }
 
   const previousRole = user.role;
+
+  if (
+    previousRole === UserRole.SUPER_ADMIN &&
+    data.role !== UserRole.SUPER_ADMIN
+  ) {
+    const superAdminCount = await countUsersByRole(UserRole.SUPER_ADMIN);
+
+    if (superAdminCount <= 1) {
+      throw new LastSuperAdminProtectionError();
+    }
+  }
 
   await updateUser(user, { role: data.role });
 

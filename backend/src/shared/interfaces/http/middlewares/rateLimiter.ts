@@ -102,6 +102,17 @@ export const authLoginRateLimiter = rateLimit({
   handler: buildRateLimitHandler("auth-login"),
 });
 
+/** Limitador para POST /auth/register: 10 requisições por minuto por IP. */
+export const authRegisterRateLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: createRedisStore("auth-register"),
+  skip: skipInTest,
+  handler: buildRateLimitHandler("auth-register"),
+});
+
 /** Limitador para PATCH /auth/me/password: 5 tentativas por minuto por usuário. */
 export const authPasswordChangeRateLimiter = rateLimit({
   windowMs: WINDOW_MS,

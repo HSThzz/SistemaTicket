@@ -9,12 +9,14 @@ import {
   AuthError,
   AdminPasswordResetForbiddenError,
   AdminSelfPasswordResetForbiddenError,
+  CurrentPasswordRequiredError,
   DocumentAlreadyExistsError,
   EmailAlreadyExistsError,
   InvalidCredentialsError,
   InvalidCurrentPasswordError,
   InvalidPasswordResetTokenError,
   InvalidRoleError,
+  LastSuperAdminProtectionError,
   PasswordReuseError,
   RoleAssignmentForbiddenError,
   UserNotFoundError,
@@ -24,6 +26,7 @@ import { UserRole } from "../../../../shared/kernel/enums";
 import { ValidationError } from "../../../../shared/kernel/validateSchema";
 import { getProfile } from "../../application/services/getProfile";
 import { loginUser } from "../../application/services/loginUser";
+import { logoutUser } from "../../application/services/logoutUser";
 import { lookupUserByEmail } from "../../application/services/lookupUserByEmail";
 import { registerUser } from "../../application/services/registerUser";
 import { adminResetUserPassword } from "../../application/services/adminResetUserPassword";
@@ -219,6 +222,26 @@ export class AuthController {
   }
 
   /**
+   * POST /auth/logout — invalida o JWT atual (denylist).
+   */
+  async logout(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    try {
+      const result = await logoutUser({
+        jti: req.user.jti,
+        tokenExp: req.user.tokenExp,
+      });
+      res.status(200).json(result);
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
    * POST /auth/forgot-password — envia link de redefinição por e-mail (se a conta existir).
    */
   async forgotPassword(req: Request, res: Response): Promise<void> {
@@ -360,6 +383,16 @@ export class AuthController {
 
     if (error instanceof InvalidCurrentPasswordError) {
       res.status(401).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof CurrentPasswordRequiredError) {
+      res.status(400).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof LastSuperAdminProtectionError) {
+      res.status(409).json({ error: error.message, code: error.code });
       return;
     }
 

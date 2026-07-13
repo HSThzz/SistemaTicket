@@ -11,6 +11,10 @@ declare global {
     interface UserPayload {
       id: string;
       role: UserRole;
+      /** `jti` do JWT atual (para logout). */
+      jti?: string;
+      /** Unix exp do JWT atual (para TTL da denylist). */
+      tokenExp?: number;
     }
 
     interface Request {
