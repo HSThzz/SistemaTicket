@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import {
   LOCK_STOCK_INIT_KEY_PREFIX,
   RESERVATION_KEY_PREFIX,
+  RESERVATION_META_GRACE_SECONDS,
+  RESERVATION_META_KEY_PREFIX,
   RESERVATION_PERSIST_QUEUE_KEY,
   RESERVATION_TTL_MS,
   RESERVATION_TTL_SECONDS,
@@ -13,17 +15,21 @@ import {
   releaseLock,
 } from "../../../../shared/application/DistributedLock";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { EventStatus } from "../../../../shared/kernel/enums";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
+  EventNotOnSaleError,
   InsufficientStockError,
   ParticipationNotApprovedError,
   ReserveUserNotFoundError,
   TicketLotNotFoundError,
 } from "../../domain/errors/PurchaseError";
 import { reserveTicketsSchema } from "../../validators/schema/reserveTicketsSchema";
-import { findOneTicketLotById } from "../queries/findOneTicketLotById";
+import { findTicketLotForPurchase } from "../queries/findTicketLotForPurchase";
 import { findOneUserById } from "../../../identity/application/queries/findOneUserById";
 import { checkParticipationAccess } from "../../../participation/application/services/checkParticipationAccess";
+import { sumPendingQuantityForLot } from "../helpers/sumPendingReservationQuantities";
+import type { ReservationMetaPayload } from "../helpers/releaseRedisReservationHold";
 import type { ReservationCachePayload } from "./types";
 
 const CONTEXT = "reserveTickets";
@@ -32,10 +38,13 @@ const RESERVE_TICKETS_LUA = `
   local stockKey = KEYS[1]
   local reservationKey = KEYS[2]
   local queueKey = KEYS[3]
+  local metaKey = KEYS[4]
 
   local quantity = tonumber(ARGV[1])
   local payloadJson = ARGV[2]
   local ttlSeconds = tonumber(ARGV[3])
+  local metaJson = ARGV[4]
+  local metaTtlSeconds = tonumber(ARGV[5])
 
   local currentStockStr = redis.call("GET", stockKey)
   if not currentStockStr then
@@ -50,6 +59,7 @@ const RESERVE_TICKETS_LUA = `
   local newStock = currentStock - quantity
   redis.call("SET", stockKey, newStock)
   redis.call("SETEX", reservationKey, ttlSeconds, payloadJson)
+  redis.call("SETEX", metaKey, metaTtlSeconds, metaJson)
   redis.call("LPUSH", queueKey, payloadJson)
   return { 1, newStock }
 `;
@@ -68,12 +78,26 @@ export async function reserveTickets(
     throw new ReserveUserNotFoundError(data.userId);
   }
 
+  const lot = await findTicketLotForPurchase(data.ticketLotId);
+  if (!lot) {
+    throw new TicketLotNotFoundError(data.ticketLotId);
+  }
+
+  if (lot.eventStatus !== EventStatus.PUBLISHED) {
+    throw new EventNotOnSaleError();
+  }
+
   const access = await checkParticipationAccess(data.userId, data.ticketLotId);
   if (access.requiresApproval && !access.allowed) {
     throw new ParticipationNotApprovedError();
   }
 
-  await ensureRedisStockInitialized(redis, data.ticketLotId, logger);
+  await ensureRedisStockInitialized(
+    redis,
+    data.ticketLotId,
+    lot.availableQuantity,
+    logger,
+  );
 
   const reservationId = randomUUID();
   const expiresAt = new Date(Date.now() + RESERVATION_TTL_MS).toISOString();
@@ -86,18 +110,30 @@ export async function reserveTickets(
     expiresAt,
   };
 
+  const metaPayload: ReservationMetaPayload = {
+    reservationId,
+    userId: data.userId,
+    ticketLotId: data.ticketLotId,
+    quantity: data.quantity,
+  };
+
   const stockKey = `${TICKET_LOT_STOCK_KEY_PREFIX}${data.ticketLotId}`;
   const reservationKey = `${RESERVATION_KEY_PREFIX}${reservationId}`;
+  const metaKey = `${RESERVATION_META_KEY_PREFIX}${reservationId}`;
+  const metaTtlSeconds = RESERVATION_TTL_SECONDS + RESERVATION_META_GRACE_SECONDS;
 
   const result = (await redis.eval(
     RESERVE_TICKETS_LUA,
-    3,
+    4,
     stockKey,
     reservationKey,
     RESERVATION_PERSIST_QUEUE_KEY,
+    metaKey,
     String(data.quantity),
     JSON.stringify(payload),
     String(RESERVATION_TTL_SECONDS),
+    JSON.stringify(metaPayload),
+    String(metaTtlSeconds),
   )) as [number, number];
 
   const [ok, remainingStock] = result;
@@ -130,6 +166,7 @@ export async function reserveTickets(
 async function ensureRedisStockInitialized(
   redis: Redis,
   ticketLotId: string,
+  pgAvailableQuantity: number,
   logger: Logger,
 ) {
   const stockKey = `${TICKET_LOT_STOCK_KEY_PREFIX}${ticketLotId}`;
@@ -146,17 +183,17 @@ async function ensureRedisStockInitialized(
       return;
     }
 
-    const lot = await findOneTicketLotById(ticketLotId);
-    if (!lot) {
-      throw new TicketLotNotFoundError(ticketLotId);
-    }
+    const pendingInQueues = await sumPendingQuantityForLot(redis, ticketLotId);
+    const initialStock = Math.max(0, pgAvailableQuantity - pendingInQueues);
 
-    await redis.setnx(stockKey, String(lot.availableQuantity));
+    await redis.setnx(stockKey, String(initialStock));
 
     logger.debug(CONTEXT, "Redis stock initialized (or already set)", {
       ticketLotId,
       stockKey,
-      availableQuantity: lot.availableQuantity,
+      pgAvailableQuantity,
+      pendingInQueues,
+      initialStock,
     });
   } finally {
     if (lock) {

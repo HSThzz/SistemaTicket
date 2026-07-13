@@ -16,6 +16,10 @@ import {
 } from "../../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { persistReservation } from "../../application/commands/persistReservation";
+import {
+  clearReservationMeta,
+  releaseRedisReservationHold,
+} from "../../application/helpers/releaseRedisReservationHold";
 
 const CONTEXT = "ReservationPersistenceWorker";
 
@@ -31,6 +35,20 @@ type PersistJobPayload = {
 const MAX_ATTEMPTS = 5;
 const RETRY_BASE_DELAY_MS = 500;
 const RETRY_MAX_DELAY_MS = 20_000;
+
+const DRAIN_RETRY_SCHEDULE_LUA = `
+  local scheduleKey = KEYS[1]
+  local retryQueueKey = KEYS[2]
+  local now = tonumber(ARGV[1])
+  local batchSize = tonumber(ARGV[2])
+
+  local due = redis.call("ZRANGEBYSCORE", scheduleKey, 0, now, "LIMIT", 0, batchSize)
+  for _, item in ipairs(due) do
+    redis.call("ZREM", scheduleKey, item)
+    redis.call("LPUSH", retryQueueKey, item)
+  end
+  return #due
+`;
 
 /**
  * Processa jobs de persistência de reserva com retentativas exponenciais e DLQ.
@@ -50,7 +68,6 @@ export class ReservationPersistenceWorker {
 
   /**
    * Inicia o loop de consumo da fila em background.
-   * @returns Promise resolvida assim que o worker estiver marcado como ativo.
    */
   async start(): Promise<void> {
     this.running = true;
@@ -62,7 +79,6 @@ export class ReservationPersistenceWorker {
 
   /**
    * Sinaliza parada do loop e registra métricas finais.
-   * @returns Promise resolvida quando a flag `running` for desligada.
    */
   async stop(): Promise<void> {
     this.running = false;
@@ -74,10 +90,6 @@ export class ReservationPersistenceWorker {
     });
   }
 
-  /**
-   * Retorna contadores acumulados do worker (processados, falhas, retries, DLQ).
-   * @returns Objeto com métricas desde o último `start`.
-   */
   getMetrics(): {
     processedCount: number;
     failedCount: number;
@@ -109,7 +121,35 @@ export class ReservationPersistenceWorker {
         }
 
         const [, raw] = result;
-        const payload = JSON.parse(raw) as PersistJobPayload;
+        let payload: PersistJobPayload;
+
+        try {
+          payload = JSON.parse(raw) as PersistJobPayload;
+        } catch {
+          this.failedCount += 1;
+          await this.redis.lpush(
+            RESERVATION_PERSIST_DLQ_KEY,
+            JSON.stringify({ raw, reason: "invalid_json" }),
+          );
+          this.dlqCount += 1;
+          this.logger.error(CONTEXT, "Invalid JSON job moved to DLQ", {
+            dlqKey: RESERVATION_PERSIST_DLQ_KEY,
+          });
+          continue;
+        }
+
+        if (
+          !payload.reservationId ||
+          !payload.ticketLotId ||
+          !payload.userId ||
+          !payload.expiresAt ||
+          typeof payload.quantity !== "number"
+        ) {
+          this.failedCount += 1;
+          await this.moveToDlq(payload, "invalid_payload");
+          continue;
+        }
+
         payload.attempt = payload.attempt ?? 1;
 
         this.logger.debug(CONTEXT, "Job dequeued", {
@@ -131,10 +171,9 @@ export class ReservationPersistenceWorker {
 
   private async persist(payload: PersistJobPayload): Promise<void> {
     const reservationKey = `${RESERVATION_KEY_PREFIX}${payload.reservationId}`;
-    const stockKey = `${TICKET_LOT_STOCK_KEY_PREFIX}${payload.ticketLotId}`;
 
     if (new Date(payload.expiresAt) <= new Date()) {
-      await this.compensateRedis(stockKey, reservationKey, payload.quantity);
+      await this.compensateRedis(payload);
       this.logger.warn(CONTEXT, "Skipped persistence — reservation already expired", {
         reservationId: payload.reservationId,
         attempt: payload.attempt,
@@ -144,7 +183,7 @@ export class ReservationPersistenceWorker {
 
     const reservationStillActive = await this.redis.exists(reservationKey);
     if (reservationStillActive === 0) {
-      await this.compensateRedis(stockKey, reservationKey, payload.quantity);
+      await this.compensateRedis(payload);
       this.logger.warn(CONTEXT, "Skipped persistence — reservation key missing in Redis", {
         reservationId: payload.reservationId,
         attempt: payload.attempt,
@@ -155,60 +194,60 @@ export class ReservationPersistenceWorker {
     try {
       const result = await persistReservation(payload);
 
-      let orderId: string | null = null;
-
       if (result.status === "duplicate") {
         this.logger.warn(CONTEXT, "Reservation already persisted (duplicate job)", {
           reservationId: payload.reservationId,
         });
-        orderId = result.orderId;
-      } else if (result.status === "lot_not_found") {
+
+        if (!result.orderId) {
+          await clearReservationMeta(this.redis, payload.reservationId);
+          await this.moveToDlq(payload, "duplicate_without_order");
+          return;
+        }
+
+        await this.markOrderReady(payload, result.orderId);
+        return;
+      }
+
+      if (result.status === "lot_not_found") {
         this.logger.error(CONTEXT, "Ticket lot not found during persistence", {
           reservationId: payload.reservationId,
           ticketLotId: payload.ticketLotId,
         });
-        await this.compensateRedis(stockKey, reservationKey, payload.quantity);
-      } else if (result.status === "negative_stock") {
+        await this.compensateRedis(payload);
+        await this.moveToDlq(payload, "lot_not_found");
+        return;
+      }
+
+      if (result.status === "negative_stock") {
         this.logger.error(CONTEXT, "DB stock would become negative — compensating Redis", {
           reservationId: payload.reservationId,
           ticketLotId: payload.ticketLotId,
         });
-        await this.compensateRedis(stockKey, reservationKey, payload.quantity);
-      } else if (result.status === "user_not_found") {
+        await this.compensateRedis(payload);
+        await this.moveToDlq(payload, "negative_stock");
+        return;
+      }
+
+      if (result.status === "user_not_found") {
         this.logger.error(CONTEXT, "User not found during persistence — compensating Redis", {
           reservationId: payload.reservationId,
           userId: payload.userId,
         });
-        await this.compensateRedis(stockKey, reservationKey, payload.quantity);
-      } else {
-        orderId = result.orderId;
-        this.logger.info(CONTEXT, "Reservation persisted successfully", {
-          reservationId: payload.reservationId,
-          orderId: result.orderId,
-          ticketLotId: payload.ticketLotId,
-          userId: payload.userId,
-          quantity: payload.quantity,
-        });
-      }
-
-      if (!orderId) {
-        this.failedCount += 1;
-        await this.scheduleRetryOrDlq(payload, "orderId_null");
+        await this.compensateRedis(payload);
+        await this.moveToDlq(payload, "user_not_found");
         return;
       }
 
-      await this.redis.setex(
-        `${ORDER_CACHE_KEY_PREFIX}${payload.reservationId}`,
-        RESERVATION_TTL_SECONDS,
-        orderId,
-      );
-
-      this.logger.info(CONTEXT, "Order ready for payment", {
+      this.logger.info(CONTEXT, "Reservation persisted successfully", {
         reservationId: payload.reservationId,
-        orderId,
+        orderId: result.orderId,
+        ticketLotId: payload.ticketLotId,
+        userId: payload.userId,
+        quantity: payload.quantity,
       });
 
-      this.processedCount += 1;
+      await this.markOrderReady(payload, result.orderId);
     } catch (error) {
       this.failedCount += 1;
       this.logger.error(CONTEXT, "Failed to persist reservation", {
@@ -227,19 +266,67 @@ export class ReservationPersistenceWorker {
     }
   }
 
-  private async compensateRedis(
-    stockKey: string,
-    reservationKey: string,
-    quantity: number,
+  private async markOrderReady(
+    payload: PersistJobPayload,
+    orderId: string,
   ): Promise<void> {
-    await this.redis.incrby(stockKey, quantity);
-    await this.redis.del(reservationKey);
+    await clearReservationMeta(this.redis, payload.reservationId);
+
+    await this.redis.setex(
+      `${ORDER_CACHE_KEY_PREFIX}${payload.reservationId}`,
+      RESERVATION_TTL_SECONDS,
+      orderId,
+    );
+
+    this.logger.info(CONTEXT, "Order ready for payment", {
+      reservationId: payload.reservationId,
+      orderId,
+    });
+
+    this.processedCount += 1;
+  }
+
+  private async compensateRedis(payload: PersistJobPayload): Promise<void> {
+    const released = await releaseRedisReservationHold(
+      this.redis,
+      payload.reservationId,
+      {
+        ticketLotId: payload.ticketLotId,
+        quantity: payload.quantity,
+      },
+    );
+
+    this.logger.info(CONTEXT, "Redis reservation hold release attempted", {
+      reservationId: payload.reservationId,
+      ticketLotId: payload.ticketLotId,
+      quantity: payload.quantity,
+      released,
+      stockKey: `${TICKET_LOT_STOCK_KEY_PREFIX}${payload.ticketLotId}`,
+    });
   }
 
   private computeRetryDelayMs(attempt: number): number {
     const exp = RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
     const jitter = Math.floor(Math.random() * 250);
     return Math.min(exp + jitter, RETRY_MAX_DELAY_MS);
+  }
+
+  private async moveToDlq(
+    payload: PersistJobPayload | Record<string, unknown>,
+    reason: string,
+  ): Promise<void> {
+    const dlqPayload = JSON.stringify({ ...payload, reason });
+    await this.redis.lpush(RESERVATION_PERSIST_DLQ_KEY, dlqPayload);
+    this.dlqCount += 1;
+    this.failedCount += 1;
+    this.logger.error(CONTEXT, "Job moved to DLQ", {
+      reservationId:
+        typeof payload.reservationId === "string"
+          ? payload.reservationId
+          : undefined,
+      reason,
+      dlqKey: RESERVATION_PERSIST_DLQ_KEY,
+    });
   }
 
   private async scheduleRetryOrDlq(
@@ -249,16 +336,7 @@ export class ReservationPersistenceWorker {
     const attempt = payload.attempt ?? 1;
 
     if (attempt >= MAX_ATTEMPTS) {
-      const dlqPayload = JSON.stringify({ ...payload, attempt, reason });
-      await this.redis.lpush(RESERVATION_PERSIST_DLQ_KEY, dlqPayload);
-      this.dlqCount += 1;
-      this.logger.error(CONTEXT, "Job moved to DLQ", {
-        reservationId: payload.reservationId,
-        ticketLotId: payload.ticketLotId,
-        attempt,
-        reason,
-        dlqKey: RESERVATION_PERSIST_DLQ_KEY,
-      });
+      await this.moveToDlq({ ...payload, attempt }, reason);
       return;
     }
 
@@ -287,28 +365,13 @@ export class ReservationPersistenceWorker {
   }
 
   private async drainRetrySchedule(batchSize = 50): Promise<void> {
-    const now = Date.now();
-
-    const due = await this.redis.zrangebyscore(
+    await this.redis.eval(
+      DRAIN_RETRY_SCHEDULE_LUA,
+      2,
       RESERVATION_PERSIST_RETRY_SCHEDULE_KEY,
-      0,
-      now,
-      "LIMIT",
-      0,
-      batchSize,
+      RESERVATION_PERSIST_RETRY_QUEUE_KEY,
+      String(Date.now()),
+      String(batchSize),
     );
-
-    if (due.length === 0) {
-      return;
-    }
-
-    const pipeline = this.redis.pipeline();
-
-    for (const item of due) {
-      pipeline.zrem(RESERVATION_PERSIST_RETRY_SCHEDULE_KEY, item);
-      pipeline.lpush(RESERVATION_PERSIST_RETRY_QUEUE_KEY, item);
-    }
-
-    await pipeline.exec();
   }
 }

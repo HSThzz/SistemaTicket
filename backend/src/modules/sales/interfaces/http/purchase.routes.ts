@@ -13,8 +13,6 @@ import { STAFF_ROLES } from "../../../../shared/kernel/staffRoles";
 import { validateBody, validateParams } from "../../../../shared/interfaces/http/middlewares/validate";
 import { reserveBodySchema, reservationIdParamsSchema } from "../../../../shared/interfaces/http/validation/sales.schemas";
 
-const OPS_ROLES = [...STAFF_ROLES, UserRole.PRODUCER] as const;
-
 const router = Router();
 
 router.post(
@@ -42,35 +40,35 @@ router.post(
 router.get(
   "/ops/queues",
   authMiddleware,
-  roleMiddleware([...OPS_ROLES]),
+  roleMiddleware([...STAFF_ROLES]),
   (req, res) => void purchaseController.getQueueStats(req, res),
 );
 
 router.get(
   "/ops/worker",
   authMiddleware,
-  roleMiddleware([...OPS_ROLES]),
+  roleMiddleware([...STAFF_ROLES]),
   (req, res) => void purchaseController.getWorkerMetrics(req, res),
 );
 
 router.get(
   "/ops/dlq",
   authMiddleware,
-  roleMiddleware([...OPS_ROLES]),
+  roleMiddleware([...STAFF_ROLES]),
   (req, res) => void purchaseController.listDlq(req, res),
 );
 
 router.get(
   "/ops/retry-schedule",
   authMiddleware,
-  roleMiddleware([...OPS_ROLES]),
+  roleMiddleware([...STAFF_ROLES]),
   (req, res) => void purchaseController.getRetrySchedule(req, res),
 );
 
 router.post(
   "/ops/dlq/reprocess",
   authMiddleware,
-  roleMiddleware([...OPS_ROLES]),
+  roleMiddleware([UserRole.SUPER_ADMIN]),
   (req, res) => void purchaseController.reprocessDlq(req, res),
 );
 

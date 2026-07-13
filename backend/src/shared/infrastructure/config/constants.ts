@@ -12,6 +12,15 @@ export const RESERVATION_TTL_MS = RESERVATION_TTL_SECONDS * 1000;
 /** Prefixo das chaves de reserva temporária no Redis. */
 export const RESERVATION_KEY_PREFIX = "reservation:";
 
+/**
+ * Prefixo de metadados da reserva (sobrevive ao TTL da key principal).
+ * Usado para devolver estoque quando a reserva expira antes da persistência no PG.
+ */
+export const RESERVATION_META_KEY_PREFIX = "reservation:meta:";
+
+/** TTL extra da meta além do TTL da reserva (24h) — cobre DLQ / workers atrasados. */
+export const RESERVATION_META_GRACE_SECONDS = 24 * 60 * 60;
+
 /** Prefixo das chaves de estoque de lote no Redis (fonte de verdade no pico). */
 export const TICKET_LOT_STOCK_KEY_PREFIX = "stock:ticket-lot:";
 

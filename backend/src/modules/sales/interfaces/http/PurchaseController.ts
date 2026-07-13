@@ -12,6 +12,7 @@ import {
   RESERVATION_PERSIST_RETRY_SCHEDULE_KEY,
 } from "../../../../shared/infrastructure/config/constants";
 import {
+  EventNotOnSaleError,
   ParticipationNotApprovedError,
   PurchaseError,
   ReservationAccessDeniedError,
@@ -346,10 +347,17 @@ export class PurchaseController {
       return;
     }
 
+    if (error instanceof EventNotOnSaleError) {
+      res.status(409).json({ error: error.message, code: error.code });
+      return;
+    }
+
     if (error instanceof PurchaseError) {
       const status =
         error.code === "INSUFFICIENT_STOCK"
           ? 409
+          : error.code === "EVENT_NOT_ON_SALE"
+            ? 409
           : error.code === "RESERVATION_ACCESS_DENIED"
             ? 403
             : 400;

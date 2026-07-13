@@ -1,14 +1,9 @@
 import type Redis from "ioredis";
-import {
-  RESERVATION_PERSIST_DLQ_KEY,
-  RESERVATION_PERSIST_QUEUE_KEY,
-  RESERVATION_PERSIST_RETRY_QUEUE_KEY,
-  RESERVATION_PERSIST_RETRY_SCHEDULE_KEY,
-  TICKET_LOT_STOCK_KEY_PREFIX,
-} from "../../../../shared/infrastructure/config/constants";
+import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../../../shared/infrastructure/config/constants";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { findAllTicketLotsStock } from "../queries/findAllTicketLotsStock";
-import type { PersistJobPayload, StockReconciliationReport } from "./types";
+import { sumPendingQuantitiesByLot } from "../helpers/sumPendingReservationQuantities";
+import type { StockReconciliationReport } from "./types";
 
 const CONTEXT = "reconcileAllStock";
 
@@ -69,50 +64,4 @@ export async function reconcileAllStock(
     correctedCount,
     lots: results,
   };
-}
-
-async function sumPendingQuantitiesByLot(redis: Redis) {
-  const pending = new Map<string, number>();
-  const queueKeys = [
-    RESERVATION_PERSIST_QUEUE_KEY,
-    RESERVATION_PERSIST_RETRY_QUEUE_KEY,
-    RESERVATION_PERSIST_DLQ_KEY,
-  ];
-
-  for (const key of queueKeys) {
-    const items = await redis.lrange(key, 0, -1);
-    addPayloadQuantities(pending, items);
-  }
-
-  const scheduled = await redis.zrange(
-    RESERVATION_PERSIST_RETRY_SCHEDULE_KEY,
-    0,
-    -1,
-  );
-  addPayloadQuantities(pending, scheduled);
-
-  return pending;
-}
-
-function addPayloadQuantities(map: Map<string, number>, rawItems: string[]): void {
-  for (const raw of rawItems) {
-    try {
-      const payload = JSON.parse(raw) as PersistJobPayload;
-      const lotId = payload.ticketLotId;
-      const quantity = payload.quantity;
-
-      if (
-        !lotId ||
-        quantity === undefined ||
-        !Number.isInteger(quantity) ||
-        quantity <= 0
-      ) {
-        continue;
-      }
-
-      map.set(lotId, (map.get(lotId) ?? 0) + quantity);
-    } catch {
-      // Ignora payloads inválidos na fila.
-    }
-  }
 }

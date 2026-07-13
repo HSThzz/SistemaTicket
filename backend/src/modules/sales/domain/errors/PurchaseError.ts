@@ -124,3 +124,16 @@ export class ParticipationNotApprovedError extends PurchaseError {
     this.name = "ParticipationNotApprovedError";
   }
 }
+
+/**
+ * Evento não está publicado (ou foi cancelado/finalizado) — compra bloqueada.
+ */
+export class EventNotOnSaleError extends PurchaseError {
+  constructor() {
+    super(
+      "This event is not available for purchase",
+      "EVENT_NOT_ON_SALE",
+    );
+    this.name = "EventNotOnSaleError";
+  }
+}

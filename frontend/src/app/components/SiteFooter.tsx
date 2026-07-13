@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-import { Anchor, Box, Divider, Grid, Group, Stack, Text } from "@mantine/core";
+import { Anchor, Box, Grid, Group, Stack, Text } from "@mantine/core";
 
 import { VibraLogo } from "@/components/brand/VibraLogo";
 

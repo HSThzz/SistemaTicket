@@ -34,7 +34,15 @@ export class ReservationExpiryWorker {
    * @returns Promise resolvida após a assinatura estar ativa.
    */
   async start(): Promise<void> {
-    await enableKeyspaceNotifications(this.redis);
+    try {
+      await enableKeyspaceNotifications(this.redis);
+    } catch (error) {
+      this.logger.error(CONTEXT, "Keyspace notifications unavailable — expiry listener disabled", {
+        error: error instanceof Error ? error.message : String(error),
+        hint: "Configure notify-keyspace-events=Ex on Redis, or rely on stock reconciliation",
+      });
+      throw error;
+    }
 
     this.subscriber = getRedisSubscriber();
     await this.subscriber.psubscribe(this.expiredKeyPattern);

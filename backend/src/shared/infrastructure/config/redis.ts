@@ -91,11 +91,36 @@ export function getRedisKeyspaceExpiredPattern(): string {
 
 /**
  * Habilita notificações de expiração de chaves (`Ex`) no Redis.
+ * Em Redis gerenciado sem CONFIG, registra erro claro (expiry depende disso).
  * @param redis - Cliente onde aplicar a configuração.
- * @returns Promise resolvida após `CONFIG SET`.
  */
 export async function enableKeyspaceNotifications(redis: Redis): Promise<void> {
-  await redis.config("SET", "notify-keyspace-events", "Ex");
+  try {
+    await redis.config("SET", "notify-keyspace-events", "Ex");
+  } catch (error) {
+    const current = await redis.config("GET", "notify-keyspace-events").catch(() => null);
+    const value = Array.isArray(current) ? String(current[1] ?? "") : "";
+
+    if (value.includes("E") && value.includes("x")) {
+      return;
+    }
+
+    throw new Error(
+      `Failed to enable Redis keyspace notifications (Ex). ` +
+        `Current notify-keyspace-events=${value || "unknown"}. ` +
+        `Reservation expiry will not run. ` +
+        `${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
+  const verified = await redis.config("GET", "notify-keyspace-events");
+  const value = Array.isArray(verified) ? String(verified[1] ?? "") : "";
+
+  if (!value.includes("E") || !value.includes("x")) {
+    throw new Error(
+      `Redis keyspace notifications not active after CONFIG SET (got "${value}")`,
+    );
+  }
 }
 
 /**
