@@ -4,7 +4,15 @@
  */
 
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { redactEmail } from "../../../../shared/kernel/redactEmail";
+import { sanitizeEmailHeader } from "../../../../shared/kernel/sanitizeEmailHeader";
+import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { buildParticipationRejectedEmail } from "../../../notifications/infrastructure/email/emailTemplates";
+import {
+  claimEmailDelivery,
+  releaseEmailDeliveryClaim,
+} from "../../../notifications/application/helpers/emailDeliveryLedger";
+import { participationRejectedJobSchema } from "../../validators/schema/participationNotificationJobSchemas";
 import type { ParticipationRejectedJobData } from "../types/participationRejectedJob";
 import { getParticipationEmailProvider } from "./sendParticipationApprovedNotification";
 
@@ -17,20 +25,37 @@ const logger = Logger.getInstance();
 export async function sendParticipationRejectedNotification(
   data: ParticipationRejectedJobData,
 ): Promise<void> {
-  logger.info(CONTEXT, "Processing participation rejected notification", {
-    requestId: data.requestId,
-    eventId: data.eventId,
-    email: data.participantEmail,
-  });
+  const parsed = validateSchema(participationRejectedJobSchema, data);
+  const deliveryKey = `participation-rejected:${parsed.requestId}`;
 
-  await getParticipationEmailProvider().send({
-    to: data.participantEmail,
-    subject: `Participação não aprovada — ${data.eventTitle}`,
-    html: buildParticipationRejectedEmail(data),
-  });
+  if (!(await claimEmailDelivery(deliveryKey))) {
+    logger.info(CONTEXT, "Participation rejected email skipped — already sent", {
+      requestId: parsed.requestId,
+    });
+    return;
+  }
 
-  logger.info(CONTEXT, "Participation rejected notification sent", {
-    requestId: data.requestId,
-    eventId: data.eventId,
-  });
+  try {
+    logger.info(CONTEXT, "Processing participation rejected notification", {
+      requestId: parsed.requestId,
+      eventId: parsed.eventId,
+      email: redactEmail(parsed.participantEmail),
+    });
+
+    await getParticipationEmailProvider().send({
+      to: parsed.participantEmail,
+      subject: sanitizeEmailHeader(
+        `Participação não aprovada — ${parsed.eventTitle}`,
+      ),
+      html: buildParticipationRejectedEmail(parsed),
+    });
+
+    logger.info(CONTEXT, "Participation rejected notification sent", {
+      requestId: parsed.requestId,
+      eventId: parsed.eventId,
+    });
+  } catch (error) {
+    await releaseEmailDeliveryClaim(deliveryKey);
+    throw error;
+  }
 }

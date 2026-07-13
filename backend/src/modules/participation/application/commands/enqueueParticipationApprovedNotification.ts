@@ -4,6 +4,7 @@
  */
 
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { isDuplicateJobError } from "../../../../shared/infrastructure/messaging/isDuplicateJobError";
 import { getParticipationNotificationQueue } from "../../infrastructure/queues/participationNotificationQueue";
 import type { ParticipationApprovedJobData } from "../types/participationApprovedJob";
 
@@ -16,16 +17,27 @@ const logger = Logger.getInstance();
 export async function enqueueParticipationApprovedNotification(
   data: ParticipationApprovedJobData,
 ): Promise<void> {
+  const jobId = `participation-approved:${data.requestId}`;
+
   try {
     const queue = getParticipationNotificationQueue();
 
-    await queue.add("participation-approved", data);
+    await queue.add("participation-approved", data, { jobId });
 
     logger.info(CONTEXT, "Participation approved notification job enqueued", {
       requestId: data.requestId,
       eventId: data.eventId,
+      jobId,
     });
   } catch (error) {
+    if (isDuplicateJobError(error)) {
+      logger.info(CONTEXT, "Participation approved notification already enqueued", {
+        requestId: data.requestId,
+        jobId,
+      });
+      return;
+    }
+
     logger.error(CONTEXT, "Failed to enqueue participation approved notification", {
       requestId: data.requestId,
       eventId: data.eventId,

@@ -1,4 +1,5 @@
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { redactEmail } from "../../../../shared/kernel/redactEmail";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { createPasswordResetToken } from "../commands/createPasswordResetToken";
 import { invalidatePasswordResetTokensForUser } from "../commands/invalidatePasswordResetTokensForUser";
@@ -51,7 +52,7 @@ export async function requestPasswordReset(input: ForgotPasswordInputSchema) {
     }
   } else {
     Logger.getInstance().info(CONTEXT, "Password reset requested for unknown email", {
-      email: data.email.toLowerCase(),
+      email: redactEmail(data.email),
     });
   }
 

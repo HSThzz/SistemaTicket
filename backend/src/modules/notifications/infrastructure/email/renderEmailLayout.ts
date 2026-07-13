@@ -25,6 +25,19 @@ export type EmailLayoutOptions = {
 const F = EMAIL_BRAND.font;
 const FM = EMAIL_BRAND.fontMono;
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function escapeHtmlAttr(value: string): string {
+  return escapeHtml(value);
+}
+
 function spacerRow(height: number, bg = EMAIL_BRAND.surface): string {
   return `
     <tr>
@@ -47,11 +60,11 @@ function renderBulletproofButton(href: string, label: string): string {
           style="background-color:${EMAIL_BRAND.green};padding:16px 40px;"
         >
           <a
-            href="${href}"
+            href="${escapeHtmlAttr(href)}"
             target="_blank"
             rel="noopener noreferrer"
             style="color:#ffffff;font-family:${F};font-size:16px;font-weight:bold;text-decoration:none;"
-          ><font face="${F}" color="#ffffff">${label}</font></a>
+          ><font face="${F}" color="#ffffff">${escapeHtml(label)}</font></a>
         </td>
       </tr>
     </table>
@@ -88,11 +101,13 @@ function renderInfoFieldRows(
 }
 
 export function renderEmailLayout(options: EmailLayoutOptions): string {
-  const preheader = options.preheader ?? options.title;
-  const eyebrow = options.eyebrow ?? EMAIL_BRAND.product;
-  const footerNote =
+  const preheader = escapeHtml(options.preheader ?? options.title);
+  const eyebrow = escapeHtml(options.eyebrow ?? EMAIL_BRAND.product);
+  const title = escapeHtml(options.title);
+  const footerNote = escapeHtml(
     options.footerNote ??
-    `Você está recebendo este e-mail porque interagiu com a ${EMAIL_BRAND.name}.`;
+      `Você está recebendo este e-mail porque interagiu com a ${EMAIL_BRAND.name}.`,
+  );
 
   const ctaBlock = options.cta
     ? `
@@ -113,7 +128,7 @@ export function renderEmailLayout(options: EmailLayoutOptions): string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="x-apple-disable-message-reformatting" />
     <meta name="format-detection" content="telephone=no,date=no,address=no,email=no" />
-    <title>${options.title}</title>
+    <title>${title}</title>
   </head>
   <body bgcolor="${EMAIL_BRAND.surface}" style="margin:0;padding:0;background-color:${EMAIL_BRAND.surface};font-family:${F};">
     <div style="display:none;max-height:0;overflow:hidden;">${preheader}</div>
@@ -154,7 +169,7 @@ export function renderEmailLayout(options: EmailLayoutOptions): string {
                   <tr>
                     <td bgcolor="${EMAIL_BRAND.surface}" style="padding:0 0 16px;background-color:${EMAIL_BRAND.surface};">
                       <font face="${F}" color="${EMAIL_BRAND.text}" style="font-size:24px;font-weight:bold;">
-                        ${options.title}
+                        ${title}
                       </font>
                     </td>
                   </tr>

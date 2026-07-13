@@ -4,6 +4,7 @@
  */
 
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { redactEmail } from "../../../../shared/kernel/redactEmail";
 import type { EmailProvider, SendEmailParams } from "./EmailProvider";
 
 const CONTEXT = "StubEmailProvider";
@@ -16,7 +17,7 @@ const logger = Logger.getInstance();
 export class StubEmailProvider implements EmailProvider {
   async send(params: SendEmailParams): Promise<void> {
     logger.info(CONTEXT, "Transactional email dispatched (stub)", {
-      to: params.to,
+      to: redactEmail(params.to),
       subject: params.subject,
       attachmentCount: params.attachments?.length ?? 0,
     });

@@ -4,9 +4,17 @@
  */
 
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { redactEmail } from "../../../../shared/kernel/redactEmail";
+import { sanitizeEmailHeader } from "../../../../shared/kernel/sanitizeEmailHeader";
+import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import type { EmailProvider } from "../../../notifications/infrastructure/email/EmailProvider";
 import { buildParticipationApprovedEmail } from "../../../notifications/infrastructure/email/emailTemplates";
 import { StubEmailProvider } from "../../../notifications/infrastructure/email/StubEmailProvider";
+import {
+  claimEmailDelivery,
+  releaseEmailDeliveryClaim,
+} from "../../../notifications/application/helpers/emailDeliveryLedger";
+import { participationApprovedJobSchema } from "../../validators/schema/participationNotificationJobSchemas";
 import type { ParticipationApprovedJobData } from "../types/participationApprovedJob";
 
 const CONTEXT = "SendParticipationApprovedNotification";
@@ -30,20 +38,37 @@ export function getParticipationEmailProvider(): EmailProvider {
 export async function sendParticipationApprovedNotification(
   data: ParticipationApprovedJobData,
 ): Promise<void> {
-  logger.info(CONTEXT, "Processing participation approved notification", {
-    requestId: data.requestId,
-    eventId: data.eventId,
-    email: data.participantEmail,
-  });
+  const parsed = validateSchema(participationApprovedJobSchema, data);
+  const deliveryKey = `participation-approved:${parsed.requestId}`;
 
-  await getParticipationEmailProvider().send({
-    to: data.participantEmail,
-    subject: `Participação aprovada — ${data.eventTitle}`,
-    html: buildParticipationApprovedEmail(data),
-  });
+  if (!(await claimEmailDelivery(deliveryKey))) {
+    logger.info(CONTEXT, "Participation approved email skipped — already sent", {
+      requestId: parsed.requestId,
+    });
+    return;
+  }
 
-  logger.info(CONTEXT, "Participation approved notification sent", {
-    requestId: data.requestId,
-    eventId: data.eventId,
-  });
+  try {
+    logger.info(CONTEXT, "Processing participation approved notification", {
+      requestId: parsed.requestId,
+      eventId: parsed.eventId,
+      email: redactEmail(parsed.participantEmail),
+    });
+
+    await getParticipationEmailProvider().send({
+      to: parsed.participantEmail,
+      subject: sanitizeEmailHeader(
+        `Participação aprovada — ${parsed.eventTitle}`,
+      ),
+      html: buildParticipationApprovedEmail(parsed),
+    });
+
+    logger.info(CONTEXT, "Participation approved notification sent", {
+      requestId: parsed.requestId,
+      eventId: parsed.eventId,
+    });
+  } catch (error) {
+    await releaseEmailDeliveryClaim(deliveryKey);
+    throw error;
+  }
 }

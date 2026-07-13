@@ -77,7 +77,17 @@ type TicketForPdf = Prettify<{
 export async function generateTicketPdf(
   input: GenerateTicketPdfInput,
 ): Promise<Buffer> {
-  const tickets = await loadTickets(input.ticketIds);
+  const tickets = await loadTickets(input.orderId, input.ticketIds);
+
+  if (tickets.length === 0) {
+    throw new Error(`No tickets found for order ${input.orderId}`);
+  }
+
+  if (tickets.length !== input.ticketIds.length) {
+    throw new Error(
+      `Incomplete ticket set for order ${input.orderId}: expected ${input.ticketIds.length}, found ${tickets.length}`,
+    );
+  }
 
   return renderPdf({
     orderId: input.orderId,
@@ -86,13 +96,16 @@ export async function generateTicketPdf(
   });
 }
 
-async function loadTickets(ticketIds: string[]): Promise<TicketForPdf[]> {
+async function loadTickets(
+  orderId: string,
+  ticketIds: string[],
+): Promise<TicketForPdf[]> {
   if (ticketIds.length === 0) {
     return [];
   }
 
   const rows = await AppDataSource.getRepository(Ticket).find({
-    where: { id: In(ticketIds) },
+    where: { id: In(ticketIds), orderId },
     relations: ["ticketLot", "ticketLot.event"],
     order: { id: "ASC" },
   });
@@ -149,11 +162,7 @@ async function renderPdf(input: {
   });
 
   if (input.tickets.length === 0) {
-    doc.addPage();
-    drawPageCanvas(doc);
-    drawEmptyState(doc, input.orderId, input.userName);
-    doc.end();
-    return pdfReady;
+    throw new Error(`Cannot render empty ticket PDF for order ${input.orderId}`);
   }
 
   for (const [index, ticket] of input.tickets.entries()) {
@@ -203,43 +212,6 @@ function drawPageGrid(doc: InstanceType<typeof PDFDocument>): void {
 
   doc.fillOpacity(1);
   doc.restore();
-}
-
-function drawEmptyState(
-  doc: InstanceType<typeof PDFDocument>,
-  orderId: string,
-  userName: string,
-): void {
-  const cardX = (PAGE.width - CARD.width) / 2;
-  const cardY = 110;
-  drawCardShell(doc, cardX, cardY);
-  drawCardHeader(doc, cardX, cardY);
-
-  const contentX = cardX + CARD.insetX;
-  const contentY = cardY + CARD.headerHeight + 28;
-  const contentWidth = CARD.width - CARD.insetX * 2;
-
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(18)
-    .fillColor(BRAND.text)
-    .text("Ingressos não encontrados", contentX, contentY, {
-      width: contentWidth,
-    });
-
-  doc
-    .font("Helvetica")
-    .fontSize(11)
-    .fillColor(BRAND.muted)
-    .text(
-      `Não localizamos ingressos para o pedido ${orderId} (${userName}). Entre em contato com o suporte.`,
-      contentX,
-      contentY + 34,
-      { width: contentWidth, lineGap: 4 },
-    );
-
-  drawAccentStripe(doc, cardX, cardY);
-  drawCardBorder(doc, cardX, cardY);
 }
 
 async function drawTicketCard(

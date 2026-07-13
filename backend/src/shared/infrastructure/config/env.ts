@@ -181,6 +181,10 @@ export function validateProductionConfig(): void {
     errors.push("RESEND_FROM_EMAIL is required in production");
   }
 
+  if (!env.resend.producerLeadNotifyEmail.trim()) {
+    errors.push("PRODUCER_LEAD_NOTIFY_EMAIL is required in production");
+  }
+
   if (errors.length > 0) {
     throw new Error(`Production configuration invalid:\n- ${errors.join("\n- ")}`);
   }

@@ -45,6 +45,8 @@ export async function handlePaymentSucceeded(
       logger.warn(CONTEXT, "Payment success ignored — already processed", {
         orderId: data.orderId,
       });
+      // Re-tenta enfileirar entrega caso o enqueue anterior tenha falhado.
+      await enqueueTicketDelivery({ id: data.orderId });
       await clearReservationCache(redis, data.orderId);
       await clearPaymentCache(redis, data.orderId);
       return;

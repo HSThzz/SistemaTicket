@@ -56,6 +56,7 @@ export class ParticipationNotificationWorker {
           jobId: job.id,
           jobName: job.name,
         });
+        throw new Error(`Unknown participation notification job: ${job.name}`);
       },
       {
         connection: getBullMQConnection(),

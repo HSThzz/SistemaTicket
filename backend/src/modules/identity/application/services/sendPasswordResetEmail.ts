@@ -1,4 +1,5 @@
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { redactEmail } from "../../../../shared/kernel/redactEmail";
 import type { EmailProvider } from "../../../notifications/infrastructure/email/EmailProvider";
 import { buildPasswordResetEmail } from "../../../notifications/infrastructure/email/emailTemplates";
 import { StubEmailProvider } from "../../../notifications/infrastructure/email/StubEmailProvider";
@@ -21,7 +22,9 @@ export type PasswordResetEmailData = {
 export async function sendPasswordResetEmail(
   data: PasswordResetEmailData,
 ): Promise<void> {
-  logger.info(CONTEXT, "Sending password reset email", { to: data.to });
+  logger.info(CONTEXT, "Sending password reset email", {
+    to: redactEmail(data.to),
+  });
 
   await emailProvider.send({
     to: data.to,

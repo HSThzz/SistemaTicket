@@ -5,6 +5,7 @@
 
 import { Resend } from "resend";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { redactEmail } from "../../../../shared/kernel/redactEmail";
 import type { EmailProvider, SendEmailParams } from "./EmailProvider";
 
 const CONTEXT = "ResendEmailProvider";
@@ -33,12 +34,13 @@ export class ResendEmailProvider implements EmailProvider {
       attachments: params.attachments?.map((attachment) => ({
         filename: attachment.filename,
         content: attachment.content.toString("base64"),
+        content_type: attachment.contentType,
       })),
     });
 
     if (error) {
       this.logger.error(CONTEXT, "Resend API rejected email", {
-        to: params.to,
+        to: redactEmail(params.to),
         subject: params.subject,
         message: error.message,
         name: error.name,
@@ -47,7 +49,7 @@ export class ResendEmailProvider implements EmailProvider {
     }
 
     this.logger.info(CONTEXT, "Email sent via Resend", {
-      to: params.to,
+      to: redactEmail(params.to),
       subject: params.subject,
       resendId: data?.id,
     });
