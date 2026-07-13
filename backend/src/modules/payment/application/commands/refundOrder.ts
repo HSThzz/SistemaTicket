@@ -12,7 +12,6 @@ import { TicketLot } from "../../../../shared/infrastructure/persistence/entitie
 import { OrderStatus, TicketStatus } from "../../../../shared/kernel/enums";
 import type { Prettify } from "../../../../shared/kernel/prettify";
 import {
-  OrderAlreadyRefundedError,
   OrderNotFoundError,
   OrderRefundNotAllowedError,
 } from "../../domain/errors/PaymentError";
@@ -40,7 +39,11 @@ export async function refundOrder(
     }
 
     if (lockedOrder.status === OrderStatus.REFUNDED) {
-      throw new OrderAlreadyRefundedError(orderId);
+      return {
+        orderId,
+        ticketsCancelled: 0,
+        stockRestored: 0,
+      };
     }
 
     if (lockedOrder.status !== OrderStatus.PAID) {

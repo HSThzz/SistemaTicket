@@ -227,8 +227,7 @@ export class PaymentController {
    */
   async webhook(req: Request, res: Response): Promise<void> {
     try {
-      const auth = await webhookAuthService.authorize(req);
-      await webhookAuthService.assertNotReplayed(auth.replayKey);
+      await webhookAuthService.authorize(req);
     } catch (error) {
       this.handleAuthError(res, error);
       return;
@@ -249,10 +248,15 @@ export class PaymentController {
     });
 
     try {
-      await enqueuePaymentJob(redis, {
+      const { enqueued } = await enqueuePaymentJob(redis, {
         kind: "webhook",
         payload,
       });
+
+      if (!enqueued) {
+        res.status(200).json({ received: true, duplicate: true, queued: true });
+        return;
+      }
 
       logger.info(CONTEXT, "Webhook queued for async processing", {
         event: payload.event,
@@ -292,10 +296,21 @@ export class PaymentController {
     });
 
     try {
-      await enqueuePaymentJob(redis, {
+      const { enqueued } = await enqueuePaymentJob(redis, {
         kind: "mercadopago",
         paymentId,
       });
+
+      if (!enqueued) {
+        res.status(200).json({
+          received: true,
+          duplicate: true,
+          queued: true,
+          provider: "mercadopago",
+          paymentId,
+        });
+        return;
+      }
 
       res.status(202).json({
         received: true,

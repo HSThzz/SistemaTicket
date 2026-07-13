@@ -99,8 +99,13 @@ export class WebhookAuthService {
         const topic = typeof req.query.topic === "string" ? req.query.topic : null;
         const ipnPaymentId = extractMercadoPagoManifestId(req);
 
-        // IPN legado (?id=&topic=payment): assinatura costuma divergir; worker confirma na API do MP.
-        if (topic === "payment" && ipnPaymentId) {
+        // IPN legado (?id=&topic=payment): assinatura costuma divergir.
+        // Em produção exige HMAC; em sandbox/dev permite fallback (worker confirma na API).
+        if (
+          topic === "payment" &&
+          ipnPaymentId &&
+          (!isProduction || isMercadoPagoSandbox())
+        ) {
           this.logger.info(
             CONTEXT,
             "Mercado Pago IPN webhook accepted (signature skipped, verified via API in worker)",
@@ -251,6 +256,20 @@ export class WebhookAuthService {
     if (inserted !== "OK") {
       throw new WebhookReplayError();
     }
+  }
+
+  /**
+   * Marca o webhook como processado com sucesso (anti-replay pós-sucesso).
+   * Idempotente: se a chave já existir, não falha.
+   */
+  async markProcessed(replayKey: string): Promise<void> {
+    await this.redis.set(replayKey, "1", "EX", REPLAY_TTL_SECONDS);
+  }
+
+  /** Indica se o webhook já foi processado com sucesso. */
+  async isProcessed(replayKey: string): Promise<boolean> {
+    const value = await this.redis.get(replayKey);
+    return value !== null;
   }
 
   private isLegacySecretAuthorized(req: Request): boolean {

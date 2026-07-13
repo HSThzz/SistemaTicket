@@ -202,7 +202,8 @@ export class OrderController {
     }
 
     if (error instanceof PaymentError) {
-      res.status(400).json({ error: error.message, code: error.code });
+      const status = error.code === "REFUND_LOCAL_STATE_ERROR" ? 500 : 400;
+      res.status(status).json({ error: error.message, code: error.code });
       return;
     }
 

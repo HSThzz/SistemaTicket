@@ -1,26 +1,38 @@
 import type Redis from "ioredis";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
-import type { PaymentGateway } from "../../infrastructure/gateways/PaymentGateway";
-import { createPaymentGateway } from "../../infrastructure/gateways/createPaymentGateway";
-import { handlePaymentFailed } from "./handlePaymentFailed";
+import { processPaymentFailed } from "../commands/processPaymentFailed";
+import { clearPaymentCache } from "../helpers/clearPaymentCache";
+import { clearReservationCache } from "../helpers/clearReservationCache";
 
 const CONTEXT = "PaymentService";
 const logger = Logger.getInstance();
 
+/**
+ * Encerra pedido e devolve estoque quando a criação da cobrança PIX falha de forma irrecuperável.
+ */
 export async function abortPendingOrderAfterPixCreationFailure(
   redis: Redis | undefined,
   orderId: string,
   reason: string,
-  _gateway: PaymentGateway = createPaymentGateway(),
 ) {
   logger.error(CONTEXT, "Aborting order after PIX creation failure", {
     orderId,
     reason,
   });
 
-  await handlePaymentFailed(redis, {
+  const result = await processPaymentFailed(
+    {
+      id: orderId,
+      paymentGatewayId: "pix_creation_failed",
+    },
+    redis,
+  );
+
+  logger.info(CONTEXT, "Order aborted after PIX creation failure", {
     orderId,
-    transactionId: "pix_creation_failed",
-    failureReason: reason,
+    result,
   });
+
+  await clearReservationCache(redis, orderId);
+  await clearPaymentCache(redis, orderId);
 }

@@ -1,6 +1,10 @@
 import type Redis from "ioredis";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
-import { InvalidWebhookPayloadError } from "../../domain/errors/PaymentError";
+import { findOneOrderById } from "../queries/findOneOrderById";
+import {
+  InvalidWebhookPayloadError,
+  PaymentAmountMismatchError,
+} from "../../domain/errors/PaymentError";
 import type { PaymentGateway } from "../../infrastructure/gateways/PaymentGateway";
 import {
   createPaymentGateway,
@@ -26,7 +30,26 @@ export async function handleMercadoPagoNotification(
     paymentId,
     orderId: snapshot.orderId,
     status: snapshot.status,
+    amountCents: snapshot.amountCents,
   });
+
+  if (snapshot.amountCents !== undefined) {
+    const order = await findOneOrderById(snapshot.orderId);
+
+    if (order && order.totalPrice !== snapshot.amountCents) {
+      logger.error(CONTEXT, "Payment amount mismatch — ignoring notification", {
+        orderId: snapshot.orderId,
+        expectedCents: order.totalPrice,
+        gatewayCents: snapshot.amountCents,
+        paymentId,
+      });
+      throw new PaymentAmountMismatchError(
+        snapshot.orderId,
+        order.totalPrice,
+        snapshot.amountCents,
+      );
+    }
+  }
 
   if (snapshot.status === "pending") {
     return "pending";

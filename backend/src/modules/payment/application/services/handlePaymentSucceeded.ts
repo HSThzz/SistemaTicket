@@ -20,10 +20,13 @@ export async function handlePaymentSucceeded(
   });
 
   try {
-    const result = await processPaymentSucceeded({
-      id: data.orderId,
-      paymentGatewayId: data.transactionId,
-    });
+    const result = await processPaymentSucceeded(
+      {
+        id: data.orderId,
+        paymentGatewayId: data.transactionId,
+      },
+      redis,
+    );
 
     logger.info(CONTEXT, "Payment succeeded — tickets issued", {
       orderId: result.id,
@@ -31,9 +34,12 @@ export async function handlePaymentSucceeded(
       transactionId: result.paymentGatewayId,
       ticketsCreated: result.ticketsCreated,
       ticketIds: result.ticketIds,
+      recoveredFromExpired: result.recoveredFromExpired,
     });
 
-    await enqueueTicketDelivery(result);
+    if (result.ticketsCreated > 0 || result.ticketIds.length > 0) {
+      await enqueueTicketDelivery(result);
+    }
   } catch (error) {
     if (error instanceof PaymentAlreadyProcessedError) {
       logger.warn(CONTEXT, "Payment success ignored — already processed", {

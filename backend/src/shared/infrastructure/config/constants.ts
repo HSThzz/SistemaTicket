@@ -52,3 +52,13 @@ export const LOCK_ORDER_PAYMENT_KEY_PREFIX = "lock:order:payment:";
 
 /** Chave da fila LIST de processamento assíncrono de webhooks de pagamento. */
 export const PAYMENT_PROCESS_QUEUE_KEY = "queue:payment:process";
+
+/** Fila de retry imediato para jobs de pagamento. */
+export const PAYMENT_PROCESS_RETRY_QUEUE_KEY = "queue:payment:process:retry";
+
+/** Dead-letter queue de processamento de pagamento. */
+export const PAYMENT_PROCESS_DLQ_KEY = "queue:payment:process:dlq";
+
+/** ZSET de agendamento de retries de pagamento (score = dueAt ms). */
+export const PAYMENT_PROCESS_RETRY_SCHEDULE_KEY =
+  "queue:payment:process:retry:schedule";

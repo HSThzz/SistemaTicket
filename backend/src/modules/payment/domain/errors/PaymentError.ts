@@ -139,3 +139,29 @@ export class OrderAlreadyRefundedError extends PaymentError {
     this.name = "OrderAlreadyRefundedError";
   }
 }
+
+/**
+ * Valor cobrado no gateway difere do total do pedido.
+ */
+export class PaymentAmountMismatchError extends PaymentError {
+  constructor(orderId: string, expectedCents: number, gatewayCents: number) {
+    super(
+      `Payment amount mismatch for order ${orderId}: expected ${expectedCents}, gateway ${gatewayCents}`,
+      "PAYMENT_AMOUNT_MISMATCH",
+    );
+    this.name = "PaymentAmountMismatchError";
+  }
+}
+
+/**
+ * Gateway reembolsou, mas a atualização local falhou após retentativas.
+ */
+export class RefundLocalStateError extends PaymentError {
+  constructor(orderId: string, cause: string) {
+    super(
+      `Gateway refund succeeded but local state update failed for order ${orderId}: ${cause}`,
+      "REFUND_LOCAL_STATE_ERROR",
+    );
+    this.name = "RefundLocalStateError";
+  }
+}

@@ -74,6 +74,8 @@ export interface GatewayPaymentSnapshot {
   orderId: string;
   status: GatewayPaymentStatus;
   failureReason?: string;
+  /** Valor cobrado em centavos (quando o gateway informa). */
+  amountCents?: number;
 }
 
 /**

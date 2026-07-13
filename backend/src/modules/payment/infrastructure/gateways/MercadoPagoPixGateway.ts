@@ -29,6 +29,7 @@ interface MercadoPagoPaymentResponse {
   id: number | string;
   status: string;
   external_reference?: string;
+  transaction_amount?: number;
   date_of_expiration?: string;
   date_created?: string;
   status_detail?: string;
@@ -200,6 +201,10 @@ export class MercadoPagoPixGateway implements PaymentGateway, PaymentGatewayWith
       orderId: response.external_reference,
       status: mapMercadoPagoStatus(response.status),
       failureReason: response.status_detail,
+      amountCents:
+        typeof response.transaction_amount === "number"
+          ? Math.round(response.transaction_amount * 100)
+          : undefined,
     };
   }
 

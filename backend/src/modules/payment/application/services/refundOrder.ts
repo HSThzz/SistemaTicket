@@ -5,6 +5,7 @@ import {
   OrderAlreadyRefundedError,
   OrderNotFoundError,
   OrderRefundNotAllowedError,
+  RefundLocalStateError,
 } from "../../domain/errors/PaymentError";
 import type { PaymentGateway } from "../../infrastructure/gateways/PaymentGateway";
 import { createPaymentGateway } from "../../infrastructure/gateways/createPaymentGateway";
@@ -16,6 +17,11 @@ import { findTicketsByOrderId } from "../queries/findTicketsByOrderId";
 
 const CONTEXT = "PaymentService";
 const logger = Logger.getInstance();
+const LOCAL_REFUND_ATTEMPTS = 3;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export async function refundOrder(
   redis: Redis | undefined,
@@ -58,16 +64,52 @@ export async function refundOrder(
     await gateway.refundPayment(order.paymentGatewayId);
   }
 
-  const result = await refundOrderCommand(orderId, redis);
+  let lastError: unknown;
 
-  logger.info(CONTEXT, "Order refunded successfully", {
+  for (let attempt = 1; attempt <= LOCAL_REFUND_ATTEMPTS; attempt += 1) {
+    try {
+      const result = await refundOrderCommand(orderId, redis);
+
+      logger.info(CONTEXT, "Order refunded successfully", {
+        orderId,
+        ticketsCancelled: result.ticketsCancelled,
+        stockRestored: result.stockRestored,
+        attempt,
+      });
+
+      await clearPaymentCache(redis, orderId);
+      await clearReservationCache(redis, orderId);
+
+      return result;
+    } catch (error) {
+      if (error instanceof OrderAlreadyRefundedError) {
+        logger.info(CONTEXT, "Local refund already applied after gateway refund", {
+          orderId,
+        });
+        await clearPaymentCache(redis, orderId);
+        await clearReservationCache(redis, orderId);
+        return {
+          orderId,
+          ticketsCancelled: 0,
+          stockRestored: 0,
+        };
+      }
+
+      lastError = error;
+      logger.error(CONTEXT, "Local refund state update failed after gateway refund", {
+        orderId,
+        attempt,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      if (attempt < LOCAL_REFUND_ATTEMPTS) {
+        await sleep(100 * attempt);
+      }
+    }
+  }
+
+  throw new RefundLocalStateError(
     orderId,
-    ticketsCancelled: result.ticketsCancelled,
-    stockRestored: result.stockRestored,
-  });
-
-  await clearPaymentCache(redis, orderId);
-  await clearReservationCache(redis, orderId);
-
-  return result;
+    lastError instanceof Error ? lastError.message : String(lastError),
+  );
 }

@@ -1,50 +1,22 @@
 import type Redis from "ioredis";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
-import { processPaymentFailed } from "../commands/processPaymentFailed";
-import { clearPaymentCache } from "../helpers/clearPaymentCache";
-import { clearReservationCache } from "../helpers/clearReservationCache";
 import type { PaymentWebhookPayload } from "../types";
 
 const CONTEXT = "PaymentService";
 const logger = Logger.getInstance();
 
+/**
+ * Registra falha/rejeição do gateway sem encerrar o pedido.
+ * Mantém a reserva `PENDING` para nova tentativa até o TTL (mesmo comportamento
+ * do cartão rejeitado de forma síncrona).
+ */
 export async function handlePaymentFailed(
-  redis: Redis | undefined,
+  _redis: Redis | undefined,
   data: PaymentWebhookPayload["data"],
 ) {
-  logger.warn(CONTEXT, "Processing payment failure", {
+  logger.warn(CONTEXT, "Payment failure noted — order kept pending until reservation TTL", {
     orderId: data.orderId,
     transactionId: data.transactionId,
     failureReason: data.failureReason,
   });
-
-  const result = await processPaymentFailed(
-    {
-      id: data.orderId,
-      paymentGatewayId: data.transactionId,
-    },
-    redis,
-  );
-
-  if (result.status === "already_failed") {
-    logger.info(CONTEXT, "Payment failure ignored — order already failed", {
-      orderId: data.orderId,
-    });
-    return;
-  }
-
-  if (result.status === "reservation_not_restored") {
-    logger.info(CONTEXT, "Payment failed — reservation not restored", {
-      orderId: data.orderId,
-    });
-  } else if (result.status === "processed") {
-    logger.info(CONTEXT, "Payment failed — stock restored to lot", {
-      orderId: data.orderId,
-      ticketLotId: result.ticketLotId,
-      quantityRestored: result.stockRestored,
-    });
-  }
-
-  await clearReservationCache(redis, data.orderId);
-  await clearPaymentCache(redis, data.orderId);
 }
