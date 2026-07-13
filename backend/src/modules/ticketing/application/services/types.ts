@@ -5,10 +5,16 @@ export interface CheckInActor {
   role: UserRole;
 }
 
-export interface CheckInResult {
+export interface CheckInPreviewResult {
   ownerName: string;
   ownerDocument: string;
-  checkedInAt: string;
   ticketId: string;
   eventTitle: string;
+  lotName: string;
+  /** Preço do lote em centavos (0 = gratuito). */
+  lotPrice: number;
+}
+
+export interface CheckInResult extends CheckInPreviewResult {
+  checkedInAt: string;
 }

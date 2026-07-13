@@ -14,17 +14,59 @@ import {
   TicketNotFoundError,
 } from "../../domain/errors/CheckInError";
 import { checkIn } from "../../application/services/checkIn";
+import { previewCheckIn } from "../../application/services/previewCheckIn";
+import type { CheckInPreviewResult, CheckInResult } from "../../application/services/types";
 
 const CONTEXT = "CheckInController";
 const logger = Logger.getInstance();
+
+function serializePreview(result: CheckInPreviewResult) {
+  return {
+    owner_name: result.ownerName,
+    owner_document: result.ownerDocument,
+    ticket_id: result.ticketId,
+    event_title: result.eventTitle,
+    lot_name: result.lotName,
+    lot_price: result.lotPrice,
+  };
+}
+
+function serializeCheckIn(result: CheckInResult) {
+  return {
+    ...serializePreview(result),
+    checked_in_at: result.checkedInAt,
+  };
+}
 
 /**
  * Endpoint de validação de ingresso por código único.
  */
 export class CheckInController {
   /**
-   * @param req - Body `{ unique_code }` e usuário admin/produtor.
-   * @param res - Dados do check-in em snake_case ou erro mapeado.
+   * POST /tickets/check-in/preview — valida e devolve dados sem marcar usado.
+   */
+  async preview(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    const { unique_code: uniqueCode } = req.body as { unique_code: string };
+
+    try {
+      const result = await previewCheckIn(uniqueCode, {
+        userId: req.user.id,
+        role: req.user.role,
+      });
+
+      res.status(200).json(serializePreview(result));
+    } catch (error) {
+      this.handleError(res, uniqueCode, error);
+    }
+  }
+
+  /**
+   * POST /tickets/check-in — confirma entrada e marca ingresso como usado.
    */
   async checkIn(req: Request, res: Response): Promise<void> {
     if (!req.user) {
@@ -40,13 +82,7 @@ export class CheckInController {
         role: req.user.role,
       });
 
-      res.status(200).json({
-        owner_name: result.ownerName,
-        owner_document: result.ownerDocument,
-        checked_in_at: result.checkedInAt,
-        ticket_id: result.ticketId,
-        event_title: result.eventTitle,
-      });
+      res.status(200).json(serializeCheckIn(result));
     } catch (error) {
       this.handleError(res, uniqueCode, error);
     }

@@ -36,6 +36,15 @@ router.post(
 );
 
 router.post(
+  "/check-in/preview",
+  authMiddleware,
+  roleMiddleware([...STAFF_ROLES, UserRole.PRODUCER]),
+  checkInRateLimiter,
+  validateBody(checkInBodySchema),
+  (req, res) => void checkInController.preview(req, res),
+);
+
+router.post(
   "/check-in",
   authMiddleware,
   roleMiddleware([...STAFF_ROLES, UserRole.PRODUCER]),

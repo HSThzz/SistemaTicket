@@ -1,18 +1,16 @@
-﻿/**
- * @file Command: registra check-in de ingresso em transação com lock pessimista.
- * @module modules/ticketing/application/commands/checkInTicket
+/**
+ * @file Command: pré-visualiza ingresso para check-in sem marcar como usado.
+ * @module modules/ticketing/application/commands/previewCheckInTicket
  */
 
-import { TicketStatus } from "../../../../shared/kernel/enums";
 import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { loadTicketForCheckIn } from "../helpers/loadTicketForCheckIn";
 import type { CheckInActor } from "../services/types";
 
-export type CheckInTicketResult = Prettify<{
+export type PreviewCheckInTicketResult = Prettify<{
   ownerName: string;
   ownerDocument: string;
-  checkedInAt: Date;
   ticketId: string;
   eventTitle: string;
   lotName: string;
@@ -20,15 +18,15 @@ export type CheckInTicketResult = Prettify<{
 }>;
 
 /**
- * Valida ownership, status do ingresso/evento e dia — tudo sob lock pessimista.
+ * Mesmas validações do check-in, sem alterar o status do ingresso.
  */
-export async function checkInTicket(
+export async function previewCheckInTicket(
   scannedCode: string,
   actor: CheckInActor,
-): Promise<CheckInTicketResult | null> {
+): Promise<PreviewCheckInTicketResult | null> {
   return AppDataSource.transaction(async (manager) => {
     const ready = await loadTicketForCheckIn(manager, scannedCode, actor, {
-      lockForUpdate: true,
+      lockForUpdate: false,
     });
 
     if (!ready) {
@@ -36,16 +34,10 @@ export async function checkInTicket(
     }
 
     const { ticket, event, lot } = ready;
-    const checkedInAt = new Date();
-
-    ticket.status = TicketStatus.USED;
-    ticket.checkedInAt = checkedInAt;
-    await manager.save(ticket);
 
     return {
       ownerName: ticket.ownerName,
       ownerDocument: ticket.ownerDocument,
-      checkedInAt,
       ticketId: ticket.id,
       eventTitle: event.title,
       lotName: lot.name,

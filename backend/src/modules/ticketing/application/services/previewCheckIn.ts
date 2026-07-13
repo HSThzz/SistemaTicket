@@ -1,47 +1,45 @@
 /**
- * @file Serviço: check-in na portaria (confirma entrada).
- * @module modules/ticketing/application/services/checkIn
+ * @file Serviço: pré-visualização de ingresso na portaria.
+ * @module modules/ticketing/application/services/previewCheckIn
  */
 
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { TicketNotFoundError } from "../../domain/errors/CheckInError";
 import { checkInSchema } from "../../validators/schema/checkInSchema";
-import { checkInTicket } from "../commands/checkInTicket";
-import type { CheckInActor, CheckInResult } from "./types";
+import { previewCheckInTicket } from "../commands/previewCheckInTicket";
+import type { CheckInActor, CheckInPreviewResult } from "./types";
 
-const CONTEXT = "CheckInService";
+const CONTEXT = "PreviewCheckInService";
 const logger = Logger.getInstance();
 
-export async function checkIn(
+export async function previewCheckIn(
   scannedCode: string,
   actor: CheckInActor,
-): Promise<CheckInResult> {
+): Promise<CheckInPreviewResult> {
   const { uniqueCode: code } = validateSchema(checkInSchema, {
     uniqueCode: scannedCode,
   });
 
-  const result = await checkInTicket(code, actor);
+  const result = await previewCheckInTicket(code, actor);
 
   if (!result) {
-    logger.warn(CONTEXT, "Check-in failed — ticket not found", {
+    logger.warn(CONTEXT, "Check-in preview failed — ticket not found", {
       uniqueCode: code,
     });
     throw new TicketNotFoundError();
   }
 
-  logger.info(CONTEXT, "Check-in completed successfully", {
+  logger.info(CONTEXT, "Check-in preview ready", {
     ticketId: result.ticketId,
     eventTitle: result.eventTitle,
     lotName: result.lotName,
-    checkedInAt: result.checkedInAt.toISOString(),
     actorUserId: actor.userId,
   });
 
   return {
     ownerName: result.ownerName,
     ownerDocument: result.ownerDocument,
-    checkedInAt: result.checkedInAt.toISOString(),
     ticketId: result.ticketId,
     eventTitle: result.eventTitle,
     lotName: result.lotName,
