@@ -1,4 +1,4 @@
-import { UserRole } from "../../../../shared/kernel/enums";
+import { TicketStatus, UserRole } from "../../../../shared/kernel/enums";
 import { isStaffRole } from "../../../../shared/kernel/staffRoles";
 import { findOneTicketForAccessCheck } from "../queries/findOneTicketForAccessCheck";
 
@@ -7,18 +7,26 @@ export interface WalletActor {
   role: UserRole;
 }
 
+/**
+ * Verifica se o ator pode acessar o ingresso (wallet / passes).
+ * Ingressos cancelados (reembolso) não geram pass.
+ */
 export async function canAccessTicket(
   ticketId: string,
   actor: WalletActor,
 ) {
-  if (isStaffRole(actor.role)) {
-    return true;
-  }
-
   const ticket = await findOneTicketForAccessCheck(ticketId);
 
   if (!ticket?.order || !ticket.ticketLot?.event) {
     return false;
+  }
+
+  if (ticket.status === TicketStatus.CANCELLED) {
+    return false;
+  }
+
+  if (isStaffRole(actor.role)) {
+    return true;
   }
 
   if (ticket.order.userId === actor.userId) {

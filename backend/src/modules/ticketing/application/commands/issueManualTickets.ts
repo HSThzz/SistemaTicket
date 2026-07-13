@@ -8,6 +8,7 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { TICKET_LOT_STOCK_KEY_PREFIX } from "../../../../shared/infrastructure/config/constants";
 import { getRedis } from "../../../../shared/infrastructure/config/redis";
+import { isUniqueViolation } from "../../../../shared/infrastructure/persistence/isUniqueViolation";
 import { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
 import { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
 import { Reservation } from "../../../../shared/infrastructure/persistence/entities/Reservation";
@@ -15,12 +16,14 @@ import { Ticket } from "../../../../shared/infrastructure/persistence/entities/T
 import { TicketLot } from "../../../../shared/infrastructure/persistence/entities/TicketLot";
 import { User } from "../../../../shared/infrastructure/persistence/entities/User";
 import {
+  EventStatus,
   OrderStatus,
   ReservationStatus,
   TicketStatus,
 } from "../../../../shared/kernel/enums";
 import { generateTicketCheckInCode } from "../../../../shared/kernel/ticketCheckInCode";
 import {
+  ManualTicketEventNotIssuableError,
   ManualTicketInsufficientStockError,
   ManualTicketLotNotFoundError,
   ManualTicketUserNotFoundError,
@@ -28,6 +31,12 @@ import {
 
 const CONTEXT = "IssueManualTickets";
 const logger = Logger.getInstance();
+const CODE_INSERT_MAX_ATTEMPTS = 5;
+
+const ISSUABLE_EVENT_STATUSES = new Set<EventStatus>([
+  EventStatus.PUBLISHED,
+  EventStatus.FINISHED,
+]);
 
 export interface IssueManualTicketsInput {
   userId: string;
@@ -45,6 +54,7 @@ export interface IssueManualTicketsResult {
   lotName: string;
   userEmail: string;
   userName: string;
+  availableQuantityAfter: number;
 }
 
 export async function issueManualTickets(
@@ -76,8 +86,12 @@ export async function issueManualTickets(
       where: { id: lot.eventId },
     });
 
-    if (!event) {
+    if (!event || event.deletedAt) {
       throw new ManualTicketLotNotFoundError(input.ticketLotId);
+    }
+
+    if (!ISSUABLE_EVENT_STATUSES.has(event.status)) {
+      throw new ManualTicketEventNotIssuableError(event.status);
     }
 
     if (lot.availableQuantity < input.quantity) {
@@ -106,20 +120,36 @@ export async function issueManualTickets(
     });
     await manager.save(order);
 
-    const ticketsData = Array.from({ length: input.quantity }, () => ({
-      orderId: order.id,
-      ticketLotId: input.ticketLotId,
-      ownerName: user.name,
-      ownerDocument: user.document,
-      uniqueCode: randomBytes(32).toString("hex"),
-      checkInCode: generateTicketCheckInCode(),
-      status: TicketStatus.ACTIVE,
-    }));
+    let ticketIds: string[] = [];
 
-    const insertResult = await manager.insert(Ticket, ticketsData);
-    const ticketIds = insertResult.identifiers.map(
-      (identifier) => identifier.id as string,
-    );
+    for (let attempt = 1; attempt <= CODE_INSERT_MAX_ATTEMPTS; attempt += 1) {
+      const ticketsData = Array.from({ length: input.quantity }, () => ({
+        orderId: order.id,
+        ticketLotId: input.ticketLotId,
+        ownerName: user.name,
+        ownerDocument: user.document,
+        uniqueCode: randomBytes(32).toString("hex"),
+        checkInCode: generateTicketCheckInCode(),
+        status: TicketStatus.ACTIVE,
+      }));
+
+      try {
+        const insertResult = await manager.insert(Ticket, ticketsData);
+        ticketIds = insertResult.identifiers.map(
+          (identifier) => identifier.id as string,
+        );
+        break;
+      } catch (error) {
+        if (!isUniqueViolation(error) || attempt === CODE_INSERT_MAX_ATTEMPTS) {
+          throw error;
+        }
+
+        logger.warn(CONTEXT, "Ticket code collision — retrying insert", {
+          attempt,
+          orderId: order.id,
+        });
+      }
+    }
 
     return {
       orderId: order.id,
@@ -131,6 +161,7 @@ export async function issueManualTickets(
       lotName: lot.name,
       userEmail: user.email,
       userName: user.name,
+      availableQuantityAfter: lot.availableQuantity,
     };
   });
 
@@ -141,6 +172,9 @@ export async function issueManualTickets(
 
     if (currentStock !== null) {
       await redis.decrby(stockKey, input.quantity);
+    } else {
+      // Alinha Redis ao PG após decremento (evita SETNX posterior ignorar o hold).
+      await redis.set(stockKey, String(result.availableQuantityAfter));
     }
   } catch (error) {
     logger.warn(CONTEXT, "Failed to sync Redis stock after manual ticket issue", {

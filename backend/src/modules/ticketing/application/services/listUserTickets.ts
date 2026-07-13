@@ -6,7 +6,7 @@ import { findManyTicketsByUserId } from "../queries/findManyTicketsByUserId";
 export interface TicketListItem {
   id: string;
   status: string;
-  uniqueCode: string;
+  /** Código curto para QR / portaria. */
   checkInCode: string;
   checkedInAt: string | null;
   event: {
@@ -42,7 +42,6 @@ function mapTicketToListItem(
   return {
     id: ticket.id,
     status: ticket.status,
-    uniqueCode: ticket.uniqueCode,
     checkInCode: ticket.checkInCode,
     checkedInAt: ticket.checkedInAt ? ticket.checkedInAt.toISOString() : null,
     event: {

@@ -50,3 +50,16 @@ export class ManualTicketInsufficientStockError extends ManualTicketError {
 
   readonly available: number;
 }
+
+/** Evento do lote não permite emissão (cancelado, rascunho, etc.). */
+export class ManualTicketEventNotIssuableError extends ManualTicketError {
+  constructor(eventStatus: string) {
+    super(
+      `Não é possível emitir ingressos para evento com status ${eventStatus}.`,
+      "MANUAL_TICKET_EVENT_NOT_ISSUABLE",
+    );
+    this.eventStatus = eventStatus;
+  }
+
+  readonly eventStatus: string;
+}

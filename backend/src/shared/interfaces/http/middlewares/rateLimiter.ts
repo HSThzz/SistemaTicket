@@ -184,6 +184,25 @@ export const reserveRateLimiter = rateLimit({
   handler: buildRateLimitHandler("reserve"),
 });
 
+/** Limitador para POST /tickets/check-in: 60 requisições por minuto por usuário. */
+export const checkInRateLimiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: createRedisStore("check-in"),
+  skip: skipInTest,
+  keyGenerator: (req) => {
+    if (req.user?.id) {
+      return req.user.id;
+    }
+
+    const ip = req.ip;
+    return ip ? ipKeyGenerator(ip) : "unknown";
+  },
+  handler: buildRateLimitHandler("check-in"),
+});
+
 /** Limitador para POST /leads/producer-contact: 10 requisições por minuto. */
 export const contactFormRateLimiter = rateLimit({
   windowMs: WINDOW_MS,

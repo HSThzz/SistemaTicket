@@ -7,6 +7,7 @@ import { Router } from "express";
 import { checkInController } from "./CheckInController";
 import { ticketController } from "./TicketController";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
+import { checkInRateLimiter } from "../../../../shared/interfaces/http/middlewares/rateLimiter";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
 import { validateBody, validateQuery } from "../../../../shared/interfaces/http/middlewares/validate";
 import {
@@ -38,6 +39,7 @@ router.post(
   "/check-in",
   authMiddleware,
   roleMiddleware([...STAFF_ROLES, UserRole.PRODUCER]),
+  checkInRateLimiter,
   validateBody(checkInBodySchema),
   (req, res) => void checkInController.checkIn(req, res),
 );

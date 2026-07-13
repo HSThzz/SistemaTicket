@@ -49,7 +49,7 @@ export class InvalidTicketStatusError extends CheckInError {
 }
 
 /**
- * Evento associado ao ingresso não está publicado.
+ * Evento associado ao ingresso não está em status elegível para check-in.
  */
 export class EventNotPublishedError extends CheckInError {
   /**
@@ -57,7 +57,7 @@ export class EventNotPublishedError extends CheckInError {
    */
   constructor(public readonly eventStatus: EventStatus) {
     super(
-      `Event is not published. Current status: ${eventStatus}`,
+      `Event is not available for check-in. Current status: ${eventStatus}`,
       "EVENT_NOT_PUBLISHED",
     );
     this.name = "EventNotPublishedError";

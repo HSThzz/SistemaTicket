@@ -3,6 +3,7 @@ import path from "node:path";
 import { google } from "googleapis";
 import { PKPass } from "passkit-generator";
 import { env } from "../../../../shared/infrastructure/config/env";
+import { TicketStatus } from "../../../../shared/kernel/enums";
 import type { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
 import type { Ticket } from "../../../../shared/infrastructure/persistence/entities/Ticket";
 import type { User } from "../../../../shared/infrastructure/persistence/entities/User";
@@ -34,6 +35,10 @@ export async function loadTicketContext(
   const ticket = await findOneTicketById(ticketId);
 
   if (!ticket?.ticketLot?.event || !ticket.order?.user) {
+    throw new TicketNotFoundError(ticketId);
+  }
+
+  if (ticket.status === TicketStatus.CANCELLED) {
     throw new TicketNotFoundError(ticketId);
   }
 

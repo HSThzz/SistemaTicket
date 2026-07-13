@@ -136,8 +136,10 @@ export interface ReserveTicketsResponse {
 export interface TicketListItem {
   id: string;
   status: string;
-  uniqueCode: string;
+  /** Código curto para QR / portaria. */
   checkInCode: string;
+  /** Legado: ausente nas listagens novas. */
+  uniqueCode?: string;
   checkedInAt: string | null;
   event: {
     id: string;

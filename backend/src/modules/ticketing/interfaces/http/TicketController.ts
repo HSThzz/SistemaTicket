@@ -10,6 +10,7 @@ import { listUserTickets } from "../../application/services/listUserTickets";
 import { issueManualTicket } from "../../application/services/issueManualTicket";
 import {
   ManualTicketError,
+  ManualTicketEventNotIssuableError,
   ManualTicketForbiddenError,
   ManualTicketInsufficientStockError,
   ManualTicketLotNotFoundError,
@@ -108,6 +109,15 @@ export class TicketController {
         error: error.message,
         code: error.code,
         available: error.available,
+      });
+      return;
+    }
+
+    if (error instanceof ManualTicketEventNotIssuableError) {
+      res.status(409).json({
+        error: error.message,
+        code: error.code,
+        eventStatus: error.eventStatus,
       });
       return;
     }

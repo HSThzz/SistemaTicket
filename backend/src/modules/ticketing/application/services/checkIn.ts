@@ -1,82 +1,19 @@
 import { Logger } from "../../../../shared/infrastructure/config/logger";
-import { EventStatus, TicketStatus } from "../../../../shared/kernel/enums";
-import { isStaffRole } from "../../../../shared/kernel/staffRoles";
-import {
-  CheckInAccessDeniedError,
-  CheckInNotAllowedTodayError,
-  EventNotPublishedError,
-  InvalidTicketStatusError,
-  TicketNotFoundError,
-} from "../../domain/errors/CheckInError";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
+import { TicketNotFoundError } from "../../domain/errors/CheckInError";
 import { checkInSchema } from "../../validators/schema/checkInSchema";
 import { checkInTicket } from "../commands/checkInTicket";
-import { findOneTicketByCheckInCode } from "../queries/findOneTicketByCheckInCode";
 import type { CheckInActor } from "./types";
 
 const CONTEXT = "CheckInService";
-const CHECK_IN_TIMEZONE = "America/Sao_Paulo";
 const logger = Logger.getInstance();
 
 export async function checkIn(scannedCode: string, actor: CheckInActor) {
-  const { uniqueCode: code } = validateSchema(checkInSchema, { uniqueCode: scannedCode });
-  const ticket = await findOneTicketByCheckInCode(code);
+  const { uniqueCode: code } = validateSchema(checkInSchema, {
+    uniqueCode: scannedCode,
+  });
 
-  if (!ticket?.ticketLot?.event) {
-    logger.warn(CONTEXT, "Check-in failed — ticket not found", {
-      uniqueCode: code,
-    });
-    throw new TicketNotFoundError();
-  }
-
-  const event = ticket.ticketLot.event;
-
-  if (!isStaffRole(actor.role) && event.producerId !== actor.userId) {
-    logger.warn(CONTEXT, "Check-in rejected — producer does not own event", {
-      ticketId: ticket.id,
-      eventId: event.id,
-      actorUserId: actor.userId,
-    });
-    throw new CheckInAccessDeniedError();
-  }
-
-  if (ticket.status !== TicketStatus.ACTIVE) {
-    logger.warn(
-      CONTEXT,
-      "Check-in rejected — invalid ticket status (possible duplicate or fraud)",
-      {
-        ticketId: ticket.id,
-        uniqueCode: code,
-        currentStatus: ticket.status,
-        eventId: event.id,
-        ownerDocument: ticket.ownerDocument,
-      },
-    );
-    throw new InvalidTicketStatusError(ticket.status);
-  }
-
-  if (event.status !== EventStatus.PUBLISHED) {
-    logger.warn(CONTEXT, "Check-in rejected — event not published", {
-      ticketId: ticket.id,
-      eventId: event.id,
-      eventStatus: event.status,
-    });
-    throw new EventNotPublishedError(event.status);
-  }
-
-  if (!isEventDay(event.date)) {
-    const eventDay = formatCalendarDay(event.date);
-
-    logger.warn(CONTEXT, "Check-in rejected — wrong event day", {
-      ticketId: ticket.id,
-      eventId: event.id,
-      eventDay,
-      today: formatCalendarDay(new Date()),
-    });
-    throw new CheckInNotAllowedTodayError(eventDay);
-  }
-
-  const result = await checkInTicket(code);
+  const result = await checkInTicket(code, actor);
 
   if (!result) {
     logger.warn(CONTEXT, "Check-in failed — ticket not found", {
@@ -87,11 +24,9 @@ export async function checkIn(scannedCode: string, actor: CheckInActor) {
 
   logger.info(CONTEXT, "Check-in completed successfully", {
     ticketId: result.ticketId,
-    uniqueCode: code,
-    eventId: event.id,
     eventTitle: result.eventTitle,
     checkedInAt: result.checkedInAt.toISOString(),
-    ownerDocument: result.ownerDocument,
+    actorUserId: actor.userId,
   });
 
   return {
@@ -101,17 +36,4 @@ export async function checkIn(scannedCode: string, actor: CheckInActor) {
     ticketId: result.ticketId,
     eventTitle: result.eventTitle,
   };
-}
-
-function isEventDay(eventDate: Date, referenceDate = new Date()): boolean {
-  return formatCalendarDay(eventDate) === formatCalendarDay(referenceDate);
-}
-
-function formatCalendarDay(date: Date): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: CHECK_IN_TIMEZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
 }
