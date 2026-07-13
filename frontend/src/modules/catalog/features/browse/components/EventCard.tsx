@@ -20,7 +20,7 @@ import {
   getLowestPrice,
   getTotalAvailable,
 } from "@/modules/catalog/utils/eventVisuals";
-import { formatCurrencyFromCents, formatEventDateOnly, formatEventTimeOnly } from "@/shared/utils/format";
+import { formatEventDateOnly, formatEventTimeOnly, formatLotPrice } from "@/shared/utils/format";
 
 /** Propriedades do card de evento na listagem. */
 interface EventCardProps {
@@ -143,7 +143,7 @@ export function EventCard({ event, variant = "default" }: EventCardProps) {
         <Group justify="space-between" align="center" mt={4}>
           {lowestPrice !== null ? (
             <Text size="sm" fw={700} c="brand">
-              {formatCurrencyFromCents(lowestPrice)}
+              {formatLotPrice(lowestPrice)}
             </Text>
           ) : (
             <Text size="sm" c="dimmed">

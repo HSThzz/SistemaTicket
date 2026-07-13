@@ -13,6 +13,7 @@ import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
   OrderNotFoundError,
   PaymentAlreadyProcessedError,
+  FreeOrderPaymentNotAllowedError,
 } from "../../domain/errors/PaymentError";
 import type { PaymentGateway } from "../../infrastructure/gateways/PaymentGateway";
 import { createPaymentGateway } from "../../infrastructure/gateways/createPaymentGateway";
@@ -32,6 +33,7 @@ export interface CreateOrderPixPaymentInput {
  *
  * @throws {OrderNotFoundError} Pedido inexistente ou de outro usuário.
  * @throws {PaymentAlreadyProcessedError} Pedido já pago ou em estado terminal.
+ * @throws {FreeOrderPaymentNotAllowedError} Pedido com total zero.
  */
 export async function createOrderPixPayment(
   redis: Redis | undefined,
@@ -44,6 +46,10 @@ export async function createOrderPixPayment(
 
   if (!order?.user || order.userId !== data.requesterUserId) {
     throw new OrderNotFoundError(data.orderId);
+  }
+
+  if (order.totalPrice === 0) {
+    throw new FreeOrderPaymentNotAllowedError(data.orderId);
   }
 
   if (order.status !== OrderStatus.PENDING) {

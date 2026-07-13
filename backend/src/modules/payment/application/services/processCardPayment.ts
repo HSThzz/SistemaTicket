@@ -11,6 +11,7 @@ import { OrderStatus } from "../../../../shared/kernel/enums";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
   CardPaymentUnsupportedError,
+  FreeOrderPaymentNotAllowedError,
   OrderNotFoundError,
   PaymentAlreadyProcessedError,
 } from "../../domain/errors/PaymentError";
@@ -83,6 +84,10 @@ export async function processCardPayment(
 
     if (order.status !== OrderStatus.PENDING) {
       throw new PaymentAlreadyProcessedError(data.orderId, order.status);
+    }
+
+    if (order.totalPrice === 0) {
+      throw new FreeOrderPaymentNotAllowedError(order.id);
     }
 
     logger.info(CONTEXT, "Starting credit card charge", {

@@ -20,6 +20,7 @@ import {
   clearReservationMeta,
   releaseRedisReservationHold,
 } from "../../application/helpers/releaseRedisReservationHold";
+import { fulfillFreeOrderIfNeeded } from "../../../payment/application/services/fulfillFreeOrderIfNeeded";
 
 const CONTEXT = "ReservationPersistenceWorker";
 
@@ -205,6 +206,7 @@ export class ReservationPersistenceWorker {
           return;
         }
 
+        await fulfillFreeOrderIfNeeded(this.redis, result.orderId);
         await this.markOrderReady(payload, result.orderId);
         return;
       }
@@ -247,6 +249,7 @@ export class ReservationPersistenceWorker {
         quantity: payload.quantity,
       });
 
+      await fulfillFreeOrderIfNeeded(this.redis, result.orderId);
       await this.markOrderReady(payload, result.orderId);
     } catch (error) {
       this.failedCount += 1;
@@ -278,7 +281,7 @@ export class ReservationPersistenceWorker {
       orderId,
     );
 
-    this.logger.info(CONTEXT, "Order ready for payment", {
+    this.logger.info(CONTEXT, "Order ready for checkout", {
       reservationId: payload.reservationId,
       orderId,
     });

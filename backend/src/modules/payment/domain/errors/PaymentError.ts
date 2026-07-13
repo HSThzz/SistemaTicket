@@ -47,6 +47,19 @@ export class InvalidWebhookPayloadError extends PaymentError {
 }
 
 /**
+ * Pedido gratuito não pode gerar cobrança no gateway.
+ */
+export class FreeOrderPaymentNotAllowedError extends PaymentError {
+  constructor(orderId: string) {
+    super(
+      `Order ${orderId} is free and does not require payment`,
+      "FREE_ORDER_PAYMENT_NOT_ALLOWED",
+    );
+    this.name = "FreeOrderPaymentNotAllowedError";
+  }
+}
+
+/**
  * Pedido já foi processado (pago, falho ou estado terminal).
  */
 export class PaymentAlreadyProcessedError extends PaymentError {

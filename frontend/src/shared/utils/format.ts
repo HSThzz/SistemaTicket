@@ -16,6 +16,17 @@ export function formatCurrencyFromCents(cents: number): string {
 }
 
 /**
+ * Preço de lote/pedido: "Gratuito" quando zero, senão moeda BRL.
+ */
+export function formatLotPrice(cents: number): string {
+  if (cents === 0) {
+    return "Gratuito";
+  }
+
+  return formatCurrencyFromCents(cents);
+}
+
+/**
  * Formata data/hora ISO em estilo completo (data + hora).
  *
  * @param isoDate - Data em formato ISO 8601.

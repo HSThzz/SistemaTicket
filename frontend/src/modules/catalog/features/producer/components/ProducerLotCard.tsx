@@ -11,7 +11,7 @@ import {
 import { IconTicket } from "@tabler/icons-react";
 import { LotStockBadge } from "@/components/ui/LotStockBadge";
 import type { TicketLot } from "@/shared/types/api";
-import { formatCurrencyFromCents } from "@/shared/utils/format";
+import { formatLotPrice } from "@/shared/utils/format";
 
 interface ProducerLotCardProps {
   lot: TicketLot;
@@ -33,7 +33,7 @@ export function ProducerLotCard({ lot }: ProducerLotCardProps) {
               {lot.name}
             </Title>
             <Text fw={800} size="xl" c="brand" className="producer-metric-value">
-              {formatCurrencyFromCents(lot.price)}
+              {formatLotPrice(lot.price)}
             </Text>
           </Stack>
         </Group>

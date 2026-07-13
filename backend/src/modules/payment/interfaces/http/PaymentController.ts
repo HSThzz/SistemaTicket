@@ -9,6 +9,7 @@ import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { getRedis } from "../../../../shared/infrastructure/config/redis";
 import {
   CardPaymentUnsupportedError,
+  FreeOrderPaymentNotAllowedError,
   InvalidWebhookPayloadError,
   OrderNotFoundError,
   PaymentAlreadyProcessedError,
@@ -201,6 +202,11 @@ export class PaymentController {
 
     if (error instanceof PaymentAlreadyProcessedError) {
       res.status(409).json({ error: error.message, code: error.code });
+      return;
+    }
+
+    if (error instanceof FreeOrderPaymentNotAllowedError) {
+      res.status(400).json({ error: error.message, code: error.code });
       return;
     }
 

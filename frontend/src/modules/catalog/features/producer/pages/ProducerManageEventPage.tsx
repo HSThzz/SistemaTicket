@@ -125,7 +125,10 @@ export function ProducerManageEventPage() {
     },
     validate: {
       name: (value) => (String(value).trim().length >= 2 ? null : "Informe o nome do lote"),
-      priceReais: (value) => (Number(value) > 0 ? null : "Preço inválido"),
+      priceReais: (value) =>
+        Number(value) >= 0 && !Number.isNaN(Number(value))
+          ? null
+          : "Preço inválido",
       totalQuantity: (value) => (Number(value) > 0 ? null : "Quantidade inválida"),
     },
   });
@@ -601,9 +604,10 @@ export function ProducerManageEventPage() {
                       />
                       <NumberInput
                         label="Preço (R$)"
+                        description="Use 0 para ingresso gratuito (cortesia, lista, feminino grátis, etc.)."
                         decimalScale={2}
                         fixedDecimalScale
-                        min={0.01}
+                        min={0}
                         radius="md"
                         {...lotForm.getInputProps("priceReais")}
                       />

@@ -60,7 +60,7 @@ import {
   getEventCoverStyle,
   preloadEventCoverImage,
 } from "@/modules/catalog/utils/eventVisuals";
-import { formatCurrencyFromCents, formatEventDateOnly, formatEventTimeOnly } from "@/shared/utils/format";
+import { formatEventDateOnly, formatEventTimeOnly, formatLotPrice } from "@/shared/utils/format";
 import { getApiErrorCode, getApiErrorMessage } from "@/shared/utils/errors";
 import {
   getBillableQuantity,
@@ -187,16 +187,26 @@ function CheckoutPaymentProgressPanel({
   );
 }
 
-function CheckoutSuccessContent({ eventId }: { eventId: string }) {
+function CheckoutSuccessContent({
+  eventId,
+  isFree,
+}: {
+  eventId: string;
+  isFree?: boolean;
+}) {
   return (
     <Stack gap="md" align="center" ta="center" className="checkout-result-content">
       <ThemeIcon size={64} radius="xl" variant="light" color="green">
         <IconCheck size={32} />
       </ThemeIcon>
       <Stack gap={4}>
-        <Title order={3}>Pagamento confirmado!</Title>
+        <Title order={3}>
+          {isFree ? "Ingressos garantidos!" : "Pagamento confirmado!"}
+        </Title>
         <Text c="dimmed">
-          Seus ingressos foram emitidos com sucesso e já estão disponíveis.
+          {isFree
+            ? "Seu ingresso gratuito foi emitido e já está disponível na carteira."
+            : "Seus ingressos foram emitidos com sucesso e já estão disponíveis."}
         </Text>
       </Stack>
       <Button
@@ -307,7 +317,7 @@ function CheckoutOrderSummary({
           />
           <CheckoutSummaryRow
             label="Unitário"
-            value={formatCurrencyFromCents(selectedLot.price)}
+            value={formatLotPrice(selectedLot.price)}
           />
           <CheckoutSummaryRow
             label="Data"
@@ -327,7 +337,7 @@ function CheckoutOrderSummary({
             className="order-total-value"
             c={quantityWarning ? "dimmed" : "brand"}
           >
-            {formatCurrencyFromCents(totalCents)}
+            {formatLotPrice(totalCents)}
           </Text>
         </Group>
 
@@ -381,8 +391,8 @@ export function CheckoutPage() {
   const pollContextRef = useRef({
     paymentMethod: "card" as "pix" | "card",
     confirmingPayment: false,
+    isFreeOrder: false,
   });
-  pollContextRef.current = { paymentMethod, confirmingPayment };
 
   const didAutoSelectPixRef = useRef(false);
 
@@ -392,10 +402,13 @@ export function CheckoutPage() {
         return false;
       }
 
-      const { paymentMethod: method, confirmingPayment: confirming } =
-        pollContextRef.current;
+      const {
+        paymentMethod: method,
+        confirmingPayment: confirming,
+        isFreeOrder: free,
+      } = pollContextRef.current;
 
-      if (confirming) {
+      if (confirming || free) {
         return true;
       }
 
@@ -417,6 +430,13 @@ export function CheckoutPage() {
     enabled: Boolean(reservationId),
     shouldContinuePolling,
   });
+
+  pollContextRef.current = {
+    paymentMethod,
+    confirmingPayment,
+    isFreeOrder:
+      selectedLot?.price === 0 || status?.order?.totalPrice === 0,
+  };
 
   useEventCoverPreload(coverImageFromNavigation ?? getEventCoverImageUrl(event ?? {}));
 
@@ -479,6 +499,7 @@ export function CheckoutPage() {
       pollContextRef.current = {
         paymentMethod: "pix",
         confirmingPayment: pollContextRef.current.confirmingPayment,
+        isFreeOrder: pollContextRef.current.isFreeOrder,
       };
     }
   }, [status?.phase, status?.payment]);
@@ -511,7 +532,11 @@ export function CheckoutPage() {
   const handlePaymentMethodChange = (value: string) => {
     const method = value as "pix" | "card";
     setPaymentMethod(method);
-    pollContextRef.current = { paymentMethod: method, confirmingPayment };
+    pollContextRef.current = {
+      paymentMethod: method,
+      confirmingPayment,
+      isFreeOrder: pollContextRef.current.isFreeOrder,
+    };
     setPixGenerateError(null);
 
     if (
@@ -616,7 +641,11 @@ export function CheckoutPage() {
 
     setSimulating(true);
     setConfirmingPayment(true);
-    pollContextRef.current = { paymentMethod, confirmingPayment: true };
+    pollContextRef.current = {
+      paymentMethod,
+      confirmingPayment: true,
+      isFreeOrder: pollContextRef.current.isFreeOrder,
+    };
 
     try {
       await purchaseService.simulateDevPayment(orderId);
@@ -653,7 +682,11 @@ export function CheckoutPage() {
 
       if (result.status === "approved") {
         setConfirmingPayment(true);
-        pollContextRef.current = { paymentMethod, confirmingPayment: true };
+        pollContextRef.current = {
+          paymentMethod,
+          confirmingPayment: true,
+          isFreeOrder: pollContextRef.current.isFreeOrder,
+        };
         await refresh();
         notifications.show({
           title: "Pagamento aprovado",
@@ -663,7 +696,11 @@ export function CheckoutPage() {
         });
       } else if (result.status === "pending") {
         setConfirmingPayment(true);
-        pollContextRef.current = { paymentMethod, confirmingPayment: true };
+        pollContextRef.current = {
+          paymentMethod,
+          confirmingPayment: true,
+          isFreeOrder: pollContextRef.current.isFreeOrder,
+        };
         await refresh();
         notifications.show({
           title: "Pagamento em análise",
@@ -714,36 +751,49 @@ export function CheckoutPage() {
   const isPixReady = phase === "AWAITING_PAYMENT" && Boolean(status?.payment);
   const canChoosePayment = isPaymentPending || isPixReady;
   const orderAmountCents = status?.order?.totalPrice ?? totalCents;
+  const isFreeOrder = orderAmountCents === 0;
   const isAwaitingCardReview =
     phase === "AWAITING_PAYMENT" && !status?.payment && confirmingPayment;
-  const showPaymentForm = canChoosePayment && !confirmingPayment && !cardSubmitting;
+  const showPaymentForm =
+    canChoosePayment && !confirmingPayment && !cardSubmitting && !isFreeOrder;
   const showCompletionState = isPaid || isFailed;
 
-  const paymentProgressCopy = cardSubmitting
+  const paymentProgressCopy = isFreeOrder
     ? {
-        title: "Processando pagamento...",
-        description: "Estamos validando os dados do cartão com segurança. Não feche esta página.",
+        title: "Emitindo ingresso gratuito",
+        description:
+          "Sua reserva gratuita foi confirmada. Estamos gerando o ingresso — isso leva só alguns segundos.",
       }
-    : isAwaitingCardReview
+    : cardSubmitting
       ? {
-          title: "Pagamento em análise",
+          title: "Processando pagamento...",
           description:
-            "Recebemos seu pagamento e estamos aguardando a confirmação. Seus ingressos serão emitidos assim que for aprovado.",
+            "Estamos validando os dados do cartão com segurança. Não feche esta página.",
         }
-      : isPendingPersistence
+      : isAwaitingCardReview
         ? {
-            title: "Emitindo seus ingressos",
-            description: "Pagamento confirmado. Estamos gerando seus ingressos — isso leva só alguns segundos.",
+            title: "Pagamento em análise",
+            description:
+              "Recebemos seu pagamento e estamos aguardando a confirmação. Seus ingressos serão emitidos assim que for aprovado.",
           }
-        : {
-            title: "Finalizando compra",
-            description: "Pagamento recebido. Aguarde enquanto concluímos a emissão dos ingressos.",
-          };
+        : isPendingPersistence
+          ? {
+              title: "Emitindo seus ingressos",
+              description:
+                "Pagamento confirmado. Estamos gerando seus ingressos — isso leva só alguns segundos.",
+            }
+          : {
+              title: "Finalizando compra",
+              description:
+                "Pagamento recebido. Aguarde enquanto concluímos a emissão dos ingressos.",
+            };
 
   const showPaymentProgress =
     !showCompletionState &&
-    (cardSubmitting || confirmingPayment || isAwaitingCardReview) &&
-    !showPaymentForm;
+    (isFreeOrder
+      ? isCheckoutStarted && (isPendingPersistence || isPaymentPending || polling)
+      : (cardSubmitting || confirmingPayment || isAwaitingCardReview) &&
+        !showPaymentForm);
 
   const handleCheckoutRetry = () => {
     setReservationId(null);
@@ -839,7 +889,7 @@ export function CheckoutPage() {
                               Preço unitário
                             </Text>
                             <Text fw={800} size="lg" c="brand">
-                              {formatCurrencyFromCents(selectedLot.price)}
+                              {formatLotPrice(selectedLot.price)}
                             </Text>
                           </Box>
                         </Group>
@@ -887,14 +937,25 @@ export function CheckoutPage() {
                           }
                           onClick={() => void handleReserve()}
                         >
-                          Reservar ingressos
+                          {isFreeOrder || selectedLot.price === 0
+                            ? "Reservar grátis"
+                            : "Reservar ingressos"}
                         </Button>
 
                         <Group gap={6} c="dimmed">
                           <IconClock size={16} />
                           <Text size="sm">
-                            Após reservar, você terá <strong>15 minutos</strong> para concluir o
-                            pagamento.
+                            {selectedLot.price === 0 ? (
+                              <>
+                                Ingresso gratuito: após reservar, a emissão é{" "}
+                                <strong>automática</strong>.
+                              </>
+                            ) : (
+                              <>
+                                Após reservar, você terá <strong>15 minutos</strong> para
+                                concluir o pagamento.
+                              </>
+                            )}
                           </Text>
                         </Group>
                       </Stack>
@@ -916,7 +977,10 @@ export function CheckoutPage() {
                             />
                             <Divider className="checkout-result-divider" />
                             {isPaid ? (
-                              <CheckoutSuccessContent eventId={event.id} />
+                              <CheckoutSuccessContent
+                                eventId={event.id}
+                                isFree={isFreeOrder}
+                              />
                             ) : (
                               <CheckoutErrorContent
                                 eventId={event.id}

@@ -59,9 +59,9 @@ import {
   preloadEventCoverImage,
 } from "@/modules/catalog/utils/eventVisuals";
 import {
-  formatCurrencyFromCents,
   formatEventDateOnly,
   formatEventTimeOnly,
+  formatLotPrice,
 } from "@/shared/utils/format";
 import { getApiErrorMessage } from "@/shared/utils/errors";
 
@@ -108,7 +108,7 @@ function LotOfferCard({
             {soldOut ? "Sem estoque" : `${lot.availableQuantity} restantes`}
           </PremiumBadge>
           <Text fw={800} size="lg" c="brand" className="lot-offer-card__price">
-            {formatCurrencyFromCents(lot.price)}
+            {formatLotPrice(lot.price)}
           </Text>
         </Group>
 
@@ -119,7 +119,15 @@ function LotOfferCard({
           disabled={soldOut}
           onClick={() => onBuy(lot.id)}
         >
-          {isAuthenticated ? "Comprar ingresso" : "Entrar para comprar"}
+          {soldOut
+            ? "Esgotado"
+            : !isAuthenticated
+              ? lot.price === 0
+                ? "Entrar para reservar"
+                : "Entrar para comprar"
+              : lot.price === 0
+                ? "Reservar grátis"
+                : "Comprar ingresso"}
         </Button>
       </Stack>
     </Box>
@@ -438,14 +446,16 @@ export function EventDetailPage() {
                       <Text size="sm" c="dimmed">
                         {eventIsPrivate && !canBuy
                           ? "Evento privado: sua participação passa pela aprovação do produtor."
-                          : "Escolha o lote ideal e finalize com PIX em minutos."}
+                          : "Escolha o lote ideal. Ingressos gratuitos são emitidos na hora; pagos finalizam com PIX ou cartão."}
                       </Text>
                     </Stack>
 
                     <Group justify="space-between" align="center" wrap="wrap" gap="sm">
                       {lowestPrice !== null ? (
                         <Text fw={800} size="xl" c="brand">
-                          a partir de {formatCurrencyFromCents(lowestPrice)}
+                          {lowestPrice === 0
+                            ? "Gratuito"
+                            : `a partir de ${formatLotPrice(lowestPrice)}`}
                         </Text>
                       ) : (
                         <Text fw={600} c="dimmed">
