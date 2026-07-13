@@ -13,7 +13,6 @@ export interface CreateEventInput {
   date: string;
   location: string;
   imageUrl?: string | null;
-  status?: string;
   type?: string;
 }
 

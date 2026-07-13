@@ -66,3 +66,47 @@ export class EventTypeChangeNotAllowedError extends EventError {
     this.name = "EventTypeChangeNotAllowedError";
   }
 }
+
+/** Conteúdo do evento não pode ser editado no status atual. */
+export class EventNotEditableError extends EventError {
+  constructor(status: string) {
+    super(
+      `Event content cannot be edited while status is ${status}`,
+      "EVENT_NOT_EDITABLE",
+    );
+    this.name = "EventNotEditableError";
+  }
+}
+
+/** Novos lotes não são permitidos no status atual do evento. */
+export class EventLotNotAllowedError extends EventError {
+  constructor(status: string) {
+    super(
+      `Cannot create ticket lots while event status is ${status}`,
+      "EVENT_LOT_NOT_ALLOWED",
+    );
+    this.name = "EventLotNotAllowedError";
+  }
+}
+
+/** Publicação exige ao menos um lote de ingressos. */
+export class EventPublishMissingLotsError extends EventError {
+  constructor() {
+    super(
+      "Publish requires at least one ticket lot",
+      "EVENT_PUBLISH_MISSING_LOTS",
+    );
+    this.name = "EventPublishMissingLotsError";
+  }
+}
+
+/** Não é permitido publicar evento com data no passado. */
+export class EventPublishPastDateError extends EventError {
+  constructor(eventDay: string) {
+    super(
+      `Cannot publish an event with a past date (${eventDay})`,
+      "EVENT_PUBLISH_PAST_DATE",
+    );
+    this.name = "EventPublishPastDateError";
+  }
+}

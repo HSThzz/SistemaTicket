@@ -25,7 +25,7 @@ export async function createEvent(
     date: new Date(data.date),
     location: data.location,
     imageUrl: normalizeImageUrl(data.imageUrl),
-    status: data.status ?? EventStatus.DRAFT,
+    status: EventStatus.DRAFT,
     type: data.type ?? EventType.PUBLIC,
   });
 

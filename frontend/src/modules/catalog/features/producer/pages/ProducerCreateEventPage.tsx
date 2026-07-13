@@ -123,7 +123,6 @@ export function ProducerCreateEventPage() {
         date: eventDateToIso(values.date!),
         location: values.location.trim(),
         imageUrl: values.imageUrl.trim() || null,
-        status: "DRAFT",
         type: values.type,
       });
 

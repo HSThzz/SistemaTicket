@@ -138,13 +138,12 @@ export class EventController {
     if (!actor) return;
 
     try {
-      const { title, description, date, location, imageUrl, status, type } = req.body as {
+      const { title, description, date, location, imageUrl, type } = req.body as {
         title: string;
         description: string;
         date: string;
         location: string;
         imageUrl?: string | null;
-        status?: EventStatus;
         type?: EventType;
       };
 
@@ -157,7 +156,6 @@ export class EventController {
             imageUrl === undefined || imageUrl === null || imageUrl === ""
               ? undefined
               : imageUrl,
-          status,
           type,
         },
         actor,

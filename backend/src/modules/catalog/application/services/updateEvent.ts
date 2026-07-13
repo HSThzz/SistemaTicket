@@ -1,4 +1,5 @@
 import { Logger } from "../../../../shared/infrastructure/config/logger";
+import { EventStatus } from "../../../../shared/kernel/enums";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { eventIdSchema } from "../../validators/schema/eventIdSchema";
 import {
@@ -10,7 +11,9 @@ import {
   type UpdateEventData,
 } from "../commands/updateEvent";
 import { assertCanManageEvent } from "../helpers/assertCanManageEvent";
+import { assertCanPublishEvent } from "../helpers/assertCanPublishEvent";
 import { assertEventIsActive } from "../helpers/assertEventIsActive";
+import { assertEventAllowsContentEdit } from "../helpers/assertEventMutable";
 import { assertValidEventStatusTransition } from "../helpers/assertValidEventStatusTransition";
 import { assertValidEventTypeChange } from "../helpers/assertValidEventTypeChange";
 import { loadEventWithLots } from "../helpers/loadEventWithLots";
@@ -20,6 +23,15 @@ import type { EventActor } from "../types";
 import { EventNotFoundError } from "../../domain/errors/EventError";
 
 const CONTEXT = "updateEvent";
+
+const CONTENT_FIELDS = [
+  "title",
+  "description",
+  "location",
+  "imageUrl",
+  "date",
+  "type",
+] as const;
 
 function buildUpdateEventData(input: UpdateEventInputSchema): UpdateEventData {
   const changes: UpdateEventData = {};
@@ -33,6 +45,10 @@ function buildUpdateEventData(input: UpdateEventInputSchema): UpdateEventData {
   if (input.date !== undefined) changes.date = new Date(input.date);
 
   return changes;
+}
+
+function hasContentChanges(changes: UpdateEventData): boolean {
+  return CONTENT_FIELDS.some((field) => changes[field] !== undefined);
 }
 
 export async function updateEvent(
@@ -53,12 +69,24 @@ export async function updateEvent(
 
   const changes = buildUpdateEventData(data);
 
+  if (hasContentChanges(changes)) {
+    assertEventAllowsContentEdit(event);
+  }
+
   if (changes.status !== undefined) {
     assertValidEventStatusTransition(event.status, changes.status);
   }
 
   if (changes.type !== undefined) {
     await assertValidEventTypeChange(event, changes.type);
+  }
+
+  const publishing =
+    changes.status === EventStatus.PUBLISHED &&
+    event.status !== EventStatus.PUBLISHED;
+
+  if (publishing) {
+    await assertCanPublishEvent(event, changes.date);
   }
 
   const saved = await updateEventCommand(event, changes);
