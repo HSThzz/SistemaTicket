@@ -97,6 +97,7 @@ describe("Check-in concurrency", () => {
         userId: client.id,
         reservationId: reservation.id,
         totalPrice: lot.price,
+        platformFeeCents: 0,
         status: OrderStatus.PAID,
         paymentGatewayId: "pix_test",
       }),

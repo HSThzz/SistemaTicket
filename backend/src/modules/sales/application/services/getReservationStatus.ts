@@ -110,6 +110,7 @@ export async function getReservationStatus(
           id: order.id,
           status: order.status,
           totalPrice: order.totalPrice,
+          platformFeeCents: order.platformFeeCents,
           paymentGatewayId: order.paymentGatewayId,
         }
       : null,

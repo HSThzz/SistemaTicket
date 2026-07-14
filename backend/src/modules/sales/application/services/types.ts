@@ -5,6 +5,7 @@ export interface OrderListItem {
   id: string;
   status: string;
   totalPrice: number;
+  platformFeeCents: number;
   paymentGatewayId: string | null;
   reservationId: string;
   eventId: string | null;
@@ -57,6 +58,7 @@ export interface ReservationStatusView {
     id: string;
     status: OrderStatus;
     totalPrice: number;
+    platformFeeCents: number;
     paymentGatewayId: string | null;
   } | null;
   payment: PixPaymentDetails | null;

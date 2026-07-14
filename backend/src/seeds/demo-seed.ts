@@ -388,6 +388,7 @@ async function seedPaidOrder(
       userId: params.user.id,
       reservationId: reservation.id,
       totalPrice: params.lot.price * params.quantity,
+      platformFeeCents: 0,
       status: OrderStatus.PAID,
       paymentGatewayId: `pix_sim_seed_${reservation.id.slice(0, 8)}`,
     }),

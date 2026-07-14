@@ -44,6 +44,10 @@ export const env = {
     gateway: (process.env.PAYMENT_GATEWAY ?? "simulated") as
       | "simulated"
       | "mercadopago",
+    /** Percentual da taxa de serviço da plataforma sobre o subtotal dos ingressos. */
+    platformFeePercent: Number(
+      process.env.PLATFORM_FEE_PERCENT ?? "8",
+    ),
     mercadoPago: {
       accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN ?? "",
       /** Chave pública para tokenização de cartão no front-end (painel MP > Credenciais de teste). */

@@ -27,6 +27,7 @@ export async function getOrderByIdForAdmin(
     id: order.id,
     status: order.status,
     totalPrice: order.totalPrice,
+    platformFeeCents: order.platformFeeCents,
     paymentGatewayId: order.paymentGatewayId,
     reservationId: order.reservationId,
     eventId: event?.id ?? null,

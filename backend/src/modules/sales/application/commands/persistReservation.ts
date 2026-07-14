@@ -7,7 +7,9 @@ import { Order } from "../../../../shared/infrastructure/persistence/entities/Or
 import { Reservation } from "../../../../shared/infrastructure/persistence/entities/Reservation";
 import { TicketLot } from "../../../../shared/infrastructure/persistence/entities/TicketLot";
 import { User } from "../../../../shared/infrastructure/persistence/entities/User";
+import { env } from "../../../../shared/infrastructure/config/env";
 import { OrderStatus, ReservationStatus } from "../../../../shared/kernel/enums";
+import { calculateOrderTotalWithPlatformFee } from "../../../../shared/kernel/platformFee";
 import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
@@ -26,7 +28,15 @@ type CreateReservationData = Prettify<
 >;
 
 type CreateOrderData = Prettify<
-  Pick<Order, "userId" | "reservationId" | "totalPrice" | "status" | "paymentGatewayId">
+  Pick<
+    Order,
+    | "userId"
+    | "reservationId"
+    | "totalPrice"
+    | "platformFeeCents"
+    | "status"
+    | "paymentGatewayId"
+  >
 >;
 
 export type PersistReservationResult =
@@ -85,10 +95,17 @@ export async function persistReservation(payload: PersistReservationPayload,
     const reservation = manager.create(Reservation, reservationData);
     await manager.save(reservation);
 
+    const subtotalCents = lot.price * payload.quantity;
+    const { platformFeeCents, totalCents } = calculateOrderTotalWithPlatformFee(
+      subtotalCents,
+      env.payment.platformFeePercent,
+    );
+
     const orderData: CreateOrderData = {
       userId: payload.userId,
       reservationId: payload.reservationId,
-      totalPrice: lot.price * payload.quantity,
+      totalPrice: totalCents,
+      platformFeeCents,
       status: OrderStatus.PENDING,
       paymentGatewayId: null,
     };

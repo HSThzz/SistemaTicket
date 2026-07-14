@@ -16,7 +16,10 @@ export async function sumRevenueByEventIds(eventIds: string[],
     .innerJoin("ticket.ticketLot", "lot")
     .innerJoin("lot.event", "event")
     .select("event.id", "eventId")
-    .addSelect("SUM(DISTINCT order.totalPrice)", "revenue")
+    .addSelect(
+      "SUM(DISTINCT (order.totalPrice - order.platformFeeCents))",
+      "revenue",
+    )
     .where("event.id IN (:...eventIds)", { eventIds })
     .andWhere("order.status = :status", { status: OrderStatus.PAID })
     .groupBy("event.id")

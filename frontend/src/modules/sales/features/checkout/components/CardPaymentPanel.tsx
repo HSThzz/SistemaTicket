@@ -22,7 +22,10 @@ import {
 } from "@mantine/core";
 import { IconAlertCircle, IconCreditCard, IconLock } from "@tabler/icons-react";
 import { PremiumPaper } from "@/shared/components/PremiumPaper";
-import { useMercadoPago } from "@/modules/sales/features/checkout/hooks/useMercadoPago";
+import {
+  useMercadoPago,
+  type InstallmentOption,
+} from "@/modules/sales/features/checkout/hooks/useMercadoPago";
 import {
   CPF_FORMATTED_MAX_LENGTH,
   formatCpf,
@@ -67,6 +70,10 @@ function formatExpiration(value: string): string {
   return `${digits.slice(0, 2)}/${digits.slice(2)}`;
 }
 
+function reaisToCents(amountReais: number): number {
+  return Math.round(amountReais * 100);
+}
+
 /**
  * Formulário seguro de cartão de crédito que tokeniza via Mercado Pago.
  */
@@ -85,14 +92,39 @@ export function CardPaymentPanel({
   const [document, setDocument] = useState("");
   const [email, setEmail] = useState(defaultEmail ?? "");
   const [installments, setInstallments] = useState("1");
-  const [installmentOptions, setInstallmentOptions] = useState<
-    { value: string; label: string }[]
-  >([{ value: "1", label: "1x sem juros" }]);
+  const [installmentOptions, setInstallmentOptions] = useState<InstallmentOption[]>([
+    {
+      installments: 1,
+      label: "1x sem juros",
+      installmentAmount: amountCents / 100,
+      totalAmount: amountCents / 100,
+    },
+  ]);
 
   const [tokenizing, setTokenizing] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const bin = useMemo(() => onlyDigits(cardNumber).slice(0, 8), [cardNumber]);
+
+  const selectedInstallment = useMemo(() => {
+    const selected = installmentOptions.find(
+      (option) => String(option.installments) === installments,
+    );
+    return selected ?? installmentOptions[0] ?? null;
+  }, [installmentOptions, installments]);
+
+  const displayTotalCents = useMemo(() => {
+    if (
+      selectedInstallment &&
+      Number.isFinite(selectedInstallment.totalAmount) &&
+      selectedInstallment.totalAmount > 0
+    ) {
+      return reaisToCents(selectedInstallment.totalAmount);
+    }
+    return amountCents;
+  }, [selectedInstallment, amountCents]);
+
+  const hasInstallmentInterest = displayTotalCents > amountCents;
 
   useEffect(() => {
     setEmail((current) => current || defaultEmail || "");
@@ -109,12 +141,11 @@ export function CardPaymentPanel({
       if (cancelled || options.length === 0) {
         return;
       }
-      setInstallmentOptions(
-        options.map((option) => ({
-          value: String(option.installments),
-          label: option.label,
-        })),
-      );
+      setInstallmentOptions(options);
+      setInstallments((current) => {
+        const stillValid = options.some((option) => String(option.installments) === current);
+        return stillValid ? current : String(options[0].installments);
+      });
     });
 
     return () => {
@@ -226,6 +257,10 @@ export function CardPaymentPanel({
   }
 
   const busy = tokenizing || submitting;
+  const selectData = installmentOptions.map((option) => ({
+    value: String(option.installments),
+    label: option.label,
+  }));
 
   return (
     <PremiumPaper p="xl" className="pix-payment-panel">
@@ -247,11 +282,16 @@ export function CardPaymentPanel({
         <Group justify="space-between" align="center" wrap="wrap" gap="sm">
           <Stack gap={2}>
             <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-              Valor a pagar
+              {hasInstallmentInterest ? "Total no cartão" : "Valor a pagar"}
             </Text>
             <Text className="order-total-value" c="brand">
-              {formatCurrencyFromCents(amountCents)}
+              {formatCurrencyFromCents(displayTotalCents)}
             </Text>
+            {hasInstallmentInterest ? (
+              <Text size="xs" c="dimmed">
+                Ingresso {formatCurrencyFromCents(amountCents)} + juros do parcelamento
+              </Text>
+            ) : null}
           </Stack>
         </Group>
 
@@ -326,7 +366,7 @@ export function CardPaymentPanel({
 
         <Select
           label="Parcelas"
-          data={installmentOptions}
+          data={selectData}
           value={installments}
           onChange={(value) => setInstallments(value ?? "1")}
           allowDeselect={false}
@@ -350,7 +390,7 @@ export function CardPaymentPanel({
           onClick={() => void handleSubmit()}
         >
           {mp.ready
-            ? `Pagar ${formatCurrencyFromCents(amountCents)}`
+            ? `Pagar ${formatCurrencyFromCents(displayTotalCents)}`
             : "Carregando pagamento seguro..."}
         </Button>
 

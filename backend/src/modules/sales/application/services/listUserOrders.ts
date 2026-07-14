@@ -16,6 +16,7 @@ export interface OrderListItem {
   id: string;
   status: string;
   totalPrice: number;
+  platformFeeCents: number;
   paymentGatewayId: string | null;
   reservationId: string;
   eventId: string | null;
@@ -47,6 +48,7 @@ function mapOrderToListItem(
     id: order.id,
     status: order.status,
     totalPrice: order.totalPrice,
+    platformFeeCents: order.platformFeeCents,
     paymentGatewayId: order.paymentGatewayId,
     reservationId: order.reservationId,
     eventId: event?.id ?? null,

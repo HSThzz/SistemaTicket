@@ -60,7 +60,8 @@ import {
   getEventCoverStyle,
   preloadEventCoverImage,
 } from "@/modules/catalog/utils/eventVisuals";
-import { formatEventDateOnly, formatEventTimeOnly, formatLotPrice } from "@/shared/utils/format";
+import { formatCurrencyFromCents, formatEventDateOnly, formatEventTimeOnly, formatLotPrice } from "@/shared/utils/format";
+import { calculateOrderTotalWithPlatformFee } from "@/shared/utils/platformFee";
 import { getApiErrorCode, getApiErrorMessage } from "@/shared/utils/errors";
 import {
   getBillableQuantity,
@@ -282,12 +283,16 @@ function CheckoutOrderSummary({
   event,
   selectedLot,
   quantity,
+  subtotalCents,
+  platformFeeCents,
   totalCents,
   quantityWarning,
 }: {
   event: Event;
   selectedLot: TicketLot;
   quantity: number;
+  subtotalCents: number;
+  platformFeeCents: number;
   totalCents: number;
   quantityWarning?: string | null;
 }) {
@@ -319,6 +324,16 @@ function CheckoutOrderSummary({
             label="Unitário"
             value={formatLotPrice(selectedLot.price)}
           />
+          <CheckoutSummaryRow
+            label="Subtotal"
+            value={formatLotPrice(subtotalCents)}
+          />
+          {platformFeeCents > 0 ? (
+            <CheckoutSummaryRow
+              label="Taxa de serviço"
+              value={formatCurrencyFromCents(platformFeeCents)}
+            />
+          ) : null}
           <CheckoutSummaryRow
             label="Data"
             value={`${formatEventDateOnly(event.date)} · ${formatEventTimeOnly(event.date)}`}
@@ -579,12 +594,28 @@ export function CheckoutPage() {
     return getBillableQuantity(quantityValidation);
   }, [quantityValidation, quantity]);
 
-  const totalCents = useMemo(() => {
+  const subtotalCents = useMemo(() => {
     if (!selectedLot) {
       return 0;
     }
     return selectedLot.price * billableQuantity;
   }, [selectedLot, billableQuantity]);
+
+  const pricing = useMemo(() => {
+    const order = status?.order;
+    if (order && typeof order.totalPrice === "number") {
+      const platformFeeCents = order.platformFeeCents ?? 0;
+      return {
+        subtotalCents: order.totalPrice - platformFeeCents,
+        platformFeeCents,
+        totalCents: order.totalPrice,
+      };
+    }
+
+    return calculateOrderTotalWithPlatformFee(subtotalCents);
+  }, [status?.order, subtotalCents]);
+
+  const totalCents = pricing.totalCents;
 
   const handleReserve = async () => {
     if (!selectedLot || !quantityValidation) {
@@ -891,6 +922,16 @@ export function CheckoutPage() {
                             <Text fw={800} size="lg" c="brand">
                               {formatLotPrice(selectedLot.price)}
                             </Text>
+                            {selectedLot.price > 0 ? (
+                              <Text size="xs" c="dimmed" mt={4}>
+                                (+ taxa{" "}
+                                {formatCurrencyFromCents(
+                                  calculateOrderTotalWithPlatformFee(selectedLot.price)
+                                    .platformFeeCents,
+                                )}
+                                )
+                              </Text>
+                            ) : null}
                           </Box>
                         </Group>
 
@@ -1144,6 +1185,8 @@ export function CheckoutPage() {
                     event={event}
                     selectedLot={selectedLot}
                     quantity={quantity}
+                    subtotalCents={pricing.subtotalCents}
+                    platformFeeCents={pricing.platformFeeCents}
                     totalCents={totalCents}
                     quantityWarning={quantityWarning}
                   />

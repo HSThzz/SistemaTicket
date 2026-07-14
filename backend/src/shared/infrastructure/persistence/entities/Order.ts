@@ -29,6 +29,10 @@ export class Order {
   @Column({ name: "total_price", type: "integer" })
   totalPrice!: number;
 
+  /** Taxa da plataforma em centavos (incluída em `totalPrice`). */
+  @Column({ name: "platform_fee_cents", type: "integer", default: 0 })
+  platformFeeCents!: number;
+
   @Column({
     type: "enum",
     enum: OrderStatus,

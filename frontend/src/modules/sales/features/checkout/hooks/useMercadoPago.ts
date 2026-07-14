@@ -25,6 +25,10 @@ export interface CardTokenData {
 export interface InstallmentOption {
   installments: number;
   label: string;
+  /** Valor de cada parcela (reais). */
+  installmentAmount: number;
+  /** Total cobrado no cartão, com juros se houver (reais). */
+  totalAmount: number;
 }
 
 /** Bandeira e emissor detectados a partir do BIN do cartão. */
@@ -48,7 +52,12 @@ interface MercadoPagoInstance {
     paymentTypeId: string;
   }): Promise<
     Array<{
-      payer_costs: Array<{ installments: number; recommended_message: string }>;
+      payer_costs: Array<{
+        installments: number;
+        recommended_message: string;
+        installment_amount: number;
+        total_amount: number;
+      }>;
     }>
   >;
 }
@@ -216,6 +225,8 @@ export function useMercadoPago(): UseMercadoPagoResult {
       return payerCosts.map((cost) => ({
         installments: cost.installments,
         label: cost.recommended_message,
+        installmentAmount: Number(cost.installment_amount),
+        totalAmount: Number(cost.total_amount),
       }));
     } catch {
       return [];

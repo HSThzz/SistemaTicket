@@ -59,10 +59,12 @@ import {
   preloadEventCoverImage,
 } from "@/modules/catalog/utils/eventVisuals";
 import {
+  formatCurrencyFromCents,
   formatEventDateOnly,
   formatEventTimeOnly,
   formatLotPrice,
 } from "@/shared/utils/format";
+import { calculatePlatformFeeCents } from "@/shared/utils/platformFee";
 import { getApiErrorMessage } from "@/shared/utils/errors";
 
 const EVENT_PERKS = [
@@ -103,13 +105,20 @@ function LotOfferCard({
           ) : null}
         </Group>
 
-        <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+        <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
           <PremiumBadge tone={soldOut ? "neutral" : "brand"} size="xs">
             {soldOut ? "Sem estoque" : `${lot.availableQuantity} restantes`}
           </PremiumBadge>
-          <Text fw={800} size="lg" c="brand" className="lot-offer-card__price">
-            {formatLotPrice(lot.price)}
-          </Text>
+          <Stack gap={2} align="flex-end">
+            <Text fw={800} size="lg" c="brand" className="lot-offer-card__price">
+              {formatLotPrice(lot.price)}
+            </Text>
+            {lot.price > 0 ? (
+              <Text size="xs" c="dimmed">
+                (+ taxa {formatCurrencyFromCents(calculatePlatformFeeCents(lot.price))})
+              </Text>
+            ) : null}
+          </Stack>
         </Group>
 
         <Button
