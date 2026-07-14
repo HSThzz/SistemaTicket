@@ -23,7 +23,12 @@ import {
 import { IconAlertCircle, IconCreditCard, IconLock } from "@tabler/icons-react";
 import { PremiumPaper } from "@/shared/components/PremiumPaper";
 import { useMercadoPago } from "@/modules/sales/features/checkout/hooks/useMercadoPago";
-import { formatCurrencyFromCents } from "@/shared/utils/format";
+import {
+  CPF_FORMATTED_MAX_LENGTH,
+  formatCpf,
+  formatCurrencyFromCents,
+  normalizeDocument,
+} from "@/shared/utils/format";
 import type { CardPaymentPayload } from "@/modules/sales/api/purchaseService";
 
 /** Propriedades do painel de pagamento via cartão. */
@@ -39,8 +44,13 @@ interface CardPaymentPanelProps {
 }
 
 function onlyDigits(value: string): string {
-  return value.replace(/\D/g, "");
+  return normalizeDocument(value);
 }
+
+/** Cartão com espaços: até 19 dígitos → no máx. 23 caracteres. */
+const CARD_NUMBER_MAX_LENGTH = 23;
+const CARD_EXPIRATION_MAX_LENGTH = 5;
+const CARD_CVV_MAX_LENGTH = 4;
 
 function formatCardNumber(value: string): string {
   return onlyDigits(value)
@@ -55,14 +65,6 @@ function formatExpiration(value: string): string {
     return digits;
   }
   return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-}
-
-function formatCpf(value: string): string {
-  return onlyDigits(value)
-    .slice(0, 11)
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 }
 
 /**
@@ -260,6 +262,7 @@ export function CardPaymentPanel({
           onChange={(event) => setCardNumber(formatCardNumber(event.currentTarget.value))}
           inputMode="numeric"
           autoComplete="cc-number"
+          maxLength={CARD_NUMBER_MAX_LENGTH}
           radius="md"
         />
 
@@ -267,8 +270,9 @@ export function CardPaymentPanel({
           label="Nome do titular"
           placeholder="Como impresso no cartão"
           value={cardholderName}
-          onChange={(event) => setCardholderName(event.currentTarget.value)}
+          onChange={(event) => setCardholderName(event.currentTarget.value.slice(0, 80))}
           autoComplete="cc-name"
+          maxLength={80}
           radius="md"
         />
 
@@ -280,6 +284,7 @@ export function CardPaymentPanel({
             onChange={(event) => setExpiration(formatExpiration(event.currentTarget.value))}
             inputMode="numeric"
             autoComplete="cc-exp"
+            maxLength={CARD_EXPIRATION_MAX_LENGTH}
             radius="md"
           />
           <TextInput
@@ -287,10 +292,11 @@ export function CardPaymentPanel({
             placeholder="123"
             value={securityCode}
             onChange={(event) =>
-              setSecurityCode(onlyDigits(event.currentTarget.value).slice(0, 4))
+              setSecurityCode(onlyDigits(event.currentTarget.value).slice(0, CARD_CVV_MAX_LENGTH))
             }
             inputMode="numeric"
             autoComplete="cc-csc"
+            maxLength={CARD_CVV_MAX_LENGTH}
             radius="md"
           />
         </Group>
@@ -302,15 +308,18 @@ export function CardPaymentPanel({
             value={document}
             onChange={(event) => setDocument(formatCpf(event.currentTarget.value))}
             inputMode="numeric"
+            autoComplete="off"
+            maxLength={CPF_FORMATTED_MAX_LENGTH}
             radius="md"
           />
           <TextInput
             label="E-mail"
             placeholder="voce@email.com"
             value={email}
-            onChange={(event) => setEmail(event.currentTarget.value)}
+            onChange={(event) => setEmail(event.currentTarget.value.slice(0, 255))}
             type="email"
             autoComplete="email"
+            maxLength={255}
             radius="md"
           />
         </Group>

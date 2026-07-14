@@ -40,7 +40,7 @@ import * as favoritesService from "@/modules/identity/api/favoritesService";
 import { useFavorites } from "@/modules/identity/features/profile/hooks/useFavorites";
 import type { AuthUser, Event } from "@/shared/types/api";
 import { getApiErrorMessage } from "@/shared/utils/errors";
-import { formatCpf, normalizeDocument } from "@/shared/utils/format";
+import { formatCpf, normalizeDocument, CPF_FORMATTED_MAX_LENGTH } from "@/shared/utils/format";
 import {
   PASSWORD_REQUIREMENTS_HINT,
   validatePassword,
@@ -347,6 +347,7 @@ export function ProfilePage() {
                   label="Nome completo"
                   placeholder="Seu nome"
                   required
+                  maxLength={255}
                   {...profileForm.getInputProps("name")}
                 />
                 <TextInput
@@ -354,6 +355,7 @@ export function ProfilePage() {
                   placeholder="voce@email.com"
                   type="email"
                   required
+                  maxLength={255}
                   {...profileForm.getInputProps("email")}
                 />
                 {profileForm.values.email.trim().toLowerCase() !==
@@ -370,6 +372,8 @@ export function ProfilePage() {
                   label="CPF"
                   placeholder="000.000.000-00"
                   inputMode="numeric"
+                  autoComplete="off"
+                  maxLength={CPF_FORMATTED_MAX_LENGTH}
                   required
                   value={profileForm.values.document}
                   onChange={(event) =>

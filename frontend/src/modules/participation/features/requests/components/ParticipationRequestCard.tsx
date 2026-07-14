@@ -31,6 +31,10 @@ import type { AuthUser, Event, ParticipationRequest } from "@/shared/types/api";
 import * as participationService from "@/modules/participation/api/participationService";
 import { PremiumBadge } from "@/components/ui/PremiumBadge";
 import { getApiErrorMessage } from "@/shared/utils/errors";
+import {
+  PHONE_BR_FORMATTED_MAX_LENGTH,
+  formatPhoneBr,
+} from "@/shared/utils/format";
 
 interface ParticipationFormValues {
   phone: string;
@@ -185,9 +189,17 @@ export function ParticipationRequestCard({
         <TextInput
           label="Telefone"
           radius="md"
-          placeholder="(opcional)"
+          placeholder="(11) 99999-9999"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          maxLength={PHONE_BR_FORMATTED_MAX_LENGTH}
           leftSection={<IconPhone size={16} />}
-          {...form.getInputProps("phone")}
+          value={form.values.phone}
+          onChange={(event) =>
+            form.setFieldValue("phone", formatPhoneBr(event.currentTarget.value))
+          }
+          error={form.errors.phone}
         />
 
         <Button type="submit" radius="xl" fullWidth loading={submitting}>

@@ -15,6 +15,10 @@ import { submitProducerContact } from "@/modules/leads/api/leadService";
 import { AnimatedSection } from "@/shared/components/AnimatedSection";
 import { SiteFooter } from "@/app/components/SiteFooter";
 import { ZeMascot } from "@/modules/leads/features/contact/components/ZeMascot";
+import {
+  PHONE_BR_FORMATTED_MAX_LENGTH,
+  formatPhoneBr,
+} from "@/shared/utils/format";
 import "@/styles/producer-landing.css";
 
 function useCountUp(end: number, decimals = 0) {
@@ -178,6 +182,7 @@ function ContactForm() {
         size="md"
         name="name"
         autoComplete="name"
+        maxLength={255}
         {...form.getInputProps("name")}
       />
       <TextInput
@@ -189,17 +194,24 @@ function ContactForm() {
         size="md"
         name="email"
         autoComplete="email"
+        maxLength={255}
         {...form.getInputProps("email")}
       />
       <TextInput
         label="Telefone"
         placeholder="(11) 99999-9999"
         type="tel"
+        inputMode="tel"
         radius="md"
         size="md"
         name="phone"
         autoComplete="tel"
-        {...form.getInputProps("phone")}
+        maxLength={PHONE_BR_FORMATTED_MAX_LENGTH}
+        value={form.values.phone}
+        onChange={(event) =>
+          form.setFieldValue("phone", formatPhoneBr(event.currentTarget.value))
+        }
+        error={form.errors.phone}
       />
       <Button
         type="submit"

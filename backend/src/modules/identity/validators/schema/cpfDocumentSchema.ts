@@ -6,7 +6,7 @@ export const cpfDocumentSchema = z
   .string()
   .trim()
   .min(11, "CPF inválido")
-  .max(18, "CPF inválido")
+  .max(14, "CPF inválido")
   .transform(sanitizeDocument)
   .refine((value) => value.length === 11, "CPF deve ter 11 dígitos")
   .refine(isValidCpf, "CPF inválido");

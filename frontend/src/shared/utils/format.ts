@@ -98,6 +98,9 @@ export function normalizeDocument(value: string): string {
   return value.replace(/\D/g, "");
 }
 
+/** CPF formatado completo: `000.000.000-00` (14 caracteres). */
+export const CPF_FORMATTED_MAX_LENGTH = 14;
+
 /** Formata CPF parcial para exibição (000.000.000-00). */
 export function formatCpf(value: string): string {
   const digits = normalizeDocument(value).slice(0, 11);
@@ -115,4 +118,33 @@ export function formatCpf(value: string): string {
   }
 
   return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+/** Telefone BR formatado completo: `(11) 99999-9999` (15 caracteres). */
+export const PHONE_BR_FORMATTED_MAX_LENGTH = 15;
+
+/** Formata telefone BR parcial (fixos / celular). */
+export function formatPhoneBr(value: string): string {
+  const digits = normalizeDocument(value).slice(0, 11);
+
+  if (digits.length === 0) {
+    return "";
+  }
+
+  if (digits.length <= 2) {
+    return `(${digits}`;
+  }
+
+  const ddd = digits.slice(0, 2);
+  const rest = digits.slice(2);
+
+  if (rest.length <= 4) {
+    return `(${ddd}) ${rest}`;
+  }
+
+  if (digits.length <= 10) {
+    return `(${ddd}) ${rest.slice(0, 4)}-${rest.slice(4)}`;
+  }
+
+  return `(${ddd}) ${rest.slice(0, 5)}-${rest.slice(5)}`;
 }

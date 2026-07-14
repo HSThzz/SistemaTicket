@@ -21,6 +21,11 @@ import { useAuth } from "@/modules/identity/features/auth/context/AuthContext";
 import * as authService from "@/modules/identity/api/authService";
 import { getApiErrorMessage } from "@/shared/utils/errors";
 import {
+  CPF_FORMATTED_MAX_LENGTH,
+  formatCpf,
+  normalizeDocument,
+} from "@/shared/utils/format";
+import {
   PASSWORD_REQUIREMENTS_HINT,
   validatePassword,
 } from "@/shared/utils/passwordValidation";
@@ -30,11 +35,6 @@ interface RegisterFormValues {
   email: string;
   password: string;
   document: string;
-}
-
-/** Remove caracteres não numéricos do CPF informado. */
-function normalizeDocument(value: string): string {
-  return value.replace(/\D/g, "");
 }
 
 /**
@@ -109,6 +109,7 @@ export function RegisterPage() {
             label="Nome completo"
             placeholder="Seu nome"
             autoComplete="name"
+            maxLength={255}
             radius="md"
             {...form.getInputProps("name")}
           />
@@ -116,6 +117,7 @@ export function RegisterPage() {
             label="E-mail"
             placeholder="seu@email.com"
             autoComplete="email"
+            maxLength={255}
             radius="md"
             {...form.getInputProps("email")}
           />
@@ -123,8 +125,14 @@ export function RegisterPage() {
             label="CPF"
             placeholder="000.000.000-00"
             inputMode="numeric"
+            autoComplete="off"
+            maxLength={CPF_FORMATTED_MAX_LENGTH}
             radius="md"
-            {...form.getInputProps("document")}
+            value={form.values.document}
+            onChange={(event) =>
+              form.setFieldValue("document", formatCpf(event.currentTarget.value))
+            }
+            error={form.errors.document}
           />
           <PasswordInput
             label="Senha"
