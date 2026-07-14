@@ -27,6 +27,7 @@ import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import {
   IconAlertCircle,
+  IconBulb,
   IconCalendar,
   IconCheck,
   IconExternalLink,
@@ -79,6 +80,12 @@ interface EventFormValues {
 const EVENT_TYPE_OPTIONS = [
   { value: "PUBLIC", label: "Público — venda direta de ingressos" },
   { value: "PRIVATE", label: "Privado — participação sob aprovação" },
+] as const;
+
+const LOT_FORM_TIPS = [
+  "Use preço 0 para ingresso gratuito.",
+  "Crie um lote por público (ex.: Masculino e Feminino).",
+  "Evento publicado precisa ter pelo menos 1 lote.",
 ] as const;
 
 interface LotFormValues {
@@ -580,8 +587,9 @@ export function ProducerManageEventPage() {
 
           <Grid>
             <Grid.Col span={{ base: 12, md: 7 }}>
-              <PremiumPaper p="xl">
-                  <form onSubmit={handleSaveEvent}>
+              <PremiumPaper p="xl" h="100%">
+                <form onSubmit={handleSaveEvent} style={{ height: "100%" }}>
+                  <Stack gap="lg" h="100%" justify="space-between">
                     <Stack gap="lg">
                       <Group gap="sm" className="producer-form-section-title">
                         <ThemeIcon size={36} radius="md" variant="light" color="brand">
@@ -594,7 +602,7 @@ export function ProducerManageEventPage() {
                       <TextInput label="Título" radius="md" {...eventForm.getInputProps("title")} />
                       <Textarea
                         label="Descrição"
-                        minRows={4}
+                        minRows={3}
                         radius="md"
                         {...eventForm.getInputProps("description")}
                       />
@@ -614,8 +622,8 @@ export function ProducerManageEventPage() {
                         disabled={!canChangeEventType}
                         description={
                           canChangeEventType
-                            ? "Eventos privados exigem aprovação do produtor antes da compra. Altere apenas em rascunho, sem solicitações ou vendas."
-                            : "O tipo só pode ser alterado enquanto o evento estiver em rascunho, sem solicitações de participação e sem vendas."
+                            ? "Privado exige aprovação antes da compra. Só em rascunho, sem solicitações ou vendas."
+                            : "Só pode alterar em rascunho, sem solicitações e sem vendas."
                         }
                         leftSection={<IconLock size={16} />}
                         {...eventForm.getInputProps("type")}
@@ -625,7 +633,7 @@ export function ProducerManageEventPage() {
                         placeholder="https://images.unsplash.com/..."
                         radius="md"
                         leftSection={<IconPhoto size={16} />}
-                        description="Opcional. Imagem exibida nos cards e na página do evento."
+                        description="Opcional. Capa nos cards e na página do evento."
                         {...eventForm.getInputProps("imageUrl")}
                       />
                       <Select
@@ -652,19 +660,21 @@ export function ProducerManageEventPage() {
                           comercial, crie outro evento.
                         </Alert>
                       ) : null}
-                      <Group justify="flex-end" pt="xs">
-                        <Button type="submit" loading={savingEvent} radius="xl">
-                          Salvar alterações
-                        </Button>
-                      </Group>
                     </Stack>
-                  </form>
-                </PremiumPaper>
+                    <Group justify="flex-end" pt="xs">
+                      <Button type="submit" loading={savingEvent} radius="xl">
+                        Salvar alterações
+                      </Button>
+                    </Group>
+                  </Stack>
+                </form>
+              </PremiumPaper>
             </Grid.Col>
 
             <Grid.Col span={{ base: 12, md: 5 }}>
-              <PremiumPaper p="xl">
-                  <form onSubmit={handleCreateLot}>
+              <PremiumPaper p="xl" h="100%">
+                <form onSubmit={handleCreateLot} style={{ height: "100%" }}>
+                  <Stack gap="lg" h="100%">
                     <Stack gap="lg">
                       <Group gap="sm" className="producer-form-section-title">
                         <ThemeIcon size={36} radius="md" variant="light" color="teal">
@@ -682,7 +692,6 @@ export function ProducerManageEventPage() {
                       />
                       <NumberInput
                         label="Preço (R$)"
-                        description="Use 0 para ingresso gratuito (cortesia, lista, feminino grátis, etc.)."
                         decimalScale={2}
                         fixedDecimalScale
                         min={0}
@@ -695,77 +704,112 @@ export function ProducerManageEventPage() {
                         radius="md"
                         {...lotForm.getInputProps("totalQuantity")}
                       />
-                      <Button
-                        type="submit"
-                        loading={creatingLot}
-                        radius="xl"
-                        fullWidth
-                        leftSection={<IconPlus size={18} />}
-                      >
-                        Adicionar lote
-                      </Button>
                     </Stack>
-                  </form>
-                </PremiumPaper>
+
+                    <Alert
+                      variant="light"
+                      color="teal"
+                      radius="md"
+                      p="md"
+                      icon={<IconBulb size={18} />}
+                      title="Dicas"
+                      styles={{
+                        wrapper: { alignItems: "flex-start" },
+                      }}
+                    >
+                      <Stack gap={6} mt={4} component="ul" style={{ margin: 0, paddingLeft: "1.1rem" }}>
+                        {LOT_FORM_TIPS.map((tip) => (
+                          <Text
+                            key={tip}
+                            component="li"
+                            size="sm"
+                            style={{ lineHeight: 1.45 }}
+                          >
+                            {tip}
+                          </Text>
+                        ))}
+                      </Stack>
+                    </Alert>
+
+                    <Box style={{ flex: 1 }} />
+
+                    <Button
+                      type="submit"
+                      loading={creatingLot}
+                      radius="xl"
+                      fullWidth
+                      leftSection={<IconPlus size={18} />}
+                    >
+                      Adicionar lote
+                    </Button>
+                  </Stack>
+                </form>
+              </PremiumPaper>
             </Grid.Col>
           </Grid>
 
           <Stack gap="md">
-              <Group justify="space-between" align="center" wrap="wrap" gap="sm">
-                <Stack gap={4}>
-                  <Title order={3} size="h4" className="producer-section-title">
-                    Lotes cadastrados
-                  </Title>
-                  <Text c="dimmed" size="sm">
-                    Acompanhe preço, estoque e ocupação de cada lote.
-                  </Text>
-                </Stack>
-                {event.ticketLots.length > 0 ? (
-                  <PremiumBadge tone="brand" size="md">
-                    {event.ticketLots.length} lote{event.ticketLots.length === 1 ? "" : "s"}
-                  </PremiumBadge>
-                ) : null}
-              </Group>
+            <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm">
+              <Stack gap={4}>
+                <Title order={3} size="h4" className="producer-section-title">
+                  Lotes cadastrados
+                </Title>
+                <Text c="dimmed" size="sm">
+                  Preço, estoque e ocupação de cada lote.
+                </Text>
+              </Stack>
+              {event.ticketLots.length > 0 ? (
+                <PremiumBadge tone="brand" size="md">
+                  {event.ticketLots.length} lote
+                  {event.ticketLots.length === 1 ? "" : "s"}
+                </PremiumBadge>
+              ) : null}
+            </Group>
 
-              {event.ticketLots.length === 0 ? (
-                <PremiumPaper p="xl">
-                  <EmptyState
-                    icon={<IconTicket size={32} />}
-                    title="Nenhum lote cadastrado"
-                    description="Adicione pelo menos um lote para começar a vender ingressos deste evento."
-                  />
-                </PremiumPaper>
-              ) : (
-                <Stack gap="md">
-                  {event.ticketLots.map((lot) => {
-                    const sold = lot.totalQuantity - lot.availableQuantity;
-                    const canDeleteLot =
-                      Boolean(canManageLots) &&
-                      !isLastPublishedLot &&
-                      sold === 0;
+            {event.ticketLots.length === 0 ? (
+              <PremiumPaper p="xl">
+                <EmptyState
+                  icon={<IconTicket size={32} />}
+                  title="Nenhum lote cadastrado"
+                  description="Use o formulário Novo lote ao lado dos detalhes para adicionar o primeiro."
+                />
+              </PremiumPaper>
+            ) : (
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                {event.ticketLots.map((lot) => {
+                  const sold = lot.totalQuantity - lot.availableQuantity;
+                  const canDeleteLot =
+                    Boolean(canManageLots) && !isLastPublishedLot && sold === 0;
 
-                    return (
-                      <ProducerLotCard
-                        key={lot.id}
-                        lot={lot}
-                        canDelete={canDeleteLot}
-                        deleting={deletingLot && lotToDelete?.id === lot.id}
-                        onDelete={setLotToDelete}
-                      />
-                    );
-                  })}
-                </Stack>
-              )}
-            </Stack>
+                  return (
+                    <ProducerLotCard
+                      key={lot.id}
+                      lot={lot}
+                      canDelete={canDeleteLot}
+                      deleting={deletingLot && lotToDelete?.id === lot.id}
+                      onDelete={setLotToDelete}
+                    />
+                  );
+                })}
+              </SimpleGrid>
+            )}
+          </Stack>
 
+          <SimpleGrid
+            cols={{
+              base: 1,
+              md: event.type === "PRIVATE" ? 2 : 1,
+            }}
+            spacing="xl"
+          >
             {event.type === "PRIVATE" ? (
               <ProducerParticipationPanel
                 eventId={event.id}
                 onReviewComplete={() => void reloadEvent()}
               />
             ) : null}
-
             <ProducerCheckInStaffPanel eventId={event.id} />
+          </SimpleGrid>
           </Stack>
         </Container>
       </Box>
