@@ -5,6 +5,7 @@
 
 import type { NextFunction, Request, Response } from "express";
 import type { ZodType } from "zod";
+import "../../../kernel/configureZodLocale";
 
 /**
  * Express 5 expõe `query` e `params` como getters; substituímos via `defineProperty`.
@@ -33,7 +34,7 @@ export function validateBody<T>(schema: ZodType<T>) {
     if (!result.success) {
       const issue = result.error.issues[0];
       res.status(400).json({
-        error: issue?.message ?? "Invalid request body",
+        error: issue?.message ?? "Dados da requisição inválidos",
         code: "VALIDATION_ERROR",
         field: issue?.path.join(".") || undefined,
       });
@@ -56,7 +57,7 @@ export function validateQuery<T>(schema: ZodType<T>) {
     if (!result.success) {
       const issue = result.error.issues[0];
       res.status(400).json({
-        error: issue?.message ?? "Invalid query parameters",
+        error: issue?.message ?? "Parâmetros de consulta inválidos",
         code: "VALIDATION_ERROR",
         field: issue?.path.join(".") || undefined,
       });
@@ -79,7 +80,7 @@ export function validateParams<T>(schema: ZodType<T>) {
     if (!result.success) {
       const issue = result.error.issues[0];
       res.status(400).json({
-        error: issue?.message ?? "Invalid route parameters",
+        error: issue?.message ?? "Parâmetros da rota inválidos",
         code: "VALIDATION_ERROR",
         field: issue?.path.join(".") || undefined,
       });

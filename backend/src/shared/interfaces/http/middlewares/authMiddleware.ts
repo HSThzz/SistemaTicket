@@ -28,7 +28,7 @@ export async function authMiddleware(
 
   if (!authHeader?.startsWith("Bearer ")) {
     res.status(401).json({
-      error: "Missing or invalid Authorization header",
+      error: "Autenticação necessária",
       code: new UnauthorizedError().code,
     });
     return;
@@ -42,12 +42,12 @@ export async function authMiddleware(
     };
 
     if (!decoded.userId || !decoded.role) {
-      throw new UnauthorizedError("Invalid token payload");
+      throw new UnauthorizedError("Token inválido");
     }
 
     if (decoded.jti && (await isAuthTokenDenylisted(decoded.jti))) {
       res.status(401).json({
-        error: "Session expired. Please sign in again.",
+        error: "Sessão expirada. Faça login novamente.",
         code: "TOKEN_REVOKED",
       });
       return;
@@ -57,7 +57,7 @@ export async function authMiddleware(
 
     if (!authState) {
       res.status(401).json({
-        error: "Invalid or expired token",
+        error: "Token inválido ou expirado",
         code: new UnauthorizedError().code,
       });
       return;
@@ -65,7 +65,7 @@ export async function authMiddleware(
 
     if (isAuthTokenRevoked(decoded.pwdAt, authState.passwordChangedAt)) {
       res.status(401).json({
-        error: "Session expired. Please sign in again.",
+        error: "Sessão expirada. Faça login novamente.",
         code: "TOKEN_REVOKED",
       });
       return;
@@ -81,7 +81,7 @@ export async function authMiddleware(
     next();
   } catch {
     res.status(401).json({
-      error: "Invalid or expired token",
+      error: "Token inválido ou expirado",
       code: new UnauthorizedError().code,
     });
   }

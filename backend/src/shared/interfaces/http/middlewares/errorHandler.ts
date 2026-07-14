@@ -114,7 +114,7 @@ export function errorHandler(
   });
 
   res.status(500).json({
-    error: "Internal server error",
+    error: "Erro interno do servidor",
     code: "INTERNAL_ERROR",
   });
 }

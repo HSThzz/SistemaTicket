@@ -44,7 +44,7 @@ function buildRateLimitHandler(label: string) {
     });
 
     res.status(429).json({
-      error: "Too many requests. Please try again later.",
+      error: "Muitas requisições. Tente novamente em instantes.",
       code: "RATE_LIMIT_EXCEEDED",
       limit: label,
     });

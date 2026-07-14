@@ -4,6 +4,7 @@
  */
 
 import type { ZodType } from "zod";
+import "./configureZodLocale";
 
 export interface ValidationIssue {
   path: string;
@@ -39,7 +40,7 @@ export function validateSchema<T>(schema: ZodType<T>, data: unknown): T {
     }));
 
     throw new ValidationError(
-      issues[0]?.message ?? "Validation failed",
+      issues[0]?.message ?? "Validação falhou",
       issues,
     );
   }

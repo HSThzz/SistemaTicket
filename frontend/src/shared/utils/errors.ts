@@ -5,9 +5,15 @@
 
 import type { AxiosError } from "axios";
 import type { ApiErrorBody } from "@/shared/types/api";
+import { resolveApiErrorMessage } from "@/shared/utils/apiErrorMessages";
 
 /**
  * Converte um erro desconhecido em mensagem legível para o usuário.
+ *
+ * Prioridade:
+ * 1. Tradução do `code` da API (exceto validação — usa detalhe do campo)
+ * 2. Mensagem `error` do corpo da resposta (ex.: Zod em português)
+ * 3. Fallback informado pelo chamador
  *
  * @param error - Erro capturado (Axios, `Error` ou outro).
  * @param fallback - Mensagem padrão quando não há detalhe utilizável.
@@ -16,11 +22,32 @@ import type { ApiErrorBody } from "@/shared/types/api";
 export function getApiErrorMessage(error: unknown, fallback = "Ocorreu um erro inesperado."): string {
   if (typeof error === "object" && error !== null && "isAxiosError" in error) {
     const axiosError = error as AxiosError<ApiErrorBody>;
-    return axiosError.response?.data?.error ?? axiosError.message ?? fallback;
+    const code = axiosError.response?.data?.code ?? null;
+    const apiMessage = axiosError.response?.data?.error;
+
+    // Validação: preferir a mensagem do Zod/campo (já em PT via locale).
+    if (code === "VALIDATION_ERROR" && apiMessage) {
+      return apiMessage;
+    }
+
+    const translated = resolveApiErrorMessage(code);
+    if (translated) {
+      return translated;
+    }
+
+    if (apiMessage) {
+      return apiMessage;
+    }
+
+    if (axiosError.message === "Network Error") {
+      return "Não foi possível conectar ao servidor. Verifique sua internet.";
+    }
+
+    return axiosError.message || fallback;
   }
 
   if (error instanceof Error) {
-    return error.message;
+    return error.message || fallback;
   }
 
   return fallback;
