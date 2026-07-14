@@ -22,8 +22,10 @@ import {
   ParticipationRequestNotFoundError,
 } from "../../domain/errors/ParticipationError";
 import { serializeParticipationRequest } from "../../application/helpers/serializeParticipationRequest";
+import { serializePaidParticipant } from "../../application/helpers/serializePaidParticipant";
 import { getMyParticipationRequest } from "../../application/services/getMyParticipationRequest";
 import { listMyParticipationRequests } from "../../application/services/listMyParticipationRequests";
+import { listPaidParticipants } from "../../application/services/listPaidParticipants";
 import { listParticipationRequests } from "../../application/services/listParticipationRequests";
 import { reviewParticipationRequest } from "../../application/services/reviewParticipationRequest";
 import { submitParticipationRequest } from "../../application/services/submitParticipationRequest";
@@ -132,6 +134,25 @@ export class ParticipationController {
       });
     } catch (error) {
       this.handleError(res, error, "list", { eventId });
+    }
+  }
+
+  /**
+   * GET /events/:eventId/paid-participants — produtor lista quem já pagou (evento privado).
+   */
+  async listPaid(req: Request, res: Response): Promise<void> {
+    const actor = requireActor(req, res);
+    if (!actor) return;
+
+    const { eventId } = req.params as { eventId: string };
+
+    try {
+      const participants = await listPaidParticipants(eventId, actor);
+      res.status(200).json({
+        paidParticipants: participants.map((row) => serializePaidParticipant(row)),
+      });
+    } catch (error) {
+      this.handleError(res, error, "listPaid", { eventId });
     }
   }
 

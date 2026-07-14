@@ -54,6 +54,13 @@ router.get(
   (req, res) => void participationController.list(req, res),
 );
 
+router.get(
+  "/:eventId/paid-participants",
+  ...participationManagementMiddlewares,
+  validateParams(participationEventIdParamsSchema),
+  (req, res) => void participationController.listPaid(req, res),
+);
+
 router.patch(
   "/:eventId/participation-requests/:requestId",
   ...participationManagementMiddlewares,

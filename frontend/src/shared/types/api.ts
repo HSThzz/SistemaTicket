@@ -72,6 +72,18 @@ export interface ParticipationRequest {
   createdAt: string;
 }
 
+/** Comprador com pedido PAID em evento privado (aba Pagos do produtor). */
+export interface PaidParticipant {
+  orderId: string;
+  userId: string;
+  name: string;
+  email: string;
+  instagramHandle: string | null;
+  ticketCount: number;
+  totalPriceCents: number;
+  paidAt: string;
+}
+
 /**
  * Fase do fluxo de reserva/compra monitorada pelo frontend.
  * Reflete o estado no Redis, fila e PostgreSQL.

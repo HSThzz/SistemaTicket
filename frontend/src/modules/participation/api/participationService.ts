@@ -5,6 +5,7 @@
 
 import { api } from "@/shared/api/client";
 import type {
+  PaidParticipant,
   ParticipationRequest,
   ParticipationRequestStatus,
 } from "@/shared/types/api";
@@ -74,6 +75,20 @@ export async function listParticipationRequests(
     { params: { status } },
   );
   return data.participationRequests;
+}
+
+/**
+ * Lista compradores com pedido pago em um evento privado (produtor/equipe).
+ *
+ * @param eventId - Identificador do evento.
+ */
+export async function listPaidParticipants(
+  eventId: string,
+): Promise<PaidParticipant[]> {
+  const { data } = await api.get<{ paidParticipants: PaidParticipant[] }>(
+    `/events/${eventId}/paid-participants`,
+  );
+  return data.paidParticipants;
 }
 
 /**

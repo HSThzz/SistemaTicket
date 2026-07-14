@@ -1,5 +1,5 @@
 /**
- * @file Painel do produtor para aprovar/recusar solicitações de participação.
+ * @file Painel do produtor para aprovar/recusar solicitações e ver quem pagou.
  * @module components/producer/ProducerParticipationPanel
  */
 
@@ -24,7 +24,9 @@ import {
   IconCheck,
   IconMail,
   IconPhone,
+  IconReceipt,
   IconRefresh,
+  IconTicket,
   IconUserCheck,
   IconUsers,
   IconX,
@@ -33,17 +35,25 @@ import { EmptyState } from "@/shared/components/EmptyState";
 import { PremiumPaper } from "@/shared/components/PremiumPaper";
 import * as participationService from "@/modules/participation/api/participationService";
 import type {
+  PaidParticipant,
   ParticipationRequest,
   ParticipationRequestStatus,
 } from "@/shared/types/api";
 import { getApiErrorMessage } from "@/shared/utils/errors";
-import { buildInstagramProfileUrl, formatEventDate } from "@/shared/utils/format";
+import {
+  buildInstagramProfileUrl,
+  formatCurrencyFromCents,
+  formatEventDate,
+} from "@/shared/utils/format";
 import { ParticipationStatusBadge } from "@/components/ui/ParticipationStatusBadge";
 
-const STATUS_FILTERS: { value: ParticipationRequestStatus; label: string }[] = [
+type PanelFilter = ParticipationRequestStatus | "PAID";
+
+const PANEL_FILTERS: { value: PanelFilter; label: string }[] = [
   { value: "PENDING", label: "Pendentes" },
   { value: "APPROVED", label: "Aprovadas" },
   { value: "REJECTED", label: "Recusadas" },
+  { value: "PAID", label: "Pagos" },
 ];
 
 /** Card individual de uma solicitação com dados de contato e ações. */
@@ -129,6 +139,57 @@ function RequestRow({
   );
 }
 
+/** Card de comprador com pedido pago. */
+function PaidRow({ participant }: { participant: PaidParticipant }) {
+  return (
+    <Box className="lot-offer-card" p="md">
+      <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+        <Stack gap={6} flex={1} miw={200}>
+          <Text fw={700} lineClamp={1}>
+            {participant.name}
+          </Text>
+          <Group gap="lg" wrap="wrap" c="dimmed">
+            <Group gap={6} wrap="nowrap">
+              <IconMail size={15} />
+              <Text size="sm">{participant.email}</Text>
+            </Group>
+            {participant.instagramHandle ? (
+              <Group gap={6} wrap="nowrap">
+                <IconBrandInstagram size={15} />
+                <Anchor
+                  href={buildInstagramProfileUrl(participant.instagramHandle)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="sm"
+                  fw={600}
+                >
+                  @{participant.instagramHandle}
+                </Anchor>
+              </Group>
+            ) : null}
+            <Group gap={6} wrap="nowrap">
+              <IconTicket size={15} />
+              <Text size="sm">
+                {participant.ticketCount}{" "}
+                {participant.ticketCount === 1 ? "ingresso" : "ingressos"}
+              </Text>
+            </Group>
+            <Group gap={6} wrap="nowrap">
+              <IconReceipt size={15} />
+              <Text size="sm" fw={600} c="brand">
+                {formatCurrencyFromCents(participant.totalPriceCents)}
+              </Text>
+            </Group>
+          </Group>
+          <Text size="xs" c="dimmed">
+            Pago em {formatEventDate(participant.paidAt)}
+          </Text>
+        </Stack>
+      </Group>
+    </Box>
+  );
+}
+
 /**
  * Lista e gerencia solicitações de participação de um evento privado.
  *
@@ -141,24 +202,34 @@ export function ProducerParticipationPanel({
   eventId: string;
   onReviewComplete?: () => void;
 }) {
-  const [statusFilter, setStatusFilter] =
-    useState<ParticipationRequestStatus>("PENDING");
+  const [panelFilter, setPanelFilter] = useState<PanelFilter>("PENDING");
   const [requests, setRequests] = useState<ParticipationRequest[]>([]);
+  const [paidParticipants, setPaidParticipants] = useState<PaidParticipant[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
 
   const load = useCallback(
-    async (status: ParticipationRequestStatus) => {
+    async (filter: PanelFilter) => {
       setLoading(true);
       try {
-        const data = await participationService.listParticipationRequests(
-          eventId,
-          status,
-        );
-        setRequests(data);
+        if (filter === "PAID") {
+          const data = await participationService.listPaidParticipants(eventId);
+          setPaidParticipants(data);
+          setRequests([]);
+        } else {
+          const data = await participationService.listParticipationRequests(
+            eventId,
+            filter,
+          );
+          setRequests(data);
+          setPaidParticipants([]);
+        }
       } catch (err) {
         notifications.show({
-          title: "Erro ao carregar solicitações",
+          title:
+            filter === "PAID"
+              ? "Erro ao carregar pagamentos"
+              : "Erro ao carregar solicitações",
           message: getApiErrorMessage(err),
           color: "red",
           icon: <IconX size={18} />,
@@ -171,8 +242,8 @@ export function ProducerParticipationPanel({
   );
 
   useEffect(() => {
-    void load(statusFilter);
-  }, [load, statusFilter]);
+    void load(panelFilter);
+  }, [load, panelFilter]);
 
   const handleReview = async (id: string, decision: "APPROVE" | "REJECT") => {
     setActingId(id);
@@ -202,6 +273,9 @@ export function ProducerParticipationPanel({
     }
   };
 
+  const isPaidTab = panelFilter === "PAID";
+  const isEmpty = isPaidTab ? paidParticipants.length === 0 : requests.length === 0;
+
   return (
     <PremiumPaper p="xl">
       <Stack gap="lg">
@@ -215,7 +289,7 @@ export function ProducerParticipationPanel({
                 Solicitações de participação
               </Title>
               <Text size="sm" c="dimmed">
-                Aprove ou recuse quem pediu para participar deste evento privado.
+                Aprove quem pediu para participar e acompanhe quem já pagou o ingresso.
               </Text>
             </Stack>
           </Group>
@@ -224,8 +298,8 @@ export function ProducerParticipationPanel({
               variant="light"
               radius="xl"
               size="lg"
-              onClick={() => void load(statusFilter)}
-              aria-label="Atualizar solicitações"
+              onClick={() => void load(panelFilter)}
+              aria-label="Atualizar lista"
             >
               <IconRefresh size={18} />
             </ActionIcon>
@@ -235,27 +309,33 @@ export function ProducerParticipationPanel({
         <SegmentedControl
           fullWidth
           radius="xl"
-          value={statusFilter}
-          onChange={(value) =>
-            setStatusFilter(value as ParticipationRequestStatus)
-          }
-          data={STATUS_FILTERS}
+          value={panelFilter}
+          onChange={(value) => setPanelFilter(value as PanelFilter)}
+          data={PANEL_FILTERS}
         />
 
         {loading ? (
           <Group justify="center" py="xl">
             <Loader size="sm" color="brand" />
           </Group>
-        ) : requests.length === 0 ? (
+        ) : isEmpty ? (
           <EmptyState
-            icon={<IconUsers size={32} />}
-            title="Nenhuma solicitação"
+            icon={isPaidTab ? <IconReceipt size={32} /> : <IconUsers size={32} />}
+            title={isPaidTab ? "Ninguém pagou ainda" : "Nenhuma solicitação"}
             description={
-              statusFilter === "PENDING"
-                ? "Quando alguém solicitar participação, aparecerá aqui para sua aprovação."
-                : "Nenhuma solicitação neste status por enquanto."
+              isPaidTab
+                ? "Quando um participante aprovado concluir o pagamento, o pedido aparece aqui."
+                : panelFilter === "PENDING"
+                  ? "Quando alguém solicitar participação, aparecerá aqui para sua aprovação."
+                  : "Nenhuma solicitação neste status por enquanto."
             }
           />
+        ) : isPaidTab ? (
+          <Stack gap="sm">
+            {paidParticipants.map((participant) => (
+              <PaidRow key={participant.orderId} participant={participant} />
+            ))}
+          </Stack>
         ) : (
           <Stack gap="sm">
             {requests.map((request) => (
