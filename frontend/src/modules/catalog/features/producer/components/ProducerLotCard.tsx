@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Box,
   Group,
   Progress,
@@ -7,17 +8,26 @@ import {
   Text,
   ThemeIcon,
   Title,
+  Tooltip,
 } from "@mantine/core";
-import { IconTicket } from "@tabler/icons-react";
+import { IconTicket, IconTrash } from "@tabler/icons-react";
 import { LotStockBadge } from "@/components/ui/LotStockBadge";
 import type { TicketLot } from "@/shared/types/api";
 import { formatLotPrice } from "@/shared/utils/format";
 
 interface ProducerLotCardProps {
   lot: TicketLot;
+  canDelete?: boolean;
+  deleting?: boolean;
+  onDelete?: (lot: TicketLot) => void;
 }
 
-export function ProducerLotCard({ lot }: ProducerLotCardProps) {
+export function ProducerLotCard({
+  lot,
+  canDelete = false,
+  deleting = false,
+  onDelete,
+}: ProducerLotCardProps) {
   const sold = lot.totalQuantity - lot.availableQuantity;
   const soldPct = lot.totalQuantity > 0 ? Math.round((sold / lot.totalQuantity) * 100) : 0;
 
@@ -37,7 +47,24 @@ export function ProducerLotCard({ lot }: ProducerLotCardProps) {
             </Text>
           </Stack>
         </Group>
-        <LotStockBadge availableQuantity={lot.availableQuantity} />
+        <Group gap="sm" wrap="nowrap">
+          <LotStockBadge availableQuantity={lot.availableQuantity} />
+          {canDelete && onDelete ? (
+            <Tooltip label="Apagar lote">
+              <ActionIcon
+                variant="light"
+                color="red"
+                radius="md"
+                size="lg"
+                loading={deleting}
+                aria-label={`Apagar lote ${lot.name}`}
+                onClick={() => onDelete(lot)}
+              >
+                <IconTrash size={18} />
+              </ActionIcon>
+            </Tooltip>
+          ) : null}
+        </Group>
       </Group>
 
       <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="md" mt="lg">

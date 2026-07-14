@@ -9,6 +9,7 @@ export interface OrderListItem {
   reservationId: string;
   eventId: string | null;
   eventTitle: string | null;
+  createdAt: string;
   payment: PixPaymentDetails | null;
 }
 

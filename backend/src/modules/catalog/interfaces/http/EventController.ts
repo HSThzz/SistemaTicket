@@ -15,11 +15,13 @@ import {
   EventError,
   EventNotFoundError,
   EventTypeChangeNotAllowedError,
+  TicketLotNotFoundError,
 } from "../../domain/errors/EventError";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
 import { createEvent } from "../../application/services/createEvent";
 import { createTicketLot } from "../../application/services/createTicketLot";
+import { deleteTicketLot } from "../../application/services/deleteTicketLot";
 import { getProducerDashboard } from "../../application/services/getProducerDashboard";
 import { getPublishedEventById } from "../../application/services/getPublishedEventById";
 import { listManagedEvents } from "../../application/services/listManagedEvents";
@@ -284,6 +286,24 @@ export class EventController {
     }
   }
 
+  /**
+   * DELETE /events/:eventId/lots/:lotId — remove lote sem vendas/reservas pendentes.
+   */
+  async deleteLot(req: Request, res: Response): Promise<void> {
+    const actor = requireActor(req, res);
+    if (!actor) return;
+
+    const { eventId, lotId } = req.params as { eventId: string; lotId: string };
+
+    try {
+      await deleteTicketLot(eventId, lotId, actor);
+      await getRedis().del(`${TICKET_LOT_STOCK_KEY_PREFIX}${lotId}`);
+      res.status(204).send();
+    } catch (error) {
+      this.handleError(res, error, "deleteLot", { eventId, lotId });
+    }
+  }
+
   /** Mapeia erros de evento para status HTTP e log. */
   private handleError(
     res: Response,
@@ -300,7 +320,10 @@ export class EventController {
       return;
     }
 
-    if (error instanceof EventNotFoundError) {
+    if (
+      error instanceof EventNotFoundError ||
+      error instanceof TicketLotNotFoundError
+    ) {
       res.status(404).json({ error: error.message, code: error.code });
       return;
     }

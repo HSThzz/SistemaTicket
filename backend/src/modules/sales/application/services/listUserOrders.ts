@@ -20,6 +20,7 @@ export interface OrderListItem {
   reservationId: string;
   eventId: string | null;
   eventTitle: string | null;
+  createdAt: string;
   payment: PixPaymentDetails | null;
 }
 
@@ -50,6 +51,7 @@ function mapOrderToListItem(
     reservationId: order.reservationId,
     eventId: event?.id ?? null,
     eventTitle: event?.title ?? null,
+    createdAt: order.createdAt.toISOString(),
     payment,
   };
 }

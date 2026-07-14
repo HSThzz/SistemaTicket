@@ -110,3 +110,44 @@ export class EventPublishPastDateError extends EventError {
     this.name = "EventPublishPastDateError";
   }
 }
+
+/** Lote de ingressos não encontrado no evento. */
+export class TicketLotNotFoundError extends EventError {
+  constructor(lotId: string) {
+    super(`Ticket lot ${lotId} not found`, "TICKET_LOT_NOT_FOUND");
+    this.name = "TicketLotNotFoundError";
+  }
+}
+
+/** Lote não pode ser removido porque já teve vendas. */
+export class TicketLotHasSalesError extends EventError {
+  constructor() {
+    super(
+      "Cannot delete a ticket lot that already has issued tickets",
+      "TICKET_LOT_HAS_SALES",
+    );
+    this.name = "TicketLotHasSalesError";
+  }
+}
+
+/** Lote não pode ser removido com reservas pendentes. */
+export class TicketLotHasPendingReservationsError extends EventError {
+  constructor() {
+    super(
+      "Cannot delete a ticket lot with pending reservations",
+      "TICKET_LOT_HAS_PENDING_RESERVATIONS",
+    );
+    this.name = "TicketLotHasPendingReservationsError";
+  }
+}
+
+/** Evento publicado precisa manter ao menos um lote. */
+export class TicketLotLastPublishedError extends EventError {
+  constructor() {
+    super(
+      "Cannot delete the last ticket lot of a published event",
+      "TICKET_LOT_LAST_OF_PUBLISHED_EVENT",
+    );
+    this.name = "TicketLotLastPublishedError";
+  }
+}

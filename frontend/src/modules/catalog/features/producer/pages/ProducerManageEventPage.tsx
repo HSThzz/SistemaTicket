@@ -37,6 +37,7 @@ import {
   IconRocket,
   IconSettings,
   IconTicket,
+  IconTrash,
   IconX,
 } from "@tabler/icons-react";
 import { PageBackNav } from "@/shared/components/PageBackNav";
@@ -51,7 +52,7 @@ import { EventPrivateBadge } from "@/modules/catalog/features/browse/components/
 import { EventStatusBadge } from "@/components/ui/EventStatusBadge";
 import { PremiumBadge } from "@/components/ui/PremiumBadge";
 import * as eventService from "@/modules/catalog/api/eventService";
-import type { Event, EventStatus } from "@/shared/types/api";
+import type { Event, EventStatus, TicketLot } from "@/shared/types/api";
 import { eventDateToIso, isoToEventDate, validateEventDate } from "@/modules/catalog/features/producer/utils/eventDateTime";
 import { getEventCoverStyle } from "@/modules/catalog/utils/eventVisuals";
 import { formatEventDate } from "@/shared/utils/format";
@@ -101,6 +102,8 @@ export function ProducerManageEventPage() {
   const [savingEvent, setSavingEvent] = useState(false);
   const [creatingLot, setCreatingLot] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<EventStatus | null>(null);
+  const [lotToDelete, setLotToDelete] = useState<TicketLot | null>(null);
+  const [deletingLot, setDeletingLot] = useState(false);
 
   const eventForm = useForm<EventFormValues>({
     initialValues: {
@@ -356,6 +359,42 @@ export function ProducerManageEventPage() {
     }
   });
 
+  const canManageLots =
+    event?.status === "DRAFT" || event?.status === "PUBLISHED";
+  const isLastPublishedLot =
+    event?.status === "PUBLISHED" && (event.ticketLots.length ?? 0) <= 1;
+
+  const confirmDeleteLot = async () => {
+    if (!eventId || !lotToDelete) {
+      return;
+    }
+
+    const deletedName = lotToDelete.name;
+    setDeletingLot(true);
+
+    try {
+      await eventService.deleteTicketLot(eventId, lotToDelete.id);
+      setLotToDelete(null);
+      await reloadEvent();
+
+      notifications.show({
+        title: "Lote removido",
+        message: `${deletedName} foi apagado.`,
+        color: "green",
+        icon: <IconCheck size={18} />,
+      });
+    } catch (err) {
+      notifications.show({
+        title: "Não foi possível apagar",
+        message: getApiErrorMessage(err),
+        color: "red",
+        icon: <IconX size={18} />,
+      });
+    } finally {
+      setDeletingLot(false);
+    }
+  };
+
   if (loading) {
     return <PageLoader label="Carregando evento..." />;
   }
@@ -394,6 +433,44 @@ export function ProducerManageEventPage() {
               radius="xl"
             >
               {statusConfirmation?.confirmLabel ?? "Confirmar"}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal
+        opened={lotToDelete !== null}
+        onClose={() => {
+          if (!deletingLot) {
+            setLotToDelete(null);
+          }
+        }}
+        title="Apagar lote"
+        centered
+        radius="lg"
+      >
+        <Stack gap="lg">
+          <Text size="sm" style={{ lineHeight: 1.55 }}>
+            Remover o lote <strong>{lotToDelete?.name}</strong>? Essa ação não pode ser
+            desfeita. Só é possível apagar lotes sem vendas nem reservas em andamento.
+          </Text>
+          <Group justify="flex-end" gap="sm">
+            <Button
+              variant="default"
+              onClick={() => setLotToDelete(null)}
+              disabled={deletingLot}
+              radius="xl"
+            >
+              Cancelar
+            </Button>
+            <Button
+              color="red"
+              leftSection={<IconTrash size={16} />}
+              loading={deletingLot}
+              onClick={() => void confirmDeleteLot()}
+              radius="xl"
+            >
+              Apagar lote
             </Button>
           </Group>
         </Stack>
@@ -659,9 +736,23 @@ export function ProducerManageEventPage() {
                 </PremiumPaper>
               ) : (
                 <Stack gap="md">
-                  {event.ticketLots.map((lot) => (
-                    <ProducerLotCard key={lot.id} lot={lot} />
-                  ))}
+                  {event.ticketLots.map((lot) => {
+                    const sold = lot.totalQuantity - lot.availableQuantity;
+                    const canDeleteLot =
+                      Boolean(canManageLots) &&
+                      !isLastPublishedLot &&
+                      sold === 0;
+
+                    return (
+                      <ProducerLotCard
+                        key={lot.id}
+                        lot={lot}
+                        canDelete={canDeleteLot}
+                        deleting={deletingLot && lotToDelete?.id === lot.id}
+                        onDelete={setLotToDelete}
+                      />
+                    );
+                  })}
                 </Stack>
               )}
             </Stack>

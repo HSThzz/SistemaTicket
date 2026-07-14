@@ -5,6 +5,7 @@
 
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -46,6 +47,9 @@ export class Order {
 
   @Column({ name: "reservation_id", type: "uuid" })
   reservationId!: string;
+
+  @CreateDateColumn({ name: "created_at", type: "timestamptz" })
+  createdAt!: Date;
 
   @ManyToOne(() => Reservation, { onDelete: "CASCADE" })
   @JoinColumn({ name: "reservation_id" })

@@ -10,3 +10,10 @@ export const eventIdParamsSchema = z.object({
 });
 
 export type EventIdParamsSchema = z.infer<typeof eventIdParamsSchema>;
+
+export const eventLotParamsSchema = z.object({
+  eventId: eventIdSchema,
+  lotId: uuidSchema,
+});
+
+export type EventLotParamsSchema = z.infer<typeof eventLotParamsSchema>;

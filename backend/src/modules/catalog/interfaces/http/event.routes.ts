@@ -10,6 +10,7 @@ import {
   createEventBodySchema,
   createTicketLotBodySchema,
   eventIdParamsSchema,
+  eventLotParamsSchema,
   updateEventBodySchema,
 } from "../../../../shared/interfaces/http/validation/catalog.schemas";
 
@@ -60,6 +61,13 @@ router.post(
   validateParams(eventIdParamsSchema),
   validateBody(createTicketLotBodySchema),
   (req, res) => void eventController.createLot(req, res),
+);
+
+router.delete(
+  "/:eventId/lots/:lotId",
+  ...eventManagementMiddlewares,
+  validateParams(eventLotParamsSchema),
+  (req, res) => void eventController.deleteLot(req, res),
 );
 
 export default router;

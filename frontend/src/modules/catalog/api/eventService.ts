@@ -109,6 +109,16 @@ export async function createTicketLot(
 }
 
 /**
+ * Remove um lote sem vendas nem reservas pendentes.
+ */
+export async function deleteTicketLot(
+  eventId: string,
+  lotId: string,
+): Promise<void> {
+  await api.delete(`/events/${eventId}/lots/${lotId}`);
+}
+
+/**
  * Obtém estatísticas agregadas do dashboard do produtor.
  */
 export async function getProducerDashboardStats(): Promise<ProducerDashboardStats> {

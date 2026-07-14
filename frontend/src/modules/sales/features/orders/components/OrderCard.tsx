@@ -20,7 +20,7 @@ import {
 import { IconClock, IconReceipt, IconTicket } from "@tabler/icons-react";
 import { OrderStatusBadge } from "@/components/ui/OrderStatusBadge";
 import type { OrderListItem } from "@/shared/types/api";
-import { formatCurrencyFromCents } from "@/shared/utils/format";
+import { formatCurrencyFromCents, formatShortDate } from "@/shared/utils/format";
 
 /** Propriedades do card de pedido na listagem do cliente. */
 interface OrderCardProps {
@@ -96,6 +96,9 @@ export function OrderCard({ order }: OrderCardProps) {
                 <Title order={4} style={{ letterSpacing: "-0.01em" }}>
                   #{order.id.slice(0, 8).toUpperCase()}
                 </Title>
+                <Text size="xs" c="dimmed">
+                  {formatShortDate(order.createdAt)}
+                </Text>
                 {order.eventTitle ? (
                   <Text size="sm" c="dimmed" lineClamp={2}>
                     {order.eventTitle}
