@@ -4,7 +4,7 @@
  */
 
 /** Percentual padrão — manter alinhado a `PLATFORM_FEE_PERCENT` do backend. */
-export const PLATFORM_FEE_PERCENT = 8;
+export const PLATFORM_FEE_PERCENT = 5;
 
 export function calculatePlatformFeeCents(
   subtotalCents: number,
