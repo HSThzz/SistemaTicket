@@ -20,11 +20,11 @@ export function formatTicketCheckInCode(raw: string): string {
 
 export function getTicketQrPayload(ticket: {
   checkInCode?: string | null;
-  uniqueCode: string;
+  uniqueCode?: string | null;
 }): string {
   if (ticket.checkInCode?.trim()) {
     return ticket.checkInCode.trim();
   }
 
-  return ticket.uniqueCode;
+  return ticket.uniqueCode?.trim() ?? "";
 }

@@ -3,9 +3,7 @@
  * @module pages/HomePage
  */
 
-import { Box, Button, Stack, Text, Title } from "@mantine/core";
-import { Link } from "react-router-dom";
-import { IconArrowRight, IconCalendarPlus } from "@tabler/icons-react";
+import { Stack } from "@mantine/core";
 import { FaqSection } from "@/app/components/FaqSection";
 import { SiteFooter } from "@/app/components/SiteFooter";
 import { LandingCta } from "@/app/components/LandingCta";

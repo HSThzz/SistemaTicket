@@ -1,6 +1,4 @@
-import { ActionIcon, UnstyledButton } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   TESTIMONIAL_STATS,
