@@ -16,9 +16,36 @@ import {
 
 const CONTEXT = "Seed";
 
+/**
+ * Seed demo é exclusivo para desenvolvimento/testes locais.
+ * Recusa produção (NODE_ENV / Railway) para não popular o banco real.
+ */
+function assertLocalSeedOnly(): void {
+  const nodeEnv = process.env.NODE_ENV?.trim().toLowerCase();
+  if (nodeEnv === "production") {
+    throw new Error(
+      "Demo seed é só para ambiente local/testes. Recusando com NODE_ENV=production.",
+    );
+  }
+
+  const railwayEnv = (
+    process.env.RAILWAY_ENVIRONMENT ??
+    process.env.RAILWAY_ENVIRONMENT_NAME ??
+    ""
+  )
+    .trim()
+    .toLowerCase();
+
+  if (railwayEnv === "production") {
+    throw new Error(
+      "Demo seed é só para ambiente local/testes. Recusando no ambiente Railway de produção.",
+    );
+  }
+}
+
 function printSummary(): void {
   console.log("\n========================================");
-  console.log("  TicketFlow — dados de demonstração");
+  console.log("  VIBRA — dados de demonstração (local)");
   console.log("========================================\n");
   console.log("Senha de todos os usuários:", SEED_PASSWORD);
   console.log("");
@@ -44,30 +71,32 @@ function printSummary(): void {
 function printConnectionHints(error: unknown): void {
   const message = error instanceof Error ? error.message : String(error);
 
-  console.error(`\n[${CONTEXT}] Dicas para Railway / remoto:`);
-  console.error("  1. Use as variáveis do serviço: DATABASE_URL e REDIS_URL");
-  console.error("  2. Local com Railway CLI: railway link && railway run npm run seed");
-  console.error("  3. No container (após deploy): node dist/seeds/run.js");
-  console.error("  4. Rode migrations antes: npm run migration:run");
+  console.error(`\n[${CONTEXT}] Dicas (seed local):`);
+  console.error("  1. Use Postgres/Redis do .env local (DB_HOST / REDIS_HOST ou URLs locais)");
+  console.error("  2. Rode migrations antes: npm run migration:run");
+  console.error("  3. Não use railway run / NODE_ENV=production — seed não roda em produção");
   console.error(`\n[${CONTEXT}] Erro: ${message}`);
 }
 
 /**
  * Executa migrations pendentes, opcionalmente reseta DB/Redis e roda o seed demo.
  * Aceita `--keep` para não truncar dados existentes.
+ * Somente para desenvolvimento local — nunca em produção.
  */
 async function main(): Promise<void> {
+  assertLocalSeedOnly();
+
   const keepExisting = process.argv.includes("--keep");
 
   if (!process.env.DATABASE_URL?.trim() && !process.env.DB_HOST?.trim()) {
     throw new Error(
-      "DATABASE_URL (Railway) ou DB_HOST não configurado. Defina as variáveis do Postgres.",
+      "DATABASE_URL ou DB_HOST não configurado. Defina as variáveis do Postgres local.",
     );
   }
 
   if (!process.env.REDIS_URL?.trim() && !process.env.REDIS_HOST?.trim()) {
     throw new Error(
-      "REDIS_URL (Railway) ou REDIS_HOST não configurado. O seed precisa do Redis para estoque.",
+      "REDIS_URL ou REDIS_HOST não configurado. O seed precisa do Redis para estoque.",
     );
   }
 

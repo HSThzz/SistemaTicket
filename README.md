@@ -77,15 +77,15 @@ docker compose up -d --build
 docker compose run --rm migrate
 ```
 
-## Usuários de demonstração
+## Usuários de demonstração (só local)
 
-Após `npm run seed` no backend:
+Após `npm run seed` no backend (**não use em produção**):
 
 | Papel | E-mail | Senha |
 |-------|--------|-------|
-| Admin | `admin@ticketflow.test` | `123456` |
-| Produtor | `producer@ticketflow.test` | `123456` |
-| Cliente | `client@ticketflow.test` | `123456` |
+| Admin | `admin@ticketflow.test` | `Senha123!` |
+| Produtor | `producer@ticketflow.test` | `Senha123!` |
+| Cliente | `client@ticketflow.test` | `Senha123!` |
 
 ## Fluxo principal (cliente)
 
@@ -108,7 +108,7 @@ Documentação completa da API: [backend/README.md](backend/README.md).
 | `npm run build` | Compila TypeScript |
 | `npm run test` | Testes de integração |
 | `npm run migration:run` | Aplica migrations |
-| `npm run seed` | Reseta e popula dados demo |
+| `npm run seed` | Reseta e popula dados demo (só local) |
 | `npm run docs` | Gera HTML a partir do JSDoc (TypeDoc) |
 
 ### Frontend (`cd frontend`)

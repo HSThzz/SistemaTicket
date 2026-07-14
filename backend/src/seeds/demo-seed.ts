@@ -26,11 +26,11 @@ import { generateTicketCheckInCode } from "../shared/kernel/ticketCheckInCode";
 /** Senha padrão de todos os usuários criados pelo seed. */
 export const SEED_PASSWORD = "Senha123!";
 
-/** E-mails dos usuários demo criados pelo seed. */
+/** E-mails dos usuários demo (somente local/testes; domínio .test). */
 export const SEED_DEMO_EMAILS = {
-  admin: "admin@ticketflow.com.br",
-  producer: "producer@ticketflow.com.br",
-  client: "client@ticketflow.com.br",
+  admin: "admin@ticketflow.test",
+  producer: "producer@ticketflow.test",
+  client: "client@ticketflow.test",
 } as const;
 const BCRYPT_ROUNDS = 12;
 

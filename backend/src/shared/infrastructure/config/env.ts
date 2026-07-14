@@ -84,7 +84,7 @@ export const env = {
     apiKey: process.env.RESEND_API_KEY ?? "",
     /** Remetente: `Nome <email@dominio.com>`. Sandbox: onboarding@resend.dev */
     fromEmail:
-      process.env.RESEND_FROM_EMAIL ?? "SistemaTicket <onboarding@resend.dev>",
+      process.env.RESEND_FROM_EMAIL ?? "VIBRA <onboarding@resend.dev>",
     /** Destino dos alertas internos de leads de produtores. */
     producerLeadNotifyEmail: process.env.PRODUCER_LEAD_NOTIFY_EMAIL ?? "",
   },
@@ -104,7 +104,7 @@ export const env = {
       signerKeyPassphrase: process.env.APPLE_SIGNER_KEY_PASSPHRASE ?? "",
       teamId: process.env.APPLE_TEAM_ID ?? "",
       passTypeIdentifier: process.env.APPLE_PASS_TYPE_IDENTIFIER ?? "",
-      organizationName: process.env.APPLE_ORGANIZATION_NAME ?? "Tickets",
+      organizationName: process.env.APPLE_ORGANIZATION_NAME ?? "VIBRA",
       passModelPath:
         process.env.APPLE_PASS_MODEL_PATH ??
         path.resolve(process.cwd(), "assets", "event.pass"),
@@ -115,7 +115,10 @@ export const env = {
       credentialsJson: process.env.GOOGLE_WALLET_CREDENTIALS_JSON ?? "",
       issuerId: process.env.GOOGLE_WALLET_ISSUER_ID ?? "",
       issuerName: process.env.GOOGLE_WALLET_ISSUER_NAME ?? "VIBRA",
-      origins: (process.env.GOOGLE_WALLET_ORIGINS ?? "http://localhost:3000")
+      origins: (
+        process.env.GOOGLE_WALLET_ORIGINS ??
+        "http://127.0.0.1:5173,https://vibraevents.com.br,https://www.vibraevents.com.br"
+      )
         .split(",")
         .map((origin) => origin.trim())
         .filter(Boolean),

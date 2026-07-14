@@ -3,12 +3,12 @@
  * @module modules/notifications/infrastructure/email/emailTemplates
  */
 
-import { env } from "../../../../shared/infrastructure/config/env";
 import type { ContactFormJobData } from "../../../leads/application/types/contactFormJob";
 import type { ParticipationApprovedJobData } from "../../../participation/application/types/participationApprovedJob";
 import type { ParticipationRejectedJobData } from "../../../participation/application/types/participationRejectedJob";
 import type { ParticipationRequestSubmittedJobData } from "../../../participation/application/types/participationRequestSubmittedJob";
 import type { TicketDeliveryJobData } from "../../application/types/ticketDeliveryJob";
+import { getAppPublicUrl } from "../../../../shared/infrastructure/config/appPublicUrl";
 import { EMAIL_BRAND } from "./emailBrand";
 import { renderEmailDataList, renderEmailInfoCard, renderEmailInfoCardGroup, renderEmailLayout } from "./renderEmailLayout";
 
@@ -21,15 +21,6 @@ function escapeHtml(value: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-}
-
-function getPublicAppUrl(): string {
-  const configured = process.env.APP_PUBLIC_URL?.trim();
-  if (configured) {
-    return configured.replace(/\/+$/, "");
-  }
-
-  return env.corsOrigins[0] ?? "https://sistema-ticket.vercel.app";
 }
 
 function bodyParagraph(content: string): string {
@@ -78,7 +69,7 @@ export function buildPurchaseConfirmationEmail(data: TicketDeliveryJobData): str
     `,
     cta: {
       label: "Ver meus ingressos",
-      href: `${getPublicAppUrl()}/ingressos`,
+      href: `${getAppPublicUrl()}/ingressos`,
     },
     footerNote:
       "Guarde este e-mail e o PDF em local seguro. Os ingressos são nominais e validados por QR code na portaria.",
@@ -111,7 +102,7 @@ export function buildLeadAcknowledgementEmail(data: ContactFormJobData): string 
     `,
     cta: {
       label: "Conhecer a VIBRA",
-      href: `${getPublicAppUrl()}/para-produtores`,
+      href: `${getAppPublicUrl()}/para-produtores`,
     },
   });
 }
@@ -142,7 +133,7 @@ export function buildProducerLeadInternalEmail(data: ContactFormJobData): string
 export function buildParticipationApprovedEmail(
   data: ParticipationApprovedJobData,
 ): string {
-  const eventUrl = `${getPublicAppUrl()}/eventos/${data.eventId}`;
+  const eventUrl = `${getAppPublicUrl()}/eventos/${data.eventId}`;
 
   return renderEmailLayout({
     preheader: `Sua participação em ${data.eventTitle} foi aprovada. Garanta seu ingresso.`,
@@ -170,7 +161,7 @@ export function buildParticipationApprovedEmail(
 export function buildParticipationRejectedEmail(
   data: ParticipationRejectedJobData,
 ): string {
-  const eventsUrl = `${getPublicAppUrl()}/eventos`;
+  const eventsUrl = `${getAppPublicUrl()}/eventos`;
 
   return renderEmailLayout({
     preheader: `Sua solicitação para ${data.eventTitle} não foi aprovada.`,
@@ -198,7 +189,7 @@ export function buildParticipationRejectedEmail(
 export function buildParticipationRequestSubmittedEmail(
   data: ParticipationRequestSubmittedJobData,
 ): string {
-  const manageUrl = `${getPublicAppUrl()}/produtor/eventos/${data.eventId}`;
+  const manageUrl = `${getAppPublicUrl()}/produtor/eventos/${data.eventId}`;
   const phoneRow = data.participantPhone
     ? renderEmailInfoCard("Telefone", escapeHtml(data.participantPhone))
     : "";

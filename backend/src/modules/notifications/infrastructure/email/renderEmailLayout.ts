@@ -108,6 +108,7 @@ export function renderEmailLayout(options: EmailLayoutOptions): string {
     options.footerNote ??
       `Você está recebendo este e-mail porque interagiu com a ${EMAIL_BRAND.name}.`,
   );
+  const footerBrand = `${EMAIL_BRAND.name} · ${EMAIL_BRAND.website}`;
 
   const ctaBlock = options.cta
     ? `
@@ -186,6 +187,11 @@ export function renderEmailLayout(options: EmailLayoutOptions): string {
               <td bgcolor="${EMAIL_BRAND.surface}" style="padding:0 24px 36px;background-color:${EMAIL_BRAND.surface};">
                 <font face="${F}" color="${EMAIL_BRAND.textSoft}" style="font-size:13px;line-height:1.6;">
                   ${footerNote}
+                </font>
+                <br /><br />
+                <font face="${F}" color="${EMAIL_BRAND.textSoft}" style="font-size:12px;line-height:1.5;">
+                  <a href="${EMAIL_BRAND.websiteUrl}" style="color:${EMAIL_BRAND.greenMid};text-decoration:none;">${footerBrand}</a>
+                  · <a href="mailto:${EMAIL_BRAND.supportEmail}" style="color:${EMAIL_BRAND.greenMid};text-decoration:none;">${EMAIL_BRAND.supportEmail}</a>
                 </font>
               </td>
             </tr>

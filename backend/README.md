@@ -66,61 +66,32 @@ npm run seed          # reseta DB + Redis e popula dados demo
 npm run dev
 ```
 
-### Dados de demonstração (`npm run seed`)
+### Dados de demonstração (`npm run seed`) — só local
+
+O seed **não roda em produção** (`NODE_ENV=production` ou Railway production). Use apenas no Postgres/Redis locais para desenvolvimento e testes.
 
 | Papel | E-mail | Senha |
 |-------|--------|-------|
-| SUPER_ADMIN | `admin@ticketflow.com.br` | `123456` |
-| PRODUCER | `producer@ticketflow.com.br` | `123456` |
-| CLIENT | `client@ticketflow.com.br` | `123456` |
+| SUPER_ADMIN | `admin@ticketflow.test` | `Senha123!` |
+| PRODUCER | `producer@ticketflow.test` | `Senha123!` |
+| CLIENT | `client@ticketflow.test` | `Senha123!` |
 
-Inclui 2 eventos publicados + 1 rascunho, estoque no Redis e 3 ingressos de exemplo para o cliente (2 ativos com QR, 1 já usado no check-in).
+Inclui eventos publicados + rascunhos, estoque no Redis e ingressos de exemplo para o cliente.
 
 ```bash
 npm run seed:keep   # não apaga o banco; aborta se os usuários demo já existirem
 ```
 
-### Seed no Railway
+> `npm run seed` **apaga** todas as tabelas principais e o Redis locais (`TRUNCATE` + `FLUSHDB`) antes de popular.
 
-O seed precisa de **Postgres** (`DATABASE_URL`) e **Redis** (`REDIS_URL`) do mesmo projeto Railway.
-
-**Opção A — da sua máquina (recomendado):**
+Migrations em produção: o `npm start` já executa `migration:run:prod` antes de subir a API. Para aplicar migrations no Railway sem seed:
 
 ```bash
 cd backend
-npm install
-railway link          # selecione o projeto e o serviço da API
-railway run npm run seed
+railway login
+railway link    # serviço da API
+railway run npm run migration:run
 ```
-
-**Opção B — no container após deploy:**
-
-```bash
-railway ssh
-node dist/seeds/run.js
-```
-
-**Opção C — variáveis manuais (sem CLI):**
-
-```bash
-cd backend
-# Cole DATABASE_URL e REDIS_URL do painel Railway no .env ou exporte no terminal
-npm run migration:run
-npm run seed
-```
-
-> `npm run migration:run` na sua máquina usa o banco do `.env` local (`DB_HOST=localhost`), **não** o Postgres do Railway. Para aplicar no ambiente remoto:
->
-> ```bash
-> cd backend
-> railway login
-> railway link    # serviço da API
-> railway run npm run migration:run
-> ```
->
-> Em produção, o `npm start` já executa `migration:run:prod` antes de subir a API (cada deploy aplica migrations pendentes).
-
-> `npm run seed` **apaga** todas as tabelas principais e o Redis (`TRUNCATE` + `FLUSHDB`) antes de popular. Use `npm run seed:keep` para não truncar (só insere se os usuários demo ainda não existirem).
 
 ## Variáveis de ambiente
 

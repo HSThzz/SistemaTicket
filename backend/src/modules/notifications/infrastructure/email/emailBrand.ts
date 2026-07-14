@@ -6,6 +6,9 @@
 export const EMAIL_BRAND = {
   name: "VIBRA",
   product: "Ingressos",
+  website: "vibraevents.com.br",
+  websiteUrl: "https://vibraevents.com.br",
+  supportEmail: "contato@vibraevents.com.br",
   green: "#16a34a",
   greenMid: "#15803d",
   greenBright: "#22c55e",

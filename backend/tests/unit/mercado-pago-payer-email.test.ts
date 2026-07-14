@@ -24,7 +24,7 @@ describe("resolveMercadoPagoPayerEmail", () => {
 
   it("accepts common real-world emails", () => {
     assert.equal(isMercadoPagoAcceptableEmail("user@gmail.com"), true);
-    assert.equal(isMercadoPagoAcceptableEmail("client@ticketflow.com.br"), true);
+    assert.equal(isMercadoPagoAcceptableEmail("client@vibraevents.com.br"), true);
   });
 
   it("rejects reserved .test emails used in seed accounts", () => {

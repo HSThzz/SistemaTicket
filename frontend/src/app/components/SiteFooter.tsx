@@ -56,6 +56,15 @@ export function SiteFooter() {
                 com tecnologia, com o Zé.
               </Text>
 
+              <Anchor
+                href="mailto:contato@vibraevents.com.br"
+                c="dimmed"
+                size="sm"
+                underline="hover"
+              >
+                contato@vibraevents.com.br
+              </Anchor>
+
               <Text className="vibra-kicker" style={{ letterSpacing: "0.2em" }}>
                 "Ingressos do jeito que o Brasil merece."
               </Text>
@@ -96,7 +105,7 @@ export function SiteFooter() {
 
         <Group justify="space-between" wrap="wrap" gap="sm">
           <Text size="xs" c="dimmed" pt="xl">
-            © {new Date().getFullYear()} VIBRA. Todos os direitos reservados.
+            © {new Date().getFullYear()} VIBRA · vibraevents.com.br
           </Text>
 
           <Text size="xs" c="dimmed">
