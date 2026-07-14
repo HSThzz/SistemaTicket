@@ -5,6 +5,7 @@
 
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { isDuplicateJobError } from "../../../../shared/infrastructure/messaging/isDuplicateJobError";
+import { queueJobId } from "../../../../shared/infrastructure/messaging/queueJobId";
 import { getParticipationNotificationQueue } from "../../infrastructure/queues/participationNotificationQueue";
 import type { ParticipationApprovedJobData } from "../types/participationApprovedJob";
 
@@ -17,7 +18,7 @@ const logger = Logger.getInstance();
 export async function enqueueParticipationApprovedNotification(
   data: ParticipationApprovedJobData,
 ): Promise<void> {
-  const jobId = `participation-approved:${data.requestId}`;
+  const jobId = queueJobId("participation-approved", data.requestId);
 
   try {
     const queue = getParticipationNotificationQueue();
@@ -38,10 +39,16 @@ export async function enqueueParticipationApprovedNotification(
       return;
     }
 
-    logger.error(CONTEXT, "Failed to enqueue participation approved notification", {
-      requestId: data.requestId,
-      eventId: data.eventId,
-      error: error instanceof Error ? error.message : String(error),
-    });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error(
+      CONTEXT,
+      `Failed to enqueue participation approved notification: ${errorMessage}`,
+      {
+        requestId: data.requestId,
+        eventId: data.eventId,
+        jobId,
+        err: error instanceof Error ? error : undefined,
+      },
+    );
   }
 }

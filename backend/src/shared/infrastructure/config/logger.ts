@@ -16,10 +16,20 @@ export class Logger {
   private readonly pino: PinoLogger;
 
   private constructor() {
+    const baseOptions = {
+      level: env.logLevel,
+      // Label textual ajuda o Railway e outros agregadores a filtrar por severity.
+      formatters: {
+        level(label: string) {
+          return { level: label };
+        },
+      },
+    };
+
     this.pino = isProduction
-      ? pino({ level: env.logLevel })
+      ? pino(baseOptions)
       : pino({
-          level: env.logLevel,
+          ...baseOptions,
           transport: {
             target: "pino-pretty",
             options: {

@@ -9,6 +9,7 @@ import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { Order } from "../../../../shared/infrastructure/persistence/entities/Order";
 import { Ticket } from "../../../../shared/infrastructure/persistence/entities/Ticket";
 import { isDuplicateJobError } from "../../../../shared/infrastructure/messaging/isDuplicateJobError";
+import { queueJobId } from "../../../../shared/infrastructure/messaging/queueJobId";
 import type { ProcessPaymentSucceededResult } from "../../../payment/application/commands/processPaymentSucceeded";
 import { getTicketDeliveryQueue } from "../../infrastructure/queues/ticketDeliveryQueue";
 
@@ -69,7 +70,7 @@ export async function enqueueTicketDelivery(
     return;
   }
 
-  const jobId = `ticket-delivery:${order.id}`;
+  const jobId = queueJobId("ticket-delivery", order.id);
 
   try {
     const ticketQueue = getTicketDeliveryQueue();
@@ -100,9 +101,11 @@ export async function enqueueTicketDelivery(
       return;
     }
 
-    logger.error(CONTEXT, "Failed to enqueue ticket delivery job", {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error(CONTEXT, `Failed to enqueue ticket delivery job: ${errorMessage}`, {
       orderId: order.id,
-      error: error instanceof Error ? error.message : String(error),
+      jobId,
+      err: error instanceof Error ? error : undefined,
     });
     throw error;
   }

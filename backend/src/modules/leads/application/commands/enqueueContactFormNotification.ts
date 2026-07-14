@@ -5,6 +5,7 @@
 
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { isDuplicateJobError } from "../../../../shared/infrastructure/messaging/isDuplicateJobError";
+import { queueJobId } from "../../../../shared/infrastructure/messaging/queueJobId";
 import { getContactFormQueue } from "../../infrastructure/queues/contactFormQueue";
 import type { ContactFormJobData } from "../types/contactFormJob";
 
@@ -18,7 +19,7 @@ const logger = Logger.getInstance();
 export async function enqueueContactFormNotification(
   data: ContactFormJobData,
 ): Promise<void> {
-  const jobId = `contact-form:${data.leadId}`;
+  const jobId = queueJobId("contact-form", data.leadId);
   const contactQueue = getContactFormQueue();
 
   const existing = await contactQueue.getJob(jobId);
@@ -58,10 +59,16 @@ export async function enqueueContactFormNotification(
       return;
     }
 
-    logger.error(CONTEXT, "Failed to enqueue contact form notification", {
-      leadId: data.leadId,
-      error: error instanceof Error ? error.message : String(error),
-    });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error(
+      CONTEXT,
+      `Failed to enqueue contact form notification: ${errorMessage}`,
+      {
+        leadId: data.leadId,
+        jobId,
+        err: error instanceof Error ? error : undefined,
+      },
+    );
     throw error;
   }
 }

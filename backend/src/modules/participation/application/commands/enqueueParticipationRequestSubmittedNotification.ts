@@ -5,6 +5,7 @@
 
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { isDuplicateJobError } from "../../../../shared/infrastructure/messaging/isDuplicateJobError";
+import { queueJobId } from "../../../../shared/infrastructure/messaging/queueJobId";
 import { getParticipationNotificationQueue } from "../../infrastructure/queues/participationNotificationQueue";
 import type { ParticipationRequestSubmittedJobData } from "../types/participationRequestSubmittedJob";
 
@@ -17,7 +18,7 @@ const logger = Logger.getInstance();
 export async function enqueueParticipationRequestSubmittedNotification(
   data: ParticipationRequestSubmittedJobData,
 ): Promise<void> {
-  const jobId = `participation-submitted:${data.requestId}`;
+  const jobId = queueJobId("participation-submitted", data.requestId);
 
   try {
     const queue = getParticipationNotificationQueue();
@@ -38,10 +39,16 @@ export async function enqueueParticipationRequestSubmittedNotification(
       return;
     }
 
-    logger.error(CONTEXT, "Failed to enqueue participation request submitted notification", {
-      requestId: data.requestId,
-      eventId: data.eventId,
-      error: error instanceof Error ? error.message : String(error),
-    });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error(
+      CONTEXT,
+      `Failed to enqueue participation request submitted notification: ${errorMessage}`,
+      {
+        requestId: data.requestId,
+        eventId: data.eventId,
+        jobId,
+        err: error instanceof Error ? error : undefined,
+      },
+    );
   }
 }
