@@ -9,9 +9,10 @@ import type {
   ParticipationRequestStatus,
 } from "@/shared/types/api";
 
-/** Payload de envio — nome/e-mail vêm da conta; só telefone é opcional no body. */
+/** Payload de envio — nome/e-mail vêm da conta; telefone e Instagram opcionais. */
 export interface SubmitParticipationRequestInput {
   phone?: string;
+  instagramHandle?: string;
 }
 
 /** Decisão do produtor sobre uma solicitação. */
@@ -21,7 +22,7 @@ export type ParticipationReviewDecision = "APPROVE" | "REJECT";
  * Envia uma solicitação de participação para um evento privado.
  *
  * @param eventId - Identificador do evento.
- * @param input - Telefone opcional do interessado.
+ * @param input - Telefone e Instagram opcionais do interessado.
  */
 export async function submitParticipationRequest(
   eventId: string,

@@ -25,4 +25,5 @@ export const participationRequestSubmittedJobSchema = z.object({
   participantName: z.string().trim().min(1).max(255),
   participantEmail: z.string().trim().email().max(255),
   participantPhone: z.string().trim().max(32).nullable(),
+  participantInstagramHandle: z.string().trim().max(30).nullable(),
 });

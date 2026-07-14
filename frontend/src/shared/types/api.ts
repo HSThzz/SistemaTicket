@@ -65,6 +65,7 @@ export interface ParticipationRequest {
   name: string;
   email: string;
   phone: string | null;
+  instagramHandle: string | null;
   status: ParticipationRequestStatus | string;
   reviewedBy: string | null;
   reviewedAt: string | null;

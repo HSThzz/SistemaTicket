@@ -13,6 +13,7 @@ export function serializeParticipationRequest(request: ParticipationRequest) {
     name: request.name,
     email: request.email,
     phone: request.phone,
+    instagramHandle: request.instagramHandle,
     status: request.status,
     reviewedBy: request.reviewedBy,
     reviewedAt: request.reviewedAt ? request.reviewedAt.toISOString() : null,

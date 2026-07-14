@@ -148,3 +148,42 @@ export function formatPhoneBr(value: string): string {
 
   return `(${ddd}) ${rest.slice(0, 5)}-${rest.slice(5)}`;
 }
+
+/** Limite de username do Instagram (sem `@`). */
+export const INSTAGRAM_HANDLE_MAX_LENGTH = 30;
+
+/** Campo de input com `@` + handle: no máx. 31 caracteres. */
+export const INSTAGRAM_HANDLE_INPUT_MAX_LENGTH = INSTAGRAM_HANDLE_MAX_LENGTH + 1;
+
+/**
+ * Normaliza handle Instagram (remove `@` / URL) e limita ao tamanho oficial.
+ */
+export function normalizeInstagramHandle(value: string): string {
+  let handle = value.trim().replace(/^@+/, "");
+
+  const urlMatch = handle.match(
+    /(?:https?:\/\/)?(?:www\.)?instagram\.com\/([a-zA-Z0-9._]+)/i,
+  );
+  if (urlMatch?.[1]) {
+    handle = urlMatch[1];
+  }
+
+  handle = (handle.replace(/\/+$/, "").split(/[/?#]/)[0] ?? "")
+    .replace(/^@+/, "")
+    .replace(/[^a-zA-Z0-9._]/g, "")
+    .slice(0, INSTAGRAM_HANDLE_MAX_LENGTH);
+
+  return handle;
+}
+
+/** Exibe o handle com `@` enquanto o usuário digita. */
+export function formatInstagramHandleInput(value: string): string {
+  const handle = normalizeInstagramHandle(value);
+  return handle ? `@${handle}` : "";
+}
+
+/** URL do perfil a partir do handle (com ou sem `@`). */
+export function buildInstagramProfileUrl(handle: string): string {
+  const normalized = normalizeInstagramHandle(handle);
+  return `https://www.instagram.com/${encodeURIComponent(normalized)}/`;
+}

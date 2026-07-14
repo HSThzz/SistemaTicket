@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   ActionIcon,
+  Anchor,
   Box,
   Button,
   Group,
@@ -19,6 +20,7 @@ import {
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
+  IconBrandInstagram,
   IconCheck,
   IconMail,
   IconPhone,
@@ -35,7 +37,7 @@ import type {
   ParticipationRequestStatus,
 } from "@/shared/types/api";
 import { getApiErrorMessage } from "@/shared/utils/errors";
-import { formatEventDate } from "@/shared/utils/format";
+import { buildInstagramProfileUrl, formatEventDate } from "@/shared/utils/format";
 import { ParticipationStatusBadge } from "@/components/ui/ParticipationStatusBadge";
 
 const STATUS_FILTERS: { value: ParticipationRequestStatus; label: string }[] = [
@@ -75,6 +77,20 @@ function RequestRow({
               <Group gap={6} wrap="nowrap">
                 <IconPhone size={15} />
                 <Text size="sm">{request.phone}</Text>
+              </Group>
+            ) : null}
+            {request.instagramHandle ? (
+              <Group gap={6} wrap="nowrap">
+                <IconBrandInstagram size={15} />
+                <Anchor
+                  href={buildInstagramProfileUrl(request.instagramHandle)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="sm"
+                  fw={600}
+                >
+                  @{request.instagramHandle}
+                </Anchor>
               </Group>
             ) : null}
           </Group>

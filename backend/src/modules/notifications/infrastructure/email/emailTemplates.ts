@@ -193,6 +193,12 @@ export function buildParticipationRequestSubmittedEmail(
   const phoneRow = data.participantPhone
     ? renderEmailInfoCard("Telefone", escapeHtml(data.participantPhone))
     : "";
+  const instagramRow = data.participantInstagramHandle
+    ? renderEmailInfoCard(
+        "Instagram",
+        `<a href="https://www.instagram.com/${encodeURIComponent(data.participantInstagramHandle)}/" style="color:${EMAIL_BRAND.text};text-decoration:underline;">@${escapeHtml(data.participantInstagramHandle)}</a>`,
+      )
+    : "";
 
   return renderEmailLayout({
     preheader: `${data.participantName} solicitou participação em ${data.eventTitle}.`,
@@ -211,6 +217,7 @@ export function buildParticipationRequestSubmittedEmail(
         { label: "E-mail", value: escapeHtml(data.participantEmail) },
       ])}
       ${phoneRow}
+      ${instagramRow}
     `,
     cta: {
       label: "Revisar solicitações",

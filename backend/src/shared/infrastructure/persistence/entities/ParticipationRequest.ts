@@ -36,6 +36,9 @@ export class ParticipationRequest {
   @Column({ type: "varchar", length: 32, nullable: true })
   phone!: string | null;
 
+  @Column({ name: "instagram_handle", type: "varchar", length: 30, nullable: true })
+  instagramHandle!: string | null;
+
   @Column({
     type: "enum",
     enum: ParticipationRequestStatus,

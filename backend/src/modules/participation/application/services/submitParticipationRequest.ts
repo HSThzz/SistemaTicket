@@ -72,6 +72,7 @@ export async function submitParticipationRequest(
       name: user.name,
       email,
       phone: data.phone ?? null,
+      instagramHandle: data.instagramHandle ?? null,
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
@@ -98,6 +99,7 @@ export async function submitParticipationRequest(
         participantName: created.name,
         participantEmail: created.email,
         participantPhone: created.phone,
+        participantInstagramHandle: created.instagramHandle,
       });
     } else {
       logger.warn(CONTEXT, "Producer email unavailable for participation notification", {

@@ -14,4 +14,5 @@ export type ParticipationRequestSubmittedJobData = Prettify<{
   participantName: string;
   participantEmail: string;
   participantPhone: string | null;
+  participantInstagramHandle: string | null;
 }>;

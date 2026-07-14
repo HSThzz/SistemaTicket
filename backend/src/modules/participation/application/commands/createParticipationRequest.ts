@@ -8,7 +8,10 @@ import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
 export type CreateParticipationRequestData = Prettify<
-  Pick<ParticipationRequest, "eventId" | "userId" | "name" | "email" | "phone">
+  Pick<
+    ParticipationRequest,
+    "eventId" | "userId" | "name" | "email" | "phone" | "instagramHandle"
+  >
 >;
 
 export async function createParticipationRequest(

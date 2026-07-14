@@ -19,6 +19,7 @@ import {
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import {
+  IconBrandInstagram,
   IconCheck,
   IconClock,
   IconLock,
@@ -32,12 +33,16 @@ import * as participationService from "@/modules/participation/api/participation
 import { PremiumBadge } from "@/components/ui/PremiumBadge";
 import { getApiErrorMessage } from "@/shared/utils/errors";
 import {
+  INSTAGRAM_HANDLE_INPUT_MAX_LENGTH,
   PHONE_BR_FORMATTED_MAX_LENGTH,
+  formatInstagramHandleInput,
   formatPhoneBr,
+  normalizeInstagramHandle,
 } from "@/shared/utils/format";
 
 interface ParticipationFormValues {
   phone: string;
+  instagramHandle: string;
 }
 
 /**
@@ -62,6 +67,7 @@ export function ParticipationRequestCard({
   const form = useForm<ParticipationFormValues>({
     initialValues: {
       phone: "",
+      instagramHandle: "",
     },
   });
 
@@ -131,6 +137,7 @@ export function ParticipationRequestCard({
     try {
       const created = await participationService.submitParticipationRequest(event.id, {
         phone: values.phone.trim() || undefined,
+        instagramHandle: normalizeInstagramHandle(values.instagramHandle) || undefined,
       });
 
       notifications.show({
@@ -200,6 +207,22 @@ export function ParticipationRequestCard({
             form.setFieldValue("phone", formatPhoneBr(event.currentTarget.value))
           }
           error={form.errors.phone}
+        />
+        <TextInput
+          label="Instagram"
+          radius="md"
+          placeholder="@seuusuario"
+          autoComplete="off"
+          maxLength={INSTAGRAM_HANDLE_INPUT_MAX_LENGTH}
+          leftSection={<IconBrandInstagram size={16} />}
+          value={form.values.instagramHandle}
+          onChange={(event) =>
+            form.setFieldValue(
+              "instagramHandle",
+              formatInstagramHandleInput(event.currentTarget.value),
+            )
+          }
+          error={form.errors.instagramHandle}
         />
 
         <Button type="submit" radius="xl" fullWidth loading={submitting}>
