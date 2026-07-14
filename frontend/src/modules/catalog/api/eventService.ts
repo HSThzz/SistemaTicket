@@ -118,6 +118,50 @@ export async function deleteTicketLot(
   await api.delete(`/events/${eventId}/lots/${lotId}`);
 }
 
+/** Membro da equipe de portaria de um evento. */
+export interface CheckInStaffMember {
+  userId: string;
+  name: string;
+  email: string;
+  createdAt: string;
+}
+
+/**
+ * Lista a equipe de portaria do evento.
+ */
+export async function listCheckInStaff(
+  eventId: string,
+): Promise<CheckInStaffMember[]> {
+  const { data } = await api.get<{ staff: CheckInStaffMember[] }>(
+    `/events/${eventId}/check-in-staff`,
+  );
+  return data.staff;
+}
+
+/**
+ * Adiciona membro à equipe de portaria pelo e-mail da conta.
+ */
+export async function addCheckInStaff(
+  eventId: string,
+  email: string,
+): Promise<CheckInStaffMember> {
+  const { data } = await api.post<{ member: CheckInStaffMember }>(
+    `/events/${eventId}/check-in-staff`,
+    { email },
+  );
+  return data.member;
+}
+
+/**
+ * Remove membro da equipe de portaria.
+ */
+export async function removeCheckInStaff(
+  eventId: string,
+  userId: string,
+): Promise<void> {
+  await api.delete(`/events/${eventId}/check-in-staff/${userId}`);
+}
+
 /**
  * Obtém estatísticas agregadas do dashboard do produtor.
  */

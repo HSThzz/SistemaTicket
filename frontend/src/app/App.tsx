@@ -5,6 +5,7 @@
 
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AdminRoute } from "@/components/auth/AdminRoute";
+import { CheckInRoute } from "@/components/auth/CheckInRoute";
 import { GuestRoute } from "@/components/auth/GuestRoute";
 import { Layout } from "@/components/layout/Layout";
 import { ProducerRoute } from "@/components/auth/ProducerRoute";
@@ -82,6 +83,9 @@ export default function App() {
                     path="produtor/eventos/:eventId"
                     element={<ProducerManageEventPage />}
                   />
+                </Route>
+
+                <Route element={<CheckInRoute />}>
                   <Route
                     path="produtor/check-in"
                     element={<ProducerCheckInPage />}

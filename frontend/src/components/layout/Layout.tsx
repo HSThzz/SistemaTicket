@@ -28,6 +28,7 @@ import { MobileNavDrawer } from "@/components/layout/MobileNavDrawer";
 import { UserAccountMenu } from "@/components/layout/UserAccountMenu";
 import { useAuth } from "@/modules/identity/features/auth/context/AuthContext";
 import { isProducerPanelRole, isStaffRole } from "@/modules/identity/features/admin/utils/adminRoles";
+import { useCheckInAccess } from "@/modules/ticketing/features/check-in/hooks/useCheckInAccess";
 
 const PUBLIC_NAV_LINKS = [
   { to: "/", label: "Início", exact: true },
@@ -43,15 +44,20 @@ function DesktopNavLinks({
   currentPath,
   isProducer,
   isAdmin,
+  canCheckIn,
 }: {
   onNavigate?: () => void;
   currentPath: string;
   isProducer: boolean;
   isAdmin: boolean;
+  canCheckIn: boolean;
 }) {
   const links = [
     ...PUBLIC_NAV_LINKS,
     ...(isProducer ? [{ to: "/produtor", label: "Produtor", exact: false } as const] : []),
+    ...(!isProducer && canCheckIn
+      ? [{ to: "/produtor/check-in", label: "Check-in", exact: true } as const]
+      : []),
     ...(isAdmin ? [{ to: "/admin", label: "Admin", exact: false } as const] : []),
   ];
 
@@ -103,6 +109,7 @@ export function Layout() {
 
   const isProducer = isProducerPanelRole(user?.role);
   const isAdmin = isStaffRole(user?.role);
+  const { canCheckIn } = useCheckInAccess();
 
   const handleLogout = () => {
     void logout().finally(() => {
@@ -162,6 +169,7 @@ export function Layout() {
                 currentPath={currentPath}
                 isProducer={isProducer}
                 isAdmin={isAdmin}
+                canCheckIn={canCheckIn}
               />
             </Group>
 
@@ -190,6 +198,7 @@ export function Layout() {
                 <UserAccountMenu
                   user={user}
                   isProducer={isProducer}
+                  canCheckIn={canCheckIn}
                   onNavigate={close}
                   onLogout={handleLogout}
                 >
@@ -246,6 +255,7 @@ export function Layout() {
           isAuthenticated={isAuthenticated}
           isProducer={isProducer}
           isAdmin={isAdmin}
+          canCheckIn={canCheckIn}
           userName={user?.name}
           userEmail={user?.email}
           onNavigate={close}

@@ -8,7 +8,6 @@ import { Event } from "../../../../shared/infrastructure/persistence/entities/Ev
 import { Ticket } from "../../../../shared/infrastructure/persistence/entities/Ticket";
 import { TicketLot } from "../../../../shared/infrastructure/persistence/entities/TicketLot";
 import { EventStatus, TicketStatus } from "../../../../shared/kernel/enums";
-import { isStaffRole } from "../../../../shared/kernel/staffRoles";
 import { resolveTicketLookupCodes } from "../../../../shared/kernel/ticketCheckInCode";
 import {
   CheckInAccessDeniedError,
@@ -17,6 +16,7 @@ import {
   InvalidTicketStatusError,
 } from "../../domain/errors/CheckInError";
 import { formatCalendarDay, isEventDay } from "./eventDay";
+import { canCheckInForEvent } from "./canCheckInForEvent";
 import type { CheckInActor } from "../services/types";
 
 const CHECK_IN_ALLOWED_EVENT_STATUSES = new Set<EventStatus>([
@@ -68,7 +68,7 @@ export async function loadTicketForCheckIn(
   const event = ticket.ticketLot.event;
   const lot = ticket.ticketLot;
 
-  if (!isStaffRole(actor.role) && event.producerId !== actor.userId) {
+  if (!(await canCheckInForEvent(actor, event, manager))) {
     throw new CheckInAccessDeniedError();
   }
 

@@ -46,6 +46,7 @@ import { PageLoader } from "@/shared/components/PageLoader";
 import { PremiumPaper } from "@/shared/components/PremiumPaper";
 import { StatCard } from "@/shared/components/StatCard";
 import { ProducerLotCard } from "@/modules/catalog/features/producer/components/ProducerLotCard";
+import { ProducerCheckInStaffPanel } from "@/modules/catalog/features/producer/components/ProducerCheckInStaffPanel";
 import { ProducerParticipationPanel } from "@/modules/participation/features/requests/components/ProducerParticipationPanel";
 import { EventDateTimeField } from "@/modules/catalog/features/producer/components/EventDateTimeField";
 import { EventPrivateBadge } from "@/modules/catalog/features/browse/components/EventPrivateBadge";
@@ -763,6 +764,8 @@ export function ProducerManageEventPage() {
                 onReviewComplete={() => void reloadEvent()}
               />
             ) : null}
+
+            <ProducerCheckInStaffPanel eventId={event.id} />
           </Stack>
         </Container>
       </Box>

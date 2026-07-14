@@ -11,6 +11,8 @@ import {
   createTicketLotBodySchema,
   eventIdParamsSchema,
   eventLotParamsSchema,
+  eventStaffParamsSchema,
+  addCheckInStaffBodySchema,
   updateEventBodySchema,
 } from "../../../../shared/interfaces/http/validation/catalog.schemas";
 
@@ -68,6 +70,28 @@ router.delete(
   ...eventManagementMiddlewares,
   validateParams(eventLotParamsSchema),
   (req, res) => void eventController.deleteLot(req, res),
+);
+
+router.get(
+  "/:eventId/check-in-staff",
+  ...eventManagementMiddlewares,
+  validateParams(eventIdParamsSchema),
+  (req, res) => void eventController.listCheckInStaff(req, res),
+);
+
+router.post(
+  "/:eventId/check-in-staff",
+  ...eventManagementMiddlewares,
+  validateParams(eventIdParamsSchema),
+  validateBody(addCheckInStaffBodySchema),
+  (req, res) => void eventController.addCheckInStaff(req, res),
+);
+
+router.delete(
+  "/:eventId/check-in-staff/:userId",
+  ...eventManagementMiddlewares,
+  validateParams(eventStaffParamsSchema),
+  (req, res) => void eventController.removeCheckInStaff(req, res),
 );
 
 export default router;

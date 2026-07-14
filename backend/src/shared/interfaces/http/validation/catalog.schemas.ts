@@ -9,4 +9,6 @@ export { createTicketLotSchema as createTicketLotBodySchema } from "../../../../
 export {
   eventIdParamsSchema,
   eventLotParamsSchema,
+  eventStaffParamsSchema,
 } from "../../../../modules/catalog/validators/schema/eventIdSchema";
+export { addCheckInStaffSchema as addCheckInStaffBodySchema } from "../../../../modules/catalog/validators/schema/addCheckInStaffSchema";

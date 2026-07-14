@@ -17,6 +17,7 @@ export { ParticipationRequest } from "./ParticipationRequest";
 export { ProducerLead } from "./ProducerLead";
 export { AdminAuditLog } from "./AdminAuditLog";
 export { Event } from "./Event";
+export { EventCheckInStaff } from "./EventCheckInStaff";
 export { Order } from "./Order";
 export { Reservation } from "./Reservation";
 export { Ticket } from "./Ticket";

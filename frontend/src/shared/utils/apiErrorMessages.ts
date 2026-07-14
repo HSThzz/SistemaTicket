@@ -108,6 +108,12 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   MANUAL_TICKET_INSUFFICIENT_STOCK: "Estoque insuficiente neste lote.",
   MANUAL_TICKET_EVENT_NOT_ISSUABLE: "Não é possível emitir ingressos para evento neste status.",
 
+  // Equipe de portaria
+  CHECK_IN_STAFF_USER_NOT_FOUND: "Nenhuma conta encontrada com este e-mail.",
+  CHECK_IN_STAFF_ALREADY_EXISTS: "Esta pessoa já está na equipe de portaria.",
+  CHECK_IN_STAFF_IS_EVENT_OWNER: "O dono do evento já tem acesso ao check-in.",
+  CHECK_IN_STAFF_NOT_FOUND: "Membro da equipe de portaria não encontrado.",
+
   // Spotify
   SPOTIFY_NOT_CONFIGURED: "Integração com Spotify não está configurada.",
   SPOTIFY_NOT_CONNECTED: "Sua conta Spotify não está conectada.",

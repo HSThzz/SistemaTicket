@@ -151,3 +151,44 @@ export class TicketLotLastPublishedError extends EventError {
     this.name = "TicketLotLastPublishedError";
   }
 }
+
+/** Usuário não encontrado ao adicionar equipe de portaria. */
+export class CheckInStaffUserNotFoundError extends EventError {
+  constructor() {
+    super("User not found for the given email", "CHECK_IN_STAFF_USER_NOT_FOUND");
+    this.name = "CheckInStaffUserNotFoundError";
+  }
+}
+
+/** Usuário já está na equipe de portaria do evento. */
+export class CheckInStaffAlreadyExistsError extends EventError {
+  constructor() {
+    super(
+      "User is already on the check-in staff for this event",
+      "CHECK_IN_STAFF_ALREADY_EXISTS",
+    );
+    this.name = "CheckInStaffAlreadyExistsError";
+  }
+}
+
+/** Não faz sentido adicionar o dono do evento como equipe de portaria. */
+export class CheckInStaffIsEventOwnerError extends EventError {
+  constructor() {
+    super(
+      "Event owner already has check-in access",
+      "CHECK_IN_STAFF_IS_EVENT_OWNER",
+    );
+    this.name = "CheckInStaffIsEventOwnerError";
+  }
+}
+
+/** Membro da equipe de portaria não encontrado neste evento. */
+export class CheckInStaffNotFoundError extends EventError {
+  constructor() {
+    super(
+      "Check-in staff member not found for this event",
+      "CHECK_IN_STAFF_NOT_FOUND",
+    );
+    this.name = "CheckInStaffNotFoundError";
+  }
+}

@@ -9,6 +9,7 @@ import {
   IconLayoutDashboard,
   IconLogout,
   IconReceipt2,
+  IconScan,
   IconTicket,
   IconUser,
 } from "@tabler/icons-react";
@@ -17,6 +18,7 @@ import type { AuthUser } from "@/shared/types/api";
 interface UserAccountMenuProps {
   user: AuthUser;
   isProducer: boolean;
+  canCheckIn?: boolean;
   onNavigate: () => void;
   onLogout: () => void;
   children: ReactNode;
@@ -28,6 +30,7 @@ interface UserAccountMenuProps {
 export function UserAccountMenu({
   user,
   isProducer,
+  canCheckIn = false,
   onNavigate,
   onLogout,
   children,
@@ -107,6 +110,20 @@ export function UserAccountMenu({
               onClick={onNavigate}
             >
               Painel produtor
+            </Menu.Item>
+          </>
+        ) : null}
+
+        {!isProducer && canCheckIn ? (
+          <>
+            <Menu.Label>Portaria</Menu.Label>
+            <Menu.Item
+              component={Link}
+              to="/produtor/check-in"
+              leftSection={<IconScan size={16} />}
+              onClick={onNavigate}
+            >
+              Check-in
             </Menu.Item>
           </>
         ) : null}

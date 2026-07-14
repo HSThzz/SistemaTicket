@@ -16,12 +16,17 @@ import {
   EventNotFoundError,
   EventTypeChangeNotAllowedError,
   TicketLotNotFoundError,
+  CheckInStaffUserNotFoundError,
+  CheckInStaffNotFoundError,
 } from "../../domain/errors/EventError";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
 import { createEvent } from "../../application/services/createEvent";
 import { createTicketLot } from "../../application/services/createTicketLot";
 import { deleteTicketLot } from "../../application/services/deleteTicketLot";
+import { addCheckInStaff } from "../../application/services/addCheckInStaff";
+import { listCheckInStaff } from "../../application/services/listCheckInStaff";
+import { removeCheckInStaff } from "../../application/services/removeCheckInStaff";
 import { getProducerDashboard } from "../../application/services/getProducerDashboard";
 import { getPublishedEventById } from "../../application/services/getPublishedEventById";
 import { listManagedEvents } from "../../application/services/listManagedEvents";
@@ -304,6 +309,57 @@ export class EventController {
     }
   }
 
+  /**
+   * GET /events/:eventId/check-in-staff — lista equipe de portaria.
+   */
+  async listCheckInStaff(req: Request, res: Response): Promise<void> {
+    const actor = requireActor(req, res);
+    if (!actor) return;
+
+    const { eventId } = req.params as { eventId: string };
+
+    try {
+      const staff = await listCheckInStaff(eventId, actor);
+      res.status(200).json({ staff });
+    } catch (error) {
+      this.handleError(res, error, "listCheckInStaff", { eventId });
+    }
+  }
+
+  /**
+   * POST /events/:eventId/check-in-staff — adiciona membro por e-mail.
+   */
+  async addCheckInStaff(req: Request, res: Response): Promise<void> {
+    const actor = requireActor(req, res);
+    if (!actor) return;
+
+    const { eventId } = req.params as { eventId: string };
+
+    try {
+      const member = await addCheckInStaff(eventId, req.body, actor);
+      res.status(201).json({ member });
+    } catch (error) {
+      this.handleError(res, error, "addCheckInStaff", { eventId });
+    }
+  }
+
+  /**
+   * DELETE /events/:eventId/check-in-staff/:userId — remove membro.
+   */
+  async removeCheckInStaff(req: Request, res: Response): Promise<void> {
+    const actor = requireActor(req, res);
+    if (!actor) return;
+
+    const { eventId, userId } = req.params as { eventId: string; userId: string };
+
+    try {
+      await removeCheckInStaff(eventId, userId, actor);
+      res.status(204).send();
+    } catch (error) {
+      this.handleError(res, error, "removeCheckInStaff", { eventId, userId });
+    }
+  }
+
   /** Mapeia erros de evento para status HTTP e log. */
   private handleError(
     res: Response,
@@ -322,7 +378,9 @@ export class EventController {
 
     if (
       error instanceof EventNotFoundError ||
-      error instanceof TicketLotNotFoundError
+      error instanceof TicketLotNotFoundError ||
+      error instanceof CheckInStaffUserNotFoundError ||
+      error instanceof CheckInStaffNotFoundError
     ) {
       res.status(404).json({ error: error.message, code: error.code });
       return;

@@ -22,6 +22,7 @@ interface MobileNavDrawerProps {
   isAuthenticated: boolean;
   isProducer: boolean;
   isAdmin: boolean;
+  canCheckIn?: boolean;
   userName?: string;
   userEmail?: string;
   onNavigate: () => void;
@@ -103,6 +104,7 @@ export function MobileNavDrawer({
   isAuthenticated,
   isProducer,
   isAdmin,
+  canCheckIn = false,
   userName,
   userEmail,
   onNavigate,
@@ -160,6 +162,16 @@ export function MobileNavDrawer({
           >
             Criar evento
           </Button>
+        </NavSection>
+      ) : null}
+
+      {!isProducer && canCheckIn ? (
+        <NavSection title="Portaria">
+          <MobileNavItem
+            item={{ to: "/produtor/check-in", label: "Check-in", icon: IconScan, exact: true }}
+            currentPath={currentPath}
+            onNavigate={onNavigate}
+          />
         </NavSection>
       ) : null}
 

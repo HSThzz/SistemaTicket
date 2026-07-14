@@ -15,6 +15,8 @@ import {
 } from "../../domain/errors/CheckInError";
 import { checkIn } from "../../application/services/checkIn";
 import { previewCheckIn } from "../../application/services/previewCheckIn";
+import { listCheckInEvents } from "../../application/services/listCheckInEvents";
+import { userHasCheckInAccess } from "../../application/queries/userHasCheckInAccess";
 import type { CheckInPreviewResult, CheckInResult } from "../../application/services/types";
 
 const CONTEXT = "CheckInController";
@@ -42,6 +44,40 @@ function serializeCheckIn(result: CheckInResult) {
  * Endpoint de validação de ingresso por código único.
  */
 export class CheckInController {
+  /**
+   * GET /tickets/check-in/access — se o usuário pode abrir a área de check-in.
+   */
+  async access(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    const canCheckIn = await userHasCheckInAccess({
+      userId: req.user.id,
+      role: req.user.role,
+    });
+
+    res.status(200).json({ canCheckIn });
+  }
+
+  /**
+   * GET /tickets/check-in/events — eventos do dia em que o ator pode validar.
+   */
+  async listEvents(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
+    const events = await listCheckInEvents({
+      userId: req.user.id,
+      role: req.user.role,
+    });
+
+    res.status(200).json({ events });
+  }
+
   /**
    * POST /tickets/check-in/preview — valida e devolve dados sem marcar usado.
    */

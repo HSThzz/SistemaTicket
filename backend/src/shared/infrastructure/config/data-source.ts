@@ -9,6 +9,7 @@ import { DataSource } from "typeorm";
 import {
   AdminAuditLog,
   Event,
+  EventCheckInStaff,
   Order,
   ParticipationRequest,
   PasswordResetToken,
@@ -59,6 +60,6 @@ export const AppDataSource = new DataSource({
   ...postgresConfig,
   synchronize: false,
   logging: !isProduction && !isTest,
-  entities: [User, PasswordResetToken, Event, TicketLot, Reservation, Order, Ticket, UserFavorite, AdminAuditLog, UserSpotifyConnection, ProducerLead, ParticipationRequest],
+  entities: [User, PasswordResetToken, Event, EventCheckInStaff, TicketLot, Reservation, Order, Ticket, UserFavorite, AdminAuditLog, UserSpotifyConnection, ProducerLead, ParticipationRequest],
   migrations: [`${__dirname}/../persistence/migrations/*.{ts,js}`],
 });

@@ -3,13 +3,15 @@
  * @module pages/producer/ProducerCheckInPage
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
+  Alert,
   Box,
   Button,
   Container,
   Grid,
   Group,
+  Select,
   Stack,
   Text,
   TextInput,
@@ -34,6 +36,8 @@ import {
 import { ProducerNav } from "@/modules/catalog/features/producer/components/ProducerNav";
 import { QrScanner } from "@/modules/ticketing/features/check-in/components/QrScanner";
 import { PremiumBadge } from "@/components/ui/PremiumBadge";
+import { useAuth } from "@/modules/identity/features/auth/context/AuthContext";
+import { isProducerPanelRole } from "@/modules/identity/features/admin/utils/adminRoles";
 import * as checkInService from "@/modules/ticketing/api/checkInService";
 import { getApiErrorMessage } from "@/shared/utils/errors";
 
@@ -51,6 +55,9 @@ const CHECKIN_TIPS = [
  * Valida ingressos via {@link QrScanner} ou código manual: preview → Liberar/Recusar.
  */
 export function ProducerCheckInPage() {
+  const { user } = useAuth();
+  const isFullProducer = isProducerPanelRole(user?.role);
+
   const [lookingUp, setLookingUp] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [pendingCode, setPendingCode] = useState<string | null>(null);
@@ -61,6 +68,9 @@ export function ProducerCheckInPage() {
     null,
   );
   const [scannerLocked, setScannerLocked] = useState(false);
+  const [events, setEvents] = useState<checkInService.CheckInEventOption[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   const form = useForm<CheckInFormValues>({
     initialValues: { checkInCode: "" },
@@ -74,6 +84,36 @@ export function ProducerCheckInPage() {
       },
     },
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadEvents() {
+      setEventsLoading(true);
+      try {
+        const rows = await checkInService.listCheckInEvents();
+        if (cancelled) {
+          return;
+        }
+        setEvents(rows);
+        setSelectedEventId(rows.length === 1 ? rows[0].id : rows[0]?.id ?? null);
+      } catch {
+        if (!cancelled) {
+          setEvents([]);
+          setSelectedEventId(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setEventsLoading(false);
+        }
+      }
+    }
+
+    void loadEvents();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const busy = lookingUp || confirming || Boolean(preview);
 
@@ -166,6 +206,13 @@ export function ProducerCheckInPage() {
     [performPreview],
   );
 
+  const selectedEvent =
+    events.find((event) => event.id === selectedEventId) ?? null;
+  const eventSelectData = events.map((event) => ({
+    value: event.id,
+    label: event.title,
+  }));
+
   return (
     <Stack gap={0}>
       <Box className="producer-checkin-hero producer-manage-hero full-bleed">
@@ -205,8 +252,39 @@ export function ProducerCheckInPage() {
       <Box className="page-body">
         <Container size="lg" py="xl" px="md">
           <Stack gap="md">
-            <PageBackNav to="/produtor" label="Voltar ao painel" />
-            <ProducerNav showCreateEvent={false} />
+            {isFullProducer ? (
+              <>
+                <PageBackNav to="/produtor" label="Voltar ao painel" />
+                <ProducerNav showCreateEvent={false} />
+              </>
+            ) : (
+              <PageBackNav to="/" label="Voltar ao início" />
+            )}
+
+            {!eventsLoading && events.length === 0 ? (
+              <Alert color="yellow" title="Nenhum evento para check-in hoje">
+                O check-in só fica disponível no dia do evento, para eventos publicados
+                em que você é dono ou faz parte da equipe de portaria.
+              </Alert>
+            ) : null}
+
+            {events.length > 1 ? (
+              <Select
+                label="Evento"
+                description="Selecione o evento da portaria (validação ainda confere o ingresso)."
+                data={eventSelectData}
+                value={selectedEventId}
+                onChange={setSelectedEventId}
+                searchable
+                radius="md"
+              />
+            ) : null}
+
+            {selectedEvent && events.length === 1 ? (
+              <Text size="sm" c="dimmed">
+                Evento de hoje: <Text span fw={600}>{selectedEvent.title}</Text>
+              </Text>
+            ) : null}
           </Stack>
           <Grid mt="lg">
             <Grid.Col span={{ base: 12, md: 7 }}>

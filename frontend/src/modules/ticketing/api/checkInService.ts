@@ -21,6 +21,33 @@ export interface CheckInResult extends CheckInPreviewResult {
   checked_in_at: string;
 }
 
+/** Evento disponível para check-in hoje. */
+export interface CheckInEventOption {
+  id: string;
+  title: string;
+  date: string;
+  location: string;
+  status: string;
+}
+
+/**
+ * Indica se o usuário autenticado pode abrir a área de check-in.
+ */
+export async function getCheckInAccess(): Promise<boolean> {
+  const { data } = await api.get<{ canCheckIn: boolean }>("/tickets/check-in/access");
+  return data.canCheckIn;
+}
+
+/**
+ * Lista eventos do dia em que o ator pode validar ingressos.
+ */
+export async function listCheckInEvents(): Promise<CheckInEventOption[]> {
+  const { data } = await api.get<{ events: CheckInEventOption[] }>(
+    "/tickets/check-in/events",
+  );
+  return data.events;
+}
+
 /**
  * Pré-visualiza o ingresso sem marcar como usado.
  */

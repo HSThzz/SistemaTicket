@@ -16,7 +16,6 @@ import {
   listUserTicketsQuerySchema,
 } from "../../../../shared/interfaces/http/validation/ticketing.schemas";
 import { UserRole } from "../../../../shared/kernel/enums";
-import { STAFF_ROLES } from "../../../../shared/kernel/staffRoles";
 
 const router = Router();
 
@@ -35,10 +34,21 @@ router.post(
   (req, res) => void ticketController.issueManual(req, res),
 );
 
+router.get(
+  "/check-in/access",
+  authMiddleware,
+  (req, res) => void checkInController.access(req, res),
+);
+
+router.get(
+  "/check-in/events",
+  authMiddleware,
+  (req, res) => void checkInController.listEvents(req, res),
+);
+
 router.post(
   "/check-in/preview",
   authMiddleware,
-  roleMiddleware([...STAFF_ROLES, UserRole.PRODUCER]),
   checkInRateLimiter,
   validateBody(checkInBodySchema),
   (req, res) => void checkInController.preview(req, res),
@@ -47,7 +57,6 @@ router.post(
 router.post(
   "/check-in",
   authMiddleware,
-  roleMiddleware([...STAFF_ROLES, UserRole.PRODUCER]),
   checkInRateLimiter,
   validateBody(checkInBodySchema),
   (req, res) => void checkInController.checkIn(req, res),
