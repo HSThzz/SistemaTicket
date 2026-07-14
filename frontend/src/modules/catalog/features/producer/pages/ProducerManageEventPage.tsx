@@ -112,6 +112,8 @@ export function ProducerManageEventPage() {
   const [pendingStatus, setPendingStatus] = useState<EventStatus | null>(null);
   const [lotToDelete, setLotToDelete] = useState<TicketLot | null>(null);
   const [deletingLot, setDeletingLot] = useState(false);
+  const [lotToEdit, setLotToEdit] = useState<TicketLot | null>(null);
+  const [savingLotEdit, setSavingLotEdit] = useState(false);
 
   const eventForm = useForm<EventFormValues>({
     initialValues: {
@@ -143,6 +145,38 @@ export function ProducerManageEventPage() {
       totalQuantity: (value) => (Number(value) > 0 ? null : "Quantidade inválida"),
     },
   });
+
+  const editLotForm = useForm<LotFormValues>({
+    initialValues: {
+      name: "",
+      priceReais: 0,
+      totalQuantity: 1,
+    },
+    validate: {
+      name: (value) => (String(value).trim().length >= 2 ? null : "Informe o nome do lote"),
+      priceReais: (value) =>
+        Number(value) >= 0 && !Number.isNaN(Number(value))
+          ? null
+          : "Preço inválido",
+      totalQuantity: (value) =>
+        Number(value) > 0 && !Number.isNaN(Number(value))
+          ? null
+          : "Quantidade inválida",
+    },
+  });
+
+  const openEditLot = (lot: TicketLot) => {
+    setLotToEdit(lot);
+    editLotForm.setValues({
+      name: lot.name,
+      priceReais: lot.price / 100,
+      totalQuantity: lot.totalQuantity,
+    });
+    editLotForm.clearErrors();
+  };
+
+  const canEditLotPrice =
+    lotToEdit !== null && lotToEdit.totalQuantity - lotToEdit.availableQuantity === 0;
 
   useEffect(() => {
     if (!eventId) {
@@ -403,6 +437,53 @@ export function ProducerManageEventPage() {
     }
   };
 
+  const handleUpdateLot = editLotForm.onSubmit(async (values) => {
+    if (!eventId || !lotToEdit) {
+      return;
+    }
+
+    if (Number(values.totalQuantity) < lotToEdit.totalQuantity) {
+      editLotForm.setFieldError(
+        "totalQuantity",
+        `A quantidade só pode aumentar (mínimo ${lotToEdit.totalQuantity})`,
+      );
+      return;
+    }
+
+    setSavingLotEdit(true);
+
+    try {
+      const payload: eventService.UpdateTicketLotInput = {
+        name: String(values.name).trim(),
+        totalQuantity: Number(values.totalQuantity),
+      };
+
+      if (canEditLotPrice) {
+        payload.price = parsePriceToCents(values.priceReais);
+      }
+
+      await eventService.updateTicketLot(eventId, lotToEdit.id, payload);
+      setLotToEdit(null);
+      await reloadEvent();
+
+      notifications.show({
+        title: "Lote atualizado",
+        message: "Alterações salvas com sucesso.",
+        color: "green",
+        icon: <IconCheck size={18} />,
+      });
+    } catch (err) {
+      notifications.show({
+        title: "Não foi possível salvar",
+        message: getApiErrorMessage(err),
+        color: "red",
+        icon: <IconX size={18} />,
+      });
+    } finally {
+      setSavingLotEdit(false);
+    }
+  });
+
   if (loading) {
     return <PageLoader label="Carregando evento..." />;
   }
@@ -482,6 +563,62 @@ export function ProducerManageEventPage() {
             </Button>
           </Group>
         </Stack>
+      </Modal>
+
+      <Modal
+        opened={lotToEdit !== null}
+        onClose={() => {
+          if (!savingLotEdit) {
+            setLotToEdit(null);
+          }
+        }}
+        title="Editar lote"
+        centered
+        radius="lg"
+      >
+        <form onSubmit={handleUpdateLot}>
+          <Stack gap="md">
+            <TextInput
+              label="Nome do lote"
+              radius="md"
+              {...editLotForm.getInputProps("name")}
+            />
+            <NumberInput
+              label="Preço (R$)"
+              decimalScale={2}
+              fixedDecimalScale
+              min={0}
+              radius="md"
+              disabled={!canEditLotPrice}
+              description={
+                canEditLotPrice
+                  ? undefined
+                  : "Preço bloqueado: este lote já tem reservas ou ingressos."
+              }
+              {...editLotForm.getInputProps("priceReais")}
+            />
+            <NumberInput
+              label="Quantidade total"
+              min={lotToEdit?.totalQuantity ?? 1}
+              radius="md"
+              description="Só é possível aumentar a quantidade."
+              {...editLotForm.getInputProps("totalQuantity")}
+            />
+            <Group justify="flex-end" gap="sm" mt="sm">
+              <Button
+                variant="default"
+                onClick={() => setLotToEdit(null)}
+                disabled={savingLotEdit}
+                radius="xl"
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" loading={savingLotEdit} radius="xl">
+                Salvar
+              </Button>
+            </Group>
+          </Stack>
+        </form>
       </Modal>
 
       <Box className="producer-manage-hero full-bleed" style={getEventCoverStyle(event)}>
@@ -785,8 +922,10 @@ export function ProducerManageEventPage() {
                     <ProducerLotCard
                       key={lot.id}
                       lot={lot}
+                      canEdit={Boolean(canManageLots)}
                       canDelete={canDeleteLot}
                       deleting={deletingLot && lotToDelete?.id === lot.id}
+                      onEdit={openEditLot}
                       onDelete={setLotToDelete}
                     />
                   );

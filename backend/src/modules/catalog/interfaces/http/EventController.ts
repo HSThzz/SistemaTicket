@@ -24,6 +24,7 @@ import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/r
 import { createEvent } from "../../application/services/createEvent";
 import { createTicketLot } from "../../application/services/createTicketLot";
 import { deleteTicketLot } from "../../application/services/deleteTicketLot";
+import { updateTicketLot } from "../../application/services/updateTicketLot";
 import { addCheckInStaff } from "../../application/services/addCheckInStaff";
 import { listCheckInStaff } from "../../application/services/listCheckInStaff";
 import { removeCheckInStaff } from "../../application/services/removeCheckInStaff";
@@ -306,6 +307,50 @@ export class EventController {
       res.status(204).send();
     } catch (error) {
       this.handleError(res, error, "deleteLot", { eventId, lotId });
+    }
+  }
+
+  /**
+   * PATCH /events/:eventId/lots/:lotId — edição segura (nome / preço / aumento de estoque).
+   */
+  async updateLot(req: Request, res: Response): Promise<void> {
+    const actor = requireActor(req, res);
+    if (!actor) return;
+
+    const { eventId, lotId } = req.params as { eventId: string; lotId: string };
+
+    try {
+      const { lot, quantityDelta } = await updateTicketLot(
+        eventId,
+        lotId,
+        req.body,
+        actor,
+      );
+
+      if (quantityDelta > 0) {
+        const redis = getRedis();
+        const stockKey = `${TICKET_LOT_STOCK_KEY_PREFIX}${lot.id}`;
+        const exists = await redis.exists(stockKey);
+
+        if (exists) {
+          await redis.incrby(stockKey, quantityDelta);
+        } else {
+          await redis.set(stockKey, String(lot.availableQuantity));
+        }
+      }
+
+      res.status(200).json({
+        ticketLot: {
+          id: lot.id,
+          eventId: lot.eventId,
+          name: lot.name,
+          price: lot.price,
+          totalQuantity: lot.totalQuantity,
+          availableQuantity: lot.availableQuantity,
+        },
+      });
+    } catch (error) {
+      this.handleError(res, error, "updateLot", { eventId, lotId });
     }
   }
 

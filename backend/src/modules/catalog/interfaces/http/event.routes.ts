@@ -14,6 +14,7 @@ import {
   eventStaffParamsSchema,
   addCheckInStaffBodySchema,
   updateEventBodySchema,
+  updateTicketLotBodySchema,
 } from "../../../../shared/interfaces/http/validation/catalog.schemas";
 
 const router = Router();
@@ -63,6 +64,14 @@ router.post(
   validateParams(eventIdParamsSchema),
   validateBody(createTicketLotBodySchema),
   (req, res) => void eventController.createLot(req, res),
+);
+
+router.patch(
+  "/:eventId/lots/:lotId",
+  ...eventManagementMiddlewares,
+  validateParams(eventLotParamsSchema),
+  validateBody(updateTicketLotBodySchema),
+  (req, res) => void eventController.updateLot(req, res),
 );
 
 router.delete(

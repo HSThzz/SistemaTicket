@@ -141,6 +141,28 @@ export class TicketLotHasPendingReservationsError extends EventError {
   }
 }
 
+/** Preço só pode mudar sem reservas pendentes nem ingressos emitidos. */
+export class TicketLotPriceLockedError extends EventError {
+  constructor() {
+    super(
+      "Cannot change ticket lot price while it has pending reservations or issued tickets",
+      "LOT_PRICE_LOCKED",
+    );
+    this.name = "TicketLotPriceLockedError";
+  }
+}
+
+/** Quantidade total do lote só pode aumentar. */
+export class TicketLotQuantityDecreaseForbiddenError extends EventError {
+  constructor() {
+    super(
+      "Cannot decrease ticket lot total quantity",
+      "LOT_QUANTITY_DECREASE_FORBIDDEN",
+    );
+    this.name = "TicketLotQuantityDecreaseForbiddenError";
+  }
+}
+
 /** Evento publicado precisa manter ao menos um lote. */
 export class TicketLotLastPublishedError extends EventError {
   constructor() {

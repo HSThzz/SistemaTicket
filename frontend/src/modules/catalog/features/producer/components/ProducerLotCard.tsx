@@ -10,22 +10,26 @@ import {
   Title,
   Tooltip,
 } from "@mantine/core";
-import { IconTicket, IconTrash } from "@tabler/icons-react";
+import { IconPencil, IconTicket, IconTrash } from "@tabler/icons-react";
 import { LotStockBadge } from "@/components/ui/LotStockBadge";
 import type { TicketLot } from "@/shared/types/api";
 import { formatLotPrice } from "@/shared/utils/format";
 
 interface ProducerLotCardProps {
   lot: TicketLot;
+  canEdit?: boolean;
   canDelete?: boolean;
   deleting?: boolean;
+  onEdit?: (lot: TicketLot) => void;
   onDelete?: (lot: TicketLot) => void;
 }
 
 export function ProducerLotCard({
   lot,
+  canEdit = false,
   canDelete = false,
   deleting = false,
+  onEdit,
   onDelete,
 }: ProducerLotCardProps) {
   const sold = lot.totalQuantity - lot.availableQuantity;
@@ -49,6 +53,20 @@ export function ProducerLotCard({
         </Group>
         <Group gap="sm" wrap="nowrap">
           <LotStockBadge availableQuantity={lot.availableQuantity} />
+          {canEdit && onEdit ? (
+            <Tooltip label="Editar lote">
+              <ActionIcon
+                variant="light"
+                color="brand"
+                radius="md"
+                size="lg"
+                aria-label={`Editar lote ${lot.name}`}
+                onClick={() => onEdit(lot)}
+              >
+                <IconPencil size={18} />
+              </ActionIcon>
+            </Tooltip>
+          ) : null}
           {canDelete && onDelete ? (
             <Tooltip label="Apagar lote">
               <ActionIcon

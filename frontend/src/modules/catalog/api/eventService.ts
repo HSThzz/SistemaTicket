@@ -35,6 +35,13 @@ export interface CreateTicketLotInput {
   availableQuantity?: number;
 }
 
+/** Campos opcionais para atualização parcial de lote. */
+export interface UpdateTicketLotInput {
+  name?: string;
+  price?: number;
+  totalQuantity?: number;
+}
+
 /**
  * Lista eventos publicados na vitrine pública.
  */
@@ -103,6 +110,21 @@ export async function createTicketLot(
 ): Promise<TicketLot & { eventId: string }> {
   const { data } = await api.post<{ ticketLot: TicketLot & { eventId: string } }>(
     `/events/${eventId}/lots`,
+    input,
+  );
+  return data.ticketLot;
+}
+
+/**
+ * Atualiza lote com regras seguras (nome, preço sem atividade, só aumento de estoque).
+ */
+export async function updateTicketLot(
+  eventId: string,
+  lotId: string,
+  input: UpdateTicketLotInput,
+): Promise<TicketLot & { eventId: string }> {
+  const { data } = await api.patch<{ ticketLot: TicketLot & { eventId: string } }>(
+    `/events/${eventId}/lots/${lotId}`,
     input,
   );
   return data.ticketLot;

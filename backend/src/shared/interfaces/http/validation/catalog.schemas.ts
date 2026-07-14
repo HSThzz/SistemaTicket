@@ -6,6 +6,7 @@
 export { createEventSchema as createEventBodySchema } from "../../../../modules/catalog/validators/schema/createEventSchema";
 export { updateEventSchema as updateEventBodySchema } from "../../../../modules/catalog/validators/schema/updateEventSchema";
 export { createTicketLotSchema as createTicketLotBodySchema } from "../../../../modules/catalog/validators/schema/createTicketLotSchema";
+export { updateTicketLotSchema as updateTicketLotBodySchema } from "../../../../modules/catalog/validators/schema/updateTicketLotSchema";
 export {
   eventIdParamsSchema,
   eventLotParamsSchema,

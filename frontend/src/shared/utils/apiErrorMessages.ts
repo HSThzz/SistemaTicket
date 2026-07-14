@@ -45,6 +45,10 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   TICKET_LOT_HAS_SALES: "Não é possível excluir um lote que já teve ingressos emitidos.",
   TICKET_LOT_HAS_PENDING_RESERVATIONS: "Não é possível excluir um lote com reservas pendentes.",
   TICKET_LOT_LAST_OF_PUBLISHED_EVENT: "Evento publicado precisa manter pelo menos um lote de ingressos.",
+  LOT_PRICE_LOCKED:
+    "Não é possível alterar o preço deste lote enquanto houver reservas pendentes ou ingressos emitidos.",
+  LOT_QUANTITY_DECREASE_FORBIDDEN:
+    "A quantidade total do lote só pode ser aumentada, não reduzida.",
   EVENT_TYPE_CHANGE_NOT_DRAFT: "O tipo do evento só pode ser alterado enquanto estiver em rascunho.",
   EVENT_TYPE_CHANGE_HAS_PARTICIPATION_REQUESTS:
     "Não é possível alterar o tipo após solicitações de participação.",
