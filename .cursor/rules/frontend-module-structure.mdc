@@ -1,0 +1,21 @@
+---
+description: Estrutura de módulos e features do frontend React
+globs: frontend/src/modules/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend — estrutura de módulo
+
+```
+modules/<domain>/
+  api/<domain>Service.ts
+  utils/
+  features/<feature>/{pages,components,hooks,context,utils}/
+```
+
+- HTTP via `api` de `@/shared/api/client`; tipos em `@/shared/types/api`.
+- Erros: `getApiErrorMessage` / `getApiErrorCode`; novos `code` → `apiErrorMessages.ts`.
+- Rotas em `app/App.tsx` com o guard adequado.
+- CSS de área em `frontend/src/styles/`; tokens `--vibra-*`.
+
+How-to completo: skill `frontend-feature`.

@@ -1,0 +1,24 @@
+---
+description: Camadas e naming do backend por módulo (DDD-ish)
+globs: backend/src/modules/**/*.ts
+alwaysApply: false
+---
+
+# Backend — estrutura de módulo
+
+```
+modules/<m>/
+  domain/errors/
+  application/{commands,queries,services,helpers}/
+  validators/schema/
+  interfaces/http/
+  infrastructure/   # só gateways/workers
+```
+
+- **Service** orquestra; **command** escreve; **query** lê com QueryBuilder.
+- Um export principal por arquivo; nome do arquivo = export.
+- Schemas Zod no módulo; rotas usam reexport em `shared/interfaces/http/validation/*.schemas.ts`.
+- `Logger.getInstance()` + `const CONTEXT = "..."`.
+- Domínio lança `*Error` com `code`; controller mapeia HTTP.
+
+How-to completo: skill `backend-feature`.

@@ -1,0 +1,13 @@
+---
+description: Códigos de erro de API devem ter mensagem no frontend
+globs: backend/src/modules/**/domain/errors/**/*.ts,frontend/src/shared/utils/apiErrorMessages.ts
+alwaysApply: false
+---
+
+# Erros de API
+
+Todo `code` novo no backend precisa de entrada em `frontend/src/shared/utils/apiErrorMessages.ts`.
+
+Resposta: `{ error, code }`. Controller mapeia status (404/403/409/400).
+
+How-to: skill `domain-errors-api`.
