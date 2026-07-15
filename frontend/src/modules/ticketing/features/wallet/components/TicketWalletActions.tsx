@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useState } from "react";
-import { Button, Group, Stack, Text } from "@mantine/core";
+import { Box, Button, Group, Stack, Text, Tooltip } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconBrandApple, IconBrandGoogle, IconWallet } from "@tabler/icons-react";
 import * as walletService from "@/modules/ticketing/api/walletService";
@@ -18,35 +18,16 @@ interface TicketWalletActionsProps {
 
 /**
  * Botões Apple Wallet e Google Wallet com feedback via notificações Mantine.
+ * Apple Wallet permanece desabilitado enquanto a integração está em desenvolvimento.
  */
 export function TicketWalletActions({ ticketId }: TicketWalletActionsProps) {
-  const [appleLoading, setAppleLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   useResetOnPageReturn(
     useCallback(() => {
-      setAppleLoading(false);
       setGoogleLoading(false);
     }, []),
   );
-
-  async function handleAppleWallet() {
-    setAppleLoading(true);
-    try {
-      await walletService.downloadAppleWalletPass(ticketId);
-    } catch (error) {
-      notifications.show({
-        title: "Apple Wallet",
-        message: await walletService.getWalletErrorMessage(
-          error,
-          "Não foi possível gerar o pass da Apple Wallet.",
-        ),
-        color: "red",
-      });
-    } finally {
-      setAppleLoading(false);
-    }
-  }
 
   async function handleGoogleWallet() {
     setGoogleLoading(true);
@@ -78,24 +59,26 @@ export function TicketWalletActions({ ticketId }: TicketWalletActionsProps) {
         entrada.
       </Text>
       <Group gap="sm" grow>
-        <Button
-          variant="light"
-          color="dark"
-          radius="xl"
-          leftSection={<IconBrandApple size={18} />}
-          loading={appleLoading}
-          disabled={googleLoading}
-          onClick={() => void handleAppleWallet()}
-        >
-          Apple Wallet
-        </Button>
+        <Tooltip label="Em desenvolvimento" withArrow position="top">
+          <Box component="span" display="block" style={{ flex: 1 }}>
+            <Button
+              fullWidth
+              variant="light"
+              color="dark"
+              radius="xl"
+              leftSection={<IconBrandApple size={18} />}
+              disabled
+            >
+              Apple Wallet
+            </Button>
+          </Box>
+        </Tooltip>
         <Button
           variant="light"
           color="blue"
           radius="xl"
           leftSection={<IconBrandGoogle size={18} />}
           loading={googleLoading}
-          disabled={appleLoading}
           onClick={() => void handleGoogleWallet()}
         >
           Google Wallet
