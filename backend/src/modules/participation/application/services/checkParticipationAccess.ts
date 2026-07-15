@@ -3,7 +3,7 @@
  * @module modules/participation/application/services/checkParticipationAccess
  *
  * Para eventos públicos o checkout é sempre liberado. Para eventos privados,
- * exige que o usuário tenha uma solicitação de participação APROVADA no evento.
+ * exige solicitação APROVADA e que o lote esteja em `allowedTicketLotIds`.
  */
 
 import { EventType } from "../../../../shared/kernel/enums";
@@ -11,7 +11,7 @@ import {
   resolveParticipationAccess,
   type ParticipationAccess,
 } from "../helpers/resolveParticipationAccess";
-import { countApprovedParticipation } from "../queries/countApprovedParticipation";
+import { findApprovedParticipationForUser } from "../queries/findApprovedParticipationForUser";
 import { findEventVisibilityByTicketLotId } from "../queries/findEventVisibilityByTicketLotId";
 
 export type { ParticipationAccess } from "../helpers/resolveParticipationAccess";
@@ -28,13 +28,18 @@ export async function checkParticipationAccess(
   const visibility = await findEventVisibilityByTicketLotId(ticketLotId);
 
   if (!visibility || visibility.type !== EventType.PRIVATE) {
-    return resolveParticipationAccess(visibility?.type ?? null, 0);
+    return resolveParticipationAccess(visibility?.type ?? null, false, null, null);
   }
 
-  const approvedCount = await countApprovedParticipation(
+  const approval = await findApprovedParticipationForUser(
     visibility.eventId,
     userId,
   );
 
-  return resolveParticipationAccess(visibility.type, approvedCount);
+  return resolveParticipationAccess(
+    visibility.type,
+    Boolean(approval),
+    ticketLotId,
+    approval?.allowedTicketLotIds ?? null,
+  );
 }

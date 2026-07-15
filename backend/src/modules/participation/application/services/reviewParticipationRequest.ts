@@ -2,8 +2,8 @@
  * @file Serviço: produtor aprova ou recusa uma solicitação de participação.
  * @module modules/participation/application/services/reviewParticipationRequest
  *
- * Aprovar libera o fluxo de checkout existente para o usuário (via gate em
- * {@link checkParticipationAccess}); a compra/pagamento seguem inalterados.
+ * Aprovar libera o checkout apenas para os lotes informados em `ticketLotIds`
+ * (gate em {@link checkParticipationAccess}).
  */
 
 import { Logger } from "../../../../shared/infrastructure/config/logger";
@@ -11,12 +11,16 @@ import { ParticipationRequestStatus } from "../../../../shared/kernel/enums";
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import { uuidSchema } from "../../../../shared/kernel/zodFields";
 import { findOneEventById } from "../../../catalog/application/queries/findOneEventById";
+import { findTicketLotIdsByEventId } from "../../../catalog/application/queries/findTicketLotIdsByEventId";
 import {
   ParticipationAlreadyReviewedError,
   ParticipationEventNotFoundError,
+  ParticipationInvalidTicketLotsError,
+  ParticipationNoTicketLotsError,
   ParticipationRequestNotFoundError,
 } from "../../domain/errors/ParticipationError";
 import {
+  ParticipationReviewDecision,
   reviewParticipationRequestSchema,
   type ReviewParticipationRequestInputSchema,
 } from "../../validators/schema/reviewParticipationRequestSchema";
@@ -50,12 +54,30 @@ export async function reviewParticipationRequest(
   assertEventAllowsParticipationReview(event);
 
   const nextStatus = mapReviewDecisionToStatus(data.decision);
+  let allowedTicketLotIds: string[] | null = null;
+
+  if (data.decision === ParticipationReviewDecision.APPROVE) {
+    const eventLotIds = await findTicketLotIdsByEventId(validEventId);
+    if (eventLotIds.length === 0) {
+      throw new ParticipationNoTicketLotsError();
+    }
+
+    const uniqueRequested = [...new Set(data.ticketLotIds ?? [])];
+    const eventLotIdSet = new Set(eventLotIds);
+    const invalid = uniqueRequested.some((id) => !eventLotIdSet.has(id));
+    if (invalid || uniqueRequested.length === 0) {
+      throw new ParticipationInvalidTicketLotsError();
+    }
+
+    allowedTicketLotIds = uniqueRequested;
+  }
 
   const saved = await reviewParticipationRequestCommand(
     validRequestId,
     validEventId,
     nextStatus,
     actor.userId,
+    allowedTicketLotIds,
   );
 
   if (!saved) {
@@ -72,6 +94,7 @@ export async function reviewParticipationRequest(
     eventId: validEventId,
     status: saved.status,
     reviewedBy: actor.userId,
+    allowedTicketLotIds: saved.allowedTicketLotIds,
   });
 
   if (saved.status === ParticipationRequestStatus.APPROVED) {

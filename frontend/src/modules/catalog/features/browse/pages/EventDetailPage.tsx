@@ -3,7 +3,7 @@
  * @module pages/EventDetailPage
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Alert,
@@ -240,6 +240,28 @@ export function EventDetailPage() {
 
   useEventCoverPreload(getEventCoverImageUrl(event ?? {}));
 
+  const eventIsPrivate = event?.type === "PRIVATE";
+  const isApproved = participation?.status === "APPROVED";
+  const canBuy = !eventIsPrivate || isApproved;
+  const purchasableLots = useMemo(() => {
+    if (!event) {
+      return [];
+    }
+    if (!eventIsPrivate || !isApproved) {
+      return event.ticketLots;
+    }
+    const allowed = participation?.allowedTicketLotIds;
+    if (!allowed) {
+      return event.ticketLots;
+    }
+    return event.ticketLots.filter((lot) => allowed.includes(lot.id));
+  }, [
+    event,
+    eventIsPrivate,
+    isApproved,
+    participation?.allowedTicketLotIds,
+  ]);
+
   if (loading) {
     return <PageLoader label="Carregando evento..." />;
   }
@@ -261,9 +283,6 @@ export function EventDetailPage() {
   const totalAvailable = getTotalAvailable(event);
   const category = inferEventCategory(event);
   const soldOut = totalAvailable === 0;
-  const eventIsPrivate = event.type === "PRIVATE";
-  const isApproved = participation?.status === "APPROVED";
-  const canBuy = !eventIsPrivate || isApproved;
 
   const handleBuy = (lotId: string) => {
     if (!isAuthenticated) {
@@ -483,28 +502,32 @@ export function EventDetailPage() {
                             icon={<IconCircleCheck size={18} />}
                             title="Participação aprovada"
                           >
-                            Você foi aprovado para este evento. Garanta seu ingresso
-                            abaixo.
+                            Você foi aprovado. Abaixo estão apenas os lotes liberados
+                            para você.
                           </Alert>
                         ) : null}
 
-                        {event.ticketLots.length === 0 ? (
+                        {purchasableLots.length === 0 ? (
                           <Box className="empty-state-card" p="xl" style={{ borderRadius: "var(--mantine-radius-lg)" }}>
                             <Stack gap="xs" align="center">
                               <ThemeIcon size={48} radius="xl" variant="light" color="gray">
                                 <IconTicket size={24} />
                               </ThemeIcon>
                               <Text fw={600} ta="center">
-                                Lotes em breve
+                                {event.ticketLots.length === 0
+                                  ? "Lotes em breve"
+                                  : "Nenhum lote liberado"}
                               </Text>
                               <Text size="sm" c="dimmed" ta="center">
-                                Este evento ainda não possui lotes de ingressos publicados.
+                                {event.ticketLots.length === 0
+                                  ? "Este evento ainda não possui lotes de ingressos publicados."
+                                  : "Sua aprovação não inclui lotes disponíveis no momento. Fale com o produtor."}
                               </Text>
                             </Stack>
                           </Box>
                         ) : (
                           <Stack gap="sm">
-                            {event.ticketLots.map((lot) => (
+                            {purchasableLots.map((lot) => (
                               <LotOfferCard
                                 key={lot.id}
                                 lot={lot}

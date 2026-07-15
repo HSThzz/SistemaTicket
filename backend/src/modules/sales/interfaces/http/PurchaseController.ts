@@ -13,6 +13,7 @@ import {
 } from "../../../../shared/infrastructure/config/constants";
 import {
   EventNotOnSaleError,
+  ParticipationLotNotAllowedError,
   ParticipationNotApprovedError,
   PendingOrderExistsError,
   PurchaseError,
@@ -343,7 +344,10 @@ export class PurchaseController {
       return;
     }
 
-    if (error instanceof ParticipationNotApprovedError) {
+    if (
+      error instanceof ParticipationNotApprovedError ||
+      error instanceof ParticipationLotNotAllowedError
+    ) {
       res.status(403).json({ error: error.message, code: error.code });
       return;
     }

@@ -14,6 +14,7 @@ export async function reviewParticipationRequest(
     | ParticipationRequestStatus.APPROVED
     | ParticipationRequestStatus.REJECTED,
   reviewerUserId: string,
+  allowedTicketLotIds: string[] | null,
 ): Promise<ParticipationRequest | null> {
   const repository = AppDataSource.getRepository(ParticipationRequest);
 
@@ -27,6 +28,7 @@ export async function reviewParticipationRequest(
       status,
       reviewedBy: reviewerUserId,
       reviewedAt: new Date(),
+      allowedTicketLotIds,
     },
   );
 
@@ -34,5 +36,8 @@ export async function reviewParticipationRequest(
     return null;
   }
 
-  return repository.findOneBy({ id: requestId });
+  return AppDataSource.getRepository(ParticipationRequest)
+    .createQueryBuilder("request")
+    .where("request.id = :requestId", { requestId })
+    .getOne();
 }

@@ -945,6 +945,7 @@ export function ProducerManageEventPage() {
             {event.type === "PRIVATE" ? (
               <ProducerParticipationPanel
                 eventId={event.id}
+                ticketLots={event.ticketLots}
                 onReviewComplete={() => void reloadEvent()}
               />
             ) : null}

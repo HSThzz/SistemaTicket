@@ -97,15 +97,20 @@ export async function listPaidParticipants(
  * @param eventId - Identificador do evento.
  * @param requestId - Identificador da solicitação.
  * @param decision - `APPROVE` ou `REJECT`.
+ * @param ticketLotIds - Obrigatório ao aprovar: lotes liberados para compra.
  */
 export async function reviewParticipationRequest(
   eventId: string,
   requestId: string,
   decision: ParticipationReviewDecision,
+  ticketLotIds?: string[],
 ): Promise<ParticipationRequest> {
   const { data } = await api.patch<{ participationRequest: ParticipationRequest }>(
     `/events/${eventId}/participation-requests/${requestId}`,
-    { decision },
+    {
+      decision,
+      ...(decision === "APPROVE" ? { ticketLotIds } : {}),
+    },
   );
   return data.participationRequest;
 }

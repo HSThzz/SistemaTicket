@@ -15,6 +15,7 @@ export function serializeParticipationRequest(request: ParticipationRequest) {
     phone: request.phone,
     instagramHandle: request.instagramHandle,
     status: request.status,
+    allowedTicketLotIds: request.allowedTicketLotIds ?? null,
     reviewedBy: request.reviewedBy,
     reviewedAt: request.reviewedAt ? request.reviewedAt.toISOString() : null,
     createdAt: request.createdAt.toISOString(),

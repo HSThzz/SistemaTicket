@@ -20,6 +20,7 @@ import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
   EventNotOnSaleError,
   InsufficientStockError,
+  ParticipationLotNotAllowedError,
   ParticipationNotApprovedError,
   PendingOrderExistsError,
   ReserveUserNotFoundError,
@@ -96,6 +97,9 @@ export async function reserveTickets(
 
   const access = await checkParticipationAccess(data.userId, data.ticketLotId);
   if (access.requiresApproval && !access.allowed) {
+    if (access.denialReason === "LOT_NOT_ALLOWED") {
+      throw new ParticipationLotNotAllowedError();
+    }
     throw new ParticipationNotApprovedError();
   }
 

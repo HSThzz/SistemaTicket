@@ -122,3 +122,25 @@ export class ParticipationAlreadyReviewedError extends ParticipationError {
     this.name = "ParticipationAlreadyReviewedError";
   }
 }
+
+/** Um ou mais lotes informados na aprovação não pertencem ao evento. */
+export class ParticipationInvalidTicketLotsError extends ParticipationError {
+  constructor() {
+    super(
+      "One or more ticket lots are invalid for this event",
+      "PARTICIPATION_INVALID_TICKET_LOTS",
+    );
+    this.name = "ParticipationInvalidTicketLotsError";
+  }
+}
+
+/** Evento sem lotes — não é possível aprovar participações ainda. */
+export class ParticipationNoTicketLotsError extends ParticipationError {
+  constructor() {
+    super(
+      "This event has no ticket lots to unlock on approval",
+      "PARTICIPATION_NO_TICKET_LOTS",
+    );
+    this.name = "ParticipationNoTicketLotsError";
+  }
+}

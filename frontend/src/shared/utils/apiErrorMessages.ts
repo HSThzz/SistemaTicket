@@ -64,6 +64,10 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   PARTICIPATION_REQUEST_NOT_FOUND: "Solicitação de participação não encontrada.",
   PARTICIPATION_ACCESS_DENIED: "Você não tem permissão para gerenciar solicitações deste evento.",
   PARTICIPATION_ALREADY_REVIEWED: "Esta solicitação já foi analisada.",
+  PARTICIPATION_INVALID_TICKET_LOTS:
+    "Um ou mais lotes selecionados são inválidos para este evento.",
+  PARTICIPATION_NO_TICKET_LOTS:
+    "Crie ao menos um lote de ingressos antes de aprovar solicitações.",
 
   // Vendas
   LOCK_NOT_ACQUIRED: "Muitas pessoas estão comprando agora. Tente novamente em instantes.",
@@ -73,6 +77,8 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   RESERVATION_ACCESS_DENIED: "Você não tem acesso a esta reserva.",
   PARTICIPATION_NOT_APPROVED:
     "Em eventos privados, sua participação precisa ser aprovada antes da compra.",
+  PARTICIPATION_LOT_NOT_ALLOWED:
+    "Sua aprovação não inclui este lote. Escolha um dos lotes liberados para você.",
   EVENT_NOT_ON_SALE: "Este evento não está disponível para compra.",
   PENDING_ORDER_EXISTS:
     "Você já tem um pedido pendente. Pague ou aguarde a expiração antes de reservar de novo.",

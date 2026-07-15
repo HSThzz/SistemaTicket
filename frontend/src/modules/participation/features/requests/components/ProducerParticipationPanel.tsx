@@ -3,12 +3,13 @@
  * @module components/producer/ProducerParticipationPanel
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActionIcon,
   Anchor,
   Box,
   Button,
+  Checkbox,
   Group,
   Loader,
   Modal,
@@ -40,12 +41,14 @@ import type {
   PaidParticipant,
   ParticipationRequest,
   ParticipationRequestStatus,
+  TicketLot,
 } from "@/shared/types/api";
 import { getApiErrorMessage } from "@/shared/utils/errors";
 import {
   buildInstagramProfileUrl,
   formatCurrencyFromCents,
   formatEventDate,
+  formatLotPrice,
 } from "@/shared/utils/format";
 import { ParticipationStatusBadge } from "@/components/ui/ParticipationStatusBadge";
 
@@ -62,13 +65,21 @@ const PANEL_FILTERS: { value: PanelFilter; label: string }[] = [
 function RequestRow({
   request,
   acting,
-  onReview,
+  lotNameById,
+  onApproveClick,
+  onReject,
 }: {
   request: ParticipationRequest;
   acting: boolean;
-  onReview: (id: string, decision: "APPROVE" | "REJECT") => void;
+  lotNameById: Map<string, string>;
+  onApproveClick: (request: ParticipationRequest) => void;
+  onReject: (id: string) => void;
 }) {
   const isPending = request.status === "PENDING";
+  const allowedLotLabels =
+    request.allowedTicketLotIds
+      ?.map((id) => lotNameById.get(id) ?? "Lote removido")
+      .filter(Boolean) ?? [];
 
   return (
     <Box className="lot-offer-card" p="md">
@@ -109,6 +120,11 @@ function RequestRow({
           <Text size="xs" c="dimmed">
             Enviada em {formatEventDate(request.createdAt)}
           </Text>
+          {request.status === "APPROVED" && allowedLotLabels.length > 0 ? (
+            <Text size="xs" c="dimmed">
+              Lotes liberados: {allowedLotLabels.join(", ")}
+            </Text>
+          ) : null}
         </Stack>
 
         {isPending ? (
@@ -119,7 +135,7 @@ function RequestRow({
               color="green"
               leftSection={<IconCheck size={16} />}
               loading={acting}
-              onClick={() => onReview(request.id, "APPROVE")}
+              onClick={() => onApproveClick(request)}
             >
               Aprovar
             </Button>
@@ -130,7 +146,7 @@ function RequestRow({
               color="red"
               leftSection={<IconX size={16} />}
               disabled={acting}
-              onClick={() => onReview(request.id, "REJECT")}
+              onClick={() => onReject(request.id)}
             >
               Recusar
             </Button>
@@ -180,13 +196,8 @@ function PaidRow({
             <Group gap={6} wrap="nowrap">
               <IconTicket size={15} />
               <Text size="sm">
-                {participant.ticketCount}{" "}
-                {participant.ticketCount === 1 ? "ingresso" : "ingressos"}
-              </Text>
-            </Group>
-            <Group gap={6} wrap="nowrap">
-              <IconReceipt size={15} />
-              <Text size="sm" fw={600} c="brand">
+                {participant.ticketCount} ingresso
+                {participant.ticketCount === 1 ? "" : "s"} ·{" "}
                 {formatCurrencyFromCents(participant.totalPriceCents)}
               </Text>
             </Group>
@@ -195,7 +206,6 @@ function PaidRow({
             Pago em {formatEventDate(participant.paidAt)}
           </Text>
         </Stack>
-
         <Button
           radius="xl"
           size="xs"
@@ -215,12 +225,15 @@ function PaidRow({
  * Lista e gerencia solicitações de participação de um evento privado.
  *
  * @param props.eventId - Identificador do evento gerenciado.
+ * @param props.ticketLots - Lotes atuais do evento (para escolher na aprovação).
  */
 export function ProducerParticipationPanel({
   eventId,
+  ticketLots,
   onReviewComplete,
 }: {
   eventId: string;
+  ticketLots: TicketLot[];
   onReviewComplete?: () => void;
 }) {
   const [panelFilter, setPanelFilter] = useState<PanelFilter>("PENDING");
@@ -230,6 +243,15 @@ export function ProducerParticipationPanel({
   const [actingId, setActingId] = useState<string | null>(null);
   const [refundTarget, setRefundTarget] = useState<PaidParticipant | null>(null);
   const [refundLoading, setRefundLoading] = useState(false);
+  const [approveTarget, setApproveTarget] = useState<ParticipationRequest | null>(
+    null,
+  );
+  const [selectedLotIds, setSelectedLotIds] = useState<string[]>([]);
+
+  const lotNameById = useMemo(
+    () => new Map(ticketLots.map((lot) => [lot.id, lot.name])),
+    [ticketLots],
+  );
 
   const load = useCallback(
     async (filter: PanelFilter) => {
@@ -268,21 +290,46 @@ export function ProducerParticipationPanel({
     void load(panelFilter);
   }, [load, panelFilter]);
 
-  const handleReview = async (id: string, decision: "APPROVE" | "REJECT") => {
+  const openApproveModal = (request: ParticipationRequest) => {
+    if (ticketLots.length === 0) {
+      notifications.show({
+        title: "Sem lotes",
+        message: "Crie ao menos um lote de ingressos antes de aprovar.",
+        color: "orange",
+        icon: <IconX size={18} />,
+      });
+      return;
+    }
+
+    setApproveTarget(request);
+    setSelectedLotIds(ticketLots.map((lot) => lot.id));
+  };
+
+  const handleReview = async (
+    id: string,
+    decision: "APPROVE" | "REJECT",
+    ticketLotIds?: string[],
+  ) => {
     setActingId(id);
     try {
-      await participationService.reviewParticipationRequest(eventId, id, decision);
+      await participationService.reviewParticipationRequest(
+        eventId,
+        id,
+        decision,
+        ticketLotIds,
+      );
       setRequests((current) => current.filter((request) => request.id !== id));
       notifications.show({
         title: decision === "APPROVE" ? "Solicitação aprovada" : "Solicitação recusada",
         message:
           decision === "APPROVE"
-            ? "O participante já pode comprar o ingresso."
+            ? "O participante só poderá comprar nos lotes liberados."
             : "A solicitação foi recusada.",
         color: decision === "APPROVE" ? "green" : "orange",
         icon: <IconCheck size={18} />,
       });
 
+      setApproveTarget(null);
       onReviewComplete?.();
     } catch (err) {
       notifications.show({
@@ -294,6 +341,22 @@ export function ProducerParticipationPanel({
     } finally {
       setActingId(null);
     }
+  };
+
+  const handleConfirmApprove = () => {
+    if (!approveTarget) {
+      return;
+    }
+    if (selectedLotIds.length === 0) {
+      notifications.show({
+        title: "Selecione lotes",
+        message: "Escolha ao menos um lote para liberar na aprovação.",
+        color: "orange",
+        icon: <IconX size={18} />,
+      });
+      return;
+    }
+    void handleReview(approveTarget.id, "APPROVE", selectedLotIds);
   };
 
   const handleConfirmRefund = async () => {
@@ -329,6 +392,7 @@ export function ProducerParticipationPanel({
 
   const isPaidTab = panelFilter === "PAID";
   const isEmpty = isPaidTab ? paidParticipants.length === 0 : requests.length === 0;
+  const approveActing = Boolean(approveTarget && actingId === approveTarget.id);
 
   return (
     <PremiumPaper p="xl">
@@ -343,7 +407,7 @@ export function ProducerParticipationPanel({
                 Solicitações de participação
               </Title>
               <Text size="sm" c="dimmed">
-                Aprove quem pediu para participar e acompanhe quem já pagou o ingresso.
+                Ao aprovar, escolha quais lotes a pessoa poderá comprar.
               </Text>
             </Stack>
           </Group>
@@ -402,12 +466,64 @@ export function ProducerParticipationPanel({
                 key={request.id}
                 request={request}
                 acting={actingId === request.id}
-                onReview={(id, decision) => void handleReview(id, decision)}
+                lotNameById={lotNameById}
+                onApproveClick={openApproveModal}
+                onReject={(id) => void handleReview(id, "REJECT")}
               />
             ))}
           </Stack>
         )}
       </Stack>
+
+      <Modal
+        opened={Boolean(approveTarget)}
+        onClose={() => {
+          if (!approveActing) {
+            setApproveTarget(null);
+          }
+        }}
+        title="Liberar lotes na aprovação"
+        centered
+        radius="lg"
+      >
+        {approveTarget ? (
+          <Stack gap="md">
+            <Text size="sm">
+              Selecione os lotes que <Text span fw={700}>{approveTarget.name}</Text>{" "}
+              poderá comprar neste evento.
+            </Text>
+            <Checkbox.Group value={selectedLotIds} onChange={setSelectedLotIds}>
+              <Stack gap="xs">
+                {ticketLots.map((lot) => (
+                  <Checkbox
+                    key={lot.id}
+                    value={lot.id}
+                    label={`${lot.name} · ${formatLotPrice(lot.price)}`}
+                  />
+                ))}
+              </Stack>
+            </Checkbox.Group>
+            <Group justify="flex-end" gap="sm">
+              <Button
+                variant="default"
+                radius="xl"
+                disabled={approveActing}
+                onClick={() => setApproveTarget(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                color="green"
+                radius="xl"
+                loading={approveActing}
+                onClick={handleConfirmApprove}
+              >
+                Confirmar aprovação
+              </Button>
+            </Group>
+          </Stack>
+        ) : null}
+      </Modal>
 
       <Modal
         opened={Boolean(refundTarget)}

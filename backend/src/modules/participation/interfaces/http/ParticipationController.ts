@@ -17,6 +17,8 @@ import {
   ParticipationAlreadyReviewedError,
   ParticipationError,
   ParticipationEventNotFoundError,
+  ParticipationInvalidTicketLotsError,
+  ParticipationNoTicketLotsError,
   ParticipationNotPrivateEventError,
   ParticipationPreviouslyRejectedError,
   ParticipationRequestNotFoundError,
@@ -223,7 +225,9 @@ export class ParticipationController {
 
     if (
       error instanceof ParticipationNotPrivateEventError ||
-      error instanceof ParticipationAlreadyReviewedError
+      error instanceof ParticipationAlreadyReviewedError ||
+      error instanceof ParticipationInvalidTicketLotsError ||
+      error instanceof ParticipationNoTicketLotsError
     ) {
       res.status(400).json({ error: error.message, code: error.code });
       return;

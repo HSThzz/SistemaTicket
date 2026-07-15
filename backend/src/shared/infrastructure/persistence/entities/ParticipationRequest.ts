@@ -52,6 +52,18 @@ export class ParticipationRequest {
   @Column({ name: "reviewed_at", type: "timestamptz", nullable: true })
   reviewedAt!: Date | null;
 
+  /**
+   * Lotes liberados para compra quando status é APPROVED.
+   * `null` em PENDING/REJECTED; em APPROVED deve listar ao menos um lote do evento.
+   */
+  @Column({
+    name: "allowed_ticket_lot_ids",
+    type: "uuid",
+    array: true,
+    nullable: true,
+  })
+  allowedTicketLotIds!: string[] | null;
+
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt!: Date;
 

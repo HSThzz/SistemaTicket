@@ -69,6 +69,8 @@ export interface ParticipationRequest {
   phone: string | null;
   instagramHandle: string | null;
   status: ParticipationRequestStatus | string;
+  /** Lotes liberados para compra quando status é APPROVED. */
+  allowedTicketLotIds: string[] | null;
   reviewedBy: string | null;
   reviewedAt: string | null;
   createdAt: string;

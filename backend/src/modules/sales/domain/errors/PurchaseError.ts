@@ -126,6 +126,19 @@ export class ParticipationNotApprovedError extends PurchaseError {
 }
 
 /**
+ * Usuário aprovado no evento privado, mas o lote escolhido não foi liberado.
+ */
+export class ParticipationLotNotAllowedError extends PurchaseError {
+  constructor() {
+    super(
+      "Your participation approval does not include this ticket lot.",
+      "PARTICIPATION_LOT_NOT_ALLOWED",
+    );
+    this.name = "ParticipationLotNotAllowedError";
+  }
+}
+
+/**
  * Evento não está publicado (ou foi cancelado/finalizado) — compra bloqueada.
  */
 export class EventNotOnSaleError extends PurchaseError {
