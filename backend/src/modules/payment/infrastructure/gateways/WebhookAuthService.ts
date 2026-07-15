@@ -21,6 +21,7 @@ import {
 } from "./internalWebhookSignature";
 import {
   extractMercadoPagoManifestId,
+  isMercadoPagoLegacyIpnRequest,
   isTimestampWithinMaxAge,
   parseMercadoPagoSignatureHeader,
   verifyMercadoPagoSignatureForRequest,
@@ -96,20 +97,21 @@ export class WebhookAuthService {
       });
 
       if (!valid) {
-        const topic = typeof req.query.topic === "string" ? req.query.topic : null;
         const ipnPaymentId = extractMercadoPagoManifestId(req);
 
-        // IPN legado (?id=&topic=payment): assinatura costuma divergir.
-        // Em produção exige HMAC; em sandbox/dev permite fallback (worker confirma na API).
-        if (
-          topic === "payment" &&
-          ipnPaymentId &&
-          (!isProduction || isMercadoPagoSandbox())
-        ) {
+        // IPN legado (?id=&topic=payment), comum após refund via notification_url:
+        // o HMAC do header frequentemente não bate com o manifest de Webhooks v1.
+        // Aceitamos e confirmamos o status na API do MP no worker (mesmo fluxo do sandbox).
+        if (isMercadoPagoLegacyIpnRequest(req) && ipnPaymentId) {
           this.logger.info(
             CONTEXT,
             "Mercado Pago IPN webhook accepted (signature skipped, verified via API in worker)",
-            { paymentId: ipnPaymentId, requestId: xRequestId },
+            {
+              paymentId: ipnPaymentId,
+              requestId: xRequestId,
+              production: isProduction,
+              sandbox: isMercadoPagoSandbox(),
+            },
           );
           return {
             replayKey: `${REPLAY_KEY_PREFIX}mercadopago-ipn:${xRequestId}:${ipnPaymentId}`,
@@ -119,6 +121,10 @@ export class WebhookAuthService {
         this.logger.warn(CONTEXT, "Mercado Pago signature mismatch", {
           dataId,
           requestId: xRequestId,
+          hasQueryDataId: Boolean(req.query["data.id"]),
+          queryTopic: typeof req.query.topic === "string" ? req.query.topic : null,
+          queryType: typeof req.query.type === "string" ? req.query.type : null,
+          legacyIpn: isMercadoPagoLegacyIpnRequest(req),
         });
         throw new WebhookUnauthorizedError("Invalid Mercado Pago webhook signature");
       }

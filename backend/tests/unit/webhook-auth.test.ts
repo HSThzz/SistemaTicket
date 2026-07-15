@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import {
   buildMercadoPagoManifest,
   collectMercadoPagoManifestDataIds,
+  isMercadoPagoLegacyIpnRequest,
   isTimestampWithinMaxAge,
   normalizeMercadoPagoTimestampMs,
   parseMercadoPagoSignatureHeader,
@@ -103,6 +104,56 @@ describe("Mercado Pago signature", () => {
     );
 
     assert.ok(collectMercadoPagoManifestDataIds(req).includes(paymentId));
+  });
+
+  it("accepts manifest without id when MP omits data.id (IPN / refund notify)", () => {
+    const secret = "test-webhook-secret";
+    const requestId = "req-refund-1";
+    const ts = "1742505638683";
+
+    const expected = createHmac("sha256", secret)
+      .update(
+        buildMercadoPagoManifest({
+          dataId: null,
+          requestId,
+          ts,
+        }),
+      )
+      .digest("hex");
+
+    const req = {
+      query: { id: "999888777", topic: "payment" },
+      body: {},
+    } as import("express").Request;
+
+    assert.equal(
+      verifyMercadoPagoSignatureForRequest({
+        req,
+        requestId,
+        ts,
+        secret,
+        receivedSignature: expected,
+      }),
+      true,
+    );
+  });
+
+  it("detects legacy IPN query shape used after refunds", () => {
+    assert.equal(
+      isMercadoPagoLegacyIpnRequest({
+        query: { id: "123", topic: "payment" },
+        body: {},
+      } as import("express").Request),
+      true,
+    );
+
+    assert.equal(
+      isMercadoPagoLegacyIpnRequest({
+        query: { "data.id": "123", type: "payment" },
+        body: {},
+      } as import("express").Request),
+      false,
+    );
   });
 });
 

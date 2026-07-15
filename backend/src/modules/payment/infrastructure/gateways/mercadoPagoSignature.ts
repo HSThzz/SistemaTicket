@@ -72,15 +72,26 @@ export function extractMercadoPagoManifestId(req: Request): string | null {
 
 /**
  * Monta a string assinada conforme documentação do Mercado Pago.
- * @param params - `dataId`, `requestId` e `ts` do webhook.
- * @returns Manifest no formato `id:...;request-id:...;ts:...;`.
+ * Pares sem valor devem ser omitidos (doc oficial): só entram `id`, `request-id` e `ts` presentes.
+ * @returns Manifest no formato `id:...;request-id:...;ts:...;` (com pares opcionais).
  */
 export function buildMercadoPagoManifest(params: {
-  dataId: string;
-  requestId: string;
+  dataId?: string | null;
+  requestId?: string | null;
   ts: string;
 }): string {
-  return `id:${params.dataId};request-id:${params.requestId};ts:${params.ts};`;
+  const parts: string[] = [];
+
+  if (params.dataId) {
+    parts.push(`id:${params.dataId}`);
+  }
+
+  if (params.requestId) {
+    parts.push(`request-id:${params.requestId}`);
+  }
+
+  parts.push(`ts:${params.ts}`);
+  return `${parts.join(";")};`;
 }
 
 /**
@@ -146,43 +157,63 @@ function normalizeMercadoPagoDataId(value: string): string {
 
 /**
  * Coleta possíveis IDs para o manifest (MP assina formatos IPN e webhook diferentes).
+ * Prioriza `data.id` da query (fonte canônica da assinatura na doc oficial).
  */
 export function collectMercadoPagoManifestDataIds(req: Request): string[] {
   const candidates = new Set<string>();
 
-  const normalized = extractMercadoPagoManifestId(req);
-  if (normalized) {
-    candidates.add(normalized);
-  }
+  const add = (value: string | null | undefined) => {
+    if (!value) {
+      return;
+    }
+    candidates.add(value);
+    const normalized = normalizeMercadoPagoDataId(value);
+    if (normalized !== value) {
+      candidates.add(normalized);
+    }
+  };
 
-  const dotted = readQueryValue(req.query["data.id"]);
-  if (dotted) {
-    candidates.add(dotted);
-  }
-
-  const topicId = readQueryValue(req.query.id);
-  if (topicId) {
-    candidates.add(topicId);
-  }
+  // Ordem: query data.id primeiro (manifest oficial), depois demais fontes.
+  add(readQueryValue(req.query["data.id"]));
 
   const nested = req.query.data;
   if (nested && typeof nested === "object" && !Array.isArray(nested)) {
-    const nestedId = readQueryValue((nested as { id?: unknown }).id);
-    if (nestedId) {
-      candidates.add(nestedId);
-    }
+    add(readQueryValue((nested as { id?: unknown }).id));
   }
+
+  add(readQueryValue(req.query.id));
+  add(readQueryValue(req.query.data_id));
 
   const body = req.body as { data?: { id?: string | number } };
   if (body?.data?.id !== undefined) {
-    candidates.add(String(body.data.id));
+    add(String(body.data.id));
   }
+
+  add(extractMercadoPagoManifestId(req));
 
   return Array.from(candidates);
 }
 
 /**
- * Tenta validar a assinatura com cada candidato de dataId do manifest.
+ * Indica IPN legado (`?id=&topic=payment`) sem `data.id` na query —
+ * formato comum em notificações via `notification_url` (ex.: após refund).
+ */
+export function isMercadoPagoLegacyIpnRequest(req: Request): boolean {
+  const topic = readQueryValue(req.query.topic);
+  const type = readQueryValue(req.query.type);
+  const hasCanonicalDataId = Boolean(readQueryValue(req.query["data.id"]));
+  const hasLegacyId = Boolean(readQueryValue(req.query.id));
+
+  if (!hasLegacyId || hasCanonicalDataId) {
+    return false;
+  }
+
+  return topic === "payment" || type === "payment";
+}
+
+/**
+ * Tenta validar a assinatura com variantes de manifest da doc MP
+ * (omitir `id` / `request-id` quando ausentes ou em formatos IPN).
  */
 export function verifyMercadoPagoSignatureForRequest(params: {
   req: Request;
@@ -191,13 +222,26 @@ export function verifyMercadoPagoSignatureForRequest(params: {
   secret: string;
   receivedSignature: string;
 }): boolean {
-  for (const dataId of collectMercadoPagoManifestDataIds(params.req)) {
-    const manifest = buildMercadoPagoManifest({
-      dataId,
-      requestId: params.requestId,
-      ts: params.ts,
-    });
+  const dataIds = collectMercadoPagoManifestDataIds(params.req);
+  const requestIds = params.requestId
+    ? [params.requestId, null]
+    : [null];
 
+  const manifests = new Set<string>();
+
+  for (const dataId of [...dataIds, null]) {
+    for (const requestId of requestIds) {
+      manifests.add(
+        buildMercadoPagoManifest({
+          dataId,
+          requestId,
+          ts: params.ts,
+        }),
+      );
+    }
+  }
+
+  for (const manifest of manifests) {
     if (
       verifyMercadoPagoSignature({
         manifest,
