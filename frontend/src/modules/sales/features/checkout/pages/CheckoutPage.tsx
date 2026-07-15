@@ -14,6 +14,7 @@ import {
   Grid,
   Group,
   Loader,
+  Modal,
   NumberInput,
   SegmentedControl,
   Stack,
@@ -31,6 +32,7 @@ import {
   IconCreditCard,
   IconMapPin,
   IconQrcode,
+  IconReceipt,
   IconShieldCheck,
   IconShoppingCart,
   IconTicket,
@@ -402,6 +404,7 @@ export function CheckoutPage() {
   const [cardSubmitting, setCardSubmitting] = useState(false);
   const [pixGenerating, setPixGenerating] = useState(false);
   const [pixGenerateError, setPixGenerateError] = useState<string | null>(null);
+  const [pendingOrderModalOpen, setPendingOrderModalOpen] = useState(false);
 
   const { user } = useAuth();
 
@@ -655,8 +658,14 @@ export function CheckoutPage() {
         icon: <IconCheck size={18} />,
       });
     } catch (error) {
-      const isParticipationBlocked =
-        getApiErrorCode(error) === "PARTICIPATION_NOT_APPROVED";
+      const errorCode = getApiErrorCode(error);
+      const isParticipationBlocked = errorCode === "PARTICIPATION_NOT_APPROVED";
+      const isPendingOrderBlocked = errorCode === "PENDING_ORDER_EXISTS";
+
+      if (isPendingOrderBlocked) {
+        setPendingOrderModalOpen(true);
+        return;
+      }
 
       notifications.show({
         title: isParticipationBlocked ? "Participação pendente" : "Não foi possível reservar",
@@ -841,6 +850,7 @@ export function CheckoutPage() {
   };
 
   return (
+    <>
     <Stack gap={0}>
       <EventCoverHero source={event} className="checkout-hero full-bleed" priority>
         <Box className="producer-manage-hero-overlay" />
@@ -1204,5 +1214,36 @@ export function CheckoutPage() {
         </Container>
       </Box>
     </Stack>
+
+    <Modal
+      opened={pendingOrderModalOpen}
+      onClose={() => setPendingOrderModalOpen(false)}
+      title="Você já tem um pedido pendente"
+      centered
+      radius="md"
+    >
+      <Stack gap="lg">
+        <Text size="sm" c="dimmed">
+          Para reservar novos ingressos, pague o pedido em aberto ou aguarde a expiração do prazo
+          de pagamento. Assim evitamos reservas duplicadas e liberamos estoque com mais justiça.
+        </Text>
+        <Group justify="flex-end" gap="sm">
+          <Button variant="subtle" radius="xl" onClick={() => setPendingOrderModalOpen(false)}>
+            Fechar
+          </Button>
+          <Button
+            radius="xl"
+            leftSection={<IconReceipt size={18} />}
+            onClick={() => {
+              setPendingOrderModalOpen(false);
+              navigate("/pedidos");
+            }}
+          >
+            Ir para meus pedidos
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+    </>
   );
 }

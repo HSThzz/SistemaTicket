@@ -14,6 +14,7 @@ import {
 import {
   EventNotOnSaleError,
   ParticipationNotApprovedError,
+  PendingOrderExistsError,
   PurchaseError,
   ReservationAccessDeniedError,
   ReservationNotFoundError,
@@ -352,11 +353,18 @@ export class PurchaseController {
       return;
     }
 
+    if (error instanceof PendingOrderExistsError) {
+      res.status(409).json({ error: error.message, code: error.code });
+      return;
+    }
+
     if (error instanceof PurchaseError) {
       const status =
         error.code === "INSUFFICIENT_STOCK"
           ? 409
           : error.code === "EVENT_NOT_ON_SALE"
+            ? 409
+          : error.code === "PENDING_ORDER_EXISTS"
             ? 409
           : error.code === "RESERVATION_ACCESS_DENIED"
             ? 403

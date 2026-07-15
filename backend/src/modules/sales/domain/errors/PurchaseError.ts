@@ -137,3 +137,16 @@ export class EventNotOnSaleError extends PurchaseError {
     this.name = "EventNotOnSaleError";
   }
 }
+
+/**
+ * Usuário já possui pedido PENDING — nova reserva bloqueada até pagar ou expirar.
+ */
+export class PendingOrderExistsError extends PurchaseError {
+  constructor() {
+    super(
+      "You already have a pending order. Pay or wait for it to expire before reserving again.",
+      "PENDING_ORDER_EXISTS",
+    );
+    this.name = "PendingOrderExistsError";
+  }
+}

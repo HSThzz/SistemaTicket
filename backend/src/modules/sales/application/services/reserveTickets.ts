@@ -21,10 +21,12 @@ import {
   EventNotOnSaleError,
   InsufficientStockError,
   ParticipationNotApprovedError,
+  PendingOrderExistsError,
   ReserveUserNotFoundError,
   TicketLotNotFoundError,
 } from "../../domain/errors/PurchaseError";
 import { reserveTicketsSchema } from "../../validators/schema/reserveTicketsSchema";
+import { findPendingOrderByUserId } from "../queries/findPendingOrderByUserId";
 import { findTicketLotForPurchase } from "../queries/findTicketLotForPurchase";
 import { findOneUserById } from "../../../identity/application/queries/findOneUserById";
 import { checkParticipationAccess } from "../../../participation/application/services/checkParticipationAccess";
@@ -76,6 +78,11 @@ export async function reserveTickets(
   const user = await findOneUserById(data.userId);
   if (!user) {
     throw new ReserveUserNotFoundError(data.userId);
+  }
+
+  const pendingOrder = await findPendingOrderByUserId(data.userId);
+  if (pendingOrder) {
+    throw new PendingOrderExistsError();
   }
 
   const lot = await findTicketLotForPurchase(data.ticketLotId);

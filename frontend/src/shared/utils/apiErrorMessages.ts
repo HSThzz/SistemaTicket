@@ -74,6 +74,8 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   PARTICIPATION_NOT_APPROVED:
     "Em eventos privados, sua participação precisa ser aprovada antes da compra.",
   EVENT_NOT_ON_SALE: "Este evento não está disponível para compra.",
+  PENDING_ORDER_EXISTS:
+    "Você já tem um pedido pendente. Pague ou aguarde a expiração antes de reservar de novo.",
 
   // Pagamento
   ORDER_NOT_FOUND: "Pedido não encontrado.",
