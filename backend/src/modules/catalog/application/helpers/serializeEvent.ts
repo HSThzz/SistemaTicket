@@ -29,6 +29,7 @@ export function serializeEvent(event: Event, options?: SerializeEventOptions) {
       price: lot.price,
       totalQuantity: lot.totalQuantity,
       availableQuantity: lot.availableQuantity,
+      maxPerDocument: lot.maxPerDocument ?? null,
     })),
     ...(options?.pendingParticipationCount !== undefined
       ? { pendingParticipationCount: options.pendingParticipationCount }

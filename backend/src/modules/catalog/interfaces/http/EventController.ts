@@ -255,12 +255,14 @@ export class EventController {
     const { eventId } = req.params as { eventId: string };
 
     try {
-      const { name, price, totalQuantity, availableQuantity } = req.body as {
-        name: string;
-        price: number;
-        totalQuantity: number;
-        availableQuantity?: number;
-      };
+      const { name, price, totalQuantity, availableQuantity, maxPerDocument } =
+        req.body as {
+          name: string;
+          price: number;
+          totalQuantity: number;
+          availableQuantity?: number;
+          maxPerDocument?: number | null;
+        };
 
       const lot = await createTicketLot(eventId,
         {
@@ -268,6 +270,7 @@ export class EventController {
           price,
           totalQuantity,
           availableQuantity,
+          maxPerDocument,
         },
         actor,
       );
@@ -285,6 +288,7 @@ export class EventController {
           price: lot.price,
           totalQuantity: lot.totalQuantity,
           availableQuantity: lot.availableQuantity,
+          maxPerDocument: lot.maxPerDocument ?? null,
         },
       });
     } catch (error) {
@@ -347,6 +351,7 @@ export class EventController {
           price: lot.price,
           totalQuantity: lot.totalQuantity,
           availableQuantity: lot.availableQuantity,
+          maxPerDocument: lot.maxPerDocument ?? null,
         },
       });
     } catch (error) {

@@ -27,6 +27,13 @@ export const createTicketLotSchema = z
         `Quantidade disponível máxima é ${MAX_TICKET_LOT_QUANTITY}`,
       )
       .optional(),
+    /** `null`/omitido = sem limite; use `1` para 1 ingresso por CPF. */
+    maxPerDocument: z
+      .union([
+        z.coerce.number().int().positive().max(10),
+        z.null(),
+      ])
+      .optional(),
   })
   .refine(
     (data) =>

@@ -10,6 +10,8 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 export type TicketLotForPurchase = {
   id: string;
   availableQuantity: number;
+  price: number;
+  maxPerDocument: number | null;
   eventId: string;
   eventStatus: EventStatus;
 };
@@ -22,6 +24,8 @@ export async function findTicketLotForPurchase(
     .innerJoin("lot.event", "event")
     .select("lot.id", "id")
     .addSelect("lot.available_quantity", "availableQuantity")
+    .addSelect("lot.price", "price")
+    .addSelect("lot.max_per_document", "maxPerDocument")
     .addSelect("event.id", "eventId")
     .addSelect("event.status", "eventStatus")
     .where("lot.id = :ticketLotId", { ticketLotId })
@@ -29,6 +33,8 @@ export async function findTicketLotForPurchase(
     .getRawOne<{
       id: string;
       availableQuantity: string | number;
+      price: string | number;
+      maxPerDocument: string | number | null;
       eventId: string;
       eventStatus: EventStatus;
     }>();
@@ -40,6 +46,9 @@ export async function findTicketLotForPurchase(
   return {
     id: row.id,
     availableQuantity: Number(row.availableQuantity),
+    price: Number(row.price),
+    maxPerDocument:
+      row.maxPerDocument == null ? null : Number(row.maxPerDocument),
     eventId: row.eventId,
     eventStatus: row.eventStatus,
   };

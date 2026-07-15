@@ -10,7 +10,12 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 export type CreateTicketLotData = Prettify<
   Pick<
     TicketLot,
-    "eventId" | "name" | "price" | "totalQuantity" | "availableQuantity"
+    | "eventId"
+    | "name"
+    | "price"
+    | "totalQuantity"
+    | "availableQuantity"
+    | "maxPerDocument"
   >
 >;
 

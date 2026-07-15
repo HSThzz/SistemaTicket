@@ -13,6 +13,7 @@ export type UpdateTicketLotCommandInput = {
   totalQuantity?: number;
   /** Incremento de capacidade (apenas se > 0). */
   quantityDelta: number;
+  maxPerDocument?: number | null;
 };
 
 export type UpdateTicketLotCommandResult = {
@@ -47,6 +48,10 @@ export async function updateTicketLot(
     if (input.quantityDelta > 0) {
       lot.totalQuantity += input.quantityDelta;
       lot.availableQuantity += input.quantityDelta;
+    }
+
+    if (input.maxPerDocument !== undefined) {
+      lot.maxPerDocument = input.maxPerDocument;
     }
 
     const saved = await manager.getRepository(TicketLot).save(lot);

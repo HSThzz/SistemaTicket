@@ -36,6 +36,13 @@ export class TicketLot {
   @Column({ name: "available_quantity", type: "integer" })
   availableQuantity!: number;
 
+  /**
+   * Máximo de ingressos por CPF neste lote.
+   * `null` = sem limite; `1` = um ingresso por documento.
+   */
+  @Column({ name: "max_per_document", type: "integer", nullable: true })
+  maxPerDocument!: number | null;
+
   @ManyToOne(() => Event, (event) => event.ticketLots, { onDelete: "CASCADE" })
   @JoinColumn({ name: "event_id" })
   event!: Event;

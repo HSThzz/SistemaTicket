@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 import { IconPencil, IconTicket, IconTrash } from "@tabler/icons-react";
 import { LotStockBadge } from "@/components/ui/LotStockBadge";
+import { PremiumBadge } from "@/components/ui/PremiumBadge";
 import type { TicketLot } from "@/shared/types/api";
 import { formatLotPrice } from "@/shared/utils/format";
 
@@ -33,7 +34,9 @@ export function ProducerLotCard({
   onDelete,
 }: ProducerLotCardProps) {
   const sold = lot.totalQuantity - lot.availableQuantity;
-  const soldPct = lot.totalQuantity > 0 ? Math.round((sold / lot.totalQuantity) * 100) : 0;
+  const soldPct =
+    lot.totalQuantity > 0 ? Math.round((sold / lot.totalQuantity) * 100) : 0;
+  const onePerDocument = lot.maxPerDocument === 1;
 
   return (
     <Box className="producer-lot-card">
@@ -43,9 +46,16 @@ export function ProducerLotCard({
             <IconTicket size={22} />
           </ThemeIcon>
           <Stack gap={6}>
-            <Title order={4} style={{ letterSpacing: "-0.01em" }}>
-              {lot.name}
-            </Title>
+            <Group gap="xs" wrap="wrap">
+              <Title order={4} style={{ letterSpacing: "-0.01em" }}>
+                {lot.name}
+              </Title>
+              {onePerDocument ? (
+                <PremiumBadge tone="paid" size="xs">
+                  1 por CPF
+                </PremiumBadge>
+              ) : null}
+            </Group>
             <Text fw={800} size="xl" c="brand" className="producer-metric-value">
               {formatLotPrice(lot.price)}
             </Text>

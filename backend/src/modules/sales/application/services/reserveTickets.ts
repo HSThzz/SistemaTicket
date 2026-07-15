@@ -20,6 +20,7 @@ import { validateSchema } from "../../../../shared/kernel/validateSchema";
 import {
   EventNotOnSaleError,
   InsufficientStockError,
+  DocumentLotLimitError,
   ParticipationLotNotAllowedError,
   ParticipationNotApprovedError,
   PendingOrderExistsError,
@@ -27,6 +28,7 @@ import {
   TicketLotNotFoundError,
 } from "../../domain/errors/PurchaseError";
 import { reserveTicketsSchema } from "../../validators/schema/reserveTicketsSchema";
+import { countUserHeldQuantityForLot } from "../queries/countUserHeldQuantityForLot";
 import { findPendingOrderByUserId } from "../queries/findPendingOrderByUserId";
 import { findTicketLotForPurchase } from "../queries/findTicketLotForPurchase";
 import { findOneUserById } from "../../../identity/application/queries/findOneUserById";
@@ -101,6 +103,17 @@ export async function reserveTickets(
       throw new ParticipationLotNotAllowedError();
     }
     throw new ParticipationNotApprovedError();
+  }
+
+  if (lot.maxPerDocument != null && lot.maxPerDocument > 0) {
+    const held = await countUserHeldQuantityForLot(
+      data.userId,
+      data.ticketLotId,
+    );
+    const remaining = lot.maxPerDocument - held;
+    if (data.quantity > remaining) {
+      throw new DocumentLotLimitError(lot.maxPerDocument, Math.max(0, remaining));
+    }
   }
 
   await ensureRedisStockInitialized(

@@ -81,6 +81,7 @@ export async function updateTicketLot(
     name: data.name,
     price: data.price,
     quantityDelta,
+    maxPerDocument: data.maxPerDocument,
   });
 
   Logger.getInstance().info(CONTEXT, "Ticket lot updated", {
@@ -90,6 +91,7 @@ export async function updateTicketLot(
     quantityDelta: result.quantityDelta,
     nameChanged: data.name !== undefined,
     priceChanged: data.price !== undefined && data.price !== lot.price,
+    maxPerDocumentChanged: data.maxPerDocument !== undefined,
   });
 
   return result;

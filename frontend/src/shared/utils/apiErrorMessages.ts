@@ -84,6 +84,8 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   EVENT_NOT_ON_SALE: "Este evento não está disponível para compra.",
   PENDING_ORDER_EXISTS:
     "Você já tem um pedido pendente. Pague ou aguarde a expiração antes de reservar de novo.",
+  DOCUMENT_LOT_LIMIT:
+    "Este lote permite apenas 1 ingresso por CPF. Você já atingiu o limite.",
 
   // Pagamento
   ORDER_NOT_FOUND: "Pedido não encontrado.",

@@ -587,7 +587,13 @@ export function CheckoutPage() {
       return null;
     }
 
-    return validateTicketQuantity(quantity, selectedLot.availableQuantity);
+    const maxByDocument =
+      selectedLot.maxPerDocument != null && selectedLot.maxPerDocument > 0
+        ? selectedLot.maxPerDocument
+        : selectedLot.availableQuantity;
+    const maxAvailable = Math.min(selectedLot.availableQuantity, maxByDocument);
+
+    return validateTicketQuantity(quantity, maxAvailable);
   }, [selectedLot, quantity]);
 
   const quantityWarning = useMemo(() => {
@@ -958,9 +964,17 @@ export function CheckoutPage() {
 
                         <NumberInput
                           label="Quantidade"
-                          description={`Máximo de ${selectedLot.availableQuantity} ingresso${selectedLot.availableQuantity === 1 ? "" : "s"} neste lote.`}
+                          description={
+                            selectedLot.maxPerDocument === 1
+                              ? "Este lote permite apenas 1 ingresso por CPF."
+                              : `Máximo de ${quantityValidation?.maxAvailable ?? selectedLot.availableQuantity} ingresso${(quantityValidation?.maxAvailable ?? selectedLot.availableQuantity) === 1 ? "" : "s"} neste lote.`
+                          }
                           min={1}
-                          max={selectedLot.availableQuantity}
+                          max={
+                            quantityValidation?.maxAvailable ??
+                            selectedLot.availableQuantity
+                          }
+                          disabled={selectedLot.maxPerDocument === 1}
                           value={quantity}
                           onChange={(value) => {
                             if (value === "" || value === undefined) {

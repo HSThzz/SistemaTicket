@@ -40,6 +40,7 @@ export async function createTicketLot(
     price: data.price,
     totalQuantity: data.totalQuantity,
     availableQuantity,
+    maxPerDocument: data.maxPerDocument ?? null,
   });
 
   Logger.getInstance().info(CONTEXT, "Ticket lot created", {

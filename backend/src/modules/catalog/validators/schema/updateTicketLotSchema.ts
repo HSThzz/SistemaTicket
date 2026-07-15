@@ -24,12 +24,19 @@ export const updateTicketLotSchema = z
         `Quantidade total máxima é ${MAX_TICKET_LOT_QUANTITY}`,
       )
       .optional(),
+    maxPerDocument: z
+      .union([
+        z.coerce.number().int().positive().max(10),
+        z.null(),
+      ])
+      .optional(),
   })
   .refine(
     (data) =>
       data.name !== undefined ||
       data.price !== undefined ||
-      data.totalQuantity !== undefined,
+      data.totalQuantity !== undefined ||
+      data.maxPerDocument !== undefined,
     {
       message: "Informe ao menos um campo para atualizar",
     },

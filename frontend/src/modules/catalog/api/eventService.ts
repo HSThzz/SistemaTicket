@@ -33,6 +33,7 @@ export interface CreateTicketLotInput {
   price: number;
   totalQuantity: number;
   availableQuantity?: number;
+  maxPerDocument?: number | null;
 }
 
 /** Campos opcionais para atualização parcial de lote. */
@@ -40,6 +41,7 @@ export interface UpdateTicketLotInput {
   name?: string;
   price?: number;
   totalQuantity?: number;
+  maxPerDocument?: number | null;
 }
 
 /**

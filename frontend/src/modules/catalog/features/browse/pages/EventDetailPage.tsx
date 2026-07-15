@@ -125,6 +125,11 @@ function LotOfferCard({
                 )
               </Text>
             ) : null}
+            {lot.maxPerDocument === 1 ? (
+              <Text size="xs" c="dimmed">
+                Limite: 1 por CPF
+              </Text>
+            ) : null}
           </Stack>
         </Group>
 

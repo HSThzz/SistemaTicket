@@ -139,6 +139,21 @@ export class ParticipationLotNotAllowedError extends PurchaseError {
 }
 
 /**
+ * Lote limita quantidade por CPF e o usuário já atingiu (ou excederia) o máximo.
+ */
+export class DocumentLotLimitError extends PurchaseError {
+  constructor(maxPerDocument: number, remaining: number) {
+    super(
+      remaining <= 0
+        ? `This ticket lot allows at most ${maxPerDocument} ticket(s) per CPF.`
+        : `This ticket lot allows at most ${maxPerDocument} ticket(s) per CPF. You can still buy ${remaining}.`,
+      "DOCUMENT_LOT_LIMIT",
+    );
+    this.name = "DocumentLotLimitError";
+  }
+}
+
+/**
  * Evento não está publicado (ou foi cancelado/finalizado) — compra bloqueada.
  */
 export class EventNotOnSaleError extends PurchaseError {

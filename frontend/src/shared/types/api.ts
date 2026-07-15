@@ -29,6 +29,8 @@ export interface TicketLot {
   price: number;
   totalQuantity: number;
   availableQuantity: number;
+  /** Máximo por CPF; `null` = sem limite. */
+  maxPerDocument?: number | null;
 }
 
 /** Status de publicação e ciclo de vida de um evento. */

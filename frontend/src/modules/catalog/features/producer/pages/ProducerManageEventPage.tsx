@@ -9,6 +9,7 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Container,
   Grid,
   Group,
@@ -86,6 +87,7 @@ const EVENT_TYPE_OPTIONS = [
 const LOT_FORM_TIPS = [
   "Use preço 0 para ingresso gratuito.",
   "Crie um lote por público (ex.: Masculino e Feminino).",
+  "Ative “1 por CPF” em lotes promocionais/gratuitos para evitar abuso.",
   "Evento publicado precisa ter pelo menos 1 lote.",
 ] as const;
 
@@ -93,6 +95,7 @@ interface LotFormValues {
   name: string;
   priceReais: number | string;
   totalQuantity: number | string;
+  limitOnePerDocument: boolean;
 }
 
 function parsePriceToCents(value: number | string): number {
@@ -136,6 +139,7 @@ export function ProducerManageEventPage() {
       name: "",
       priceReais: 50,
       totalQuantity: 100,
+      limitOnePerDocument: false,
     },
     validate: {
       name: (value) => (String(value).trim().length >= 2 ? null : "Informe o nome do lote"),
@@ -152,6 +156,7 @@ export function ProducerManageEventPage() {
       name: "",
       priceReais: 0,
       totalQuantity: 1,
+      limitOnePerDocument: false,
     },
     validate: {
       name: (value) => (String(value).trim().length >= 2 ? null : "Informe o nome do lote"),
@@ -172,6 +177,7 @@ export function ProducerManageEventPage() {
       name: lot.name,
       priceReais: lot.price / 100,
       totalQuantity: lot.totalQuantity,
+      limitOnePerDocument: lot.maxPerDocument === 1,
     });
     editLotForm.clearErrors();
   };
@@ -379,6 +385,7 @@ export function ProducerManageEventPage() {
         name: String(values.name).trim(),
         price: parsePriceToCents(values.priceReais),
         totalQuantity: Number(values.totalQuantity),
+        maxPerDocument: values.limitOnePerDocument ? 1 : null,
       });
 
       lotForm.reset();
@@ -457,6 +464,7 @@ export function ProducerManageEventPage() {
       const payload: eventService.UpdateTicketLotInput = {
         name: String(values.name).trim(),
         totalQuantity: Number(values.totalQuantity),
+        maxPerDocument: values.limitOnePerDocument ? 1 : null,
       };
 
       if (canEditLotPrice) {
@@ -604,6 +612,13 @@ export function ProducerManageEventPage() {
               radius="md"
               description="Só é possível aumentar a quantidade."
               {...editLotForm.getInputProps("totalQuantity")}
+            />
+            <Checkbox
+              label="Limitar a 1 ingresso por CPF"
+              description="Ideal para lotes gratuitos ou promocionais."
+              {...editLotForm.getInputProps("limitOnePerDocument", {
+                type: "checkbox",
+              })}
             />
             <Group justify="flex-end" gap="sm" mt="sm">
               <Button
@@ -841,6 +856,13 @@ export function ProducerManageEventPage() {
                         min={1}
                         radius="md"
                         {...lotForm.getInputProps("totalQuantity")}
+                      />
+                      <Checkbox
+                        label="Limitar a 1 ingresso por CPF"
+                        description="Ideal para lotes gratuitos ou promocionais."
+                        {...lotForm.getInputProps("limitOnePerDocument", {
+                          type: "checkbox",
+                        })}
                       />
                     </Stack>
 
