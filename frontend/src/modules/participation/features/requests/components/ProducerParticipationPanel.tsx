@@ -52,6 +52,7 @@ import {
   formatLotPrice,
 } from "@/shared/utils/format";
 import { ParticipationStatusBadge } from "@/components/ui/ParticipationStatusBadge";
+import { PremiumBadge } from "@/components/ui/PremiumBadge";
 
 type PanelFilter = ParticipationRequestStatus | "PAID";
 
@@ -94,6 +95,11 @@ function RequestRow({
               {request.name}
             </Text>
             <ParticipationStatusBadge status={request.status} size="xs" />
+            {isApproved && request.hasPaid ? (
+              <PremiumBadge tone="paid" size="xs">
+                Pago
+              </PremiumBadge>
+            ) : null}
           </Group>
           <Group gap="lg" wrap="wrap" c="dimmed">
             <Group gap={6} wrap="nowrap">

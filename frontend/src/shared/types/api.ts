@@ -71,6 +71,8 @@ export interface ParticipationRequest {
   status: ParticipationRequestStatus | string;
   /** Lotes liberados para compra quando status é APPROVED. */
   allowedTicketLotIds: string[] | null;
+  /** Indica se o usuário já tem pedido PAID neste evento. */
+  hasPaid?: boolean;
   reviewedBy: string | null;
   reviewedAt: string | null;
   createdAt: string;

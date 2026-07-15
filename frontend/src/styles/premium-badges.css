@@ -123,6 +123,12 @@
   border-color: var(--vibra-border-accent);
 }
 
+.premium-badge--paid {
+  background: linear-gradient(135deg, rgba(8, 145, 178, 0.16) 0%, rgba(14, 116, 144, 0.1) 100%);
+  color: #0e7490;
+  border-color: rgba(8, 145, 178, 0.32);
+}
+
 .premium-badge--sold-out {
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.14) 0%, rgba(185, 28, 28, 0.1) 100%);
   color: #b91c1c;
@@ -172,6 +178,10 @@
   color: var(--vibra-v-bright);
 }
 
+[data-mantine-color-scheme="dark"] .premium-badge--paid {
+  color: #22d3ee;
+}
+
 [data-mantine-color-scheme="dark"] .premium-badge--sold-out {
   color: #fca5a5;
 }
@@ -213,6 +223,11 @@
 
 .premium-badge--overlay.premium-badge--finished {
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.94) 0%, rgba(29, 78, 216, 0.96) 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.premium-badge--overlay.premium-badge--paid {
+  background: linear-gradient(135deg, rgba(8, 145, 178, 0.94) 0%, rgba(14, 116, 144, 0.96) 100%);
   border-color: rgba(255, 255, 255, 0.2);
 }
 

@@ -9,6 +9,7 @@ import { uuidSchema } from "../../../../shared/kernel/zodFields";
 import { findOneEventById } from "../../../catalog/application/queries/findOneEventById";
 import { ParticipationEventNotFoundError } from "../../domain/errors/ParticipationError";
 import { assertCanManageEventParticipation } from "../helpers/assertCanManageEventParticipation";
+import { findPaidUserIdsByEventId } from "../queries/findPaidUserIdsByEventId";
 import { findParticipationRequestsByEvent } from "../queries/findParticipationRequestsByEvent";
 import type { ParticipationActor } from "../types";
 
@@ -26,5 +27,12 @@ export async function listParticipationRequests(
 
   assertCanManageEventParticipation(event, actor);
 
-  return findParticipationRequestsByEvent(id, status);
+  const requests = await findParticipationRequestsByEvent(id, status);
+
+  const paidUserIds =
+    status === ParticipationRequestStatus.APPROVED
+      ? await findPaidUserIdsByEventId(id)
+      : new Set<string>();
+
+  return { requests, paidUserIds };
 }

@@ -5,7 +5,10 @@
 
 import type { ParticipationRequest } from "../../../../shared/infrastructure/persistence/entities/ParticipationRequest";
 
-export function serializeParticipationRequest(request: ParticipationRequest) {
+export function serializeParticipationRequest(
+  request: ParticipationRequest,
+  extras?: { hasPaid?: boolean },
+) {
   return {
     id: request.id,
     eventId: request.eventId,
@@ -16,6 +19,7 @@ export function serializeParticipationRequest(request: ParticipationRequest) {
     instagramHandle: request.instagramHandle,
     status: request.status,
     allowedTicketLotIds: request.allowedTicketLotIds ?? null,
+    hasPaid: extras?.hasPaid ?? false,
     reviewedBy: request.reviewedBy,
     reviewedAt: request.reviewedAt ? request.reviewedAt.toISOString() : null,
     createdAt: request.createdAt.toISOString(),

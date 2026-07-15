@@ -130,10 +130,18 @@ export class ParticipationController {
     const { status } = req.query as { status: ParticipationRequestStatus };
 
     try {
-      const requests = await listParticipationRequests(eventId, status, actor);
+      const { requests, paidUserIds } = await listParticipationRequests(
+        eventId,
+        status,
+        actor,
+      );
       res.status(200).json({
         participationRequests: requests.map((request) =>
-          serializeParticipationRequest(request),
+          serializeParticipationRequest(request, {
+            hasPaid: Boolean(
+              request.userId && paidUserIds.has(request.userId),
+            ),
+          }),
         ),
       });
     } catch (error) {

@@ -17,7 +17,8 @@ export type PremiumBadgeTone =
   | "neutral"
   | "sold-out"
   | "glass"
-  | "brand";
+  | "brand"
+  | "paid";
 
 /** Propriedades do badge premium. */
 export interface PremiumBadgeProps {
