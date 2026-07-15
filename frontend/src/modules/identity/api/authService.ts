@@ -18,6 +18,10 @@ export interface RegisterInput {
   email: string;
   password: string;
   document: string;
+  /** Aceite explícito dos Termos e da Política de Privacidade. */
+  acceptedTerms: true;
+  /** Versão dos documentos legais aceitos (ex.: "1.0"). */
+  termsVersion: string;
 }
 
 /**

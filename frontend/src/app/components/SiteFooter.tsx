@@ -103,14 +103,31 @@ export function SiteFooter() {
 
         {/* <Divider my="xl" opacity={0.6} /> */}
 
-        <Group justify="space-between" wrap="wrap" gap="sm">
-          <Text size="xs" c="dimmed" pt="xl">
+        <Group justify="space-between" wrap="wrap" gap="sm" pt="xl">
+          <Text size="xs" c="dimmed">
             © {new Date().getFullYear()} VIBRA · vibraevents.com.br
           </Text>
 
-          <Text size="xs" c="dimmed">
-            Feito para experiências inesquecíveis.
-          </Text>
+          <Group gap="md">
+            <Anchor
+              component={Link}
+              to="/termos"
+              c="dimmed"
+              size="xs"
+              underline="hover"
+            >
+              Termos de Uso
+            </Anchor>
+            <Anchor
+              component={Link}
+              to="/privacidade"
+              c="dimmed"
+              size="xs"
+              underline="hover"
+            >
+              Privacidade
+            </Anchor>
+          </Group>
         </Group>
       </Box>
     </Box>

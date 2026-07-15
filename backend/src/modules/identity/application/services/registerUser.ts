@@ -47,6 +47,8 @@ export async function registerUser(
       passwordHash,
       document: data.document,
       role: UserRole.CLIENT,
+      termsAcceptedAt: new Date(),
+      termsVersion: data.termsVersion,
     });
 
     Logger.getInstance().info(CONTEXT, "User registered", {

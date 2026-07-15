@@ -57,7 +57,7 @@ const logger = Logger.getInstance();
 export class AuthController {
   /**
    * POST /auth/register — cadastra novo usuário.
-   * @param req - Corpo: name, email, password, document.
+   * @param req - Corpo: name, email, password, document, acceptedTerms, termsVersion.
    * @param res - 201 com token e user ou erro de validação/domínio.
    * @returns Promise resolvida após enviar a resposta.
    */

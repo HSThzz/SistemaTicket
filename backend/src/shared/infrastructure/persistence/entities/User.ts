@@ -32,6 +32,12 @@ export class User {
   @Column({ name: "password_changed_at", type: "timestamptz", nullable: true })
   passwordChangedAt!: Date | null;
 
+  @Column({ name: "terms_accepted_at", type: "timestamptz", nullable: true })
+  termsAcceptedAt!: Date | null;
+
+  @Column({ name: "terms_version", type: "varchar", length: 16, nullable: true })
+  termsVersion!: string | null;
+
   @Column({ type: "varchar", length: 18, unique: true })
   document!: string;
 

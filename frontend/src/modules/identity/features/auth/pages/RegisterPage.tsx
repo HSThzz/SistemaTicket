@@ -3,11 +3,12 @@
  * @module pages/RegisterPage
  */
 
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Anchor,
   Button,
+  Checkbox,
   PasswordInput,
   Stack,
   Text,
@@ -19,6 +20,11 @@ import { IconCheck, IconUserPlus, IconX } from "@tabler/icons-react";
 import { AuthCard } from "@/modules/identity/features/auth/components/AuthCard";
 import { useAuth } from "@/modules/identity/features/auth/context/AuthContext";
 import * as authService from "@/modules/identity/api/authService";
+import { LegalDocumentModal } from "@/shared/legal/LegalDocumentModal";
+import {
+  LEGAL_DOCUMENTS_VERSION,
+  type LegalDocumentId,
+} from "@/shared/legal/documents";
 import { getApiErrorMessage } from "@/shared/utils/errors";
 import {
   CPF_FORMATTED_MAX_LENGTH,
@@ -35,15 +41,17 @@ interface RegisterFormValues {
   email: string;
   password: string;
   document: string;
+  acceptedTerms: boolean;
 }
 
 /**
- * Formulário de cadastro com nome, e-mail, CPF e senha; inicia sessão ao concluir.
+ * Formulário de cadastro com nome, e-mail, CPF, senha e aceite dos termos.
  */
 export function RegisterPage() {
   const navigate = useNavigate();
   const { setSession } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+  const [legalModal, setLegalModal] = useState<LegalDocumentId | null>(null);
 
   const form = useForm<RegisterFormValues>({
     initialValues: {
@@ -51,6 +59,7 @@ export function RegisterPage() {
       email: "",
       password: "",
       document: "",
+      acceptedTerms: false,
     },
     validate: {
       name: (value) => (value.trim().length >= 2 ? null : "Informe seu nome"),
@@ -61,6 +70,8 @@ export function RegisterPage() {
         normalizeDocument(value).length === 11
           ? null
           : "Informe um CPF com 11 dígitos",
+      acceptedTerms: (value) =>
+        value ? null : "É necessário aceitar os termos para criar a conta",
     },
   });
 
@@ -73,6 +84,8 @@ export function RegisterPage() {
         email: values.email.trim().toLowerCase(),
         password: values.password,
         document: normalizeDocument(values.document),
+        acceptedTerms: true,
+        termsVersion: LEGAL_DOCUMENTS_VERSION,
       });
 
       setSession(response.token, response.user);
@@ -97,74 +110,107 @@ export function RegisterPage() {
     }
   });
 
+  const openLegal = (id: LegalDocumentId) => (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setLegalModal(id);
+  };
+
   return (
-    <AuthCard
-      title="Crie sua"
-      highlight="conta"
-      description="Cadastre-se em segundos para reservar ingressos, pagar com PIX e receber seus tickets na hora."
-    >
-      <form onSubmit={handleSubmit}>
-        <Stack gap="md">
-          <TextInput
-            label="Nome completo"
-            placeholder="Seu nome"
-            autoComplete="name"
-            maxLength={255}
-            radius="md"
-            {...form.getInputProps("name")}
-          />
-          <TextInput
-            label="E-mail"
-            placeholder="seu@email.com"
-            autoComplete="email"
-            maxLength={255}
-            radius="md"
-            {...form.getInputProps("email")}
-          />
-          <TextInput
-            label="CPF"
-            placeholder="000.000.000-00"
-            inputMode="numeric"
-            autoComplete="off"
-            maxLength={CPF_FORMATTED_MAX_LENGTH}
-            radius="md"
-            value={form.values.document}
-            onChange={(event) =>
-              form.setFieldValue("document", formatCpf(event.currentTarget.value))
-            }
-            error={form.errors.document}
-          />
-          <PasswordInput
-            label="Senha"
-            placeholder="Crie uma senha forte"
-            description={PASSWORD_REQUIREMENTS_HINT}
-            autoComplete="new-password"
-            radius="md"
-            {...form.getInputProps("password")}
-          />
-          <Button type="submit" loading={submitting} fullWidth radius="xl" size="md">
-            Cadastrar
-          </Button>
-        </Stack>
-      </form>
-
-      <Text size="sm" c="dimmed" ta="center">
-        Já tem conta?{" "}
-        <Anchor component={Link} to="/login" fw={600}>
-          Entrar
-        </Anchor>
-      </Text>
-
-      <Button
-        component={Link}
-        to="/"
-        variant="subtle"
-        radius="xl"
-        fullWidth
-        leftSection={<IconUserPlus size={16} />}
+    <>
+      <AuthCard
+        title="Crie sua"
+        highlight="conta"
+        description="Cadastre-se em segundos para reservar ingressos, pagar com PIX e receber seus tickets na hora."
       >
-        Explorar sem cadastro
-      </Button>
-    </AuthCard>
+        <form onSubmit={handleSubmit}>
+          <Stack gap="md">
+            <TextInput
+              label="Nome completo"
+              placeholder="Seu nome"
+              autoComplete="name"
+              maxLength={255}
+              radius="md"
+              {...form.getInputProps("name")}
+            />
+            <TextInput
+              label="E-mail"
+              placeholder="seu@email.com"
+              autoComplete="email"
+              maxLength={255}
+              radius="md"
+              {...form.getInputProps("email")}
+            />
+            <TextInput
+              label="CPF"
+              placeholder="000.000.000-00"
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={CPF_FORMATTED_MAX_LENGTH}
+              radius="md"
+              value={form.values.document}
+              onChange={(event) =>
+                form.setFieldValue("document", formatCpf(event.currentTarget.value))
+              }
+              error={form.errors.document}
+            />
+            <PasswordInput
+              label="Senha"
+              placeholder="Crie uma senha forte"
+              description={PASSWORD_REQUIREMENTS_HINT}
+              autoComplete="new-password"
+              radius="md"
+              {...form.getInputProps("password")}
+            />
+            <Checkbox
+              label={
+                <Text size="sm" component="span">
+                  Li e concordo com os{" "}
+                  <Anchor component="button" type="button" fw={600} onClick={openLegal("terms")}>
+                    Termos de Uso
+                  </Anchor>{" "}
+                  e a{" "}
+                  <Anchor
+                    component="button"
+                    type="button"
+                    fw={600}
+                    onClick={openLegal("privacy")}
+                  >
+                    Política de Privacidade
+                  </Anchor>
+                </Text>
+              }
+              {...form.getInputProps("acceptedTerms", { type: "checkbox" })}
+            />
+            <Button type="submit" loading={submitting} fullWidth radius="xl" size="md">
+              Cadastrar
+            </Button>
+          </Stack>
+        </form>
+
+        <Text size="sm" c="dimmed" ta="center">
+          Já tem conta?{" "}
+          <Anchor component={Link} to="/login" fw={600}>
+            Entrar
+          </Anchor>
+        </Text>
+
+        <Button
+          component={Link}
+          to="/"
+          variant="subtle"
+          radius="xl"
+          fullWidth
+          leftSection={<IconUserPlus size={16} />}
+        >
+          Explorar sem cadastro
+        </Button>
+      </AuthCard>
+
+      <LegalDocumentModal
+        documentId={legalModal}
+        onClose={() => setLegalModal(null)}
+      />
+    </>
   );
 }

@@ -8,7 +8,16 @@ import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
 export type CreateUserData = Prettify<
-  Pick<User, "name" | "email" | "passwordHash" | "document" | "role">
+  Pick<
+    User,
+    | "name"
+    | "email"
+    | "passwordHash"
+    | "document"
+    | "role"
+    | "termsAcceptedAt"
+    | "termsVersion"
+  >
 >;
 
 export async function createUser(data: CreateUserData,

@@ -17,6 +17,8 @@ import { CheckoutPage } from "@/modules/sales/features/checkout/pages/CheckoutPa
 import { EventDetailPage } from "@/modules/catalog/features/browse/pages/EventDetailPage";
 import { EventsPage } from "@/modules/catalog/features/browse/pages/EventsPage";
 import { HomePage } from "@/app/pages/HomePage";
+import { PrivacyPolicyPage } from "@/app/pages/PrivacyPolicyPage";
+import { TermsOfUsePage } from "@/app/pages/TermsOfUsePage";
 import { LoginPage } from "@/modules/identity/features/auth/pages/LoginPage";
 import { ForgotPasswordPage } from "@/modules/identity/features/auth/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/modules/identity/features/auth/pages/ResetPasswordPage";
@@ -47,6 +49,8 @@ export default function App() {
                 <Route path="eventos" element={<EventsPage />} />
                 {/* <Route path="para-produtores" element={<ProducerLandingPage />} /> */}
                 <Route path="eventos/:eventId" element={<EventDetailPage />} />
+                <Route path="termos" element={<TermsOfUsePage />} />
+                <Route path="privacidade" element={<PrivacyPolicyPage />} />
 
                 <Route element={<GuestRoute />}>
                   <Route path="login" element={<LoginPage />} />
