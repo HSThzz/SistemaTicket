@@ -7,6 +7,7 @@ import type { ContactFormJobData } from "../../../leads/application/types/contac
 import type { ParticipationApprovedJobData } from "../../../participation/application/types/participationApprovedJob";
 import type { ParticipationRejectedJobData } from "../../../participation/application/types/participationRejectedJob";
 import type { ParticipationRequestSubmittedJobData } from "../../../participation/application/types/participationRequestSubmittedJob";
+import type { OrderRefundJobData } from "../../application/types/orderRefundJob";
 import type { TicketDeliveryJobData } from "../../application/types/ticketDeliveryJob";
 import { getAppPublicUrl } from "../../../../shared/infrastructure/config/appPublicUrl";
 import { EMAIL_BRAND } from "./emailBrand";
@@ -253,5 +254,45 @@ export function buildPasswordResetEmail(data: PasswordResetEmailTemplateData): s
     },
     footerNote:
       "Por segurança, após redefinir a senha todas as sessões anteriores serão encerradas.",
+  });
+}
+
+function formatCurrencyFromCents(cents: number): string {
+  return (cents / 100).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+export function buildOrderRefundEmail(data: OrderRefundJobData): string {
+  const ticketLabel =
+    data.ticketsCancelled === 1
+      ? "1 ingresso"
+      : `${data.ticketsCancelled} ingressos`;
+
+  return renderEmailLayout({
+    preheader: `Seu pedido de ${escapeHtml(data.eventTitle)} foi reembolsado.`,
+    eyebrow: "Reembolso",
+    title: "Pedido reembolsado",
+    bodyHtml: `
+      ${bodyParagraph(`Olá, <font color="${EMAIL_BRAND.text}"><b>${escapeHtml(data.userName)}</b></font>.`)}
+      ${bodyParagraph(
+        `Confirmamos o reembolso do seu pedido para <font color="${EMAIL_BRAND.text}"><b>${escapeHtml(data.eventTitle)}</b></font>. Os ingressos foram cancelados e não são mais válidos para entrada.`,
+      )}
+      ${renderEmailInfoCardGroup([
+        { label: "Pedido", value: escapeHtml(data.orderId), mono: true },
+        { label: "Valor", value: escapeHtml(formatCurrencyFromCents(data.totalPriceCents)) },
+        { label: "Ingressos", value: escapeHtml(ticketLabel) },
+      ])}
+      ${bodyParagraph(
+        "O valor volta pela mesma forma de pagamento usada na compra. O prazo depende do banco ou da operadora do cartão.",
+      )}
+    `,
+    cta: {
+      label: "Ver meus pedidos",
+      href: `${getAppPublicUrl()}/pedidos`,
+    },
+    footerNote:
+      "Se você não esperava este reembolso, fale com o produtor do evento ou com o suporte da VIBRA.",
   });
 }

@@ -341,7 +341,7 @@ function mapMercadoPagoStatus(
       return "cancelled";
     case "refunded":
     case "charged_back":
-      return "failed";
+      return "refunded";
     default:
       return "pending";
   }

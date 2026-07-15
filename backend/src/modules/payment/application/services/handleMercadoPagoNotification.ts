@@ -70,6 +70,21 @@ export async function handleMercadoPagoNotification(
     return "processed";
   }
 
+  if (snapshot.status === "refunded") {
+    await handleWebhook(redis,
+      {
+        event: "payment.refunded",
+        data: {
+          orderId: snapshot.orderId,
+          transactionId: snapshot.transactionId,
+          failureReason: snapshot.failureReason ?? snapshot.status,
+        },
+      },
+      gateway,
+    );
+    return "processed";
+  }
+
   if (
     snapshot.status === "rejected" ||
     snapshot.status === "cancelled" ||

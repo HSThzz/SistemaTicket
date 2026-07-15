@@ -8,6 +8,7 @@ import {
   type PaymentWebhookInputSchema,
 } from "../../validators/schema/paymentWebhookSchema";
 import { handlePaymentFailed } from "./handlePaymentFailed";
+import { handlePaymentRefunded } from "./handlePaymentRefunded";
 import { handlePaymentSucceeded } from "./handlePaymentSucceeded";
 
 const CONTEXT = "handleWebhook";
@@ -28,6 +29,11 @@ export async function handleWebhook(
 
   if (data.event === "payment.succeeded") {
     await handlePaymentSucceeded(redis, data.data);
+    return;
+  }
+
+  if (data.event === "payment.refunded") {
+    await handlePaymentRefunded(redis, data.data);
     return;
   }
 

@@ -64,7 +64,8 @@ export type GatewayPaymentStatus =
   | "pending"
   | "rejected"
   | "cancelled"
-  | "failed";
+  | "failed"
+  | "refunded";
 
 /**
  * Snapshot de pagamento para conciliação via webhook ou consulta.

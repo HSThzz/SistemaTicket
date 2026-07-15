@@ -11,3 +11,6 @@ export const CONTACT_FORM_QUEUE = "contact-form";
 
 /** Fila de notificações de participação aprovada em eventos privados. */
 export const PARTICIPATION_NOTIFICATION_QUEUE = "participation-notification";
+
+/** Fila de e-mail de pedido reembolsado. */
+export const ORDER_REFUND_NOTIFICATION_QUEUE = "order-refund-notification";

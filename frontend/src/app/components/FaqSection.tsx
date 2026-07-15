@@ -6,7 +6,7 @@ const FAQ_ITEMS = [
   {
     question: "Como cancelo ou peço reembolso de um ingresso?",
     answer:
-      "Entre em contato com o produtor do evento ou com nosso suporte em até 7 dias após a compra, conforme o Código de Defesa do Consumidor. Reembolsos de pedidos elegíveis são processados pelo painel administrativo.",
+      "Entre em contato com o produtor do evento ou com nosso suporte. Pedidos elegíveis (sem check-in) podem ser reembolsados pelo painel do produtor ou pela equipe da VIBRA. O valor volta pela mesma forma de pagamento usada na compra.",
   },
   {
     question: "Onde encontro meus ingressos após a compra?",

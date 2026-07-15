@@ -24,6 +24,7 @@ import { ReservationPersistenceWorker } from "./modules/sales/infrastructure/wor
 import { StockReconciliationWorker } from "./modules/sales/infrastructure/workers/StockReconciliationWorker";
 import { PaymentProcessingWorker } from "./modules/payment/infrastructure/workers/PaymentProcessingWorker";
 import { TicketDeliveryWorker } from "./modules/notifications/infrastructure/workers/TicketDeliveryWorker";
+import { OrderRefundNotificationWorker } from "./modules/notifications/infrastructure/workers/OrderRefundNotificationWorker";
 import { ContactFormWorker } from "./modules/leads/infrastructure/workers/ContactFormWorker";
 import { ParticipationNotificationWorker } from "./modules/participation/infrastructure/workers/ParticipationNotificationWorker";
 import { configureEmailProviders } from "./modules/notifications/infrastructure/email/configureEmailProviders";
@@ -36,6 +37,7 @@ let persistenceWorker: ReservationPersistenceWorker | null = null;
 let stockReconciliationWorker: StockReconciliationWorker | null = null;
 let paymentProcessingWorker: PaymentProcessingWorker | null = null;
 let ticketDeliveryWorker: TicketDeliveryWorker | null = null;
+let orderRefundNotificationWorker: OrderRefundNotificationWorker | null = null;
 let contactFormWorker: ContactFormWorker | null = null;
 let participationNotificationWorker: ParticipationNotificationWorker | null = null;
 
@@ -145,6 +147,17 @@ async function bootstrap(): Promise<void> {
     process.exit(1);
   }
 
+  orderRefundNotificationWorker = new OrderRefundNotificationWorker();
+
+  try {
+    await orderRefundNotificationWorker.start();
+  } catch (error) {
+    logger.error(CONTEXT, "Failed to start order refund notification worker", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    process.exit(1);
+  }
+
   contactFormWorker = new ContactFormWorker();
 
   try {
@@ -204,6 +217,10 @@ async function shutdown(): Promise<void> {
   await ticketDeliveryWorker?.stop();
 
   setTicketDeliveryWorker(null);
+
+  await orderRefundNotificationWorker?.stop();
+
+  orderRefundNotificationWorker = null;
 
   await contactFormWorker?.stop();
 

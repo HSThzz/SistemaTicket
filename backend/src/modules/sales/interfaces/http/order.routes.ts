@@ -5,6 +5,7 @@
 
 import { Router } from "express";
 import { orderController } from "./OrderController";
+import { UserRole } from "../../../../shared/kernel/enums";
 import { STAFF_ROLES } from "../../../../shared/kernel/staffRoles";
 import { authMiddleware } from "../../../../shared/interfaces/http/middlewares/authMiddleware";
 import { roleMiddleware } from "../../../../shared/interfaces/http/middlewares/roleMiddleware";
@@ -41,7 +42,7 @@ router.get(
 router.post(
   "/:id/refund",
   authMiddleware,
-  roleMiddleware([...STAFF_ROLES]),
+  roleMiddleware([...STAFF_ROLES, UserRole.PRODUCER]),
   validateParams(orderIdParamsSchema),
   (req, res) => void orderController.refund(req, res),
 );

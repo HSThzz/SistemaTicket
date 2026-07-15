@@ -1,5 +1,5 @@
 ﻿/**
- * @file Controlador HTTP de pedidos do cliente: listagem, PIX e reembolso (admin).
+ * @file Controlador HTTP de pedidos do cliente: listagem, PIX e reembolso (admin/produtor).
  * @module sales/interfaces/http/OrderController
  */
 
@@ -19,6 +19,8 @@ import { refundOrder } from "../../../payment/application/services/refundOrder";
 import { createPaymentGateway } from "../../../payment/infrastructure/gateways/createPaymentGateway";
 import { AdminAuditAction } from "../../../../shared/kernel/enums";
 import { createAdminAuditLog } from "../../../identity/application/commands/createAdminAuditLog";
+import { ForbiddenError } from "../../../identity/domain/errors/AuthError";
+import { assertCanRefundOrder } from "../../application/helpers/assertCanRefundOrder";
 import { getOrderByIdForAdmin } from "../../application/services/getOrderByIdForAdmin";
 import { listUserOrders } from "../../application/services/listUserOrders";
 
@@ -138,11 +140,16 @@ export class OrderController {
   }
 
   /**
-   * Reembolsa pedido pago (somente admin via rota).
+   * Reembolsa pedido pago (admin ou produtor dono do evento).
    * @param req - Parâmetro `id` do pedido.
    * @param res - `{ refund }` ou erro de negócio/gateway.
    */
   async refund(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized", code: "UNAUTHORIZED" });
+      return;
+    }
+
     const orderId = parseOrderId(req.params.id);
 
     if (!orderId) {
@@ -151,23 +158,24 @@ export class OrderController {
     }
 
     try {
-      const result = await refundOrder(redis,
-        orderId,
-        paymentGateway,
-      );
+      await assertCanRefundOrder(orderId, {
+        userId: req.user.id,
+        role: req.user.role,
+      });
 
-      if (req.user) {
-        await createAdminAuditLog({
-          actorUserId: req.user.id,
-          action: AdminAuditAction.ORDER_REFUNDED,
-          targetType: "order",
-          targetId: orderId,
-          metadata: {
-            ticketsCancelled: result.ticketsCancelled,
-            stockRestored: result.stockRestored,
-          },
-        });
-      }
+      const result = await refundOrder(redis, orderId, paymentGateway);
+
+      await createAdminAuditLog({
+        actorUserId: req.user.id,
+        action: AdminAuditAction.ORDER_REFUNDED,
+        targetType: "order",
+        targetId: orderId,
+        metadata: {
+          ticketsCancelled: result.ticketsCancelled,
+          stockRestored: result.stockRestored,
+          actorRole: req.user.role,
+        },
+      });
 
       res.status(200).json({ refund: result });
     } catch (error) {
@@ -176,6 +184,11 @@ export class OrderController {
   }
 
   private handleRefundError(res: Response, orderId: string, error: unknown): void {
+    if (error instanceof ForbiddenError) {
+      res.status(403).json({ error: error.message, code: error.code });
+      return;
+    }
+
     if (error instanceof OrderNotFoundError) {
       res.status(404).json({ error: error.message, code: error.code });
       return;

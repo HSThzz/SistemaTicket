@@ -9,6 +9,7 @@ import { setContactFormEmailProvider } from "../../../leads/application/services
 import { setPasswordResetEmailProvider } from "../../../identity/application/services/sendPasswordResetEmail";
 import { setParticipationEmailProvider } from "../../../participation/application/services/sendParticipationApprovedNotification";
 import { setEmailProvider } from "../../application/services/deliverTicketsEmail";
+import { setOrderRefundEmailProvider } from "../../application/services/sendOrderRefundNotification";
 import { ResendEmailProvider } from "./ResendEmailProvider";
 import { StubEmailProvider } from "./StubEmailProvider";
 
@@ -27,6 +28,7 @@ export function configureEmailProviders(): void {
     setContactFormEmailProvider(provider);
     setPasswordResetEmailProvider(provider);
     setParticipationEmailProvider(provider);
+    setOrderRefundEmailProvider(provider);
     logger.info(CONTEXT, "Resend email provider configured", {
       from: env.resend.fromEmail,
     });
@@ -38,5 +40,6 @@ export function configureEmailProviders(): void {
   setContactFormEmailProvider(stub);
   setPasswordResetEmailProvider(stub);
   setParticipationEmailProvider(stub);
+  setOrderRefundEmailProvider(stub);
   logger.warn(CONTEXT, "RESEND_API_KEY not set — using stub email provider");
 }

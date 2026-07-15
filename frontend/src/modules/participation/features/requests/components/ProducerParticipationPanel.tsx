@@ -11,6 +11,7 @@ import {
   Button,
   Group,
   Loader,
+  Modal,
   SegmentedControl,
   Stack,
   Text,
@@ -34,6 +35,7 @@ import {
 import { EmptyState } from "@/shared/components/EmptyState";
 import { PremiumPaper } from "@/shared/components/PremiumPaper";
 import * as participationService from "@/modules/participation/api/participationService";
+import * as orderService from "@/modules/sales/api/orderService";
 import type {
   PaidParticipant,
   ParticipationRequest,
@@ -139,8 +141,16 @@ function RequestRow({
   );
 }
 
-/** Card de comprador com pedido pago. */
-function PaidRow({ participant }: { participant: PaidParticipant }) {
+/** Card de comprador com pedido pago e ação de reembolso. */
+function PaidRow({
+  participant,
+  acting,
+  onRefundClick,
+}: {
+  participant: PaidParticipant;
+  acting: boolean;
+  onRefundClick: (participant: PaidParticipant) => void;
+}) {
   return (
     <Box className="lot-offer-card" p="md">
       <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
@@ -185,6 +195,17 @@ function PaidRow({ participant }: { participant: PaidParticipant }) {
             Pago em {formatEventDate(participant.paidAt)}
           </Text>
         </Stack>
+
+        <Button
+          radius="xl"
+          size="xs"
+          variant="light"
+          color="red"
+          loading={acting}
+          onClick={() => onRefundClick(participant)}
+        >
+          Reembolsar
+        </Button>
       </Group>
     </Box>
   );
@@ -207,6 +228,8 @@ export function ProducerParticipationPanel({
   const [paidParticipants, setPaidParticipants] = useState<PaidParticipant[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
+  const [refundTarget, setRefundTarget] = useState<PaidParticipant | null>(null);
+  const [refundLoading, setRefundLoading] = useState(false);
 
   const load = useCallback(
     async (filter: PanelFilter) => {
@@ -273,6 +296,37 @@ export function ProducerParticipationPanel({
     }
   };
 
+  const handleConfirmRefund = async () => {
+    if (!refundTarget) {
+      return;
+    }
+
+    setRefundLoading(true);
+    try {
+      await orderService.refundOrder(refundTarget.orderId);
+      setPaidParticipants((current) =>
+        current.filter((item) => item.orderId !== refundTarget.orderId),
+      );
+      notifications.show({
+        title: "Reembolso processado",
+        message: `O pedido de ${refundTarget.name} foi reembolsado e os ingressos foram cancelados.`,
+        color: "green",
+        icon: <IconCheck size={18} />,
+      });
+      setRefundTarget(null);
+      onReviewComplete?.();
+    } catch (err) {
+      notifications.show({
+        title: "Reembolso falhou",
+        message: getApiErrorMessage(err),
+        color: "red",
+        icon: <IconX size={18} />,
+      });
+    } finally {
+      setRefundLoading(false);
+    }
+  };
+
   const isPaidTab = panelFilter === "PAID";
   const isEmpty = isPaidTab ? paidParticipants.length === 0 : requests.length === 0;
 
@@ -333,7 +387,12 @@ export function ProducerParticipationPanel({
         ) : isPaidTab ? (
           <Stack gap="sm">
             {paidParticipants.map((participant) => (
-              <PaidRow key={participant.orderId} participant={participant} />
+              <PaidRow
+                key={participant.orderId}
+                participant={participant}
+                acting={actingId === participant.orderId}
+                onRefundClick={setRefundTarget}
+              />
             ))}
           </Stack>
         ) : (
@@ -349,6 +408,48 @@ export function ProducerParticipationPanel({
           </Stack>
         )}
       </Stack>
+
+      <Modal
+        opened={Boolean(refundTarget)}
+        onClose={() => {
+          if (!refundLoading) {
+            setRefundTarget(null);
+          }
+        }}
+        title="Reembolsar pedido"
+        centered
+        radius="lg"
+      >
+        {refundTarget ? (
+          <Stack gap="md">
+            <Text size="sm">
+              Reembolsar o pedido de <Text span fw={700}>{refundTarget.name}</Text> no valor de{" "}
+              <Text span fw={700}>
+                {formatCurrencyFromCents(refundTarget.totalPriceCents)}
+              </Text>
+              ? Os ingressos serão cancelados e a vaga volta ao estoque.
+            </Text>
+            <Group justify="flex-end" gap="sm">
+              <Button
+                variant="default"
+                radius="xl"
+                disabled={refundLoading}
+                onClick={() => setRefundTarget(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                color="red"
+                radius="xl"
+                loading={refundLoading}
+                onClick={() => void handleConfirmRefund()}
+              >
+                Confirmar reembolso
+              </Button>
+            </Group>
+          </Stack>
+        ) : null}
+      </Modal>
     </PremiumPaper>
   );
 }

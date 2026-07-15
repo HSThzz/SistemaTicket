@@ -5,6 +5,7 @@
 
 import { closeContactFormQueue } from "../../../modules/leads/infrastructure/queues/contactFormQueue";
 import { closeParticipationNotificationQueue } from "../../../modules/participation/infrastructure/queues/participationNotificationQueue";
+import { closeOrderRefundNotificationQueue } from "../../../modules/notifications/infrastructure/queues/orderRefundNotificationQueue";
 import { closeTicketDeliveryQueue } from "../../../modules/notifications/infrastructure/queues/ticketDeliveryQueue";
 
 /** Fecha todas as instâncias de Queue BullMQ abertas. */
@@ -13,5 +14,6 @@ export async function closeBullMQQueues(): Promise<void> {
     closeTicketDeliveryQueue(),
     closeContactFormQueue(),
     closeParticipationNotificationQueue(),
+    closeOrderRefundNotificationQueue(),
   ]);
 }

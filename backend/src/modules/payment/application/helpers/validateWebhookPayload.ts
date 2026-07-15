@@ -8,7 +8,8 @@ export function validateWebhookPayload(payload: PaymentWebhookPayload): void {
 
   if (
     payload.event !== "payment.succeeded" &&
-    payload.event !== "payment.failed"
+    payload.event !== "payment.failed" &&
+    payload.event !== "payment.refunded"
   ) {
     throw new InvalidWebhookPayloadError(`Unsupported event: ${payload.event}`);
   }

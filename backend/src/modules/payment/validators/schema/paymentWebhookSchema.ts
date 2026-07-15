@@ -2,7 +2,7 @@ import { z } from "zod";
 import { uuidSchema } from "../../../../shared/kernel/zodFields";
 
 export const paymentWebhookSchema = z.object({
-  event: z.enum(["payment.succeeded", "payment.failed"], {
+  event: z.enum(["payment.succeeded", "payment.failed", "payment.refunded"], {
     message: "Evento de webhook inválido",
   }),
   data: z.object({
