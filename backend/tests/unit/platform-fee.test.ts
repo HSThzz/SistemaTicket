@@ -6,16 +6,16 @@ import {
 } from "../../src/shared/kernel/platformFee";
 
 describe("platformFee", () => {
-  it("calculates 5% rounded to cents", () => {
-    assert.equal(calculatePlatformFeeCents(30000), 1500);
+  it("calculates 10% rounded to cents", () => {
+    assert.equal(calculatePlatformFeeCents(30000), 3000);
     assert.equal(calculatePlatformFeeCents(0), 0);
   });
 
   it("builds order total with fee", () => {
     assert.deepEqual(calculateOrderTotalWithPlatformFee(30000), {
       subtotalCents: 30000,
-      platformFeeCents: 1500,
-      totalCents: 31500,
+      platformFeeCents: 3000,
+      totalCents: 33000,
     });
   });
 });

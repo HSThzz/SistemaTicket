@@ -3,8 +3,8 @@
  * @module shared/kernel/platformFee
  */
 
-/** Percentual padrão da taxa (5%). Sobrescrevível via `PLATFORM_FEE_PERCENT`. */
-export const DEFAULT_PLATFORM_FEE_PERCENT = 5;
+/** Percentual padrão da taxa (10%). Sobrescrevível via `PLATFORM_FEE_PERCENT`. */
+export const DEFAULT_PLATFORM_FEE_PERCENT = 10;
 
 /**
  * Taxa em centavos a partir do subtotal dos ingressos.

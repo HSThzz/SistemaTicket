@@ -65,6 +65,7 @@ import {
 import { eventPath } from "@/modules/catalog/utils/eventPaths";
 import { formatCurrencyFromCents, formatEventDateOnly, formatEventTimeOnly, formatLotPrice } from "@/shared/utils/format";
 import { calculateOrderTotalWithPlatformFee } from "@/shared/utils/platformFee";
+import { usePlatformFeePercent } from "@/shared/hooks/usePlatformFeePercent";
 import { getApiErrorCode, getApiErrorMessage } from "@/shared/utils/errors";
 import {
   getBillableQuantity,
@@ -404,6 +405,7 @@ export function CheckoutPage() {
   const [cardSubmitting, setCardSubmitting] = useState(false);
   const [pixGenerating, setPixGenerating] = useState(false);
   const [pixGenerateError, setPixGenerateError] = useState<string | null>(null);
+  const feePercent = usePlatformFeePercent();
   const [pendingOrderModalOpen, setPendingOrderModalOpen] = useState(false);
 
   const { user } = useAuth();
@@ -622,8 +624,8 @@ export function CheckoutPage() {
       };
     }
 
-    return calculateOrderTotalWithPlatformFee(subtotalCents);
-  }, [status?.order, subtotalCents]);
+    return calculateOrderTotalWithPlatformFee(subtotalCents, feePercent);
+  }, [status?.order, subtotalCents, feePercent]);
 
   const totalCents = pricing.totalCents;
 
@@ -943,8 +945,10 @@ export function CheckoutPage() {
                               <Text size="xs" c="dimmed" mt={4}>
                                 (+ taxa{" "}
                                 {formatCurrencyFromCents(
-                                  calculateOrderTotalWithPlatformFee(selectedLot.price)
-                                    .platformFeeCents,
+                                  calculateOrderTotalWithPlatformFee(
+                                    selectedLot.price,
+                                    feePercent,
+                                  ).platformFeeCents,
                                 )}
                                 )
                               </Text>

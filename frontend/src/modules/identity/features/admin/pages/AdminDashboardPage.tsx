@@ -13,6 +13,7 @@ import {
   Grid,
   Group,
   Modal,
+  NumberInput,
   Paper,
   PasswordInput,
   Select,
@@ -31,6 +32,7 @@ import {
   IconDatabase,
   IconHistory,
   IconLock,
+  IconPercentage,
   IconReceiptRefund,
   IconRefresh,
   IconSearch,
@@ -49,7 +51,9 @@ import { AdminAuditLogList } from "@/modules/identity/features/admin/components/
 import * as authService from "@/modules/identity/api/authService";
 import * as orderService from "@/modules/sales/api/orderService";
 import * as purchaseService from "@/modules/sales/api/purchaseService";
+import * as platformSettingsService from "@/modules/sales/api/platformSettingsService";
 import { useAuth } from "@/modules/identity/features/auth/context/AuthContext";
+import { PLATFORM_FEE_PERCENT } from "@/shared/utils/platformFee";
 import type {
   AdminAuditLogEntry,
   AuthUser,
@@ -104,6 +108,10 @@ export function AdminDashboardPage() {
   const [reconcileReport, setReconcileReport] =
     useState<StockReconciliationReport | null>(null);
 
+  const [feePercent, setFeePercent] = useState<number | string>(PLATFORM_FEE_PERCENT);
+  const [feeLoading, setFeeLoading] = useState(false);
+  const [feeSaving, setFeeSaving] = useState(false);
+
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState<string | null>(null);
   const [auditLogs, setAuditLogs] = useState<AdminAuditLogEntry[]>([]);
@@ -157,11 +165,62 @@ export function AdminDashboardPage() {
     }
   };
 
+  const loadPlatformFee = async () => {
+    if (!canManagePlatform) return;
+
+    setFeeLoading(true);
+    try {
+      const percent = await platformSettingsService.getPlatformFeePercent();
+      setFeePercent(percent);
+    } catch (err) {
+      notifications.show({
+        title: "Taxa indisponível",
+        message: getApiErrorMessage(err, "Não foi possível carregar a taxa da plataforma."),
+        color: "red",
+      });
+    } finally {
+      setFeeLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (canManagePlatform) {
       void loadAuditLogs();
+      void loadPlatformFee();
     }
   }, [canManagePlatform]);
+
+  const handleSavePlatformFee = async () => {
+    const percent = typeof feePercent === "number" ? feePercent : Number(feePercent);
+    if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
+      notifications.show({
+        title: "Valor inválido",
+        message: "Informe um percentual entre 0 e 100.",
+        color: "orange",
+      });
+      return;
+    }
+
+    setFeeSaving(true);
+    try {
+      const result = await platformSettingsService.updatePlatformFeePercent(percent);
+      setFeePercent(result.percent);
+      notifications.show({
+        title: "Taxa atualizada",
+        message: `Taxa da plataforma: ${result.previousPercent}% → ${result.percent}%.`,
+        color: "green",
+      });
+      void loadAuditLogs();
+    } catch (err) {
+      notifications.show({
+        title: "Erro ao salvar",
+        message: getApiErrorMessage(err, "Não foi possível atualizar a taxa."),
+        color: "red",
+      });
+    } finally {
+      setFeeSaving(false);
+    }
+  };
 
   const handleLookupUser = userForm.onSubmit(async (values) => {
     setLookupLoading(true);
@@ -592,6 +651,42 @@ export function AdminDashboardPage() {
 
   const platformPanel = (
     <Stack gap="lg">
+      <AdminSection
+        icon={IconPercentage}
+        iconColor="brand"
+        title="Taxa da plataforma"
+        description="Percentual cobrado sobre o subtotal dos ingressos pagos (não se aplica a ingressos gratuitos)."
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            A alteração vale para novos pedidos. Pedidos já criados mantêm a taxa congelada
+            no momento da reserva.
+          </Text>
+          <Group align="flex-end" wrap="wrap" gap="sm">
+            <NumberInput
+              label="Percentual (%)"
+              description="Entre 0 e 100"
+              min={0}
+              max={100}
+              decimalScale={2}
+              fixedDecimalScale={false}
+              value={feePercent}
+              onChange={setFeePercent}
+              disabled={feeLoading || feeSaving}
+              w={{ base: "100%", sm: 180 }}
+            />
+            <Button
+              radius="xl"
+              loading={feeSaving}
+              disabled={feeLoading}
+              onClick={() => void handleSavePlatformFee()}
+            >
+              Salvar taxa
+            </Button>
+          </Group>
+        </Stack>
+      </AdminSection>
+
       <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
         <AdminSection
           icon={IconDatabase}

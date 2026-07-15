@@ -46,7 +46,7 @@ export const env = {
       | "mercadopago",
     /** Percentual da taxa de serviço da plataforma sobre o subtotal dos ingressos. */
     platformFeePercent: Number(
-      process.env.PLATFORM_FEE_PERCENT ?? "5",
+      process.env.PLATFORM_FEE_PERCENT ?? "10",
     ),
     mercadoPago: {
       accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN ?? "",

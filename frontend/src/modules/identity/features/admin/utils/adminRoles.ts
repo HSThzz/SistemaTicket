@@ -39,7 +39,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   USER_PASSWORD_RESET: "Senha redefinida",
   ORDER_REFUNDED: "Pedido reembolsado",
   STOCK_RECONCILED: "Estoque reconciliado",
-  TICKETS_ISSUED_MANUALLY: "Ingressos emitidos manualmente",
+  PLATFORM_FEE_UPDATED: "Taxa da plataforma atualizada",
 };
 
 /** Indica se o admin pode redefinir a senha do usuário selecionado. */

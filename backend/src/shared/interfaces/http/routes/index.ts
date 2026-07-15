@@ -11,6 +11,7 @@ import participationRoutes from "../../../../modules/participation/interfaces/ht
 import orderRoutes from "../../../../modules/sales/interfaces/http/order.routes";
 import paymentRoutes from "../../../../modules/payment/interfaces/http/payment.routes";
 import purchaseRoutes from "../../../../modules/sales/interfaces/http/purchase.routes";
+import platformRoutes from "../../../../modules/sales/interfaces/http/platform.routes";
 import ticketRoutes from "../../../../modules/ticketing/interfaces/http/ticket.routes";
 import walletRoutes from "../../../../modules/ticketing/interfaces/http/wallet.routes";
 import leadRoutes from "../../../../modules/leads/interfaces/http/lead.routes";
@@ -26,6 +27,7 @@ router.use("/events", eventRoutes);
 router.use("/events", participationRoutes);
 router.use("/orders", orderRoutes);
 router.use("/purchases", purchaseRoutes);
+router.use("/platform", platformRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/tickets", ticketRoutes);
 router.use("/wallet", walletRoutes);

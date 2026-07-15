@@ -7,11 +7,11 @@ import { Order } from "../../../../shared/infrastructure/persistence/entities/Or
 import { Reservation } from "../../../../shared/infrastructure/persistence/entities/Reservation";
 import { TicketLot } from "../../../../shared/infrastructure/persistence/entities/TicketLot";
 import { User } from "../../../../shared/infrastructure/persistence/entities/User";
-import { env } from "../../../../shared/infrastructure/config/env";
 import { OrderStatus, ReservationStatus } from "../../../../shared/kernel/enums";
 import { calculateOrderTotalWithPlatformFee } from "../../../../shared/kernel/platformFee";
 import type { Prettify } from "../../../../shared/kernel/prettify";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
+import { getPlatformFeePercent } from "../services/getPlatformFeePercent";
 
 export type PersistReservationPayload = Prettify<
   Pick<Reservation, "userId" | "ticketLotId" | "quantity"> & {
@@ -96,9 +96,10 @@ export async function persistReservation(payload: PersistReservationPayload,
     await manager.save(reservation);
 
     const subtotalCents = lot.price * payload.quantity;
+    const feePercent = await getPlatformFeePercent();
     const { platformFeeCents, totalCents } = calculateOrderTotalWithPlatformFee(
       subtotalCents,
-      env.payment.platformFeePercent,
+      feePercent,
     );
 
     const orderData: CreateOrderData = {

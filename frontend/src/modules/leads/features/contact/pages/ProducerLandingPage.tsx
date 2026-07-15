@@ -236,7 +236,7 @@ function ContactForm() {
 const FEATURES = [
   {
     icon: IconCoin,
-    title: "Taxa de 8% — ponto final.",
+    title: "Taxa de 10% — ponto final.",
     body: "Sem adesão, mensalidade ou surpresa na fatura. Enquanto o mercado cobra entre 10% e 12%, você fica com mais do que é seu e sabe exatamente o que paga.",
   },
   {
@@ -273,7 +273,7 @@ const FAQ_ITEMS = [
   {
     question: "Quanto a VIBRA cobra por ingresso?",
     answer:
-      "Nossa taxa é de 8% sobre o valor do ingresso — transparente, sem taxas escondidas. Para comparar: as principais plataformas do mercado cobram entre 10% e 12%, mais taxas adicionais.",
+      "Nossa taxa é de 10% sobre o valor do ingresso — transparente, sem taxas escondidas. Para comparar: as principais plataformas do mercado cobram entre 10% e 12%, mais taxas adicionais.",
   },
   {
     question: "Quando recebo o dinheiro das vendas?",

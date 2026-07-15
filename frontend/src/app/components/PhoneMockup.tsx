@@ -94,7 +94,7 @@ function DashboardScreen() {
           </Text>
         </Box>
         <Box className="landing-phone-mini-stat">
-          <Text className="landing-phone-mini-value">8%</Text>
+          <Text className="landing-phone-mini-value">10%</Text>
           <Text size="xs" c="dimmed">
             taxa
           </Text>

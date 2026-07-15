@@ -65,6 +65,7 @@ import {
   formatLotPrice,
 } from "@/shared/utils/format";
 import { calculatePlatformFeeCents } from "@/shared/utils/platformFee";
+import { usePlatformFeePercent } from "@/shared/hooks/usePlatformFeePercent";
 import { getApiErrorMessage } from "@/shared/utils/errors";
 
 const EVENT_PERKS = [
@@ -83,10 +84,12 @@ const EVENT_PERKS = [
 function LotOfferCard({
   lot,
   isAuthenticated,
+  feePercent,
   onBuy,
 }: {
   lot: TicketLot;
   isAuthenticated: boolean;
+  feePercent: number;
   onBuy: (lotId: string) => void;
 }) {
   const soldOut = lot.availableQuantity === 0;
@@ -115,7 +118,11 @@ function LotOfferCard({
             </Text>
             {lot.price > 0 ? (
               <Text size="xs" c="dimmed">
-                (+ taxa {formatCurrencyFromCents(calculatePlatformFeeCents(lot.price))})
+                (+ taxa{" "}
+                {formatCurrencyFromCents(
+                  calculatePlatformFeeCents(lot.price, feePercent),
+                )}
+                )
               </Text>
             ) : null}
           </Stack>
@@ -159,6 +166,7 @@ export function EventDetailPage() {
     loginReturnPath: event ? eventPath(event) : undefined,
   });
   const { setParticipationStatus } = useParticipation();
+  const feePercent = usePlatformFeePercent();
 
   const handleParticipationSubmitted = (request: ParticipationRequest) => {
     setParticipation(request);
@@ -532,6 +540,7 @@ export function EventDetailPage() {
                                 key={lot.id}
                                 lot={lot}
                                 isAuthenticated={isAuthenticated}
+                                feePercent={feePercent}
                                 onBuy={handleBuy}
                               />
                             ))}

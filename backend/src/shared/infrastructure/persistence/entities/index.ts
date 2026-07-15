@@ -26,3 +26,4 @@ export { User } from "./User";
 export { PasswordResetToken } from "./PasswordResetToken";
 export { UserFavorite } from "./UserFavorite";
 export { UserSpotifyConnection } from "./UserSpotifyConnection";
+export { PlatformSetting } from "./PlatformSetting";
