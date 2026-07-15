@@ -98,6 +98,9 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.2;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .stat-card .mantine-Group-root {

@@ -428,23 +428,25 @@ export function EventDetailPage() {
                   </PremiumPaper>
                 </AnimatedSection>
 
-                <AnimatedSection delayMs={120}>
-                  <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
-                    {EVENT_PERKS.map((perk) => (
-                      <PremiumPaper key={perk.label} p="lg">
-                        <Stack gap="sm">
-                          <ThemeIcon size={36} radius="md" variant="light" color="brand">
-                            <perk.icon size={18} />
-                          </ThemeIcon>
-                          <Text fw={700}>{perk.label}</Text>
-                          <Text size="sm" c="dimmed" style={{ lineHeight: 1.55 }}>
-                            {perk.description}
-                          </Text>
-                        </Stack>
-                      </PremiumPaper>
-                    ))}
-                  </SimpleGrid>
-                </AnimatedSection>
+                <Box visibleFrom="md">
+                  <AnimatedSection delayMs={120}>
+                    <SimpleGrid cols={3} spacing="md">
+                      {EVENT_PERKS.map((perk) => (
+                        <PremiumPaper key={perk.label} p="lg">
+                          <Stack gap="sm">
+                            <ThemeIcon size={36} radius="md" variant="light" color="brand">
+                              <perk.icon size={18} />
+                            </ThemeIcon>
+                            <Text fw={700}>{perk.label}</Text>
+                            <Text size="sm" c="dimmed" style={{ lineHeight: 1.55 }}>
+                              {perk.description}
+                            </Text>
+                          </Stack>
+                        </PremiumPaper>
+                      ))}
+                    </SimpleGrid>
+                  </AnimatedSection>
+                </Box>
               </Stack>
             </Grid.Col>
 
@@ -546,6 +548,26 @@ export function EventDetailPage() {
                     )}
                   </Stack>
                 </PremiumPaper>
+              </AnimatedSection>
+            </Grid.Col>
+
+            <Grid.Col span={12} hiddenFrom="md">
+              <AnimatedSection delayMs={120}>
+                <SimpleGrid cols={1} spacing="md">
+                  {EVENT_PERKS.map((perk) => (
+                    <PremiumPaper key={perk.label} p="lg">
+                      <Stack gap="sm">
+                        <ThemeIcon size={36} radius="md" variant="light" color="brand">
+                          <perk.icon size={18} />
+                        </ThemeIcon>
+                        <Text fw={700}>{perk.label}</Text>
+                        <Text size="sm" c="dimmed" style={{ lineHeight: 1.55 }}>
+                          {perk.description}
+                        </Text>
+                      </Stack>
+                    </PremiumPaper>
+                  ))}
+                </SimpleGrid>
               </AnimatedSection>
             </Grid.Col>
           </Grid>
