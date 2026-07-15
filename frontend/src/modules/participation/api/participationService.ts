@@ -10,10 +10,10 @@ import type {
   ParticipationRequestStatus,
 } from "@/shared/types/api";
 
-/** Payload de envio — nome/e-mail vêm da conta; telefone e Instagram opcionais. */
+/** Payload de envio — nome/e-mail vêm da conta; telefone e Instagram obrigatórios. */
 export interface SubmitParticipationRequestInput {
-  phone?: string;
-  instagramHandle?: string;
+  phone: string;
+  instagramHandle: string;
 }
 
 /** Decisão do produtor sobre uma solicitação. */
@@ -23,11 +23,11 @@ export type ParticipationReviewDecision = "APPROVE" | "REJECT";
  * Envia uma solicitação de participação para um evento privado.
  *
  * @param eventId - Identificador do evento.
- * @param input - Telefone e Instagram opcionais do interessado.
+ * @param input - Telefone e Instagram do interessado.
  */
 export async function submitParticipationRequest(
   eventId: string,
-  input: SubmitParticipationRequestInput = {},
+  input: SubmitParticipationRequestInput,
 ): Promise<ParticipationRequest> {
   const { data } = await api.post<{ participationRequest: ParticipationRequest }>(
     `/events/${eventId}/participation-requests`,

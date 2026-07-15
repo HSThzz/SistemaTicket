@@ -476,26 +476,30 @@ export function EventDetailPage() {
                       </Text>
                     </Stack>
 
-                    <Group justify="space-between" align="center" wrap="wrap" gap="sm">
-                      {lowestPrice !== null ? (
-                        <Text fw={800} size="xl" c="brand">
-                          {lowestPrice === 0
-                            ? "Gratuito"
-                            : `a partir de ${formatLotPrice(lowestPrice)}`}
-                        </Text>
-                      ) : (
-                        <Text fw={600} c="dimmed">
-                          Sem lotes disponíveis
-                        </Text>
-                      )}
-                      <PremiumBadge tone={soldOut ? "sold-out" : "published"} size="sm">
-                        {soldOut
-                          ? "Esgotado"
-                          : `${totalAvailable} disponíve${totalAvailable === 1 ? "l" : "is"}`}
-                      </PremiumBadge>
-                    </Group>
+                    {!(eventIsPrivate && !canBuy) ? (
+                      <>
+                        <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+                          {lowestPrice !== null ? (
+                            <Text fw={800} size="xl" c="brand">
+                              {lowestPrice === 0
+                                ? "Gratuito"
+                                : `a partir de ${formatLotPrice(lowestPrice)}`}
+                            </Text>
+                          ) : (
+                            <Text fw={600} c="dimmed">
+                              Sem lotes disponíveis
+                            </Text>
+                          )}
+                          <PremiumBadge tone={soldOut ? "sold-out" : "published"} size="sm">
+                            {soldOut
+                              ? "Esgotado"
+                              : `${totalAvailable} disponíve${totalAvailable === 1 ? "l" : "is"}`}
+                          </PremiumBadge>
+                        </Group>
 
-                    <Divider />
+                        <Divider />
+                      </>
+                    ) : null}
 
                     {eventIsPrivate && !canBuy ? (
                       <ParticipationRequestCard

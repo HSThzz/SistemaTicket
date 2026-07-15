@@ -69,6 +69,28 @@ export function ParticipationRequestCard({
       phone: "",
       instagramHandle: "",
     },
+    validate: {
+      phone: (value) => {
+        const digits = value.replace(/\D/g, "");
+        if (!digits) {
+          return "Informe o telefone";
+        }
+        if (digits.length < 10 || digits.length > 11) {
+          return "Informe um telefone válido com DDD";
+        }
+        return null;
+      },
+      instagramHandle: (value) => {
+        const handle = normalizeInstagramHandle(value);
+        if (!handle) {
+          return "Informe o Instagram";
+        }
+        if (!/^[a-zA-Z0-9._]{1,30}$/.test(handle)) {
+          return "Informe um @ válido do Instagram";
+        }
+        return null;
+      },
+    },
   });
 
   if (!isAuthenticated) {
@@ -136,8 +158,8 @@ export function ParticipationRequestCard({
 
     try {
       const created = await participationService.submitParticipationRequest(event.id, {
-        phone: values.phone.trim() || undefined,
-        instagramHandle: normalizeInstagramHandle(values.instagramHandle) || undefined,
+        phone: values.phone.trim(),
+        instagramHandle: normalizeInstagramHandle(values.instagramHandle),
       });
 
       notifications.show({
@@ -184,6 +206,8 @@ export function ParticipationRequestCard({
           leftSection={<IconUser size={16} />}
           value={user?.name ?? ""}
           readOnly
+          withAsterisk
+          required
         />
         <TextInput
           label="E-mail"
@@ -192,6 +216,8 @@ export function ParticipationRequestCard({
           leftSection={<IconMail size={16} />}
           value={user?.email ?? ""}
           readOnly
+          withAsterisk
+          required
         />
         <TextInput
           label="Telefone"
@@ -207,6 +233,8 @@ export function ParticipationRequestCard({
             form.setFieldValue("phone", formatPhoneBr(event.currentTarget.value))
           }
           error={form.errors.phone}
+          withAsterisk
+          required
         />
         <TextInput
           label="Instagram"
@@ -223,6 +251,8 @@ export function ParticipationRequestCard({
             )
           }
           error={form.errors.instagramHandle}
+          withAsterisk
+          required
         />
 
         <Button type="submit" radius="xl" fullWidth loading={submitting}>

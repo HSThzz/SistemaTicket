@@ -56,7 +56,7 @@ function requireActor(req: Request, res: Response): ParticipationActor | null {
 export class ParticipationController {
   /**
    * POST /events/:eventId/participation-requests — usuário autenticado solicita participação.
-   * Nome e e-mail vêm da conta; o body aceita apenas telefone opcional.
+   * Nome e e-mail vêm da conta; o body exige telefone e Instagram.
    */
   async submit(req: Request, res: Response): Promise<void> {
     const actor = requireActor(req, res);

@@ -71,8 +71,8 @@ export async function submitParticipationRequest(
       userId: requester.userId,
       name: user.name,
       email,
-      phone: data.phone ?? null,
-      instagramHandle: data.instagramHandle ?? null,
+      phone: data.phone,
+      instagramHandle: data.instagramHandle,
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
