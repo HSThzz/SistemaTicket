@@ -12,6 +12,7 @@ export type CreateEventData = Prettify<
     Event,
     | "producerId"
     | "title"
+    | "slug"
     | "description"
     | "date"
     | "location"

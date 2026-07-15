@@ -14,6 +14,7 @@ import {
 import { ParticipationStatusBadge } from "@/components/ui/ParticipationStatusBadge";
 import type { Event } from "@/shared/types/api";
 import { useParticipation } from "@/modules/participation/features/requests/hooks/useParticipation";
+import { eventPath } from "@/modules/catalog/utils/eventPaths";
 import {
   extractCity,
   getEventCoverStyle,
@@ -42,12 +43,13 @@ export function EventCard({ event, variant = "default" }: EventCardProps) {
   const lowestPrice = getLowestPrice(event);
   const totalAvailable = getTotalAvailable(event);
   const soldOut = totalAvailable === 0;
+  const href = eventPath(event);
 
   if (variant === "horizontal") {
     return (
       <Card
         component={Link}
-        to={`/eventos/${event.id}`}
+        to={href}
         padding="sm"
         radius="lg"
         withBorder
@@ -94,7 +96,7 @@ export function EventCard({ event, variant = "default" }: EventCardProps) {
   return (
     <Card
       component={Link}
-      to={`/eventos/${event.id}`}
+      to={href}
       padding={0}
       radius="lg"
       withBorder

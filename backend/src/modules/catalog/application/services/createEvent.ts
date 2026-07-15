@@ -6,6 +6,7 @@ import {
   type CreateEventInputSchema,
 } from "../../validators/schema/createEventSchema";
 import { createEvent as createEventCommand } from "../commands/createEvent";
+import { ensureUniqueEventSlug } from "../helpers/ensureUniqueEventSlug";
 import { loadEventWithLots } from "../helpers/loadEventWithLots";
 import { normalizeImageUrl } from "../helpers/normalizeImageUrl";
 import type { EventActor } from "../types";
@@ -17,10 +18,12 @@ export async function createEvent(
   actor: EventActor,
 ) {
   const data = validateSchema(createEventSchema, input);
+  const slug = await ensureUniqueEventSlug(data.title);
 
   const saved = await createEventCommand({
     producerId: actor.userId,
     title: data.title,
+    slug,
     description: data.description,
     date: new Date(data.date),
     location: data.location,
@@ -31,6 +34,7 @@ export async function createEvent(
 
   Logger.getInstance().info(CONTEXT, "Event created", {
     eventId: saved.id,
+    slug: saved.slug,
     producerId: saved.producerId,
     status: saved.status,
   });

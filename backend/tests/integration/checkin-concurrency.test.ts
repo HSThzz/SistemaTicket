@@ -65,6 +65,7 @@ describe("Check-in concurrency", () => {
       eventRepo.create({
         producerId: producer.id,
         title: "Show Hoje",
+        slug: `show-hoje-${Date.now().toString(36)}`,
         description: "Evento no dia do check-in",
         date: new Date(),
         location: "Arena",

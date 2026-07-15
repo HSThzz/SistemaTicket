@@ -58,6 +58,7 @@ import {
   inferEventCategory,
   preloadEventCoverImage,
 } from "@/modules/catalog/utils/eventVisuals";
+import { eventCheckoutPath, eventPath } from "@/modules/catalog/utils/eventPaths";
 import {
   formatCurrencyFromCents,
   formatEventDateOnly,
@@ -155,8 +156,8 @@ export function EventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { liked, handleToggleFavorite } = useEventFavoriteAction({
-    eventId: eventId ?? "",
-    loginReturnPath: eventId ? `/eventos/${eventId}` : undefined,
+    eventId: event?.id ?? "",
+    loginReturnPath: event ? eventPath(event) : undefined,
   });
   const { setParticipationStatus } = useParticipation();
 
@@ -183,6 +184,9 @@ export function EventDetailPage() {
         if (!cancelled) {
           setEvent(data);
           preloadEventCoverImage(data.imageUrl);
+          if (data.slug && eventId !== data.slug) {
+            navigate(eventPath(data), { replace: true });
+          }
         }
       })
       .catch((err) => {
@@ -199,12 +203,12 @@ export function EventDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [eventId]);
+  }, [eventId, navigate]);
 
   const isPrivate = event?.type === "PRIVATE";
 
   useEffect(() => {
-    if (!eventId || !isPrivate || !isAuthenticated) {
+    if (!event?.id || !isPrivate || !isAuthenticated) {
       setParticipation(null);
       return;
     }
@@ -212,7 +216,7 @@ export function EventDetailPage() {
     let cancelled = false;
 
     participationService
-      .getMyParticipationRequest(eventId)
+      .getMyParticipationRequest(event.id)
       .then((data) => {
         if (!cancelled) {
           setParticipation(data);
@@ -233,7 +237,7 @@ export function EventDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [eventId, isPrivate, isAuthenticated, setParticipationStatus]);
+  }, [event?.id, isPrivate, isAuthenticated, setParticipationStatus]);
 
   useEventCoverPreload(getEventCoverImageUrl(event ?? {}));
 
@@ -265,12 +269,12 @@ export function EventDetailPage() {
 
   const handleBuy = (lotId: string) => {
     if (!isAuthenticated) {
-      navigate("/login", { state: { from: `/eventos/${event.id}` } });
+      navigate("/login", { state: { from: eventPath(event) } });
       return;
     }
 
     preloadEventCoverImage(event.imageUrl);
-    navigate(`/eventos/${event.id}/comprar?lot=${lotId}`, {
+    navigate(eventCheckoutPath(event, { lot: lotId }), {
       state: { coverImageUrl: event.imageUrl },
     });
   };
@@ -532,7 +536,7 @@ export function EventDetailPage() {
 
                         {!isAuthenticated && !eventIsPrivate ? (
                           <Text size="sm" c="dimmed" ta="center">
-                            <Link to="/login" state={{ from: `/eventos/${event.id}` }}>
+                            <Link to="/login" state={{ from: eventPath(event) }}>
                               Faça login
                             </Link>{" "}
                             ou <Link to="/cadastro">cadastre-se</Link> para reservar.

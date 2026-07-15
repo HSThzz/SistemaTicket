@@ -1,10 +1,10 @@
 import { validateSchema } from "../../../../shared/kernel/validateSchema";
-import { eventIdSchema } from "../../validators/schema/eventIdSchema";
+import { eventPublicIdSchema } from "../../validators/schema/eventIdSchema";
 import { findOnePublishedEventById } from "../queries/findOnePublishedEventById";
 
 export async function getPublishedEventById(
-  eventId: string,
+  eventIdOrSlug: string,
 ) {
-  const id = validateSchema(eventIdSchema, eventId);
-  return findOnePublishedEventById(id);
+  const idOrSlug = validateSchema(eventPublicIdSchema, eventIdOrSlug);
+  return findOnePublishedEventById(idOrSlug);
 }

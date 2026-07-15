@@ -7,6 +7,7 @@ import { EventPrivateBadge, isPrivateEvent } from "./EventPrivateBadge";
 import { useEventFavoriteAction } from "@/modules/identity/features/profile/hooks/useEventFavoriteAction";
 import { useParticipation } from "@/modules/participation/features/requests/hooks/useParticipation";
 import type { Event } from "@/shared/types/api";
+import { eventPath } from "@/modules/catalog/utils/eventPaths";
 import {
   extractCity,
   getEventCoverStyle,
@@ -29,12 +30,13 @@ export function DiceEventCard({ event }: DiceEventCardProps) {
   const totalAvailable = getTotalAvailable(event);
   const soldOut = totalAvailable === 0;
   const venue = extractCity(event.location);
+  const href = eventPath(event);
 
   return (
     <Box className="dice-event-card">
       <UnstyledButton
         component={Link}
-        to={`/eventos/${event.id}`}
+        to={href}
         className="dice-event-card__link"
       >
         <Box className="dice-event-card__cover" style={getEventCoverStyle(event)}>
@@ -63,7 +65,7 @@ export function DiceEventCard({ event }: DiceEventCardProps) {
       <Stack gap={4} className="dice-event-card__body">
         <Text
           component={Link}
-          to={`/eventos/${event.id}`}
+          to={href}
           className="dice-event-card__title"
           lineClamp={2}
         >

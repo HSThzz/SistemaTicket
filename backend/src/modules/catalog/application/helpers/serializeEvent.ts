@@ -15,6 +15,7 @@ export function serializeEvent(event: Event, options?: SerializeEventOptions) {
     id: event.id,
     producerId: event.producerId,
     title: event.title,
+    slug: event.slug,
     description: event.description,
     date: event.date.toISOString(),
     location: event.location,

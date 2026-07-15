@@ -9,6 +9,7 @@ export interface OrderListItem {
   paymentGatewayId: string | null;
   reservationId: string;
   eventId: string | null;
+  eventSlug: string | null;
   eventTitle: string | null;
   createdAt: string;
   payment: PixPaymentDetails | null;

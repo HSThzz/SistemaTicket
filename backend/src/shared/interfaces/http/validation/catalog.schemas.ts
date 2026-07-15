@@ -9,6 +9,7 @@ export { createTicketLotSchema as createTicketLotBodySchema } from "../../../../
 export { updateTicketLotSchema as updateTicketLotBodySchema } from "../../../../modules/catalog/validators/schema/updateTicketLotSchema";
 export {
   eventIdParamsSchema,
+  eventPublicIdParamsSchema,
   eventLotParamsSchema,
   eventStaffParamsSchema,
 } from "../../../../modules/catalog/validators/schema/eventIdSchema";

@@ -16,6 +16,7 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import type { TicketListItem } from "@/shared/types/api";
 import { TicketWalletActions } from "@/modules/ticketing/features/wallet/components/TicketWalletActions";
+import { eventPath } from "@/modules/catalog/utils/eventPaths";
 import { formatShortDate } from "@/shared/utils/format";
 import {
   formatTicketCheckInCode,
@@ -30,7 +31,7 @@ export function TicketCardDetails({ ticket }: TicketCardDetailsProps) {
   const [showCode, setShowCode] = useState(false);
   const isActive = ticket.status === "ACTIVE";
   const isUsed = ticket.status === "USED";
-  const eventHref = `/eventos/${ticket.event.id}`;
+  const eventHref = eventPath(ticket.event);
   const qrPayload = getTicketQrPayload(ticket);
   const displayCheckInCode = formatTicketCheckInCode(ticket.checkInCode ?? ticket.uniqueCode);
 

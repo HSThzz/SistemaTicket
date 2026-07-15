@@ -10,6 +10,7 @@ import {
   createEventBodySchema,
   createTicketLotBodySchema,
   eventIdParamsSchema,
+  eventPublicIdParamsSchema,
   eventLotParamsSchema,
   eventStaffParamsSchema,
   addCheckInStaffBodySchema,
@@ -32,7 +33,7 @@ router.get(
 );
 router.get(
   "/:eventId",
-  validateParams(eventIdParamsSchema),
+  validateParams(eventPublicIdParamsSchema),
   (req, res) => void eventController.getPublished(req, res),
 );
 

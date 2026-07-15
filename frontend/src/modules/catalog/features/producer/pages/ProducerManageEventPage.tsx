@@ -57,6 +57,7 @@ import * as eventService from "@/modules/catalog/api/eventService";
 import type { Event, EventStatus, TicketLot } from "@/shared/types/api";
 import { eventDateToIso, isoToEventDate, validateEventDate } from "@/modules/catalog/features/producer/utils/eventDateTime";
 import { getEventCoverStyle } from "@/modules/catalog/utils/eventVisuals";
+import { eventPath } from "@/modules/catalog/utils/eventPaths";
 import { formatEventDate } from "@/shared/utils/format";
 import { getApiErrorMessage } from "@/shared/utils/errors";
 import {
@@ -679,7 +680,7 @@ export function ProducerManageEventPage() {
               {event.status === "PUBLISHED" ? (
                 <Button
                   component={Link}
-                  to={`/eventos/${event.id}`}
+                  to={eventPath(event)}
                   variant="white"
                   color="dark"
                   radius="xl"

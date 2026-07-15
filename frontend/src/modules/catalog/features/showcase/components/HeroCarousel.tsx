@@ -5,6 +5,7 @@ import { useRef } from "react";
 import { Box, Button, Group, Stack, Text, Title } from "@mantine/core";
 import { IconCalendar, IconMapPin, IconTicket } from "@tabler/icons-react";
 import type { Event } from "@/shared/types/api";
+import { eventPath } from "@/modules/catalog/utils/eventPaths";
 import {
   extractCity,
   getEventCoverStyle,
@@ -58,7 +59,7 @@ export function HeroCarousel({ events }: HeroCarouselProps) {
             <Carousel.Slide key={event.id}>
               <Box
                 component={Link}
-                to={`/eventos/${event.id}`}
+                to={eventPath(event)}
                 className="hero-slide"
                 style={{
                   ...getEventCoverStyle(event),

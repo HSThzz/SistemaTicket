@@ -29,7 +29,7 @@ export function useEventFavoriteAction({
 
     if (!isAuthenticated) {
       navigate("/login", {
-        state: { from: loginReturnPath ?? `/eventos/${eventId}` },
+        state: { from: loginReturnPath ?? `/eventos/${eventId || ""}` },
       });
       return;
     }

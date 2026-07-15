@@ -42,6 +42,8 @@ export interface Event {
   id: string;
   producerId: string;
   title: string;
+  /** Slug estável para URLs públicas (`/eventos/:slug`). */
+  slug: string;
   description: string;
   date: string;
   location: string;
@@ -157,6 +159,7 @@ export interface TicketListItem {
   checkedInAt: string | null;
   event: {
     id: string;
+    slug: string;
     title: string;
     description: string;
     date: string;
@@ -192,6 +195,7 @@ export interface OrderListItem {
   paymentGatewayId: string | null;
   reservationId: string;
   eventId: string | null;
+  eventSlug?: string | null;
   eventTitle: string | null;
   createdAt: string;
   payment: PixPaymentDetails | null;

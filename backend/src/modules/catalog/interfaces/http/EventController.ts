@@ -118,8 +118,8 @@ export class EventController {
   }
 
   /**
-   * GET /events/:eventId — detalhe de evento publicado.
-   * @param req - Parâmetro eventId.
+   * GET /events/:eventId — detalhe de evento publicado (UUID ou slug).
+   * @param req - Parâmetro eventId (UUID ou slug público).
    * @param res - Evento ou 404.
    * @returns Promise resolvida após enviar a resposta.
    */

@@ -20,6 +20,7 @@ import {
 import { IconClock, IconReceipt, IconTicket } from "@tabler/icons-react";
 import { OrderStatusBadge } from "@/components/ui/OrderStatusBadge";
 import type { OrderListItem } from "@/shared/types/api";
+import { eventCheckoutPath } from "@/modules/catalog/utils/eventPaths";
 import { formatCurrencyFromCents, formatShortDate } from "@/shared/utils/format";
 
 /** Propriedades do card de pedido na listagem do cliente. */
@@ -67,7 +68,10 @@ export function OrderCard({ order }: OrderCardProps) {
   const isPaid = order.status === "PAID";
   const isPending = order.status === "PENDING";
   const checkoutUrl = order.eventId
-    ? `/eventos/${order.eventId}/comprar?reservation=${order.reservationId}`
+    ? eventCheckoutPath(
+        { id: order.eventId, slug: order.eventSlug },
+        { reservation: order.reservationId },
+      )
     : null;
 
   return (

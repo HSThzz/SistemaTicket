@@ -20,6 +20,7 @@ export interface OrderListItem {
   paymentGatewayId: string | null;
   reservationId: string;
   eventId: string | null;
+  eventSlug: string | null;
   eventTitle: string | null;
   createdAt: string;
   payment: PixPaymentDetails | null;
@@ -52,6 +53,7 @@ function mapOrderToListItem(
     paymentGatewayId: order.paymentGatewayId,
     reservationId: order.reservationId,
     eventId: event?.id ?? null,
+    eventSlug: event?.slug ?? null,
     eventTitle: event?.title ?? null,
     createdAt: order.createdAt.toISOString(),
     payment,

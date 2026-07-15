@@ -22,6 +22,7 @@ import {
   UserRole,
 } from "../shared/kernel/enums";
 import { generateTicketCheckInCode } from "../shared/kernel/ticketCheckInCode";
+import { slugifyEventTitle } from "../modules/catalog/application/helpers/slugifyEventTitle";
 
 /** Senha padrão de todos os usuários criados pelo seed. */
 export const SEED_PASSWORD = "Senha123!";
@@ -289,6 +290,7 @@ export async function runDemoSeed(
       eventRepo.create({
         producerId: producer.id,
         title: def.title,
+        slug: slugifyEventTitle(def.title),
         description: def.description,
         date: daysFromNow(def.daysFromNow),
         location: def.location,

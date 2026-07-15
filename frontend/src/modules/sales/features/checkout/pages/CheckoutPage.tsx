@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -60,6 +60,7 @@ import {
   getEventCoverStyle,
   preloadEventCoverImage,
 } from "@/modules/catalog/utils/eventVisuals";
+import { eventPath } from "@/modules/catalog/utils/eventPaths";
 import { formatCurrencyFromCents, formatEventDateOnly, formatEventTimeOnly, formatLotPrice } from "@/shared/utils/format";
 import { calculateOrderTotalWithPlatformFee } from "@/shared/utils/platformFee";
 import { getApiErrorCode, getApiErrorMessage } from "@/shared/utils/errors";
@@ -189,10 +190,10 @@ function CheckoutPaymentProgressPanel({
 }
 
 function CheckoutSuccessContent({
-  eventId,
+  eventHref,
   isFree,
 }: {
-  eventId: string;
+  eventHref: string;
   isFree?: boolean;
 }) {
   return (
@@ -222,7 +223,7 @@ function CheckoutSuccessContent({
       <Button
         variant="subtle"
         component={Link}
-        to={`/eventos/${eventId}`}
+        to={eventHref}
         radius="xl"
         size="sm"
       >
@@ -233,10 +234,10 @@ function CheckoutSuccessContent({
 }
 
 function CheckoutErrorContent({
-  eventId,
+  eventHref,
   onRetry,
 }: {
-  eventId: string;
+  eventHref: string;
   onRetry: () => void;
 }) {
   return (
@@ -254,7 +255,7 @@ function CheckoutErrorContent({
         <Button radius="xl" onClick={onRetry}>
           Tentar novamente
         </Button>
-        <Button variant="subtle" component={Link} to={`/eventos/${eventId}`} radius="xl">
+        <Button variant="subtle" component={Link} to={eventHref} radius="xl">
           Voltar ao evento
         </Button>
       </Group>
@@ -376,6 +377,7 @@ function CheckoutOrderSummary({
  */
 export function CheckoutPage() {
   const { eventId } = useParams<{ eventId: string }>();
+  const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const coverImageFromNavigation = (location.state as CheckoutLocationState | null)
@@ -474,6 +476,11 @@ export function CheckoutPage() {
         setEvent(data);
         preloadEventCoverImage(data.imageUrl);
 
+        if (data.slug && eventId !== data.slug) {
+          const next = `${eventPath(data)}/comprar${location.search}`;
+          navigate(next, { replace: true, state: location.state });
+        }
+
         const lot =
           data.ticketLots.find((item) => item.id === lotIdFromQuery) ??
           data.ticketLots[0] ??
@@ -495,7 +502,7 @@ export function CheckoutPage() {
     return () => {
       cancelled = true;
     };
-  }, [eventId, lotIdFromQuery]);
+  }, [eventId, lotIdFromQuery, location.search, location.state, navigate]);
 
   useEffect(() => {
     if (reservationFromQuery) {
@@ -884,7 +891,7 @@ export function CheckoutPage() {
 
       <Box className="checkout-body page-body">
         <Container size="lg" py="xl" px="md">
-          <PageBackNav to={`/eventos/${event.id}`} label="Voltar ao evento" />
+          <PageBackNav to={eventPath(event)} label="Voltar ao evento" />
           <Grid gap="xl" mt="lg">
             <Grid.Col span={{ base: 12, md: 7 }}>
               <Stack gap="lg">
@@ -1019,12 +1026,12 @@ export function CheckoutPage() {
                             <Divider className="checkout-result-divider" />
                             {isPaid ? (
                               <CheckoutSuccessContent
-                                eventId={event.id}
+                                eventHref={eventPath(event)}
                                 isFree={isFreeOrder}
                               />
                             ) : (
                               <CheckoutErrorContent
-                                eventId={event.id}
+                                eventHref={eventPath(event)}
                                 onRetry={handleCheckoutRetry}
                               />
                             )}
@@ -1164,7 +1171,7 @@ export function CheckoutPage() {
                             <Button
                               variant="subtle"
                               component={Link}
-                              to={`/eventos/${event.id}`}
+                              to={eventPath(event)}
                               radius="xl"
                             >
                               Voltar ao evento

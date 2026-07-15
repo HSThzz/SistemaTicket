@@ -27,6 +27,10 @@ export class Event {
   @Column({ type: "varchar", length: 255 })
   title!: string;
 
+  /** Slug estável para URLs públicas (`/eventos/:slug`). */
+  @Column({ type: "varchar", length: 100, unique: true })
+  slug!: string;
+
   @Column({ type: "text" })
   description!: string;
 

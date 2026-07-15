@@ -11,6 +11,7 @@ export interface TicketListItem {
   checkedInAt: string | null;
   event: {
     id: string;
+    slug: string;
     title: string;
     description: string;
     date: string;
@@ -46,6 +47,7 @@ function mapTicketToListItem(
     checkedInAt: ticket.checkedInAt ? ticket.checkedInAt.toISOString() : null,
     event: {
       id: ticket.ticketLot.event.id,
+      slug: ticket.ticketLot.event.slug,
       title: ticket.ticketLot.event.title,
       description: ticket.ticketLot.event.description,
       date: ticket.ticketLot.event.date.toISOString(),

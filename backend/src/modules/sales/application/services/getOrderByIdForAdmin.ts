@@ -32,6 +32,7 @@ export async function getOrderByIdForAdmin(
     reservationId: order.reservationId,
     eventId: event?.id ?? null,
     eventTitle: event?.title ?? null,
+    eventSlug: event?.slug ?? null,
     payment,
     userId: order.userId,
     userName: order.user.name,

@@ -4,6 +4,7 @@ import { Event } from "../../src/shared/infrastructure/persistence/entities/Even
 import { TicketLot } from "../../src/shared/infrastructure/persistence/entities/TicketLot";
 import { User } from "../../src/shared/infrastructure/persistence/entities/User";
 import { EventStatus, UserRole } from "../../src/shared/kernel/enums";
+import { slugifyEventTitle } from "../../src/modules/catalog/application/helpers/slugifyEventTitle";
 
 const BCRYPT_ROUNDS = 4;
 
@@ -79,6 +80,7 @@ export async function createPublishedEventWithLot(
     eventRepository.create({
       producerId,
       title: "Evento Teste",
+      slug: `${slugifyEventTitle("Evento Teste")}-${Date.now().toString(36)}`,
       description: "Descrição do evento de teste",
       date: new Date(Date.now() + 24 * 60 * 60 * 1000),
       location: "Arena Teste",

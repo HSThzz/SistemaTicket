@@ -30,10 +30,10 @@ import {
 } from "@tabler/icons-react";
 import type { AuthUser, Event, ParticipationRequest } from "@/shared/types/api";
 import * as participationService from "@/modules/participation/api/participationService";
+import { eventPath } from "@/modules/catalog/utils/eventPaths";
 import { PremiumBadge } from "@/components/ui/PremiumBadge";
 import { getApiErrorMessage } from "@/shared/utils/errors";
-import {
-  INSTAGRAM_HANDLE_INPUT_MAX_LENGTH,
+import {  INSTAGRAM_HANDLE_INPUT_MAX_LENGTH,
   PHONE_BR_FORMATTED_MAX_LENGTH,
   formatInstagramHandleInput,
   formatPhoneBr,
@@ -89,7 +89,7 @@ export function ParticipationRequestCard({
         <Button
           component={Link}
           to="/login"
-          state={{ from: `/eventos/${event.id}` }}
+          state={{ from: eventPath(event) }}
           radius="xl"
           fullWidth
         >
