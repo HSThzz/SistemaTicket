@@ -2,22 +2,25 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { matchEventsToArtists } from "../../src/modules/catalog/application/helpers/matchEventsToArtists";
 import type { Event } from "../../src/shared/infrastructure/persistence/entities/Event";
-import { EventStatus } from "../../src/shared/kernel/enums";
+import { EventStatus, EventType } from "../../src/shared/kernel/enums";
 
 function buildEvent(partial: Partial<Event> & Pick<Event, "title">): Event {
   return {
     id: "event-1",
     producerId: "producer-1",
-    description: partial.description ?? "",
+    slug: "event-1",
+    description: "",
     date: new Date("2026-08-01T20:00:00.000Z"),
     location: "São Paulo, SP",
     imageUrl: null,
-    artists: partial.artists ?? [],
+    artists: [],
     status: EventStatus.PUBLISHED,
+    type: EventType.PUBLIC,
+    deletedAt: null,
     ticketLots: [],
     producer: {} as Event["producer"],
     ...partial,
-  };
+  } as Event;
 }
 
 describe("matchEventsToArtists", () => {

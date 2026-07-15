@@ -3,7 +3,7 @@
  * @module modules/participation/interfaces/http/ParticipationController
  */
 
-import type { Request, Response } from "express";
+import type { Request, RequestHandler, Response } from "express";
 import { Logger } from "../../../../shared/infrastructure/config/logger";
 import { ParticipationRequestStatus, UserRole } from "../../../../shared/kernel/enums";
 import { STAFF_ROLES } from "../../../../shared/kernel/staffRoles";
@@ -246,13 +246,13 @@ export class ParticipationController {
 export const participationController = new ParticipationController();
 
 /** Middlewares de gestão (auth + produtor ou equipe admin). */
-export const participationManagementMiddlewares = [
+export const participationManagementMiddlewares: RequestHandler[] = [
   authMiddleware,
   roleMiddleware([...STAFF_ROLES, UserRole.PRODUCER]),
-] as const;
+];
 
 /** Middlewares de submissão (auth obrigatório + rate limit). */
-export const participationSubmitMiddlewares = [
+export const participationSubmitMiddlewares: RequestHandler[] = [
   authMiddleware,
   participationSubmitRateLimiter,
-] as const;
+];

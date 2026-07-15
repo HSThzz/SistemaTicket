@@ -90,7 +90,7 @@ describe("Mercado Pago signature", () => {
     const req = {
       query: { id: paymentId, topic: "payment" },
       body: {},
-    } as import("express").Request;
+    } as unknown as import("express").Request;
 
     assert.equal(
       verifyMercadoPagoSignatureForRequest({
@@ -124,7 +124,7 @@ describe("Mercado Pago signature", () => {
     const req = {
       query: { id: "999888777", topic: "payment" },
       body: {},
-    } as import("express").Request;
+    } as unknown as import("express").Request;
 
     assert.equal(
       verifyMercadoPagoSignatureForRequest({
@@ -143,7 +143,7 @@ describe("Mercado Pago signature", () => {
       isMercadoPagoLegacyIpnRequest({
         query: { id: "123", topic: "payment" },
         body: {},
-      } as import("express").Request),
+      } as unknown as import("express").Request),
       true,
     );
 
@@ -151,7 +151,7 @@ describe("Mercado Pago signature", () => {
       isMercadoPagoLegacyIpnRequest({
         query: { "data.id": "123", type: "payment" },
         body: {},
-      } as import("express").Request),
+      } as unknown as import("express").Request),
       false,
     );
   });
