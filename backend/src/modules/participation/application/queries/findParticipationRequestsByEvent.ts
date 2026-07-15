@@ -11,10 +11,20 @@ export async function findParticipationRequestsByEvent(
   eventId: string,
   status: ParticipationRequestStatus,
 ): Promise<ParticipationRequest[]> {
-  return AppDataSource.getRepository(ParticipationRequest)
+  const qb = AppDataSource.getRepository(ParticipationRequest)
     .createQueryBuilder("request")
     .where("request.eventId = :eventId", { eventId })
-    .andWhere("request.status = :status", { status })
-    .orderBy("request.createdAt", "ASC")
-    .getMany();
+    .andWhere("request.status = :status", { status });
+
+  // Fila de análise: mais antigas primeiro. Aprovadas/recusadas: A–Z.
+  if (status === ParticipationRequestStatus.PENDING) {
+    qb.orderBy("request.createdAt", "ASC");
+  } else {
+    qb.orderBy("LOWER(request.name)", "ASC").addOrderBy(
+      "request.createdAt",
+      "ASC",
+    );
+  }
+
+  return qb.getMany();
 }

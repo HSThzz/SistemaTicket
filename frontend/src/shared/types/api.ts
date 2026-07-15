@@ -90,6 +90,8 @@ export interface PaidParticipant {
   ticketCount: number;
   totalPriceCents: number;
   paidAt: string;
+  ticketLotId: string;
+  ticketLotName: string;
 }
 
 /**

@@ -15,5 +15,7 @@ export function serializePaidParticipant(row: PaidParticipantRow) {
     ticketCount: row.ticketCount,
     totalPriceCents: row.totalPriceCents,
     paidAt: row.paidAt.toISOString(),
+    ticketLotId: row.ticketLotId,
+    ticketLotName: row.ticketLotName,
   };
 }

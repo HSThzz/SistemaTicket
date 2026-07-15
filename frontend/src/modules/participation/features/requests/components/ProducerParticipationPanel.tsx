@@ -14,8 +14,10 @@ import {
   Loader,
   Modal,
   SegmentedControl,
+  Select,
   Stack,
   Text,
+  TextInput,
   ThemeIcon,
   Title,
   Tooltip,
@@ -29,6 +31,7 @@ import {
   IconPhone,
   IconReceipt,
   IconRefresh,
+  IconSearch,
   IconTicket,
   IconUserCheck,
   IconUsers,
@@ -55,6 +58,7 @@ import { ParticipationStatusBadge } from "@/components/ui/ParticipationStatusBad
 import { PremiumBadge } from "@/components/ui/PremiumBadge";
 
 type PanelFilter = ParticipationRequestStatus | "PAID";
+type PaymentFilter = "ALL" | "PAID" | "UNPAID";
 
 const PANEL_FILTERS: { value: PanelFilter; label: string }[] = [
   { value: "PENDING", label: "Pendentes" },
@@ -62,6 +66,27 @@ const PANEL_FILTERS: { value: PanelFilter; label: string }[] = [
   { value: "REJECTED", label: "Recusadas" },
   { value: "PAID", label: "Pagos" },
 ];
+
+const PAGE_SIZE = 12;
+
+function compareByNameAsc(a: string, b: string): number {
+  return a.localeCompare(b, "pt-BR", { sensitivity: "base" });
+}
+
+function matchesSearch(
+  name: string,
+  email: string,
+  query: string,
+): boolean {
+  if (!query) {
+    return true;
+  }
+  const normalized = query.trim().toLowerCase();
+  return (
+    name.toLowerCase().includes(normalized) ||
+    email.toLowerCase().includes(normalized)
+  );
+}
 
 /** Card individual de uma solicitação com dados de contato e ações. */
 function RequestRow({
@@ -227,6 +252,8 @@ function PaidRow({
           </Group>
           <Text size="xs" c="dimmed">
             Pago em {formatEventDate(participant.paidAt)}
+            {" · "}
+            {participant.ticketLotName}
           </Text>
         </Stack>
         <Button
@@ -260,6 +287,10 @@ export function ProducerParticipationPanel({
   onReviewComplete?: () => void;
 }) {
   const [panelFilter, setPanelFilter] = useState<PanelFilter>("PENDING");
+  const [lotFilter, setLotFilter] = useState<string | null>(null);
+  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [requests, setRequests] = useState<ParticipationRequest[]>([]);
   const [paidParticipants, setPaidParticipants] = useState<PaidParticipant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -277,20 +308,35 @@ export function ProducerParticipationPanel({
     [ticketLots],
   );
 
+  const lotFilterOptions = useMemo(
+    () =>
+      ticketLots.map((lot) => ({
+        value: lot.id,
+        label: lot.name,
+      })),
+    [ticketLots],
+  );
+
   const load = useCallback(
     async (filter: PanelFilter) => {
       setLoading(true);
       try {
         if (filter === "PAID") {
           const data = await participationService.listPaidParticipants(eventId);
-          setPaidParticipants(data);
+          setPaidParticipants(
+            [...data].sort((a, b) => compareByNameAsc(a.name, b.name)),
+          );
           setRequests([]);
         } else {
           const data = await participationService.listParticipationRequests(
             eventId,
             filter,
           );
-          setRequests(data);
+          const sorted =
+            filter === "PENDING"
+              ? data
+              : [...data].sort((a, b) => compareByNameAsc(a.name, b.name));
+          setRequests(sorted);
           setPaidParticipants([]);
         }
       } catch (err) {
@@ -313,6 +359,72 @@ export function ProducerParticipationPanel({
   useEffect(() => {
     void load(panelFilter);
   }, [load, panelFilter]);
+
+  useEffect(() => {
+    setLotFilter(null);
+    setPaymentFilter("ALL");
+    setSearchQuery("");
+    setVisibleCount(PAGE_SIZE);
+  }, [panelFilter]);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [lotFilter, paymentFilter, searchQuery]);
+
+  const filteredRequests = useMemo(() => {
+    return requests.filter((request) => {
+      if (!matchesSearch(request.name, request.email, searchQuery)) {
+        return false;
+      }
+
+      if (
+        lotFilter &&
+        !(request.allowedTicketLotIds ?? []).includes(lotFilter)
+      ) {
+        return false;
+      }
+
+      if (panelFilter === "APPROVED") {
+        if (paymentFilter === "PAID" && !request.hasPaid) {
+          return false;
+        }
+        if (paymentFilter === "UNPAID" && request.hasPaid) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [requests, searchQuery, lotFilter, panelFilter, paymentFilter]);
+
+  const filteredPaid = useMemo(() => {
+    return paidParticipants.filter((participant) => {
+      if (!matchesSearch(participant.name, participant.email, searchQuery)) {
+        return false;
+      }
+      if (lotFilter && participant.ticketLotId !== lotFilter) {
+        return false;
+      }
+      return true;
+    });
+  }, [paidParticipants, searchQuery, lotFilter]);
+
+  const isPaidTab = panelFilter === "PAID";
+  const filteredListLength = isPaidTab
+    ? filteredPaid.length
+    : filteredRequests.length;
+  const visibleRequests = filteredRequests.slice(0, visibleCount);
+  const visiblePaid = filteredPaid.slice(0, visibleCount);
+  const hasMore = filteredListLength > visibleCount;
+  const showLotFilter =
+    ticketLots.length > 0 &&
+    (panelFilter === "APPROVED" || panelFilter === "PAID");
+  const showPaymentFilter = panelFilter === "APPROVED";
+  const isEmptySource = isPaidTab
+    ? paidParticipants.length === 0
+    : requests.length === 0;
+  const isEmptyFiltered = !isEmptySource && filteredListLength === 0;
+  const approveActing = Boolean(approveTarget && actingId === approveTarget.id);
 
   const openApproveModal = (request: ParticipationRequest) => {
     if (ticketLots.length === 0) {
@@ -472,10 +584,6 @@ export function ProducerParticipationPanel({
     }
   };
 
-  const isPaidTab = panelFilter === "PAID";
-  const isEmpty = isPaidTab ? paidParticipants.length === 0 : requests.length === 0;
-  const approveActing = Boolean(approveTarget && actingId === approveTarget.id);
-
   return (
     <PremiumPaper p="xl">
       <Stack gap="lg">
@@ -517,11 +625,60 @@ export function ProducerParticipationPanel({
           />
         </Box>
 
+        {!loading && !isEmptySource ? (
+          <Stack gap="sm">
+            <TextInput
+              placeholder="Buscar por nome ou e-mail"
+              radius="md"
+              leftSection={<IconSearch size={16} />}
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.currentTarget.value)}
+            />
+            {(showLotFilter || showPaymentFilter) ? (
+              <Group grow preventGrowOverflow={false} align="flex-start">
+                {showLotFilter ? (
+                  <Select
+                    label="Lote"
+                    placeholder="Todos os lotes"
+                    radius="md"
+                    data={lotFilterOptions}
+                    value={lotFilter}
+                    onChange={setLotFilter}
+                    clearable
+                  />
+                ) : null}
+                {showPaymentFilter ? (
+                  <Select
+                    label="Pagamento"
+                    radius="md"
+                    data={[
+                      { value: "ALL", label: "Todos" },
+                      { value: "UNPAID", label: "Ainda não pagaram" },
+                      { value: "PAID", label: "Já pagaram" },
+                    ]}
+                    value={paymentFilter}
+                    onChange={(value) =>
+                      setPaymentFilter((value as PaymentFilter) ?? "ALL")
+                    }
+                    allowDeselect={false}
+                  />
+                ) : null}
+              </Group>
+            ) : null}
+            {filteredListLength > 0 ? (
+              <Text size="xs" c="dimmed">
+                Mostrando {Math.min(visibleCount, filteredListLength)} de{" "}
+                {filteredListLength}
+              </Text>
+            ) : null}
+          </Stack>
+        ) : null}
+
         {loading ? (
           <Group justify="center" py="xl">
             <Loader size="sm" color="brand" />
           </Group>
-        ) : isEmpty ? (
+        ) : isEmptySource ? (
           <EmptyState
             icon={isPaidTab ? <IconReceipt size={32} /> : <IconUsers size={32} />}
             title={isPaidTab ? "Ninguém pagou ainda" : "Nenhuma solicitação"}
@@ -533,9 +690,15 @@ export function ProducerParticipationPanel({
                   : "Nenhuma solicitação neste status por enquanto."
             }
           />
+        ) : isEmptyFiltered ? (
+          <EmptyState
+            icon={<IconSearch size={32} />}
+            title="Nenhum resultado"
+            description="Nada encontrado com esses filtros. Tente limpar a busca ou o lote."
+          />
         ) : isPaidTab ? (
           <Stack gap="sm">
-            {paidParticipants.map((participant) => (
+            {visiblePaid.map((participant) => (
               <PaidRow
                 key={participant.orderId}
                 participant={participant}
@@ -543,10 +706,20 @@ export function ProducerParticipationPanel({
                 onRefundClick={setRefundTarget}
               />
             ))}
+            {hasMore ? (
+              <Button
+                variant="light"
+                radius="xl"
+                fullWidth
+                onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
+              >
+                Ver mais
+              </Button>
+            ) : null}
           </Stack>
         ) : (
           <Stack gap="sm">
-            {requests.map((request) => (
+            {visibleRequests.map((request) => (
               <RequestRow
                 key={request.id}
                 request={request}
@@ -557,6 +730,16 @@ export function ProducerParticipationPanel({
                 onReject={(id) => void handleReview(id, "REJECT")}
               />
             ))}
+            {hasMore ? (
+              <Button
+                variant="light"
+                radius="xl"
+                fullWidth
+                onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
+              >
+                Ver mais
+              </Button>
+            ) : null}
           </Stack>
         )}
       </Stack>

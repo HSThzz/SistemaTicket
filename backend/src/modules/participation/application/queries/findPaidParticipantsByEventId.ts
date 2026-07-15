@@ -17,10 +17,13 @@ export type PaidParticipantRow = {
   ticketCount: number;
   paidAt: Date;
   instagramHandle: string | null;
+  ticketLotId: string;
+  ticketLotName: string;
 };
 
 /**
- * Lista um item por pedido PAID do evento, enriquecido com Instagram da solicitação.
+ * Lista um item por pedido PAID do evento, enriquecido com Instagram e lote.
+ * Ordenado por nome (A–Z) para facilitar busca no painel do produtor.
  */
 export async function findPaidParticipantsByEventId(
   eventId: string,
@@ -28,8 +31,8 @@ export async function findPaidParticipantsByEventId(
   const rawRows = await AppDataSource.getRepository(Order)
     .createQueryBuilder("ord")
     .innerJoin("ord.user", "user")
-    .innerJoin("ord.tickets", "ticket")
-    .innerJoin("ticket.ticketLot", "lot")
+    .innerJoin("ord.reservation", "reservation")
+    .innerJoin("reservation.ticketLot", "lot")
     .where("lot.eventId = :eventId", { eventId })
     .andWhere("ord.status = :status", { status: OrderStatus.PAID })
     .select("ord.id", "orderId")
@@ -38,14 +41,11 @@ export async function findPaidParticipantsByEventId(
     .addSelect("user.email", "email")
     .addSelect("ord.totalPrice", "totalPriceCents")
     .addSelect("ord.createdAt", "paidAt")
-    .addSelect("COUNT(ticket.id)", "ticketCount")
-    .groupBy("ord.id")
-    .addGroupBy("ord.userId")
-    .addGroupBy("user.name")
-    .addGroupBy("user.email")
-    .addGroupBy("ord.totalPrice")
-    .addGroupBy("ord.createdAt")
-    .orderBy("ord.createdAt", "DESC")
+    .addSelect("reservation.quantity", "ticketCount")
+    .addSelect("lot.id", "ticketLotId")
+    .addSelect("lot.name", "ticketLotName")
+    .orderBy("LOWER(user.name)", "ASC")
+    .addOrderBy("ord.createdAt", "DESC")
     .getRawMany<{
       orderId: string;
       userId: string;
@@ -54,6 +54,8 @@ export async function findPaidParticipantsByEventId(
       totalPriceCents: string;
       paidAt: Date;
       ticketCount: string;
+      ticketLotId: string;
+      ticketLotName: string;
     }>();
 
   if (rawRows.length === 0) {
@@ -83,5 +85,7 @@ export async function findPaidParticipantsByEventId(
     ticketCount: Number(row.ticketCount),
     paidAt: row.paidAt instanceof Date ? row.paidAt : new Date(row.paidAt),
     instagramHandle: instagramByUserId.get(row.userId) ?? null,
+    ticketLotId: row.ticketLotId,
+    ticketLotName: row.ticketLotName,
   }));
 }
