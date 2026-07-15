@@ -7,7 +7,8 @@ import { Ticket } from "../../../../shared/infrastructure/persistence/entities/T
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
 export async function countTicketsByLotId(lotId: string): Promise<number> {
-  return AppDataSource.getRepository(Ticket).count({
-    where: { ticketLotId: lotId },
-  });
+  return AppDataSource.getRepository(Ticket)
+    .createQueryBuilder("ticket")
+    .where("ticket.ticketLotId = :lotId", { lotId })
+    .getCount();
 }

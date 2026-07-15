@@ -9,9 +9,10 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 export async function hasParticipationRequestsForEvent(
   eventId: string,
 ): Promise<boolean> {
-  const count = await AppDataSource.getRepository(ParticipationRequest).count({
-    where: { eventId },
-  });
+  const count = await AppDataSource.getRepository(ParticipationRequest)
+    .createQueryBuilder("request")
+    .where("request.eventId = :eventId", { eventId })
+    .getCount();
 
   return count > 0;
 }

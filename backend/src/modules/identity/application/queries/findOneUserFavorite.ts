@@ -5,7 +5,9 @@ export async function findOneUserFavorite(
   userId: string,
   eventId: string,
 ): Promise<UserFavorite | null> {
-  return AppDataSource.getRepository(UserFavorite).findOne({
-    where: { userId, eventId },
-  });
+  return AppDataSource.getRepository(UserFavorite)
+    .createQueryBuilder("favorite")
+    .where("favorite.userId = :userId", { userId })
+    .andWhere("favorite.eventId = :eventId", { eventId })
+    .getOne();
 }

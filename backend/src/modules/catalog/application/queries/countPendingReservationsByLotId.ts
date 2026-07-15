@@ -10,10 +10,9 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 export async function countPendingReservationsByLotId(
   lotId: string,
 ): Promise<number> {
-  return AppDataSource.getRepository(Reservation).count({
-    where: {
-      ticketLotId: lotId,
-      status: ReservationStatus.PENDING,
-    },
-  });
+  return AppDataSource.getRepository(Reservation)
+    .createQueryBuilder("reservation")
+    .where("reservation.ticketLotId = :lotId", { lotId })
+    .andWhere("reservation.status = :status", { status: ReservationStatus.PENDING })
+    .getCount();
 }

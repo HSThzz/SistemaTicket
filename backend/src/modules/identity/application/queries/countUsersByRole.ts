@@ -8,5 +8,8 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 import type { UserRole } from "../../../../shared/kernel/enums";
 
 export async function countUsersByRole(role: UserRole): Promise<number> {
-  return AppDataSource.getRepository(User).count({ where: { role } });
+  return AppDataSource.getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.role = :role", { role })
+    .getCount();
 }

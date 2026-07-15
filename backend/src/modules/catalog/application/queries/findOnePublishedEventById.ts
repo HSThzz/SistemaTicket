@@ -3,7 +3,6 @@
  * @module modules/catalog/application/queries/findOnePublishedEventById
  */
 
-import { IsNull } from "typeorm";
 import { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
 import { EventStatus } from "../../../../shared/kernel/enums";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
@@ -15,12 +14,15 @@ export async function findOnePublishedEventById(
   const repository = AppDataSource.getRepository(Event);
   const isUuid = uuidSchema.safeParse(eventIdOrSlug).success;
 
-  return repository.findOne({
-    where: {
-      ...(isUuid ? { id: eventIdOrSlug } : { slug: eventIdOrSlug }),
-      status: EventStatus.PUBLISHED,
-      deletedAt: IsNull(),
-    },
-    relations: { ticketLots: true },
-  });
+  const qb = repository
+    .createQueryBuilder("event")
+    .leftJoinAndSelect("event.ticketLots", "ticketLots")
+    .where(
+      isUuid ? "event.id = :eventIdOrSlug" : "event.slug = :eventIdOrSlug",
+      { eventIdOrSlug },
+    )
+    .andWhere("event.status = :status", { status: EventStatus.PUBLISHED })
+    .andWhere("event.deletedAt IS NULL");
+
+  return qb.getOne();
 }

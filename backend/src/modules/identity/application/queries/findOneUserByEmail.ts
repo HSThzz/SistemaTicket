@@ -8,9 +8,10 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 
 export async function findOneUserByEmail(email: string,
 ): Promise<User | null> {
-  return AppDataSource.getRepository(User).findOne({
-    where: { email: email.toLowerCase() },
-  });
+  return AppDataSource.getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.email = :email", { email: email.toLowerCase() })
+    .getOne();
 }
 
 

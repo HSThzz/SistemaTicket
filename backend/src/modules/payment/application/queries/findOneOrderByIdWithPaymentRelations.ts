@@ -8,10 +8,13 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 
 export async function findOneOrderByIdWithPaymentRelations(orderId: string,
 ): Promise<Order | null> {
-  return AppDataSource.getRepository(Order).findOne({
-    where: { id: orderId },
-    relations: { reservation: { ticketLot: true }, user: true },
-  });
+  return AppDataSource.getRepository(Order)
+    .createQueryBuilder("order")
+    .leftJoinAndSelect("order.reservation", "reservation")
+    .leftJoinAndSelect("reservation.ticketLot", "ticketLot")
+    .leftJoinAndSelect("order.user", "user")
+    .where("order.id = :orderId", { orderId })
+    .getOne();
 }
 
 

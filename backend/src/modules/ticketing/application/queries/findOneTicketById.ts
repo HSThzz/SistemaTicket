@@ -8,13 +8,14 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 
 export async function findOneTicketById(ticketId: string,
 ): Promise<Ticket | null> {
-  return AppDataSource.getRepository(Ticket).findOne({
-    where: { id: ticketId },
-    relations: {
-      order: { user: true },
-      ticketLot: { event: true },
-    },
-  });
+  return AppDataSource.getRepository(Ticket)
+    .createQueryBuilder("ticket")
+    .leftJoinAndSelect("ticket.order", "order")
+    .leftJoinAndSelect("order.user", "user")
+    .leftJoinAndSelect("ticket.ticketLot", "ticketLot")
+    .leftJoinAndSelect("ticketLot.event", "event")
+    .where("ticket.id = :ticketId", { ticketId })
+    .getOne();
 }
 
 

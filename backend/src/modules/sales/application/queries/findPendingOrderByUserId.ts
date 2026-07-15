@@ -13,8 +13,10 @@ import { OrderStatus } from "../../../../shared/kernel/enums";
 export async function findPendingOrderByUserId(
   userId: string,
 ): Promise<{ id: string } | null> {
-  return AppDataSource.getRepository(Order).findOne({
-    where: { userId, status: OrderStatus.PENDING },
-    select: { id: true },
-  });
+  return AppDataSource.getRepository(Order)
+    .createQueryBuilder("order")
+    .select(["order.id"])
+    .where("order.userId = :userId", { userId })
+    .andWhere("order.status = :status", { status: OrderStatus.PENDING })
+    .getOne();
 }

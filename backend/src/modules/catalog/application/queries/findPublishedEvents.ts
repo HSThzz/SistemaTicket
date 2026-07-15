@@ -3,15 +3,16 @@
  * @module modules/catalog/application/queries/findPublishedEvents
  */
 
-import { IsNull } from "typeorm";
 import { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
 import { EventStatus } from "../../../../shared/kernel/enums";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
 export async function findPublishedEvents(): Promise<Event[]> {
-  return AppDataSource.getRepository(Event).find({
-    where: { status: EventStatus.PUBLISHED, deletedAt: IsNull() },
-    order: { date: "ASC" },
-    relations: { ticketLots: true },
-  });
+  return AppDataSource.getRepository(Event)
+    .createQueryBuilder("event")
+    .leftJoinAndSelect("event.ticketLots", "ticketLots")
+    .where("event.status = :status", { status: EventStatus.PUBLISHED })
+    .andWhere("event.deletedAt IS NULL")
+    .orderBy("event.date", "ASC")
+    .getMany();
 }

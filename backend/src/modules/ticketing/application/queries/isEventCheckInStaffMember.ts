@@ -16,9 +16,11 @@ export async function isEventCheckInStaffMember(
     ? manager.getRepository(EventCheckInStaff)
     : AppDataSource.getRepository(EventCheckInStaff);
 
-  const count = await repo.count({
-    where: { eventId, userId },
-  });
+  const count = await repo
+    .createQueryBuilder("staff")
+    .where("staff.eventId = :eventId", { eventId })
+    .andWhere("staff.userId = :userId", { userId })
+    .getCount();
 
   return count > 0;
 }

@@ -18,10 +18,11 @@ export type UserAuthState = {
 export async function findUserAuthStateById(
   userId: string,
 ): Promise<UserAuthState | undefined> {
-  const row = await AppDataSource.getRepository(User).findOne({
-    where: { id: userId },
-    select: { id: true, role: true, passwordChangedAt: true },
-  });
+  const row = await AppDataSource.getRepository(User)
+    .createQueryBuilder("user")
+    .select(["user.id", "user.role", "user.passwordChangedAt"])
+    .where("user.id = :userId", { userId })
+    .getOne();
 
   if (!row) {
     return undefined;

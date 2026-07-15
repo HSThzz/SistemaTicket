@@ -14,14 +14,18 @@ export async function findOneTicketByCheckInCode(
   const repository = AppDataSource.getRepository(Ticket);
 
   if (uniqueCode) {
-    return repository.findOne({
-      where: { uniqueCode },
-      relations: { ticketLot: { event: true } },
-    });
+    return repository
+      .createQueryBuilder("ticket")
+      .leftJoinAndSelect("ticket.ticketLot", "ticketLot")
+      .leftJoinAndSelect("ticketLot.event", "event")
+      .where("ticket.uniqueCode = :uniqueCode", { uniqueCode })
+      .getOne();
   }
 
-  return repository.findOne({
-    where: { checkInCode: compactCheckInCode },
-    relations: { ticketLot: { event: true } },
-  });
+  return repository
+    .createQueryBuilder("ticket")
+    .leftJoinAndSelect("ticket.ticketLot", "ticketLot")
+    .leftJoinAndSelect("ticketLot.event", "event")
+    .where("ticket.checkInCode = :compactCheckInCode", { compactCheckInCode })
+    .getOne();
 }

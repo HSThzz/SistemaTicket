@@ -11,8 +11,10 @@ export async function findParticipationRequestsByEvent(
   eventId: string,
   status: ParticipationRequestStatus,
 ): Promise<ParticipationRequest[]> {
-  return AppDataSource.getRepository(ParticipationRequest).find({
-    where: { eventId, status },
-    order: { createdAt: "ASC" },
-  });
+  return AppDataSource.getRepository(ParticipationRequest)
+    .createQueryBuilder("request")
+    .where("request.eventId = :eventId", { eventId })
+    .andWhere("request.status = :status", { status })
+    .orderBy("request.createdAt", "ASC")
+    .getMany();
 }

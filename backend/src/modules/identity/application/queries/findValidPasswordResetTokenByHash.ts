@@ -9,8 +9,9 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 export async function findValidPasswordResetTokenByHash(
   tokenHash: string,
 ): Promise<PasswordResetToken | null> {
-  return AppDataSource.getRepository(PasswordResetToken).findOne({
-    where: { tokenHash },
-    relations: { user: true },
-  });
+  return AppDataSource.getRepository(PasswordResetToken)
+    .createQueryBuilder("token")
+    .leftJoinAndSelect("token.user", "user")
+    .where("token.tokenHash = :tokenHash", { tokenHash })
+    .getOne();
 }

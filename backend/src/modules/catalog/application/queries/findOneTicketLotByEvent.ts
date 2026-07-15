@@ -10,7 +10,9 @@ export async function findOneTicketLotByEvent(
   eventId: string,
   lotId: string,
 ): Promise<TicketLot | null> {
-  return AppDataSource.getRepository(TicketLot).findOne({
-    where: { id: lotId, eventId },
-  });
+  return AppDataSource.getRepository(TicketLot)
+    .createQueryBuilder("lot")
+    .where("lot.id = :lotId", { lotId })
+    .andWhere("lot.eventId = :eventId", { eventId })
+    .getOne();
 }

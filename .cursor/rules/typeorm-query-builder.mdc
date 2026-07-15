@@ -1,0 +1,33 @@
+---
+description: TypeORM queries must use QueryBuilder in application/queries
+globs: backend/src/modules/**/application/queries/**/*.ts
+alwaysApply: false
+---
+
+# TypeORM QueryBuilder padrão
+
+Em `application/queries`, **sempre** use `createQueryBuilder`. Não use `.find()`, `.findOne()` nem `.count({ where })`.
+
+```ts
+// preferir
+return AppDataSource.getRepository(Order)
+  .createQueryBuilder("order")
+  .where("order.userId = :userId", { userId })
+  .andWhere("order.status = :status", { status })
+  .getOne();
+
+// com relações
+.leftJoinAndSelect("order.reservation", "reservation")
+.leftJoinAndSelect("reservation.ticketLot", "ticketLot")
+
+// contagem
+.getCount()
+
+// select parcial
+.select(["order.id"])
+.getOne()
+```
+
+- Use nomes de **propriedade da entidade** no where (`order.userId`, `event.deletedAt IS NULL`).
+- Alias curto e estável: `order`, `event`, `user`, `ticket`, etc.
+- Preserve o contrato de retorno da query (tipo e shape).

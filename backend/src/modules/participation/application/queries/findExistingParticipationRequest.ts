@@ -10,7 +10,9 @@ export async function findExistingParticipationRequest(
   eventId: string,
   userId: string,
 ): Promise<ParticipationRequest | null> {
-  return AppDataSource.getRepository(ParticipationRequest).findOne({
-    where: { eventId, userId },
-  });
+  return AppDataSource.getRepository(ParticipationRequest)
+    .createQueryBuilder("request")
+    .where("request.eventId = :eventId", { eventId })
+    .andWhere("request.userId = :userId", { userId })
+    .getOne();
 }

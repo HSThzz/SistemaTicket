@@ -7,25 +7,27 @@ import { Event } from "../../../../shared/infrastructure/persistence/entities/Ev
 import { isStaffRole } from "../../../../shared/kernel/staffRoles";
 import type { EventActor } from "../types";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
-import { IsNull } from "typeorm";
 
 export async function findManagedEventsByActor(actor: EventActor,
 ): Promise<Event[]> {
   const repository = AppDataSource.getRepository(Event);
 
   if (isStaffRole(actor.role)) {
-    return repository.find({
-      where: { deletedAt: IsNull() },
-      order: { date: "ASC" },
-      relations: { ticketLots: true },
-    });
+    return repository
+      .createQueryBuilder("event")
+      .leftJoinAndSelect("event.ticketLots", "ticketLots")
+      .where("event.deletedAt IS NULL")
+      .orderBy("event.date", "ASC")
+      .getMany();
   }
 
-  return repository.find({
-    where: { producerId: actor.userId, deletedAt: IsNull() },
-    order: { date: "ASC" },
-    relations: { ticketLots: true },
-  });
+  return repository
+    .createQueryBuilder("event")
+    .leftJoinAndSelect("event.ticketLots", "ticketLots")
+    .where("event.producerId = :producerId", { producerId: actor.userId })
+    .andWhere("event.deletedAt IS NULL")
+    .orderBy("event.date", "ASC")
+    .getMany();
 }
 
 

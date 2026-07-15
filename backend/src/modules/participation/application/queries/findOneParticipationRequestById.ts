@@ -9,7 +9,8 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 export async function findOneParticipationRequestById(
   requestId: string,
 ): Promise<ParticipationRequest | null> {
-  return AppDataSource.getRepository(ParticipationRequest).findOne({
-    where: { id: requestId },
-  });
+  return AppDataSource.getRepository(ParticipationRequest)
+    .createQueryBuilder("request")
+    .where("request.id = :requestId", { requestId })
+    .getOne();
 }

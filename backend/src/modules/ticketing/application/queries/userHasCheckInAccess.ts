@@ -14,9 +14,10 @@ export async function userHasCheckInAccess(actor: CheckInActor): Promise<boolean
     return true;
   }
 
-  const staffCount = await AppDataSource.getRepository(EventCheckInStaff).count({
-    where: { userId: actor.userId },
-  });
+  const staffCount = await AppDataSource.getRepository(EventCheckInStaff)
+    .createQueryBuilder("staff")
+    .where("staff.userId = :userId", { userId: actor.userId })
+    .getCount();
 
   return staffCount > 0;
 }

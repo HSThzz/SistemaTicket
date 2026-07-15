@@ -10,7 +10,9 @@ export async function findCheckInStaffMember(
   eventId: string,
   userId: string,
 ): Promise<EventCheckInStaff | null> {
-  return AppDataSource.getRepository(EventCheckInStaff).findOne({
-    where: { eventId, userId },
-  });
+  return AppDataSource.getRepository(EventCheckInStaff)
+    .createQueryBuilder("staff")
+    .where("staff.eventId = :eventId", { eventId })
+    .andWhere("staff.userId = :userId", { userId })
+    .getOne();
 }

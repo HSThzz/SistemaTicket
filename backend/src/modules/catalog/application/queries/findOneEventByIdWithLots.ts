@@ -8,10 +8,11 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 
 export async function findOneEventByIdWithLots(eventId: string,
 ): Promise<Event | null> {
-  return AppDataSource.getRepository(Event).findOne({
-    where: { id: eventId },
-    relations: { ticketLots: true },
-  });
+  return AppDataSource.getRepository(Event)
+    .createQueryBuilder("event")
+    .leftJoinAndSelect("event.ticketLots", "ticketLots")
+    .where("event.id = :eventId", { eventId })
+    .getOne();
 }
 
 

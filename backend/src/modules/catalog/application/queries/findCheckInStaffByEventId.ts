@@ -9,9 +9,10 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 export async function findCheckInStaffByEventId(
   eventId: string,
 ): Promise<EventCheckInStaff[]> {
-  return AppDataSource.getRepository(EventCheckInStaff).find({
-    where: { eventId },
-    relations: { user: true },
-    order: { createdAt: "ASC" },
-  });
+  return AppDataSource.getRepository(EventCheckInStaff)
+    .createQueryBuilder("staff")
+    .leftJoinAndSelect("staff.user", "user")
+    .where("staff.eventId = :eventId", { eventId })
+    .orderBy("staff.createdAt", "ASC")
+    .getMany();
 }

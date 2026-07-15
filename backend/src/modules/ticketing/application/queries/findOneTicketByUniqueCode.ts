@@ -8,10 +8,12 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 
 export async function findOneTicketByUniqueCode(uniqueCode: string,
 ): Promise<Ticket | null> {
-  return AppDataSource.getRepository(Ticket).findOne({
-    where: { uniqueCode },
-    relations: { ticketLot: { event: true } },
-  });
+  return AppDataSource.getRepository(Ticket)
+    .createQueryBuilder("ticket")
+    .leftJoinAndSelect("ticket.ticketLot", "ticketLot")
+    .leftJoinAndSelect("ticketLot.event", "event")
+    .where("ticket.uniqueCode = :uniqueCode", { uniqueCode })
+    .getOne();
 }
 
 

@@ -9,8 +9,9 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 export async function findParticipationRequestsByUserId(
   userId: string,
 ): Promise<ParticipationRequest[]> {
-  return AppDataSource.getRepository(ParticipationRequest).find({
-    where: { userId },
-    order: { createdAt: "DESC" },
-  });
+  return AppDataSource.getRepository(ParticipationRequest)
+    .createQueryBuilder("request")
+    .where("request.userId = :userId", { userId })
+    .orderBy("request.createdAt", "DESC")
+    .getMany();
 }

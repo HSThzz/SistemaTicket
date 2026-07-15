@@ -8,9 +8,10 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 
 export async function findOneEventById(eventId: string,
 ): Promise<Event | null> {
-  return AppDataSource.getRepository(Event).findOne({
-    where: { id: eventId },
-  });
+  return AppDataSource.getRepository(Event)
+    .createQueryBuilder("event")
+    .where("event.id = :eventId", { eventId })
+    .getOne();
 }
 
 

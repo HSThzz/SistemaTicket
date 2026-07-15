@@ -7,7 +7,8 @@ import { User } from "../../../../shared/infrastructure/persistence/entities/Use
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
 export async function findOneUserByDocument(document: string): Promise<User | null> {
-  return AppDataSource.getRepository(User).findOne({
-    where: { document },
-  });
+  return AppDataSource.getRepository(User)
+    .createQueryBuilder("user")
+    .where("user.document = :document", { document })
+    .getOne();
 }

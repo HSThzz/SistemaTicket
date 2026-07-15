@@ -9,29 +9,23 @@ import { AppDataSource } from "../../../../shared/infrastructure/config/data-sou
 export async function findOneTicketForAccessCheck(
   ticketId: string,
 ): Promise<Ticket | null> {
-  return AppDataSource.getRepository(Ticket).findOne({
-    where: { id: ticketId },
-    relations: {
-      order: true,
-      ticketLot: { event: true },
-    },
-    select: {
-      id: true,
-      status: true,
-      orderId: true,
-      ticketLotId: true,
-      order: {
-        id: true,
-        userId: true,
-      },
-      ticketLot: {
-        id: true,
-        eventId: true,
-        event: {
-          id: true,
-          producerId: true,
-        },
-      },
-    },
-  });
+  return AppDataSource.getRepository(Ticket)
+    .createQueryBuilder("ticket")
+    .leftJoin("ticket.order", "order")
+    .leftJoin("ticket.ticketLot", "ticketLot")
+    .leftJoin("ticketLot.event", "event")
+    .select([
+      "ticket.id",
+      "ticket.status",
+      "ticket.orderId",
+      "ticket.ticketLotId",
+      "order.id",
+      "order.userId",
+      "ticketLot.id",
+      "ticketLot.eventId",
+      "event.id",
+      "event.producerId",
+    ])
+    .where("ticket.id = :ticketId", { ticketId })
+    .getOne();
 }

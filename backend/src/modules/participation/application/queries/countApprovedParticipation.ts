@@ -11,11 +11,12 @@ export async function countApprovedParticipation(
   eventId: string,
   userId: string,
 ): Promise<number> {
-  return AppDataSource.getRepository(ParticipationRequest).count({
-    where: {
-      eventId,
-      userId,
+  return AppDataSource.getRepository(ParticipationRequest)
+    .createQueryBuilder("request")
+    .where("request.eventId = :eventId", { eventId })
+    .andWhere("request.userId = :userId", { userId })
+    .andWhere("request.status = :status", {
       status: ParticipationRequestStatus.APPROVED,
-    },
-  });
+    })
+    .getCount();
 }

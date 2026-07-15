@@ -3,7 +3,6 @@
  * @module modules/leads/application/queries/findRecentProducerLeadByEmail
  */
 
-import { MoreThanOrEqual } from "typeorm";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 import { ProducerLead } from "../../../../shared/infrastructure/persistence/entities/ProducerLead";
 
@@ -16,11 +15,10 @@ export async function findRecentProducerLeadByEmail(
 ): Promise<ProducerLead | null> {
   const since = new Date(Date.now() - windowMs);
 
-  return AppDataSource.getRepository(ProducerLead).findOne({
-    where: {
-      email,
-      createdAt: MoreThanOrEqual(since),
-    },
-    order: { createdAt: "DESC" },
-  });
+  return AppDataSource.getRepository(ProducerLead)
+    .createQueryBuilder("lead")
+    .where("lead.email = :email", { email })
+    .andWhere("lead.createdAt >= :since", { since })
+    .orderBy("lead.createdAt", "DESC")
+    .getOne();
 }
