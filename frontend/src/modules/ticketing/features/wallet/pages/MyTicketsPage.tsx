@@ -7,11 +7,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Alert,
+  Box,
   Button,
   SegmentedControl,
   SimpleGrid,
   Stack,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import {
   IconAlertCircle,
   IconCalendarEvent,
@@ -48,6 +50,7 @@ function countByStatus(tickets: TicketListItem[], status: string) {
  */
 export function MyTicketsPage() {
   const [tickets, setTickets] = useState<TicketListItem[]>([]);
+  const isNarrow = useMediaQuery("(max-width: 47.99em)");
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -183,15 +186,17 @@ export function MyTicketsPage() {
           </AnimatedSection>
 
           <AnimatedSection delayMs={100}>
-            <SegmentedControl
-              className="filter-pills"
-              value={filter}
-              onChange={(value) => setFilter(value as TicketFilter)}
-              data={FILTER_OPTIONS}
-              radius="xl"
-              fullWidth
-              size="sm"
-            />
+            <Box className="filter-pills-scroll">
+              <SegmentedControl
+                className="filter-pills"
+                value={filter}
+                onChange={(value) => setFilter(value as TicketFilter)}
+                data={FILTER_OPTIONS}
+                radius="xl"
+                fullWidth={!isNarrow}
+                size="sm"
+              />
+            </Box>
           </AnimatedSection>
 
           {tickets.length === 0 ? (

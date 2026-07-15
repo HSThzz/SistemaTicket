@@ -100,12 +100,13 @@ html,
 body,
 #root {
   min-height: 100%;
+  min-width: 360px;
   background-color: var(--mantine-color-body);
 }
 
 body {
   margin: 0;
-  overflow-x: hidden;
+  overflow-x: auto;
   background-color: var(--mantine-color-body);
   color: var(--mantine-color-text);
 }

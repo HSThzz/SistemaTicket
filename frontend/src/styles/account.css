@@ -406,8 +406,32 @@
   background: var(--vibra-empty-bg);
 }
 
+.filter-pills-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.filter-pills-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-pills-scroll .filter-pills {
+  min-width: max-content;
+}
+
+@media (min-width: 48em) {
+  .filter-pills-scroll .filter-pills {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
 .filter-pills .mantine-SegmentedControl-label {
   font-weight: 500;
+  white-space: nowrap;
 }
 
 /* Painéis e formulários */
@@ -1300,6 +1324,7 @@
 }
 
 .producer-lot-card {
+  position: relative;
   padding: var(--mantine-spacing-lg) var(--mantine-spacing-xl);
   border-radius: var(--mantine-radius-lg);
   border: 1px solid var(--mantine-color-default-border);
@@ -1314,6 +1339,33 @@
   transform: translateY(-3px);
   border-color: var(--vibra-border-accent-hover);
   box-shadow: 0 12px 32px var(--vibra-shadow-soft);
+}
+
+.producer-lot-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-sm);
+}
+
+.producer-lot-card__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.producer-lot-card__actions {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+@media (max-width: 36em) {
+  .producer-lot-card {
+    padding: var(--mantine-spacing-md);
+  }
+
+  .producer-lot-card__header {
+    gap: var(--mantine-spacing-xs);
+  }
 }
 
 .producer-lot-stat {

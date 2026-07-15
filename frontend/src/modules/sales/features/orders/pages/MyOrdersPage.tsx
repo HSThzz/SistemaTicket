@@ -7,11 +7,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Alert,
+  Box,
   Button,
   SegmentedControl,
   SimpleGrid,
   Stack,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import {
   IconAlertCircle,
   IconReceipt,
@@ -48,6 +50,7 @@ export function MyOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isNarrow = useMediaQuery("(max-width: 47.99em)");
   const [filter, setFilter] = useState<OrderFilter>("all");
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasNextPage, setHasNextPage] = useState(false);
@@ -177,15 +180,17 @@ export function MyOrdersPage() {
           </AnimatedSection>
 
           <AnimatedSection delayMs={100}>
-            <SegmentedControl
-              className="filter-pills"
-              value={filter}
-              onChange={(value) => setFilter(value as OrderFilter)}
-              data={FILTER_OPTIONS}
-              radius="xl"
-              fullWidth
-              size="sm"
-            />
+            <Box className="filter-pills-scroll">
+              <SegmentedControl
+                className="filter-pills"
+                value={filter}
+                onChange={(value) => setFilter(value as OrderFilter)}
+                data={FILTER_OPTIONS}
+                radius="xl"
+                fullWidth={!isNarrow}
+                size="sm"
+              />
+            </Box>
           </AnimatedSection>
 
           {orders.length === 0 ? (

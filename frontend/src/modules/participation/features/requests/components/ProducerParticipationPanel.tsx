@@ -506,13 +506,16 @@ export function ProducerParticipationPanel({
           </Tooltip>
         </Group>
 
-        <SegmentedControl
-          fullWidth
-          radius="xl"
-          value={panelFilter}
-          onChange={(value) => setPanelFilter(value as PanelFilter)}
-          data={PANEL_FILTERS}
-        />
+        <Box className="filter-pills-scroll">
+          <SegmentedControl
+            className="filter-pills"
+            fullWidth
+            radius="xl"
+            value={panelFilter}
+            onChange={(value) => setPanelFilter(value as PanelFilter)}
+            data={PANEL_FILTERS}
+          />
+        </Box>
 
         {loading ? (
           <Group justify="center" py="xl">

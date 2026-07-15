@@ -37,17 +37,27 @@ export function ProducerLotCard({
   const soldPct =
     lot.totalQuantity > 0 ? Math.round((sold / lot.totalQuantity) * 100) : 0;
   const onePerDocument = lot.maxPerDocument === 1;
+  const showActions = (canEdit && onEdit) || (canDelete && onDelete);
 
   return (
     <Box className="producer-lot-card">
-      <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
-        <Group gap="md" wrap="nowrap" align="flex-start">
-          <ThemeIcon size={44} radius="md" variant="light" color="brand">
+      <Box className="producer-lot-card__header">
+        <Group
+          className="producer-lot-card__main"
+          gap="md"
+          wrap="nowrap"
+          align="flex-start"
+        >
+          <ThemeIcon size={44} radius="md" variant="light" color="brand" flex="none">
             <IconTicket size={22} />
           </ThemeIcon>
-          <Stack gap={6}>
+          <Stack gap={8} style={{ minWidth: 0, flex: 1 }}>
             <Group gap="xs" wrap="wrap">
-              <Title order={4} style={{ letterSpacing: "-0.01em" }}>
+              <Title
+                order={4}
+                style={{ letterSpacing: "-0.01em" }}
+                lineClamp={2}
+              >
                 {lot.name}
               </Title>
               {onePerDocument ? (
@@ -59,41 +69,44 @@ export function ProducerLotCard({
             <Text fw={800} size="xl" c="brand" className="producer-metric-value">
               {formatLotPrice(lot.price)}
             </Text>
+            <LotStockBadge availableQuantity={lot.availableQuantity} />
           </Stack>
         </Group>
-        <Group gap="sm" wrap="nowrap">
-          <LotStockBadge availableQuantity={lot.availableQuantity} />
-          {canEdit && onEdit ? (
-            <Tooltip label="Editar lote">
-              <ActionIcon
-                variant="light"
-                color="brand"
-                radius="md"
-                size="lg"
-                aria-label={`Editar lote ${lot.name}`}
-                onClick={() => onEdit(lot)}
-              >
-                <IconPencil size={18} />
-              </ActionIcon>
-            </Tooltip>
-          ) : null}
-          {canDelete && onDelete ? (
-            <Tooltip label="Apagar lote">
-              <ActionIcon
-                variant="light"
-                color="red"
-                radius="md"
-                size="lg"
-                loading={deleting}
-                aria-label={`Apagar lote ${lot.name}`}
-                onClick={() => onDelete(lot)}
-              >
-                <IconTrash size={18} />
-              </ActionIcon>
-            </Tooltip>
-          ) : null}
-        </Group>
-      </Group>
+
+        {showActions ? (
+          <Group className="producer-lot-card__actions" gap={6} wrap="nowrap">
+            {canEdit && onEdit ? (
+              <Tooltip label="Editar lote">
+                <ActionIcon
+                  variant="light"
+                  color="brand"
+                  radius="md"
+                  size="lg"
+                  aria-label={`Editar lote ${lot.name}`}
+                  onClick={() => onEdit(lot)}
+                >
+                  <IconPencil size={18} />
+                </ActionIcon>
+              </Tooltip>
+            ) : null}
+            {canDelete && onDelete ? (
+              <Tooltip label="Apagar lote">
+                <ActionIcon
+                  variant="light"
+                  color="red"
+                  radius="md"
+                  size="lg"
+                  loading={deleting}
+                  aria-label={`Apagar lote ${lot.name}`}
+                  onClick={() => onDelete(lot)}
+                >
+                  <IconTrash size={18} />
+                </ActionIcon>
+              </Tooltip>
+            ) : null}
+          </Group>
+        ) : null}
+      </Box>
 
       <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="md" mt="lg">
         <Box className="producer-lot-stat">
