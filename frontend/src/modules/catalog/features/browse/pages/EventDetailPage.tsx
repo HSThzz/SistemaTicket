@@ -52,7 +52,6 @@ import {
   extractCity,
   getEventCoverImageUrl,
   getEventCoverStyle,
-  getEventGradient,
   getLowestPrice,
   getTotalAvailable,
   inferEventCategory,
@@ -261,7 +260,6 @@ export function EventDetailPage() {
   const lowestPrice = getLowestPrice(event);
   const totalAvailable = getTotalAvailable(event);
   const category = inferEventCategory(event);
-  const [glowColor] = getEventGradient(event.id);
   const soldOut = totalAvailable === 0;
   const eventIsPrivate = event.type === "PRIVATE";
   const isApproved = participation?.status === "APPROVED";
@@ -282,25 +280,6 @@ export function EventDetailPage() {
   return (
     <Stack gap={0}>
       <Box className="event-detail-hero full-bleed" style={getEventCoverStyle(event)}>
-        <Box
-          className="hero-glow"
-          style={{
-            top: "8%",
-            right: "6%",
-            background: glowColor,
-          }}
-        />
-        <Box
-          className="hero-glow"
-          style={{
-            bottom: "12%",
-            left: "4%",
-            background: glowColor,
-            animationDelay: "2.5s",
-            width: 200,
-            height: 200,
-          }}
-        />
         <Box className="producer-manage-hero-overlay" />
         <Container size="lg" px="md" className="event-detail-hero-content">
           <Stack gap="md" className="event-detail-hero-info">
