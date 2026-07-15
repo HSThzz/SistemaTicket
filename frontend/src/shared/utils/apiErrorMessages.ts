@@ -68,6 +68,8 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
     "Um ou mais lotes selecionados são inválidos para este evento.",
   PARTICIPATION_NO_TICKET_LOTS:
     "Crie ao menos um lote de ingressos antes de aprovar solicitações.",
+  PARTICIPATION_LOTS_UPDATE_NOT_ALLOWED:
+    "Só é possível editar lotes de solicitações já aprovadas.",
 
   // Vendas
   LOCK_NOT_ACQUIRED: "Muitas pessoas estão comprando agora. Tente novamente em instantes.",

@@ -25,6 +25,7 @@ import {
   IconBrandInstagram,
   IconCheck,
   IconMail,
+  IconPencil,
   IconPhone,
   IconReceipt,
   IconRefresh,
@@ -67,15 +68,18 @@ function RequestRow({
   acting,
   lotNameById,
   onApproveClick,
+  onEditLotsClick,
   onReject,
 }: {
   request: ParticipationRequest;
   acting: boolean;
   lotNameById: Map<string, string>;
   onApproveClick: (request: ParticipationRequest) => void;
+  onEditLotsClick: (request: ParticipationRequest) => void;
   onReject: (id: string) => void;
 }) {
   const isPending = request.status === "PENDING";
+  const isApproved = request.status === "APPROVED";
   const allowedLotLabels =
     request.allowedTicketLotIds
       ?.map((id) => lotNameById.get(id) ?? "Lote removido")
@@ -120,7 +124,7 @@ function RequestRow({
           <Text size="xs" c="dimmed">
             Enviada em {formatEventDate(request.createdAt)}
           </Text>
-          {request.status === "APPROVED" && allowedLotLabels.length > 0 ? (
+          {isApproved && allowedLotLabels.length > 0 ? (
             <Text size="xs" c="dimmed">
               Lotes liberados: {allowedLotLabels.join(", ")}
             </Text>
@@ -151,6 +155,19 @@ function RequestRow({
               Recusar
             </Button>
           </Group>
+        ) : null}
+
+        {isApproved ? (
+          <Button
+            radius="xl"
+            size="xs"
+            variant="light"
+            leftSection={<IconPencil size={16} />}
+            loading={acting}
+            onClick={() => onEditLotsClick(request)}
+          >
+            Editar lotes
+          </Button>
         ) : null}
       </Group>
     </Box>
@@ -246,6 +263,7 @@ export function ProducerParticipationPanel({
   const [approveTarget, setApproveTarget] = useState<ParticipationRequest | null>(
     null,
   );
+  const [lotsModalMode, setLotsModalMode] = useState<"approve" | "edit">("approve");
   const [selectedLotIds, setSelectedLotIds] = useState<string[]>([]);
 
   const lotNameById = useMemo(
@@ -301,8 +319,29 @@ export function ProducerParticipationPanel({
       return;
     }
 
+    setLotsModalMode("approve");
     setApproveTarget(request);
     setSelectedLotIds(ticketLots.map((lot) => lot.id));
+  };
+
+  const openEditLotsModal = (request: ParticipationRequest) => {
+    if (ticketLots.length === 0) {
+      notifications.show({
+        title: "Sem lotes",
+        message: "Crie ao menos um lote de ingressos antes de editar.",
+        color: "orange",
+        icon: <IconX size={18} />,
+      });
+      return;
+    }
+
+    const currentIds = (request.allowedTicketLotIds ?? []).filter((id) =>
+      ticketLots.some((lot) => lot.id === id),
+    );
+
+    setLotsModalMode("edit");
+    setApproveTarget(request);
+    setSelectedLotIds(currentIds.length > 0 ? currentIds : ticketLots.map((lot) => lot.id));
   };
 
   const handleReview = async (
@@ -343,19 +382,56 @@ export function ProducerParticipationPanel({
     }
   };
 
-  const handleConfirmApprove = () => {
+  const handleUpdateAllowedLots = async (id: string, ticketLotIds: string[]) => {
+    setActingId(id);
+    try {
+      const updated = await participationService.updateAllowedTicketLots(
+        eventId,
+        id,
+        ticketLotIds,
+      );
+      setRequests((current) =>
+        current.map((request) => (request.id === id ? updated : request)),
+      );
+      notifications.show({
+        title: "Lotes atualizados",
+        message: "Os lotes liberados para este participante foram salvos.",
+        color: "green",
+        icon: <IconCheck size={18} />,
+      });
+      setApproveTarget(null);
+      onReviewComplete?.();
+    } catch (err) {
+      notifications.show({
+        title: "Não foi possível salvar",
+        message: getApiErrorMessage(err),
+        color: "red",
+        icon: <IconX size={18} />,
+      });
+    } finally {
+      setActingId(null);
+    }
+  };
+
+  const handleConfirmLotsModal = () => {
     if (!approveTarget) {
       return;
     }
     if (selectedLotIds.length === 0) {
       notifications.show({
         title: "Selecione lotes",
-        message: "Escolha ao menos um lote para liberar na aprovação.",
+        message: "Escolha ao menos um lote para liberar.",
         color: "orange",
         icon: <IconX size={18} />,
       });
       return;
     }
+
+    if (lotsModalMode === "edit") {
+      void handleUpdateAllowedLots(approveTarget.id, selectedLotIds);
+      return;
+    }
+
     void handleReview(approveTarget.id, "APPROVE", selectedLotIds);
   };
 
@@ -468,6 +544,7 @@ export function ProducerParticipationPanel({
                 acting={actingId === request.id}
                 lotNameById={lotNameById}
                 onApproveClick={openApproveModal}
+                onEditLotsClick={openEditLotsModal}
                 onReject={(id) => void handleReview(id, "REJECT")}
               />
             ))}
@@ -482,7 +559,11 @@ export function ProducerParticipationPanel({
             setApproveTarget(null);
           }
         }}
-        title="Liberar lotes na aprovação"
+        title={
+          lotsModalMode === "edit"
+            ? "Editar lotes liberados"
+            : "Liberar lotes na aprovação"
+        }
         centered
         radius="lg"
       >
@@ -516,9 +597,9 @@ export function ProducerParticipationPanel({
                 color="green"
                 radius="xl"
                 loading={approveActing}
-                onClick={handleConfirmApprove}
+                onClick={handleConfirmLotsModal}
               >
-                Confirmar aprovação
+                {lotsModalMode === "edit" ? "Salvar lotes" : "Confirmar aprovação"}
               </Button>
             </Group>
           </Stack>

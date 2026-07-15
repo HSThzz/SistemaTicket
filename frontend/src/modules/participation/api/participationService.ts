@@ -114,3 +114,18 @@ export async function reviewParticipationRequest(
   );
   return data.participationRequest;
 }
+
+/**
+ * Atualiza os lotes liberados de uma participação já aprovada.
+ */
+export async function updateAllowedTicketLots(
+  eventId: string,
+  requestId: string,
+  ticketLotIds: string[],
+): Promise<ParticipationRequest> {
+  const { data } = await api.patch<{ participationRequest: ParticipationRequest }>(
+    `/events/${eventId}/participation-requests/${requestId}/allowed-lots`,
+    { ticketLotIds },
+  );
+  return data.participationRequest;
+}

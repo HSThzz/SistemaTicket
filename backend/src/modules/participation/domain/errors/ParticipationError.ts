@@ -144,3 +144,14 @@ export class ParticipationNoTicketLotsError extends ParticipationError {
     this.name = "ParticipationNoTicketLotsError";
   }
 }
+
+/** Só solicitações APPROVED podem ter a lista de lotes editada. */
+export class ParticipationLotsUpdateNotAllowedError extends ParticipationError {
+  constructor(status: string) {
+    super(
+      `Cannot update allowed ticket lots while status is ${status}`,
+      "PARTICIPATION_LOTS_UPDATE_NOT_ALLOWED",
+    );
+    this.name = "ParticipationLotsUpdateNotAllowedError";
+  }
+}

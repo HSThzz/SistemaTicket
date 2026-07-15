@@ -21,6 +21,7 @@ import {
   participationEventRequestParamsSchema,
   reviewParticipationRequestBodySchema,
   submitParticipationRequestBodySchema,
+  updateAllowedTicketLotsBodySchema,
 } from "../../../../shared/interfaces/http/validation/participation.schemas";
 
 const router = Router();
@@ -67,6 +68,14 @@ router.patch(
   validateParams(participationEventRequestParamsSchema),
   validateBody(reviewParticipationRequestBodySchema),
   (req, res) => void participationController.review(req, res),
+);
+
+router.patch(
+  "/:eventId/participation-requests/:requestId/allowed-lots",
+  ...participationManagementMiddlewares,
+  validateParams(participationEventRequestParamsSchema),
+  validateBody(updateAllowedTicketLotsBodySchema),
+  (req, res) => void participationController.updateAllowedLots(req, res),
 );
 
 export default router;

@@ -18,6 +18,7 @@ import {
   ParticipationError,
   ParticipationEventNotFoundError,
   ParticipationInvalidTicketLotsError,
+  ParticipationLotsUpdateNotAllowedError,
   ParticipationNoTicketLotsError,
   ParticipationNotPrivateEventError,
   ParticipationPreviouslyRejectedError,
@@ -31,6 +32,7 @@ import { listPaidParticipants } from "../../application/services/listPaidPartici
 import { listParticipationRequests } from "../../application/services/listParticipationRequests";
 import { reviewParticipationRequest } from "../../application/services/reviewParticipationRequest";
 import { submitParticipationRequest } from "../../application/services/submitParticipationRequest";
+import { updateAllowedTicketLots } from "../../application/services/updateAllowedTicketLots";
 import type { ParticipationActor } from "../../application/types";
 
 const CONTEXT = "ParticipationController";
@@ -186,6 +188,35 @@ export class ParticipationController {
     }
   }
 
+  /**
+   * PATCH /events/:eventId/participation-requests/:requestId/allowed-lots
+   * — atualiza lotes liberados de uma aprovação existente.
+   */
+  async updateAllowedLots(req: Request, res: Response): Promise<void> {
+    const actor = requireActor(req, res);
+    if (!actor) return;
+
+    const { eventId, requestId } = req.params as {
+      eventId: string;
+      requestId: string;
+    };
+
+    try {
+      const updated = await updateAllowedTicketLots(
+        eventId,
+        requestId,
+        req.body,
+        actor,
+      );
+
+      res.status(200).json({
+        participationRequest: serializeParticipationRequest(updated),
+      });
+    } catch (error) {
+      this.handleError(res, error, "updateAllowedLots", { eventId, requestId });
+    }
+  }
+
   /** Mapeia erros de participação para status HTTP e log. */
   private handleError(
     res: Response,
@@ -227,7 +258,8 @@ export class ParticipationController {
       error instanceof ParticipationNotPrivateEventError ||
       error instanceof ParticipationAlreadyReviewedError ||
       error instanceof ParticipationInvalidTicketLotsError ||
-      error instanceof ParticipationNoTicketLotsError
+      error instanceof ParticipationNoTicketLotsError ||
+      error instanceof ParticipationLotsUpdateNotAllowedError
     ) {
       res.status(400).json({ error: error.message, code: error.code });
       return;
