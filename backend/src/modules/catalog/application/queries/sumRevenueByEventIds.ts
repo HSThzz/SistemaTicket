@@ -1,5 +1,5 @@
 ﻿/**
- * @file Query: soma receita bruta de pedidos pagos por evento.
+ * @file Query: soma receita de pedidos pagos por evento (líquida da taxa da plataforma).
  * @module modules/catalog/application/queries/sumRevenueByEventIds
  */
 
@@ -7,17 +7,29 @@ import { Order } from "../../../../shared/infrastructure/persistence/entities/Or
 import { OrderStatus } from "../../../../shared/kernel/enums";
 import { AppDataSource } from "../../../../shared/infrastructure/config/data-source";
 
-export async function sumRevenueByEventIds(eventIds: string[],
+/**
+ * Soma `totalPrice - platformFeeCents` por evento, um pedido por vez.
+ *
+ * Usa o caminho Order → Reservation → Lot → Event (1:1) para não multiplicar
+ * a receita pela quantidade de ingressos do pedido. Não usar `SUM(DISTINCT …)`:
+ * em Postgres isso deduplica pelo valor, não pelo pedido — pedidos do mesmo
+ * preço eram contados só uma vez.
+ */
+export async function sumRevenueByEventIds(
+  eventIds: string[],
 ): Promise<Map<string, number>> {
-  const rows = await AppDataSource
-    .getRepository(Order)
+  if (eventIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await AppDataSource.getRepository(Order)
     .createQueryBuilder("order")
-    .innerJoin("order.tickets", "ticket")
-    .innerJoin("ticket.ticketLot", "lot")
+    .innerJoin("order.reservation", "reservation")
+    .innerJoin("reservation.ticketLot", "lot")
     .innerJoin("lot.event", "event")
     .select("event.id", "eventId")
     .addSelect(
-      "SUM(DISTINCT (order.totalPrice - order.platformFeeCents))",
+      "COALESCE(SUM(order.totalPrice - order.platformFeeCents), 0)",
       "revenue",
     )
     .where("event.id IN (:...eventIds)", { eventIds })
@@ -27,4 +39,3 @@ export async function sumRevenueByEventIds(eventIds: string[],
 
   return new Map(rows.map((row) => [row.eventId, Number(row.revenue)]));
 }
-

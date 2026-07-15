@@ -192,7 +192,7 @@ export function ProducerDashboardPage() {
 
         <SimpleGrid cols={{ base: 2, lg: 4 }} spacing="md">
           <StatCard
-            label="Receita bruta"
+            label="Receita"
             value={formatCurrencyFromCents(filteredSummary.grossRevenueCents)}
             icon={<IconCash size={20} />}
             iconColor="brand"
