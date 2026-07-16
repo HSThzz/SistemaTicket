@@ -18,11 +18,15 @@ const logger = Logger.getInstance();
 /** Cor de fundo do card (API só aceita cor sólida). */
 const GOOGLE_WALLET_BACKGROUND_COLOR = "#000000";
 
-/** Asset do frontend: `frontend/public/wallet/vibra-hero.png`. */
+/** Asset do frontend: faixa larga (`frontend/public/wallet/vibra-hero.png`). */
 const FRONTEND_HERO_PATH = "/wallet/vibra-hero.png";
 
-/** Fallback servido pela API: `backend/assets/wallet/vibra-hero.png`. */
+/** Logo quadrada para o ícone circular (`frontend/public/wallet/vibra-logo.png`). */
+const FRONTEND_LOGO_PATH = "/wallet/vibra-logo.png";
+
+/** Fallbacks servidos pela API. */
 const API_HERO_PATH = "/wallet-assets/vibra-hero.png";
+const API_LOGO_PATH = "/wallet-assets/vibra-logo.png";
 
 function getIssuerDisplayName(): string {
   return env.wallet.google.issuerName.trim() || "VIBRA";
@@ -32,27 +36,42 @@ function isHttpsUrl(value: string): boolean {
   return /^https:\/\//i.test(value);
 }
 
+function joinPublicUrl(base: string, path: string): string {
+  return `${base.replace(/\/+$/, "")}${path}`;
+}
+
+type BrandImageUrls = {
+  heroUrl?: string;
+  logoUrl?: string;
+};
+
 /**
- * URL HTTPS da marca (`logo` + `heroImage`).
- * Preferência: env → frontend public → API static.
+ * URLs HTTPS da marca.
+ * Preferência: env (hero) → frontend public → API static.
  */
-function resolveBrandImageUrl(): string | undefined {
+function resolveBrandImageUrls(): BrandImageUrls {
   const configured = env.wallet.google.heroImageUrl.trim();
-  if (configured) {
-    return isHttpsUrl(configured) ? configured : undefined;
+  if (configured && isHttpsUrl(configured)) {
+    return { heroUrl: configured, logoUrl: configured };
   }
 
   const appPublicUrl = getAppPublicUrl();
   if (isHttpsUrl(appPublicUrl)) {
-    return `${appPublicUrl.replace(/\/+$/, "")}${FRONTEND_HERO_PATH}`;
+    return {
+      heroUrl: joinPublicUrl(appPublicUrl, FRONTEND_HERO_PATH),
+      logoUrl: joinPublicUrl(appPublicUrl, FRONTEND_LOGO_PATH),
+    };
   }
 
   const apiPublicUrl = getApiPublicUrl();
   if (apiPublicUrl && isHttpsUrl(apiPublicUrl)) {
-    return `${apiPublicUrl}${API_HERO_PATH}`;
+    return {
+      heroUrl: joinPublicUrl(apiPublicUrl, API_HERO_PATH),
+      logoUrl: joinPublicUrl(apiPublicUrl, API_LOGO_PATH),
+    };
   }
 
-  return undefined;
+  return {};
 }
 
 function truncate(value: string, maxLength: number): string {
@@ -119,11 +138,14 @@ function isInvalidImageError(error: unknown): boolean {
 function buildClassBody(
   event: Event,
   classId: string,
-  brandImageUrl: string | undefined,
+  brandImages: BrandImageUrls,
 ) {
   const venue = buildGoogleWalletVenue(event.location);
-  const brandImage = brandImageUrl
-    ? buildWalletImage(brandImageUrl)
+  const heroImage = brandImages.heroUrl
+    ? buildWalletImage(brandImages.heroUrl)
+    : undefined;
+  const logo = brandImages.logoUrl
+    ? buildWalletImage(brandImages.logoUrl)
     : undefined;
 
   return {
@@ -139,7 +161,8 @@ function buildClassBody(
       start: event.date.toISOString(),
     },
     hexBackgroundColor: GOOGLE_WALLET_BACKGROUND_COLOR,
-    ...(brandImage ? { logo: brandImage, heroImage: brandImage } : {}),
+    ...(logo ? { logo } : {}),
+    ...(heroImage ? { heroImage } : {}),
   };
 }
 
@@ -183,27 +206,30 @@ export async function ensureGoogleEventTicketClass(
   });
 
   const wallet = google.walletobjects({ version: "v1", auth });
-  const brandImageUrl = resolveBrandImageUrl();
+  const brandImages = resolveBrandImageUrls();
 
   try {
     await upsertClass(
       wallet,
       classId,
-      buildClassBody(event, classId, brandImageUrl),
+      buildClassBody(event, classId, brandImages),
     );
   } catch (error) {
-    if (!brandImageUrl || !isInvalidImageError(error)) {
+    if (
+      (!brandImages.heroUrl && !brandImages.logoUrl) ||
+      !isInvalidImageError(error)
+    ) {
       throw error;
     }
 
     // Imagem ainda não publicada / URL inválida: card preto sem logo (não derruba o fluxo).
     logger.warn(CONTEXT, "Brand image rejected by Google Wallet; retrying without images", {
       classId,
-      brandImageUrl,
+      brandImages,
       error: error instanceof Error ? error.message : String(error),
     });
 
-    await upsertClass(wallet, classId, buildClassBody(event, classId, undefined));
+    await upsertClass(wallet, classId, buildClassBody(event, classId, {}));
   }
 }
 
