@@ -18,7 +18,7 @@ const logger = Logger.getInstance();
 /** Cor de fundo do card (API só aceita cor sólida). */
 const GOOGLE_WALLET_BACKGROUND_COLOR = "#000000";
 
-/** Asset do frontend: faixa larga (`frontend/public/wallet/vibra-hero.png`). */
+/** Asset do frontend: hero quadrado (`frontend/public/wallet/vibra-hero.png`). */
 const FRONTEND_HERO_PATH = "/wallet/vibra-hero.png";
 
 /** Logo quadrada para o ícone circular (`frontend/public/wallet/vibra-logo.png`). */
