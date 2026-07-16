@@ -25,10 +25,10 @@ import {
 import { notifications } from "@mantine/notifications";
 import {
   IconBrandInstagram,
+  IconBrandWhatsapp,
   IconCheck,
   IconMail,
   IconPencil,
-  IconPhone,
   IconReceipt,
   IconRefresh,
   IconSearch,
@@ -50,6 +50,7 @@ import type {
 import { getApiErrorMessage } from "@/shared/utils/errors";
 import {
   buildInstagramProfileUrl,
+  buildWhatsAppUrl,
   formatCurrencyFromCents,
   formatEventDate,
   formatLotPrice,
@@ -106,6 +107,7 @@ function RequestRow({
 }) {
   const isPending = request.status === "PENDING";
   const isApproved = request.status === "APPROVED";
+  const whatsappUrl = request.phone ? buildWhatsAppUrl(request.phone) : null;
   const allowedLotLabels =
     request.allowedTicketLotIds
       ?.map((id) => lotNameById.get(id) ?? "Lote removido")
@@ -133,8 +135,20 @@ function RequestRow({
             </Group>
             {request.phone ? (
               <Group gap={6} wrap="nowrap">
-                <IconPhone size={15} />
-                <Text size="sm">{request.phone}</Text>
+                <IconBrandWhatsapp size={15} />
+                {whatsappUrl ? (
+                  <Anchor
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="sm"
+                    fw={600}
+                  >
+                    {request.phone}
+                  </Anchor>
+                ) : (
+                  <Text size="sm">{request.phone}</Text>
+                )}
               </Group>
             ) : null}
             {request.instagramHandle ? (

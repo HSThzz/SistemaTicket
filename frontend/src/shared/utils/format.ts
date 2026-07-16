@@ -187,3 +187,38 @@ export function buildInstagramProfileUrl(handle: string): string {
   const normalized = normalizeInstagramHandle(handle);
   return `https://www.instagram.com/${encodeURIComponent(normalized)}/`;
 }
+
+/**
+ * Digitos do telefone para WhatsApp (E.164 sem `+`).
+ * Aceita formato BR com/sem DDI `55`.
+ */
+export function normalizePhoneDigitsForWhatsApp(value: string): string {
+  let digits = value.replace(/\D/g, "");
+  if (!digits) {
+    return "";
+  }
+
+  // Remove zero à esquerda de operadora (ex.: 015… → 15…).
+  if (digits.startsWith("0")) {
+    digits = digits.replace(/^0+/, "");
+  }
+
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
+    return digits;
+  }
+
+  if (digits.length === 10 || digits.length === 11) {
+    return `55${digits}`;
+  }
+
+  return digits;
+}
+
+/** Link `wa.me` a partir do telefone informado (BR ou com DDI). */
+export function buildWhatsAppUrl(phone: string): string | null {
+  const digits = normalizePhoneDigitsForWhatsApp(phone);
+  if (digits.length < 12) {
+    return null;
+  }
+  return `https://wa.me/${digits}`;
+}
