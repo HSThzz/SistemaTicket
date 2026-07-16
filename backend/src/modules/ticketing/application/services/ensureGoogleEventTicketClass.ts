@@ -29,8 +29,27 @@ function localizedString(value: string) {
   };
 }
 
+/**
+ * Banner da frente do card (API `heroImage`).
+ * Exige URL HTTPS pública — o Google precisa baixar a imagem.
+ */
+function buildHeroImage(imageUrl: string | null | undefined) {
+  const uri = imageUrl?.trim();
+  if (!uri || !/^https:\/\//i.test(uri)) {
+    return undefined;
+  }
+
+  return {
+    sourceUri: { uri },
+    contentDescription: localizedString("Capa do evento"),
+  };
+}
+
 /** Separa nome e endereço a partir do campo único `location` do evento. */
-function buildGoogleWalletVenue(location: string): { name: string; address: string } {
+function buildGoogleWalletVenue(location: string): {
+  name: string;
+  address: string;
+} {
   const trimmed = location.trim() || "Local a confirmar";
   const parts = trimmed
     .split(/\s*[—–-]\s*|\n/)
@@ -63,6 +82,7 @@ export async function ensureGoogleEventTicketClass(
 
   const wallet = google.walletobjects({ version: "v1", auth });
   const venue = buildGoogleWalletVenue(event.location);
+  const heroImage = buildHeroImage(event.imageUrl);
 
   const classBody = {
     id: classId,
@@ -76,7 +96,9 @@ export async function ensureGoogleEventTicketClass(
     dateTime: {
       start: event.date.toISOString(),
     },
-    hexBackgroundColor: "#16A34A",
+    // Fallback quando não há capa; com heroImage o Google também deriva tons da imagem.
+    hexBackgroundColor: "#000000",
+    ...(heroImage ? { heroImage } : {}),
   };
 
   try {
@@ -95,7 +117,9 @@ export async function ensureGoogleEventTicketClass(
   }
 }
 
-export function buildGoogleWalletOrigins(requestOrigin?: string | null): string[] {
+export function buildGoogleWalletOrigins(
+  requestOrigin?: string | null,
+): string[] {
   const origins = new Set(
     env.wallet.google.origins
       .map((origin) => origin.trim().replace(/\/+$/, ""))
