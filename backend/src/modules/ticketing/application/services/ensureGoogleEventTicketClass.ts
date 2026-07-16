@@ -9,6 +9,9 @@ import type { Event } from "../../../../shared/infrastructure/persistence/entiti
 import { WalletConfigError } from "../../domain/errors/WalletError";
 import { loadGoogleCredentials } from "../helpers/walletHelpers";
 
+/** Cor de fundo do card (API só aceita cor sólida — não há imagem de capa full-bleed). */
+const GOOGLE_WALLET_BACKGROUND_COLOR = "#000000";
+
 function getIssuerDisplayName(): string {
   return env.wallet.google.issuerName.trim() || "VIBRA";
 }
@@ -26,22 +29,6 @@ function localizedString(value: string) {
       language: "pt-BR",
       value,
     },
-  };
-}
-
-/**
- * Banner da frente do card (API `heroImage`).
- * Exige URL HTTPS pública — o Google precisa baixar a imagem.
- */
-function buildHeroImage(imageUrl: string | null | undefined) {
-  const uri = imageUrl?.trim();
-  if (!uri || !/^https:\/\//i.test(uri)) {
-    return undefined;
-  }
-
-  return {
-    sourceUri: { uri },
-    contentDescription: localizedString("Capa do evento"),
   };
 }
 
@@ -82,8 +69,9 @@ export async function ensureGoogleEventTicketClass(
 
   const wallet = google.walletobjects({ version: "v1", auth });
   const venue = buildGoogleWalletVenue(event.location);
-  const heroImage = buildHeroImage(event.imageUrl);
 
+  // Observação: a API do Google Wallet NÃO permite imagem como fundo do card.
+  // `heroImage` vira uma faixa abaixo dos dados e alonga o ingresso — não usamos.
   const classBody = {
     id: classId,
     issuerName: getIssuerDisplayName(),
@@ -96,16 +84,19 @@ export async function ensureGoogleEventTicketClass(
     dateTime: {
       start: event.date.toISOString(),
     },
-    // Fallback quando não há capa; com heroImage o Google também deriva tons da imagem.
-    hexBackgroundColor: "#000000",
-    ...(heroImage ? { heroImage } : {}),
+    hexBackgroundColor: GOOGLE_WALLET_BACKGROUND_COLOR,
   };
 
   try {
-    await wallet.eventticketclass.get({ resourceId: classId });
-    await wallet.eventticketclass.patch({
+    const existing = await wallet.eventticketclass.get({ resourceId: classId });
+
+    // Patch não remove `heroImage` se já existir; `update` com o campo omitido sim.
+    const nextBody = { ...existing.data, ...classBody };
+    delete (nextBody as { heroImage?: unknown }).heroImage;
+
+    await wallet.eventticketclass.update({
       resourceId: classId,
-      requestBody: classBody,
+      requestBody: nextBody,
     });
   } catch (error) {
     const status = (error as { code?: number }).code;
