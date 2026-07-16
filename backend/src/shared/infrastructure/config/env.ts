@@ -119,6 +119,11 @@ export const env = {
       credentialsJson: process.env.GOOGLE_WALLET_CREDENTIALS_JSON ?? "",
       issuerId: process.env.GOOGLE_WALLET_ISSUER_ID ?? "",
       issuerName: process.env.GOOGLE_WALLET_ISSUER_NAME ?? "VIBRA",
+      /**
+       * URL HTTPS pública da faixa/logo do card.
+       * Se vazio, usa `{API_PUBLIC_URL}/wallet-assets/vibra-hero.png`.
+       */
+      heroImageUrl: process.env.GOOGLE_WALLET_HERO_IMAGE_URL ?? "",
       origins: (
         process.env.GOOGLE_WALLET_ORIGINS ??
         "http://127.0.0.1:5173,https://vibraevents.com.br,https://www.vibraevents.com.br"

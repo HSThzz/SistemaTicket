@@ -4,16 +4,55 @@
  */
 
 import { google } from "googleapis";
+import { getApiPublicUrl } from "../../../../shared/infrastructure/config/apiPublicUrl";
+import { getAppPublicUrl } from "../../../../shared/infrastructure/config/appPublicUrl";
 import { env } from "../../../../shared/infrastructure/config/env";
+import { Logger } from "../../../../shared/infrastructure/config/logger";
 import type { Event } from "../../../../shared/infrastructure/persistence/entities/Event";
 import { WalletConfigError } from "../../domain/errors/WalletError";
 import { loadGoogleCredentials } from "../helpers/walletHelpers";
 
-/** Cor de fundo do card (API só aceita cor sólida — não há imagem de capa full-bleed). */
+const CONTEXT = "ensureGoogleEventTicketClass";
+const logger = Logger.getInstance();
+
+/** Cor de fundo do card (API só aceita cor sólida). */
 const GOOGLE_WALLET_BACKGROUND_COLOR = "#000000";
+
+/** Asset do frontend: `frontend/public/wallet/vibra-hero.png`. */
+const FRONTEND_HERO_PATH = "/wallet/vibra-hero.png";
+
+/** Fallback servido pela API: `backend/assets/wallet/vibra-hero.png`. */
+const API_HERO_PATH = "/wallet-assets/vibra-hero.png";
 
 function getIssuerDisplayName(): string {
   return env.wallet.google.issuerName.trim() || "VIBRA";
+}
+
+function isHttpsUrl(value: string): boolean {
+  return /^https:\/\//i.test(value);
+}
+
+/**
+ * URL HTTPS da marca (`logo` + `heroImage`).
+ * Preferência: env → frontend public → API static.
+ */
+function resolveBrandImageUrl(): string | undefined {
+  const configured = env.wallet.google.heroImageUrl.trim();
+  if (configured) {
+    return isHttpsUrl(configured) ? configured : undefined;
+  }
+
+  const appPublicUrl = getAppPublicUrl();
+  if (isHttpsUrl(appPublicUrl)) {
+    return `${appPublicUrl.replace(/\/+$/, "")}${FRONTEND_HERO_PATH}`;
+  }
+
+  const apiPublicUrl = getApiPublicUrl();
+  if (apiPublicUrl && isHttpsUrl(apiPublicUrl)) {
+    return `${apiPublicUrl}${API_HERO_PATH}`;
+  }
+
+  return undefined;
 }
 
 function truncate(value: string, maxLength: number): string {
@@ -32,7 +71,13 @@ function localizedString(value: string) {
   };
 }
 
-/** Separa nome e endereço a partir do campo único `location` do evento. */
+function buildWalletImage(uri: string) {
+  return {
+    sourceUri: { uri },
+    contentDescription: localizedString("VIBRA"),
+  };
+}
+
 function buildGoogleWalletVenue(location: string): {
   name: string;
   address: string;
@@ -57,22 +102,31 @@ function buildGoogleWalletVenue(location: string): {
   };
 }
 
-export async function ensureGoogleEventTicketClass(
+function isInvalidImageError(error: unknown): boolean {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" &&
+          error !== null &&
+          "message" in error &&
+          typeof (error as { message: unknown }).message === "string"
+        ? (error as { message: string }).message
+        : String(error);
+
+  return /invalid image url|could not load image/i.test(message);
+}
+
+function buildClassBody(
   event: Event,
   classId: string,
-): Promise<void> {
-  const credentials = await loadGoogleCredentials();
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: ["https://www.googleapis.com/auth/wallet_object.issuer"],
-  });
-
-  const wallet = google.walletobjects({ version: "v1", auth });
+  brandImageUrl: string | undefined,
+) {
   const venue = buildGoogleWalletVenue(event.location);
+  const brandImage = brandImageUrl
+    ? buildWalletImage(brandImageUrl)
+    : undefined;
 
-  // Observação: a API do Google Wallet NÃO permite imagem como fundo do card.
-  // `heroImage` vira uma faixa abaixo dos dados e alonga o ingresso — não usamos.
-  const classBody = {
+  return {
     id: classId,
     issuerName: getIssuerDisplayName(),
     reviewStatus: "underReview" as const,
@@ -85,14 +139,24 @@ export async function ensureGoogleEventTicketClass(
       start: event.date.toISOString(),
     },
     hexBackgroundColor: GOOGLE_WALLET_BACKGROUND_COLOR,
+    ...(brandImage ? { logo: brandImage, heroImage: brandImage } : {}),
   };
+}
 
+async function upsertClass(
+  wallet: ReturnType<typeof google.walletobjects>,
+  classId: string,
+  classBody: ReturnType<typeof buildClassBody>,
+): Promise<void> {
   try {
     const existing = await wallet.eventticketclass.get({ resourceId: classId });
-
-    // Patch não remove `heroImage` se já existir; `update` com o campo omitido sim.
     const nextBody = { ...existing.data, ...classBody };
-    delete (nextBody as { heroImage?: unknown }).heroImage;
+
+    if (!("heroImage" in classBody)) {
+      delete (nextBody as { heroImage?: unknown }).heroImage;
+      delete (nextBody as { logo?: unknown }).logo;
+    }
+    delete (nextBody as { logoImage?: unknown }).logoImage;
 
     await wallet.eventticketclass.update({
       resourceId: classId,
@@ -105,6 +169,41 @@ export async function ensureGoogleEventTicketClass(
       return;
     }
     throw error;
+  }
+}
+
+export async function ensureGoogleEventTicketClass(
+  event: Event,
+  classId: string,
+): Promise<void> {
+  const credentials = await loadGoogleCredentials();
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ["https://www.googleapis.com/auth/wallet_object.issuer"],
+  });
+
+  const wallet = google.walletobjects({ version: "v1", auth });
+  const brandImageUrl = resolveBrandImageUrl();
+
+  try {
+    await upsertClass(
+      wallet,
+      classId,
+      buildClassBody(event, classId, brandImageUrl),
+    );
+  } catch (error) {
+    if (!brandImageUrl || !isInvalidImageError(error)) {
+      throw error;
+    }
+
+    // Imagem ainda não publicada / URL inválida: card preto sem logo (não derruba o fluxo).
+    logger.warn(CONTEXT, "Brand image rejected by Google Wallet; retrying without images", {
+      classId,
+      brandImageUrl,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    await upsertClass(wallet, classId, buildClassBody(event, classId, undefined));
   }
 }
 

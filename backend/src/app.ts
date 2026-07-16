@@ -4,6 +4,7 @@
  */
 
 import express from "express";
+import path from "node:path";
 import helmet from "helmet";
 import { corsMiddleware } from "./shared/interfaces/http/middlewares/corsMiddleware";
 import { globalRateLimiter } from "./shared/interfaces/http/middlewares/rateLimiter";
@@ -37,7 +38,17 @@ export function createApp(): express.Application {
   }
 
   app.use(requestLogger);
-  
+
+  // Assets públicos (logo Google Wallet). Precisam ser HTTPS acessíveis pelo Google.
+  app.use(
+    "/wallet-assets",
+    express.static(path.resolve(process.cwd(), "assets", "wallet"), {
+      maxAge: "7d",
+      immutable: true,
+      fallthrough: false,
+    }),
+  );
+
   app.use(routes);
 
   app.use(errorHandler);
